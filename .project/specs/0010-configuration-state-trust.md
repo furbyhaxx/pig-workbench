@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for trust scope and concurrent saves"]
+    - revision: 5
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Catalog entries for statusline mode, answer history, edit mode rules, bash routing, fetch backends and sessions", "Column cap default 512"]
 ---
 
 # 1. Scope and precedence
@@ -79,7 +82,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | edit.snapshot.maxPaths/maxVersions/maxBytes/maxFileBytes | 256 / 4 / 67108864 / 4194304 | user/runtime; lowering evicts LRU safely |
 | read.maxBytes/maxLines/concurrency | 51200 / 2000 / 4 | user/project/runtime; project can only reduce safety ceilings |
 | read.summarize.enabled/minTotalLines/minBodyLines/minCommentLines/prose | true / 200 / 12 / 8 / false | user/project/runtime; cache-key revision |
-| read.outputMaxColumns | no extra column cap | user/project/runtime; when set, partial lines remain unseen |
+| read.outputMaxColumns | 512 | user/project/runtime; cut lines remain unseen (SPEC-0006 G6.1) |
 | read.query.defaultRows/maxRows/timeoutMs | 100 / 1000 / 30000 | user/runtime ceilings, project reductions |
 | read.loopHintAfter | 3 | display hint, not a read lockout |
 | instructions.enabled/boundary | true / project | user/runtime; project cannot widen boundary |
@@ -100,7 +103,13 @@ All defaults below are proposals subject to design review and measurements, not 
 | tools.<owner>.<key> | contribution defaults | display fields from SPEC-0003 only |
 | trust.rules / history.globalAccess | no extra grants / ask | user/runtime only; never project |
 | storage.finishedRetentionDays/artifactRetentionDays | 7 / 7 | user/runtime; active references protected |
-| statusline.segments | short location/jobs status | contributions only; no footer takeover |
+| statusline.mode / statusline.layout | segments / donor default layout | user/runtime; `footer` only by explicit user choice (SPEC-0009 §9) |
+| ask.history.enabled / retentionDays | true / 90 | user/runtime (SPEC-0009 §5, provisional) |
+| edit.modeRules | donor model-family list → replace | user/runtime (SPEC-0005 G5.9) |
+| bash.routeToTools | true | user/project/runtime (SPEC-0008 G8.15) |
+| resources.fetchBackends.<key>.enabled / order | true / registration order | user/runtime (SPEC-0004 §11) |
+| sessions.enabled/discoverable/inbound/wake | true / true / all / always | user/runtime only (SPEC-0011 §6) |
+| sessions.wakeBudget/maxHops/rateLimit | 10 per peer-hour / 8 / 30 per peer-minute | user/runtime only |
 
 Additional adapter/backend size/pixel/decompression/grammar limits must be added to this catalog before those adapters register. This is an extensible catalog, not authorization to expose undocumented magic settings. Model selections use provider/id references resolved through current host catalog; no hardcoded stale “best model” default. Unset answer/tldr model explicitly uses current host model only if supported/authorized, otherwise asks for configuration.
 
@@ -127,7 +136,7 @@ Trust means different things; keep them separate:
 | Whether a tool operation is permitted | Host operation policy plus Workbench capability/scope checks |
 | Whether a file is instruction vs data | Workbench class + user source policy, constrained by host |
 | Whether a frame can use native elevated role | Granted producer authority + verified provider capability |
-| External bridge identity | Approved authenticated bridge, not JSON owner fields |
+| External bridge identity | Approved authenticated bridge, not JSON owner fields. Inter-session peers: token from the 0600 record file plus peer UID where available (SPEC-0011 §3) |
 | Presentation settings | Cosmetic; never grant execution permissions |
 
 Workbench /workbench trust manages its source/path/host rules, not PiG's host /trust store. Host docs state saved trust changes may require restart; Workbench cannot claim immediate host trust activation. Nearest explicit rule over canonical root/authority wins; ties use most-specific path then last declared user rule, shown in inspection. Deny/ignore decisions cannot be overridden by lower-trust project content.

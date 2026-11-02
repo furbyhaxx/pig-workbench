@@ -5,9 +5,9 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for secret guard, cd branch flow, worktrees, SSH config, remote shell and bash"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Secret guard includes extension-registered secret sources"]
 ---
 
 # 1. Scope and references
@@ -173,7 +176,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 
 **Jobs and output**
 - **G8.1 Secret guard.**
-  - Inventory: PiG credential stores, credential-shaped environment variables and Workbench state. Placeholders are preserved. Overlapping or straddling values merge without cascading.
+  - Inventory: PiG credential stores, credential-shaped environment variables, Workbench state, and secret sources other extensions register by reference (SPEC-0001 §8; a failing contributed source is reported but does not block launches). Placeholders are preserved. Overlapping or straddling values merge without cascading.
   - Credential shapes such as private keys are withheld until complete, using a bounded buffer. Interleaved stdout/stderr is withheld, never reordered, at a buffer limit counted in UTF-8 bytes.
   - A malformed or oversized inventory **refuses the launch**.
   - A failing listener or redaction callback never writes raw output. A failed reload discards the previous snapshot. Redacting before the inventory is loaded is refused. Secrets are never written to any store.

@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for ask_user, /answer and /tldr"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Answer history on by default with retention and purge (D9.c, provisional)", "Statusline segments/footer modes and external status segments (D9.d)", "Cancel returns cancelled (D9.b)"]
 ---
 
 # 1. Scope and sources
@@ -99,7 +102,7 @@ Print/JSON: if no authorized remote bridge exists, return interactionUnavailable
 
 Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
 
-Answer history archive outside the session is off by default. Session payloads can contain sensitive user text; display redaction does not promise erasure from the already recorded transcript. Optional archive/export policy belongs to SPEC-0010 and must not duplicate sensitive drafts silently.
+Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retentionDays` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Values are redacted; drafts are never recorded. Session payloads can still contain sensitive text; display redaction does not erase the transcript.
 
 # 6. /answer extraction and replay
 
@@ -148,7 +151,8 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /workbench integrations [owner], /workbench resources [scheme] | Read-only contribution/capability inspection |
 | /answer, /answer:again, /ask:replay, /ask-settings | Extraction/replay/shared Ask settings |
 | /tldr, /workbench tldr [...] | Checkpoint actions above |
-| /workbench statusline | Contribution segment editor; never implicit footer takeover |
+| /workbench statusline | Segment editor and `segments`/`footer` mode switch; footer only by explicit user choice |
+| /workbench sessions [ls|send|trust|untrust|block|unblock|hide|show] | Live sessions and messages (SPEC-0011 §7) |
 
 Aliases list/ls, config/settings, rm/remove are canonicalized only where valid. Completion supplies argument-context choices from cached state; never blocks on remote enumeration. Entity actions revalidate IDs after selection. Commands do not inject model text except their explicitly stated frame/location/answer/checkpoint behaviors.
 
@@ -162,7 +166,10 @@ Observed (P6, P7, P9, P15): child calls raise `tool_call`, `tool_execution_start
 
 Codemode remains PiG's builtin execution engine. Workbench adds semantic nested captures and renders via SPEC-0003, including script facts derived from real source parsing where supported. Do not replace QuickJS or invent filesystem access. Cancellation/error/parent-child IDs come from verified host hooks; if child provenance is unavailable, report missing capture, not parse guessed IDs. Display settings affect rendering only.
 
-Statusline editor configures Workbench-contributed segments (location, running jobs, pending ask/context warning). At most a short ambient status by default; live multi-line widgets are opt-in and cleared after completion. Only an explicitly selected full-footer owner may compose the whole footer; ordinary extension install cannot claim it.
+Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `segments`.
+- `segments`: Workbench publishes short status entries through the host (`ctx.SetStatus`): location, running jobs, pending ask, context warning, live peers (SPEC-0011). At most a short ambient status; multi-line widgets are opt-in and cleared after completion.
+- `footer`: Workbench composes the whole footer with the donor layout engine (lines, items, priority, minimum columns, merge, right alignment, conditions, wrapping, hit regions) and builtin segments (usage, cost, agent, model, fish-style path with branch, remote identity). Only an explicit user choice enables it; installing an extension never does.
+- Other extensions register `statusSegment` contributions `{key, label, priority, minColumns, maxColumns, align}` and push values with `status.update` `{text ≤ 64 columns plain, style: normal|dim|success|warning|error}`, coalesced to 4 updates per second. In both modes the user orders and hides them in `/workbench statusline`. The receipt says `composedByWorkbench: true`, so the producer stops its own `SetStatus` to avoid duplicates; it resumes when Workbench closes.
 
 # 10. Acceptance
 
@@ -202,3 +209,4 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - **G9.10 Evidence filter.** Context, instruction and alias frames are excluded even when explicitly included; job event frames are kept; hidden or empty extension messages are dropped. Unfinished calls cross checkpoints as background without repeating work. Late corrections to already-summarised messages are kept. Folded edits apply locally and never to a shared ancestor.
 - **G9.11 Segmentation.** Blocks start at each user request and are packed without splitting. An oversize block is split into continued pieces with every character kept. Suggested length grows with the amount of work and has no fixed ceiling.
 - **G9.12 Run control.** The first failing part aborts its siblings, and a stalled part is stopped by its timeout. Compaction during generation discards the card and keeps the checkpoint. A late result is discarded after a context edit, fork or session switch. A malformed secret inventory stops the run before any request.
+- **D9.b (user decision):** cancelling a form returns `cancelled: true` as a normal result and does not abort the agent turn.

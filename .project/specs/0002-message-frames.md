@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for escaping, timestamps and sequences"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Added the message frame kind for inter-session messages"]
 ---
 
 # 1. Purpose and dependency
@@ -35,7 +38,7 @@ Register kind `frameProducer`:
 |---|---|
 | key | Stable dotted source prefix owned by producer, e.g. build-tools.build |
 | label, description | Plain text for inspection/settings |
-| kinds | Allowed subset: instruction, reminder, warning, error, notice, info |
+| kinds | Allowed subset: instruction, reminder, warning, error, notice, info, message (`message` is reserved for Workbench's own `workbench.sessions` source, SPEC-0011) |
 | defaultVisibility | shown, collapsed or hidden; user override wins |
 | requestedAuthority | data or instruction; host/user policy grants actual authority |
 | allowWake | Request permission to schedule follow-up, default false |

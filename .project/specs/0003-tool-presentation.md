@@ -5,9 +5,9 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,11 +20,16 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor density budgets, header fact sources and preview rules"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Resolver reads the live registry at first use (pig-web R2)", "Typed table cells including uri (R3)"]
 ---
 
 # 1. Goal and verified host mechanisms
 
 Let other extensions opt their tools into Workbench renderers and display settings without surrendering tool execution ownership. Workbench consumes a **semantic presentation model**, not remotely executed drawing callbacks. This draft depends on [SPEC-0001](0001-extension-services.md) and [integration UX](../sketches/extension-apis/README.md).
+
+Open probe: whether the host asks the resolver about historical tool names before extensions run `session_start` on resume; if it does, those names report `appliesAfterReload` as above.
 
 Verified SDK: `Extension.ToolRenderer` resolves tool renderers, including foreign tools, and `next()` preserves the next renderer. Its returned marker cannot be wrapped to call foreign rendering (SDK divergence D89). `SetToolRenderers` updates locally registered tools; it is not sufficient evidence for arbitrary foreign-tool takeover. Use the resolver to opt in registered contributions and return next() for others. CallView/ResultView are supported; a renderer error triggers host fallback. Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P8–P11): the resolver is called once per tool name and cached for the process; a later claim change has no effect until `/reload`, after which history re-renders with the new renderer. Render width is terminal width − 2. In one run a historical call row re-rendered after reload received empty args.
 
@@ -77,7 +82,7 @@ Producer places a complete presentation snapshot in each relevant tool update/fi
 | provenance | Optional resource revision, source coordinates, adapter/view kind |
 | parentCallId | Only if the producer/host actually supplies nesting identity |
 
-Block contracts: text/code contain bounded text and optional language; diff contains file operation plus before/after identities and bounded hunks; table contains columns and typed rows; imageRef references an existing content block/resource, not arbitrary base64 duplication; children contains child call IDs and retained child presentation snapshots. Notices declare info/warning/error. No raw ANSI/style code or arbitrary kit node graphs cross the API.
+Block contracts: text/code contain bounded text and optional language; diff contains file operation plus before/after identities and bounded hunks; table contains columns and typed rows (cell types: text, count, bytes, duration, path, uri, label; a `uri` cell needs no path or line, so web results use the `search` preset unchanged); imageRef references an existing content block/resource, not arbitrary base64 duplication; children contains child call IDs and retained child presentation snapshots. Notices declare info/warning/error. No raw ANSI/style code or arbitrary kit node graphs cross the API.
 
 Maximum presentation payload 64 KiB, at most 32 blocks, 16 metrics, 100 table rows and nesting depth 4. Overflow is explicit with continuation. Defaults are adjustable downward through negotiated limits. Tool model-output budgets remain independent; duplicating an entire large result into Details is discouraged.
 
@@ -110,7 +115,7 @@ Resolver reads the in-memory registration and validated snapshot only. No bus/fi
 - Workbench absent: producer's own renderer/host default.
 - Another later resolver overrides Workbench: inspector reports actual resolver ownership if host exposes it; never claim enforced ownership based only on registration.
 
-Because resolution is cached, Workbench answers the resolver from its registry snapshot taken at `session_start`; a registration that arrives after a tool's first render reports `appliesAfterReload` in its register result and in `/workbench integrations`, and Workbench never triggers reload on its own. Call views must not depend on args for historical rows; they render from the stored presentation Details and show "arguments not retained" when both are missing.
+Because resolution is cached per tool name, Workbench answers the resolver from its **live** registry at the moment the host first asks about that tool name, so registration order between extensions' `session_start` handlers does not matter. Workbench records which tool names it has already answered. A registration for a name already answered reports `appliesAfterReload` in its register result and in `/workbench integrations`, and Workbench never triggers reload on its own. Call views must not depend on args for historical rows; they render from the stored presentation Details and show "arguments not retained" when both are missing.
 
 Historical rendering uses retained presentation version and safe snapshot labels, not current producer callbacks. If producer is absent but a compatible stored presentation exists, a guarded historical resolver may render it without claiming current tool execution. If the host resolver cannot select by stored data, default fallback remains available and the limitation is reported. Unknown schema versions render generic content with no guessed metrics. No destructive rewriting of session records.
 

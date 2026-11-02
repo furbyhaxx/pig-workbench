@@ -5,9 +5,9 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "User defined session:// routes and removed session access restrictions"
       changes: ["Added the session:// route grammar and project membership rule", "Removed cross-project consent and session-scope authorization"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Per-authority provider scopes (pig-web R4)", "Added fetchBackend contributions for http(s)"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -38,7 +41,7 @@ Register kind `resourceProvider` with:
 | capabilities | stat, read, list, search, locate, write, edit, remove, move, watch as supported |
 | selectorMode | lines, provider or none |
 | backing | file, virtual, remote or device |
-| scope | session, project, user or external; operation may narrow further |
+| scope | session, project, user or external; operation may narrow further. Alternatively `scopes: [{authority, scope}]` when authorities differ (e.g. `kb://public/` user, `kb://project/` project); an unlisted authority is rejected |
 | contentKinds | text, binary, image, container |
 | mutations | Operation-specific side-effect class and required policy; immutable providers omit these |
 | snapshots | stableRevision, rangedRead, compareAndSwap and expiry capabilities |
@@ -196,3 +199,26 @@ Catalog `read harness://schemes` and `/workbench resources` show active registra
 - Same semantics for direct Go providers and foreign bus adapter in isolated/fused host runs.
 
 Host blockers remain SPEC-0001's bus cancellation/lifecycle guarantees. Backend-dependent rich read behavior remains in PLAN-0001; this contract adds extensibility without replacing full builtin reader scope.
+
+# 11. Fetch backends for http(s)
+
+`http`/`https` stay Workbench routes: URL parsing, selectors, network policy, redirect reauthorisation, content dispatch (SPEC-0006 G6.2), paging, caching and presentation are Workbench's. Another extension can contribute **content** for the URLs it understands better, through registration kind `fetchBackend`:
+
+| Field | Contract |
+|---|---|
+| key, label, description | Stable identity and inspection text |
+| match | Ordered rules `{host, pathPrefix?}`; `host` is exact or `*.suffix`; `"*"` is a catch-all |
+| capabilities | `fetch`, optional `locate` (backing file of a stored snapshot), `offline` |
+| egress | Declares whether the backend may send the URL to third-party services (e.g. reader APIs) |
+| limits | Body bytes and time, bounded by Workbench |
+
+Flow for `read https://…`:
+1. Workbench parses and authorises the URL.
+2. It picks the enabled backend with the most specific matching rule (host, then path prefix, then registration order). No match, or none enabled, uses the builtin static reader.
+3. It sends `fetch` `{url, refresh, offline, accept, timeoutMs, maxBytes}` as a provider request.
+4. The backend answers with either a body, or `locate` to a stored snapshot (preferred for large bodies, e.g. pig-web's `kb://…/sources/…`), plus `{finalUrl, redirects[], status, contentType, charset, revision, handler, usedThirdParty, notices[]}`.
+5. Workbench reauthorises `finalUrl` and every redirect hop, then applies its own pipeline to the content. The result names the backend and handler, and says when a third party saw the URL.
+
+Failure handling: unavailable, timeout or a backend error → builtin static reader, with a visible notice. A definitive answer from the origin (404, 410, auth required) is final and does not fall back. A backend never receives credentials from Workbench, and Workbench never sends the URL to a backend that declares third-party egress when the user disabled that backend's egress in its own settings; the backend reports its effective policy in the descriptor.
+
+Settings: `/workbench settings resources › fetch backends` lists backends with enable toggles and order. A newly registered backend is enabled by default. Disabling it changes only `read https://`; the producer's own tools (e.g. `web_fetch`) keep working.

@@ -5,9 +5,9 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for column cap, HTTP, grep, find, paths, SQLite, write and media"]
+    - revision: 5
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Allowed SQLite row writes (D6.a)", "Recorded deferred AST tools (D6.b)", "Pointed http(s) reads at fetch backends"]
 ---
 
 # 1. Scope and evidence
@@ -108,7 +111,7 @@ Every adapter returns typed content plus view/source provenance through the shar
 | Adapter | Required views and selectors | Integrity/boundary conditions |
 |---|---|---|
 | Directories | Root entries and bounded child previews, :N-M / :-N over stable listing | Deterministic ordering, root completeness explicit, default 12 children per expanded directory, +K more path when known |
-| SQLite | Bare tables/counts; :table schema/sample; :table:key PK/rowid; ?limit/offset/where/q read queries | Read-only connection, single read statement, reject mutation/attach/extension/filesystem functions; parameterize keys, bound rows/time |
+| SQLite | Bare tables/counts; :table schema/sample; :table:key PK/rowid; ?limit/offset/where/q read queries; row writes through `write` (G6.16) | Reads: read-only connection, single read statement, reject mutation/attach/extension/filesystem functions; parameterize keys, bound rows/time |
 | JSON/JSONL/NDJSON | ?q= jq-compatible filter; raw/compact; result offset/limit | Preserve number lexemes, percent-decode once, + remains plus, %26 inside filter, no shell interpolation, query failure distinct from empty result |
 | Archives | ZIP/JAR/APK/WHL, compressed TAR, RAR/7z/ISO/CAB/DEB/RPM/CPIO/AR/LZH/ARJ/ASAR and compressed streams; member then source selector | Containment, no extraction-to-workspace by default, link traversal rejected, expanded byte/member/depth caps, solid archives bounded |
 | ELF/PE/Mach-O | Overview/function list; symbol/address pseudocode; :asm; :imports/:exports/:strings; :xrefs:symbol; universal Mach-O :@arch | Inspect without execution; architecture explicit; disassembly is not passed off as pseudocode; optional licensed backend requires approval |
@@ -162,7 +165,7 @@ Final support/backend matrix and adapter-specific query schemas must be approved
 
 From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi read/grep/glob/fetch/sqlite/write tests at `553f0d1`. Normative.
 
-- **G6.1** Per-line column cap, `read.maxColumns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
+- **G6.1** Per-line column cap, `read.outputMaxColumns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
 - **G6.2 HTTP.**
   - Prefer a page-specific `<link rel="alternate" type="text/markdown">`. Never substitute a site-wide `llms.txt` or feed for a deep page; a section-scoped `llms.txt` is an allowed fallback.
   - Render RSS/Atom as title, date, summary and link; `:raw` returns the feed itself.
@@ -206,3 +209,6 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - **G6.13 Video.** Line-range selectors are rejected with a video hint; image questions on video are rejected; a corrupt video is a probe failure and emits no bytes; media symlinked outside the root is refused.
 - **G6.14** A FIFO reached through a suffix-match symlink or a SQLite name is rejected without blocking. Invalid-UTF-8 lines report their on-disk byte length. Hashing uses BOM-stripped text, so a whole-file tag validates.
 - **G8.12 Remote search.** `fd`, with a `find` fallback. The limit applies after matching and transfer stops at the limit. Abort kills the traversal. An oversized unterminated path is rejected.
+- **G6.16 SQLite row writes (user decision D6.a).** `write db.sqlite:table` with JSON5 content inserts one row or an array of rows. `write db.sqlite:table:key` with content updates that row by primary key (rowid when there is none), and with empty content deletes it. Columns are validated against the schema; unknown columns, missing tables and missing databases are rejected. Each write runs in one transaction on a separate read-write connection with the same authoriser restrictions (no ATTACH, extensions or filesystem functions), and the result reports the affected rows. Writes need ordinary write permission for the database file and respect plan/read-only modes. Raw SQL mutation through `?q=` stays rejected.
+- **Deferred (user decision D6.b):** structural search and rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend are planned after v1. Their design is not decided; see PLAN-0001 WB-21.
+- **Fetch backends.** `read https://…` can be served by a registered fetch backend (SPEC-0004 §11); everything in G6.2 still applies to the content it returns.

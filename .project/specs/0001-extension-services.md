@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T18:10:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 host probes measured bus ordering, cancellation and reload"
       changes: ["Recorded observed bus semantics", "Added explicit cancel method and late-reply rule", "Made reload fire-and-forget with re-registration on load", "Replaced resolved M0 blockers with remaining host issues"]
+    - revision: 3
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Added location, secrets, status, snapshots, fetch and sessions capabilities and answered pig-web R1–R5"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -104,12 +107,17 @@ Methods:
 | Method | Parameters/result |
 |---|---|
 | discover | Version/capability negotiation |
-| register | `kind: frameProducer|toolPresentation|resourceProvider`, stable contribution `key`, descriptor → registrationId + accepted descriptor revision |
+| register | `kind: frameProducer|toolPresentation|resourceProvider|fetchBackend|statusSegment`, stable contribution `key`, descriptor → registrationId + accepted descriptor revision |
 | unregister | registrationId → removed (idempotent for same owner/generation) |
 | describe | optional kind/key, cursor → bounded registration descriptors and nextCursor |
 | settings.get | registrationId → effective presentation settings and sources |
 | operation.status | operationId → receipt state for admitted deferred work |
 | cancel | requestId of the caller's own pending request → no reply; idempotent |
+| location.get | → current location (§8) |
+| secrets.registerSources | secret source references → registration receipt (§8) |
+| status.update | registrationId of a `statusSegment`, text and style → accepted (SPEC-0009 §9) |
+| snapshots.view / snapshots.status / snapshots.touched | Edit-tracking service for other tools (SPEC-0005 §10) |
+| sessions.list / sessions.send | Live-session messaging (SPEC-0011 §8) |
 
 Register validates the whole descriptor atomically. Identical register for (owner, instance, kind, key) is idempotent. Changed descriptor requires explicit replace using registrationId and previous descriptorRevision; invalid replacement leaves the old descriptor intact. Cross-owner collisions never silently replace registrations. Resource aliases participate in collision detection too.
 
@@ -130,7 +138,7 @@ Read-only diagnostics are exposed at `harness://integrations` (registrations), `
 
 # 5. Events, persistence and reliability
 
-Event envelope: `{v,sessionId,generation,eventId,type,registrationId?,data}`. Event IDs are unique in the generation. Types initially: ready, closing, registration.changed, settings.changed, frames.deliveryChanged, resources.changed.
+Event envelope: `{v,sessionId,generation,eventId,type,registrationId?,data}`. Event IDs are unique in the generation. Types initially: ready, closing, registration.changed, settings.changed, frames.deliveryChanged, resources.changed, location.changed, sessions.message.
 
 Events are notifications, not transactional acknowledgements. Describe/get/status APIs recover state after a missed notification. No event subscriber can veto another service's successful operation. Capture/report listener errors without changing committed facts.
 
@@ -156,3 +164,31 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 - Cancel after caller abort stops a busy listener and the late reply is discarded (packed and isolated).
 - Reload hang: Workbench state stays consistent when `ctx.Reload()` never returns.
 - Remaining host issues (not blockers): intermittent `ctx.Reload()` hang; no request-scoped listener cancellation in the bus. Owner identity still cannot be authenticated from bus payloads.
+
+# 8. Collaboration services and answers to integrating extensions
+
+Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `secrets`, `status`, `snapshots`, `fetch` and `sessions`. Each is optional; an unsupported capability fails explicitly.
+
+**Location (`location`).** The `discover` result includes `location` when requested: `{authority, cwd, displayCwd, projectRoot, projectKey, origin, revision}`. `projectKey` follows the SPEC-0004 §9 membership rule, so clients use the same project identity as Workbench. `location.get` returns the same object. `location.changed` events carry `{previous, current, origin, revision, reason}`. Config roots are still the host session cwd (SPEC-0010 §1); the location is for scoping, not for loading config.
+
+**Secret sources (`secrets`).** `secrets.registerSources` registers *references*, never values, because every listener on the shared bus sees request payloads. Allowed references: `{kind:"env", names:[…]}`, and `{kind:"jsonFile", path, pointers:[…]}` for a file inside the agent directory or the owner's config root that is owned by the user and has mode 0600. A pointer may use `*` for one path segment. Workbench reads the values itself, refreshes them when the file fingerprint changes, and adds them to the SPEC-0008 secret guard. At most 32 references per owner. An unreadable contributed source is reported in `/workbench integrations` and does not block job launches; only the core inventory fails closed (SPEC-0008 G8.1). Unregister removes the values from the guard.
+
+**Status segments (`status`).** See SPEC-0009 §9.
+
+**Edit tracking (`snapshots`).** See SPEC-0005 §10.
+
+**Fetch backends (`fetch`).** See SPEC-0004 §11.
+
+**Sessions (`sessions`).** See SPEC-0011 §8.
+
+## Answers to pig-web (its SPEC-0001 §3.7)
+
+| Request | Answer |
+|---|---|
+| R1 location at attach time | Accepted: `location` capability above |
+| R2 registry timing | Accepted: the resolver reads the live registry when the host first asks about a tool name, not a snapshot from Workbench's `session_start`; see SPEC-0003 §5 |
+| R3 `search` preset with URI rows | Accepted: table cells are typed and include `uri` (SPEC-0003 §3) |
+| R4 per-authority scope | Accepted: `scopes` by authority (SPEC-0004 §2) |
+| R5 secret contribution | Accepted as references, not values: `secrets` capability above |
+| Edit tracking (dropped by pig-web) | Offered as the `snapshots` service (SPEC-0005 §10) |
+| `https://` reads (dropped by pig-web) | Offered as `fetchBackend` contributions: Workbench keeps routing, policy and paging; pig-web supplies content for the URLs it handles (SPEC-0004 §11) |

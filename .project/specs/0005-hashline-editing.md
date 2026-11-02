@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for payload repair, recovery, leniency, streaming, path policy, notebooks and per-model mode"]
+    - revision: 4
+      reason: "pig-web harmonisation and user decisions"
+      changes: ["Added the snapshots edit-tracking service for other extensions"]
 ---
 
 # 1. Authority and scope
@@ -213,3 +216,14 @@ Overlapping hunks are still rejected.
 **G5.11** Warn when an edit turns a parseable file unparseable (valid → invalid only). The optional transition log is off by default.
 
 **G5.12** `MV` keeps the source's mode bits, including setuid, and completes when the destination refuses chmod.
+
+# 10. Edit tracking for other extensions
+
+Other tools can show file content that the model may then edit with hashline anchors, without a second `read`. Capability `snapshots`:
+
+- **`snapshots.view`** `{toolCallId, uri, ranges?, raw?}`. `toolCallId` must belong to a running call of a tool the caller owns (cross-checked with host source metadata). Workbench reads the resource itself, through its own authorisation and read pipeline, records a **pending** snapshot and returns the rendered block (`[path#TAG]` header plus `N:LINE` rows), tag, revision and shown ranges. The caller includes the block verbatim in its tool result.
+- **Confirmation without trust in the caller.** When that call's `tool_execution_end` arrives, Workbench checks that the exact rendered block is present in the result content delivered to the model. Only then are the shown lines marked seen. A block that was cut, altered or not included marks nothing, and the pending snapshot expires.
+- **`snapshots.status`** `{uri}` → current tag and revision, whether a seen snapshot exists, and whether it is stale. Counts only, never content.
+- **`snapshots.touched`** `{uris}` → hint that the caller changed these files. Workbench revalidates them (hint only; edits still revalidate revisions).
+
+Limits are those of `read`. Provider-backed resources need the SPEC-0004 §7 prerequisites; a read-only provider's content can be viewed and anchored for reference, but edits on it stay `unsupported`.

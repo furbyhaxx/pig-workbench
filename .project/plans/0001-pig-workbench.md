@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-02T20:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "M0.1 donor parity audit completed at test level"
       changes: ["Recorded the audit result, open decisions and the remaining source-level gap"]
+    - revision: 9
+      reason: "User decisions and pig-web harmonisation"
+      changes: ["Added WB-20 (inter-session messaging and collaboration services) and WB-21 (deferred AST tools)", "D10 resolved for live sessions by SPEC-0011"]
 ---
 
 # 1. Outcome and authority
@@ -98,6 +101,8 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-16 | Codemode nested captures, call trees, output previews, config and replay | M1, M7 | Live nested execution plus historical rendering; failures/cancellation stay visible |
 | WB-17 | `/tools`, `--list-tools`, previews, settings, jobs/frames/instructions/trust commands and `/tldr` | M1, M7 | Command inventory, completions and usable non-TUI behavior |
 | WB-18 | Extensibility for external project notifications without implementing task tracking | M6 | Validated project/path-scoped frame inputs; explicit transport boundary |
+| WB-20 | Live session discovery across projects and inter-session messaging that can wake idle sessions (SPEC-0011); collaboration services for other extensions: location, secret sources, status segments, edit tracking, fetch backends (SPEC-0001 §8) | M5 (endpoint, tool), M7 (panel), services with their owning milestone | Two-session wake/steer/loop-guard tests; pig-web integration against the services |
+| WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
 Explicit exclusions remain subagents, agent definitions and task/todo tracking. Reading BACKLOG.md and accepting external claim/completion notifications does not create a task manager. Do not import unrelated oh-my-pi subsystems merely because they have a URI scheme.
@@ -128,7 +133,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D7: terminal job input | Sending a control byte through a pipe is not a terminal signal/EOF | Distinguish stdin bytes, close, signals and PTY input. Preserve key controls with defined backend semantics and a tested PTY backend where needed; unsupported terminal operations fail explicitly |
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
-| D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
+| D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 
 Further corrections carried into implementation contracts:
 
