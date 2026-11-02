@@ -7,7 +7,7 @@ document:
   status: "published"
   revision: 3
   created_at: "2026-11-02T17:50:00+01:00"
-  updated_at: "2026-11-02T22:40:00+01:00"
+  updated_at: "2026-11-02T20:04:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:

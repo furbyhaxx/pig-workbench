@@ -5,9 +5,9 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes measured renderer resolution and codemode rows"
       changes: ["Recorded resolver caching, reload re-render and codemode child ownership", "Required registration before first render and history rendering from stored Details"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor density budgets, header fact sources and preview rules"]
 ---
 
 # 1. Goal and verified host mechanisms
@@ -146,3 +149,16 @@ Composite/codemode renderer uses the same child snapshots/presets. It must show 
 - User/project/runtime precedence, reset, dormant provider, descriptor replacement and settings-change invalidation.
 - Direct tool vs codemode child have identical formatting semantics; replay without producer performs no I/O.
 - Verify registration/unregister changes are reflected in live host resolver caches. D89 prohibits designs that call foreign next() renderers as ordinary Go callbacks.
+
+# 9. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench renderer tests. These are the defaults; settings can change them.
+- G3.1 Normal density: bash shows the last 5 visual lines; codemode shows 10 script lines plus the configured output budget and hides the oldest successes behind a count; frame bodies show 40 lines with an exact overflow count. Compact groups runs of the same tool. Running, cancelled and failed rows are never hidden. Wrapped Unicode, whitespace-only and blank rows count as visual rows.
+- G3.2 Header numbers come from result metrics first, then arguments or the returned diff, and are never guessed (a read shows the range actually returned). Bash failures lead with the exit status. An error's first line goes in the header and the rest in the body. Empty or limited results warn; a silent zero-output success does not. Malformed numeric arguments are omitted on replay. Argument targets are stamped with the root they were resolved against, so a later `cd` does not rewrite old rows. Job rows keep the job ID at 40 columns.
+- G3.3 Running rows animate on one shared clock and release it when they settle. Queued and preparing rows are dimmed. Settled layouts are cached and invalidated by width, settings, theme or result changes.
+- G3.4 Persisted render metadata keeps location, root, job and metrics, and does not duplicate output. Binary and control bytes never reach the terminal.
+- G3.5 `/workbench preview` pairs exact call IDs (the latest invocation, even without a result), uses built-in examples only for tools with no recorded call, persists references only (never model context) and is width-safe.
+- G3.6 Frame rows: hidden means zero lines; a click toggles one row and the expand binding resets it; the untrusted label appears before secondary metrics; diff fences render with add/remove tokens; invalid details fall back to sanitized plain text.
+- G5.14 Edit rows show the target path from partial arguments while they stream, window a streaming diff to the viewport tail, render a move-only result as `src → dst`, put change stats in the header, and bound oversized hunks.
+- G6.15 Consecutive reads group into one row with same-file ranges merged. A late result repaints a pending preview; a call that never resolves is sealed instead of left spinning.
+- G8.13 Paths: home becomes `~`; a local path uses the shorter of root-relative and absolute; a remote path keeps its authority and is shortened only against the same authority; fish-style shortening keeps the basename and never exceeds the width; shell command display shortens only standalone literal paths.

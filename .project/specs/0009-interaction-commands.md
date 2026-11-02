@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes measured dialogs, commands, flags and codemode observation"
       changes: ["Bound RPC/print dialog behaviour to observed host semantics", "Recorded /tools registration and the --list-tools output blocker", "Recorded codemode child observation limits"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for ask_user, /answer and /tldr"]
 ---
 
 # 1. Scope and sources
@@ -174,3 +177,28 @@ Statusline editor configures Workbench-contributed segments (location, running j
 - Width/height/focus/keybinding captures per SKETCH-0001/2 and workflow designs in SKETCH-0003.
 
 No inference-dependent test may be reported live-verified without authorized execution. Mocks prove parsing/state only, not provider/API integration.
+
+# 11. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi `tools/ask` and pi-workbench `ask/*`, `tldr/*`. Normative unless listed as open in the audit.
+
+**ask_user**
+- **G9.1 Images in answers.** Custom answers and notes can carry images. They are returned after the text with numbered markers, renumbered per answer. An optional vision description (setting) can follow each image; a failed description keeps the answer and its images, and cancelled asks make no vision call.
+- **G9.2 Answer in chat.** The user can leave the form to reply in chat. The result says so explicitly and is distinct from cancel.
+- **G9.3 Input hygiene.**
+  - A double-encoded `questions` string is decoded. Carriage-return runs are stripped.
+  - A label that collides with a reserved UI label (Other, Done), or labels/IDs that sanitisation would merge, fail closed with the field named.
+  - Blank optional presentation fields count as absent. Validation messages expand tabs and clamp long values.
+- **G9.4 Pending scan.** Pick the newest unresolved `ask_user` call on the branch and ignore failed assistant responses. Prefer the persisted payload over recorded arguments. A newer invalid call does not hide an older valid one. Dismissal is persisted, but manual replay still works. Scan only on startup, resume and fork.
+- **G9.5 Abort races.** An already-aborted signal resolves cancelled without mounting the form. An abort during config load never mounts. A session replacement during load records nothing in the new session. An abort after mount cancels a dirty form without confirmation. A local/remote race completes once.
+- **G9.6 Answer editing.** Switching multi → single confirms before discarding extra answers and keeps custom text and notes. Notes on deselected options stay in state, but only selected options' notes are submitted. An empty custom draft clears the answer and keeps its notes.
+- **G9.9** Untrusted project notification commands are ignored. Trust is refreshed on each call.
+
+**/answer**
+- **G9.7 Extraction.** Tool-call arguments win over text; multiple tool calls are rejected; fenced JSON is a fallback. Option spam is flagged, options are capped, and generic conversational prompts are dropped. The extraction model is the first configured model with auth inside the session's model scope; a fallback outside that scope is rejected.
+- **G9.8 History store** (when enabled). Per project and session under XDG data, as append-only whole records. The file mode is tightened. Values are redacted while keeping their structure, and errors are value-free. Disabled means nothing is written. A failed history write never loses the answer.
+
+**/tldr**
+- **G9.10 Evidence filter.** Context, instruction and alias frames are excluded even when explicitly included; job event frames are kept; hidden or empty extension messages are dropped. Unfinished calls cross checkpoints as background without repeating work. Late corrections to already-summarised messages are kept. Folded edits apply locally and never to a shared ancestor.
+- **G9.11 Segmentation.** Blocks start at each user request and are packed without splitting. An oversize block is split into continued pieces with every character kept. Suggested length grows with the amount of work and has no fixed ceiling.
+- **G9.12 Run control.** The first failing part aborts its siblings, and a stalled part is stopped by its timeout. Compaction during generation discards the card and keeps the checkpoint. A late result is discarded after a context edit, fork or session switch. A malformed secret inventory stops the run before any request.

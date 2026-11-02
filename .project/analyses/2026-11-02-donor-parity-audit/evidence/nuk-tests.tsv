@@ -1,0 +1,16 @@
+nukular-agent-sdk/src/frame/role_projector_tests.rs	decisions_remain_stable_across_capability_and_position_changes
+nukular-agent-sdk/src/frame/role_projector_tests.rs	untrusted_is_always_user_and_marked
+nukular-agent-sdk/src/frame/timestamp_tests.rs	utc_offsets_and_fractional_seconds
+nukular-agent-sdk/src/frame/timestamp_tests.rs	rejects_invalid_calendar_and_offsets
+nukular-agent-sdk/src/frame/frame_tests.rs	hostile_round_trip
+nukular-agent-sdk/src/frame/frame_tests.rs	body_escape_runs_are_injective
+nukular-agent-sdk/src/frame/frame_tests.rs	rendered_snapshot
+nukular-agent-sdk/src/frame/frame_tests.rs	wire_kind_goldens
+nukular-agent-sdk/src/frame/frame_tests.rs	rejects_invalid_envelopes
+nukular-agent-sdk/src/frame/frame_tests.rs	wire_requires_consistent_explicit_metadata
+nukular-agent-sdk/src/frame/frame_tests.rs	whitespace_round_trip
+nukular-agent-sdk/src/frame/instruction_ledger_tests.rs	classify_exact_bytes_trust_applicability_and_epoch
+nukular-agent-sdk/src/frame/instruction_ledger_tests.rs	replay_withdraw_remove_relocate_and_content_replacement
+nukular-agent-sdk/src/frame/instruction_ledger_tests.rs	stale_epochs_other_sources_and_missing_files_do_not_reload_content
+nukular-agent-sdk/src/frame/sequence_tests.rs	concurrent_reservations_share_one_positive_sequence
+nukular-agent-sdk/src/frame/sequence_tests.rs	exhausted_session_never_wraps_or_reuses_a_sequence

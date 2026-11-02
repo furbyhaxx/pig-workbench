@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes verified host context-file control and projection timing"
       changes: ["Specified structural suppression through systemPromptOptions.contextFiles", "Specified per-request projection via the context hook and resume detection"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for remote watching, watch modes, idle delivery and races"]
 ---
 
 # 1. Purpose and inputs
@@ -197,3 +200,15 @@ External claim/completion messages enter through registered frame producers with
 - Self-edit with actual transformation vs authored bytes; failed persistence never marks content delivered.
 - Equal bytes/different trust do not deduplicate; worktree identity alone does not prove sameness.
 - Host duplicate context suppression and restoration proven in live tests; no false “all agents notified” claim from a local event bus.
+
+# 11. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench `instructions/*` at `bc7ce0e`. Normative.
+- **G7.1 Remote watching.** Detect an already-installed remote inotify tool once per host, otherwise fall back to on-turn checks. A forced native mode that fails names the host and the recovery step. The remote monitor exits on stdin EOF, restarts with backoff, and is torn down by abort with a process-group kill fallback. NUL-separated events are parsed across chunk boundaries.
+- **G7.2** `instructions.watch = auto|native|off`. `off` never rechecks remote host instructions on later prompts, withdraws remote ancestors on a local transition without remote reads, and still checks local changes.
+- **G7.3 Idle delivery.** Changes while idle coalesce to the latest view and are delivered at the next prompt. Idle compaction defers to the next prompt's full baseline. An unreachable restored host never blocks local deliveries; host connection failures are reported at the prompt.
+- **G7.4** BOM stripping never produces a false change. Local reads report caps, skip directories and honour abort. SSH reads fetch all ancestors in one batched round trip, keep first-filename precedence, and distinguish absent from empty.
+- **G7.5** A cancelled self-edit cannot acknowledge or clear a newer edit. A self-edit suppresses the matching watcher diff and emits exactly one notice.
+- **G7.6** A prepared plan applies exactly once without further filesystem reads. A root or manager revision change discards a stale plan or scan. An aborted preparation changes nothing.
+- **G7.7** An authorised SSH host note delivers its body as host-scoped steering. A note with only frontmatter delivers nothing.
+- **G7.8** SSH host/path trust rules are isolated from local and global rules. Host trust defaults apply only to local sources.

@@ -1,0 +1,1746 @@
+agents/annotation-panel.test.ts	remapped app.clear aborts a pending file read without a toast or parent reopen
+agents/annotation-panel.test.ts	remapped app.clear dismisses a pending file dialog without aborting the session
+agents/annotation-panel.test.ts	ordinary read failures notify and Escape returns from file detail locally
+agents/builtins.test.ts	main and architect match the primary catalog policies
+agents/catalog.test.ts	loader filters modes, tolerates missing roots and expands extra skill roots
+agents/catalog.test.ts	project TOML role patches replace only supplied fields of a user single-file agent
+agents/catalog.test.ts	resolve composes identity, role and specialization in order without mutating definitions
+agents/catalog.test.ts	identity defaults apply only to roles; replace mode omits identity text
+agents/catalog.test.ts	roles win hybrid collisions and TOML prompt subfields merge independently
+agents/catalog.test.ts	all project TOML beats project markdown across ordered roots
+agents/catalog.test.ts	TOML scalar definitions cannot masquerade as identity tables
+agents/catalog.test.ts	invalid TOML and malformed part files produce diagnostics, not fatal failures
+agents/catalog.test.ts	built-in prewalk and handoff are hidden utilities that a user file replaces
+agents/catalog-view.test.ts	groups definitions once, filters, and preserves identity and type at narrow widths
+agents/catalog-view.test.ts	handles missing catalogs, empty selection, unknown quota and control characters
+agents/child-session.test.ts	disposing a child emits session_shutdown so extensions release process-wide listeners
+agents/child-session.test.ts	child finalization is single-flight, retryable, and retains the native root
+agents/child-session.test.ts	an active child is aborted and settled before shutdown and finalization
+agents/child-session.test.ts	a failed abort leaves the child intact for cleanup retry
+agents/child-session.test.ts	shutdown failure retains the native child and concurrent callers join the retryable attempt
+agents/child-session.test.ts	a concurrent dispose joins through terminal disposal
+agents/child-session.test.ts	each failed teardown stage is retried before advancing
+agents/child-session.test.ts	a failed low-level dispose retries without repeating finalization
+agents/child-session.test.ts	a child without native finalization disposes once
+agents/child-session.test.ts	a child gets Pi
+agents/child-session.test.ts	a child discovers and can preload Workbench
+agents/child-session.test.ts	a child preloads each selected skill once across overlapping patterns
+agents/child-session.test.ts	the report is the last non-empty assistant text of the current prompt
+agents/colors.test.ts	accepts only the theme tokens the editor offers
+agents/colors.test.ts	resolves tokens, names and hex, and falls back to accent
+agents/commands.test.ts	command resolves this session
+agents/commands.test.ts	viewer opens above widgets at full width and session replacement dismisses it
+agents/commands.test.ts	owner dismissal closes the transcript viewer and unwinds without aborting the session
+agents/commands.test.ts	escape closes the transcript viewer locally without dismissing its owner
+agents/commands.test.ts	bare agents and workbench agents print headless run and annotation summaries
+agents/commands.test.ts	bare agents hydrates persisted session runs before the first tool call
+agents/commands.test.ts	bare agents opens the session panel and abort releases it
+agents/commands.test.ts	/agents navigates definitions, saves identities, and creates native specializations
+agents/commands.test.ts	registered /agents owns Definitions child panels and unwinds on app.clear
+agents/commands.test.ts	widget run operations own dismissal and nested calls share one owner
+agents/commands.test.ts	settings opens in the editor area, not as an overlay over the transcript
+agents/commands.test.ts	workbench routes to the same handler and completes agent references
+agents/commands.test.ts	completion includes handles and ids; picker is newest-first with live labels
+agents/commands.test.ts	density-bound registry reuses each map and renders owned tools, leaving unknown tools to Pi
+agents/composition-actions.test.ts	typed TOML saves preserve inherited fields, siblings, and reloaded diagnostics
+agents/composition-actions.test.ts	native Markdown saves use local and file URL sources interchangeably
+agents/composition-actions.test.ts	changed resolved catalog entries and sources are refused
+agents/composition-actions.test.ts	reload after the snapshot detects changed inherited and own effective fields
+agents/composition-actions.test.ts	snapshot text and current view are rechecked after the reload
+agents/composition-actions.test.ts	creation uses native roots, rejects same-kind catalog IDs, and allows other kinds
+agents/composition-actions.test.ts	creation reloads before checking IDs and refuses single mode or unavailable catalogs
+agents/composition-actions.test.ts	creation never claims success if the reloaded definition is inactive
+agents/composition-actions.test.ts	read-only sources and untrusted project creation are refused by persistence
+agents/composition-actions.test.ts	revoked project trust is reported for native Markdown saves
+agents/composition-actions.test.ts	queued saves recheck trust, session cancellation, and owning flow dismissal
+agents/composition-actions.test.ts	dismissal during creation preflight propagates without creating a file or notifying
+agents/composition-actions.test.ts	session and flow cancellation during the post-write reload emit no toast
+agents/composition-actions.test.ts	a reload failure after a write reports that the file was saved
+agents/composition-create.test.ts	typed blank clears persist only as native overlays after Save
+agents/composition-create.test.ts	failed save keeps the typed patch in the draft for correction or retry
+agents/composition-create.test.ts	local Escape cancels without saving or aborting the session
+agents/composition-create.test.ts	single mode refuses creation before opening a draft or writing an inactive file
+agents/composition-create.test.ts	owning dismissal cancels the child with the exact sentinel and leaves the session alive
+agents/composition-fields.test.ts	identity fields return only their own typed patch
+agents/composition-fields.test.ts	specialization text fields return only their own typed patch
+agents/composition-fields.test.ts	blank text is an explicit clear and cancellation emits no patch
+agents/composition-fields.test.ts	rebound app.clear closes the editor before the owning flow unwinds
+agents/composition-markdown.test.ts	encode only explicit fields with native keys and valid clears
+agents/composition-markdown.test.ts	refuse unknown keys and invalid explicit values
+agents/composition-markdown.test.ts	preserves BOM, CRLF, comments, unknown fields and body when editing fields
+agents/composition-markdown.test.ts	updates an explicit persona rather than the unrelated body, including clears
+agents/composition-markdown.test.ts	updates the body when persona is absent and leaves fields untouched
+agents/composition-markdown.test.ts	retains CRLF, BOM and survivor comments when updating a list
+agents/composition-markdown.test.ts	clears both lists explicitly while retaining unrelated content
+agents/composition-markdown.test.ts	updates explicit instructions or the body according to loader precedence
+agents/composition-markdown.test.ts	accepts CRLF body edits and compares using the loader
+agents/composition-markdown.test.ts	refuses malformed known values and malformed documents for reads and edits
+agents/composition-markdown.test.ts	allows unknown and legacy fields and leaves empty patches byte-for-byte unchanged
+agents/composition-markdown.test.ts	refuses unsafe aliases, referenced anchors and alias-derived persona keys
+agents/composition-markdown.test.ts	refuses a requested value shadowed by a later alias-derived key
+agents/composition-markdown.test.ts	rejects invalid patches before returning any output
+agents/composition-panel.test.ts	remote definitions show their source as read-only and do not open an editor
+agents/composition-panel.test.ts	new-definition entry cannot collide with a live definition id
+agents/composition-panel.test.ts	owning app.clear unwinds from a nested editor without saving or reopening
+agents/composition-persistence.test.ts	patches own TOML fields while real catalog reload retains inherited identity and specialization fields
+agents/composition-persistence.test.ts	patches native Markdown through loader precedence without disturbing comments or unrelated body
+agents/composition-persistence.test.ts	creates active native identity and specialization files exclusively
+agents/composition-persistence.test.ts	normalizes invalid documents and patches without changing disk
+agents/composition-persistence.test.ts	serializes concurrent identity and specialization writes to the same TOML file
+agents/composition-persistence.test.ts	rejects stale text and retargeted symlinks before either target is written
+agents/composition-persistence.test.ts	rechecks project trust and cancellation while writes wait in the shared queue
+agents/composition-persistence.test.ts	refuses builtin and remote sources, untrusted project creation, and aborted operations
+agents/composition-toml.test.ts	edits one own field and retains quoted ids, unknown keys, comments and other tables
+agents/composition-toml.test.ts	serializes communicationStyle using its native key and accepts empty strings
+agents/composition-toml.test.ts	updates a quoted inline target without changing its nested unknown data
+agents/composition-toml.test.ts	round-trips multiline values through the catalog loader
+agents/composition-toml.test.ts	allows unknown TOML values without interpreting or rewriting them
+agents/composition-toml.test.ts	edits only an own field without flattening lists or inherited defaults
+agents/composition-toml.test.ts	clears explicit lists and text while leaving unrelated fields and tables
+agents/composition-toml.test.ts	retains survivor list comments when adding and reordering skills
+agents/composition-toml.test.ts	reads missing targets as empty and creates only explicit fields for quoted ids
+agents/composition-toml.test.ts	leaves empty and unchanged patches byte-for-byte intact
+agents/composition-toml.test.ts	handles prototype-like ids and preserves existing target metadata
+agents/composition-toml.test.ts	accepts unknown and legacy keys but rejects malformed target tables and known values
+agents/composition-toml.test.ts	rejects undefined, unknown, wrong-type and unrepresentable patches
+agents/creator-panel.test.ts	blank preview fits widths and acceptance creates exactly once in chosen scope
+agents/creator-panel.test.ts	template copies known fields under a new name and discard never writes
+agents/creator-panel.test.ts	accepted template contains only known fields and the new identity
+agents/creator-panel.test.ts	a hybrid role template saves as a role and composes identity after reload
+agents/creator-panel.test.ts	retrying a role template retains its output form and edited draft
+agents/creator-panel.test.ts	failed create keeps the edited draft actionable for retry
+agents/creator-panel.test.ts	failed commit keeps the edited rewrite draft actionable for retry
+agents/creator-panel.test.ts	description generation abort ignores late completion
+agents/creator-panel.test.ts	rewrite commits the original snapshot even after catalog changes
+agents/creator-panel.test.ts	invalid generated YAML remains editable and accepts the repaired text
+agents/creator-panel.test.ts	project trust is checked again at selection
+agents/creator-panel.test.ts	untrusted projects cannot be selected
+agents/creator-panel.test.ts	escape returns from the draft editor to preview without aborting the session
+agents/creator-panel.test.ts	flow dismissal waits for the draft discard confirmation and never reopens preview
+agents/creator-panel.test.ts	cancelling discard confirmation returns to preview in the same flow
+agents/creator-panel.test.ts	flow dismissal aborts creator native input and does not return to the parent
+agents/creator-panel.test.ts	flow dismissal during rewrite generation suppresses the subsequent error
+agents/creator-panel.test.ts	preview shows each draft line unchanged instead of re-wrapping it
+agents/creator.test.ts	creator uses the configured hidden utility through the normal runner and returns a quiet draft
+agents/creator.test.ts	cancellation aborts an awaiting creator and never returns its late document
+agents/creator.test.ts	creator can inspect definitions but cannot use agent mutation actions
+agents/definition-actions.test.ts	accepted builtin edits materialize a user copy; cancellation creates nothing
+agents/definition-actions.test.ts	three-layer creates user and project roles that appear after reload
+agents/definition-actions.test.ts	three-layer builtin edits materialize a role effective after reload
+agents/definition-actions.test.ts	single mode creates flat definitions even when a role form is requested
+agents/definition-actions.test.ts	creation requires an available catalog to choose its form
+agents/definition-actions.test.ts	role creation rejects a symlink root and refuses to overwrite an unseen file
+agents/definition-actions.test.ts	role creation rechecks project trust after waiting for the file queue
+agents/definition-actions.test.ts	local symlink and file URL sources save without false stale-source refusal
+agents/definition-actions.test.ts	edits real user and trusted project roles through definition actions
+agents/definition-actions.test.ts	tilde skill roots remain editable without hiding real source changes
+agents/definition-actions.test.ts	TOML saves patch only requested fields in user and project overlays
+agents/definition-actions.test.ts	TOML actions reject stale own and inherited definitions and untrusted projects
+agents/definition-actions.test.ts	TOML actions preserve inherited prompt leaves and honor staged whole-field scope
+agents/definition-actions.test.ts	TOML actions preserve own tilde skill roots and accept native file URLs
+agents/definition-actions.test.ts	TOML actions reject revoked trust or cancellation while waiting for the file queue
+agents/definition-actions.test.ts	TOML actions recheck exact snapshot and current catalog immediately before saving
+agents/definition-actions.test.ts	draft commits reject changed files, invalid external edits and duplicate creates
+agents/definition-actions.test.ts	editFile propagates external editor panel dismissal without committing or notifying
+agents/definition-actions.test.ts	save propagates owner dismissal after catalog IO and does not write late
+agents/definition-actions.test.ts	save propagates the exact dismissal from a failing catalog callback
+agents/definition-actions.test.ts	commit propagates owner dismissal before writing
+agents/definition-actions.test.ts	create does not turn owner dismissal into false or an error notification
+agents/definition-actions.test.ts	project trust and cancellation block persistence and late UI updates
+agents/definition-document.test.ts	edits fields while retaining comments, siblings, unknown keys, and exact CRLF body
+agents/definition-document.test.ts	removes own optional keys while retaining siblings, comments, and body
+agents/definition-document.test.ts	omitted keys and unrelated undefined fields leave optional fields unchanged
+agents/definition-document.test.ts	deleting absent optional fields does not create or convert a prompt
+agents/definition-document.test.ts	validates actual value changes alongside deletion markers
+agents/definition-document.test.ts	leaves alias-derived fields and their source anchors untouched
+agents/definition-document.test.ts	adds a literal field without mutating an alias-derived field
+agents/definition-document.test.ts	refuses deletion of referenced or aliased optional nodes and parents
+agents/definition-document.test.ts	encodes models and skills and creates frontmatter
+agents/definition-document.test.ts	creates missing role mappings without losing unrelated frontmatter or body
+agents/definition-document.test.ts	keeps the audit
+agents/definition-document.test.ts	preserves comments on reordered and edited candidates and list entries
+agents/definition-document.test.ts	keeps a positional candidate edit
+agents/definition-document.test.ts	keeps duplicate surviving entries and nested list metadata when deleting an entry
+agents/definition-document.test.ts	keeps sequence comments and removes deleted entries
+agents/definition-document.test.ts	retains flow-sequence comments when clearing a list
+agents/definition-document.test.ts	prompt edits preserve inline and markdown content and allow clearing
+agents/definition-document.test.ts	keeps scalar inline prompts and their comments when editing prompt fields
+agents/definition-document.test.ts	refuses malformed YAML, duplicate keys, non-map documents, invalid edits, and shared mutation
+agents/definition-fields.test.ts	role type choices round trip every non-empty combination
+agents/definition-fields.test.ts	types cannot be emptied, and another type can be selected after the warning
+agents/definition-fields.test.ts	custom patterns round trip and cancel keeps the definition unchanged
+agents/definition-fields.test.ts	clearing tools in the editor selects no optional runtime tools
+agents/definition-fields.test.ts	clearing extensions in the editor retains only required runtime extensions
+agents/definition-fields.test.ts	required child tools and extensions are labeled independently of patterns
+agents/definition-fields.test.ts	nested scope and skill edits preserve other fields
+agents/definition-fields.test.ts	scope UI additions become literal allow globs and retain denials
+agents/definition-fields.test.ts	applying scope normalizes existing plus-prefixed patterns
+agents/definition-fields.test.ts	scope rejects bare addition prefixes
+agents/definition-fields.test.ts	removing a visible preloaded skill leaves an encodable policy
+agents/definition-fields.test.ts	skill editor removes a preload and edits tilde roots in one staged patch
+agents/definition-fields.test.ts	root paths retain codec-significant prefixes and the home shorthand
+agents/definition-fields.test.ts	skill custom entries use the codec and retain allow and preload order
+agents/definition-fields.test.ts	preloading an earlier allowed skill preserves canonical order and duplicates
+agents/definition-fields.test.ts	removing preload and deny entries preserves visibility and unrelated duplicates
+agents/definition-fields.test.ts	denying a preloaded skill preserves its policy entries and hides it
+agents/definition-fields.test.ts	skill editor keeps explicit none distinct from all
+agents/definition-fields.test.ts	skill editor distinguishes wildcard and special preloaded names
+agents/definition-fields.test.ts	cancelled root edits and cancelled skills leave the original unchanged
+agents/definition-fields.test.ts	skill custom prefixes become preload and deny policies
+agents/definition-fields.test.ts	checkboxes toggle with space and abort discards staged work
+agents/definition-fields.test.ts	model after_failure remains selectable
+agents/definition-fields.test.ts	legacy thinking fallback is marked ignored and preserved until changed
+agents/definition-fields.test.ts	applying an unchanged legacy thinking fallback preserves its stored value
+agents/definition-fields.test.ts	prompt editor preserves mode and base and cancels on abort
+agents/definition-fields.test.ts	flow dismissal closes the prompt editor without returning to its parent
+agents/definition-fields.test.ts	a captured text editor flow survives an external callback
+agents/definition-fields.test.ts	dismissal before editor mount waits for the child to close
+agents/definition-fields.test.ts	dismissal racing a local editor close finishes the child only once
+agents/definition-fields.test.ts	escape closes the prompt editor locally without aborting the session
+agents/definition-fields.test.ts	flow dismissal waits for native input to close before unwinding
+agents/definition-fields.test.ts	prompt modes and base edits preserve the body and other prompt fields
+agents/definition-fields.test.ts	explicit base and color unsets remove only those fields from the source
+agents/definition-fields.test.ts	prewalk selects off, default, and preserves an existing custom utility
+agents/definition-fields.test.ts	custom prewalk rejects empty ids and persists a new utility id
+agents/definition-fields.test.ts	every preset color remains selectable and round trips
+agents/definition-fields.test.ts	custom colors accept supported names and hex while rejecting invalid values
+agents/definition-fields.test.ts	new controls discard staged choices and cancelled input
+agents/definition-fields.test.ts	max turns validates input and session abort prevents patches
+agents/definition-fields.test.ts	agent color choices retain distinct themed swatches
+agents/definition-fields.test.ts	menus fit required terminal widths
+agents/definition-file.test.ts	authorizes each kind
+agents/definition-file.test.ts	rejects stale text and retargeted authorized symlinks
+agents/definition-file.test.ts	guards shared TOML snapshots across entity kinds
+agents/definition-file.test.ts	checks project trust and cancellation when queued, and trust for TOML reads
+agents/definition-file.test.ts	creates exclusively in each native directory with trusted safe roots
+agents/definition-file.test.ts	creates role and legacy flat role snapshots in their native locations
+agents/definition-file.test.ts	rejects symlinked creation directories and existing symlink files
+agents/definition-persistence.test.ts	patches only an overlay
+agents/definition-persistence.test.ts	refuses implicit resets when adding scope or override to an inherited role
+agents/definition-persistence.test.ts	edits explicit nested leaves and handles native string prompts without losing comments
+agents/definition-persistence.test.ts	permits only native TOML sources for their declared local layer
+agents/definition-persistence.test.ts	rechecks trust, abort and canonical target after waiting for a TOML mutation
+agents/definition-persistence.test.ts	refuses missing roles, malformed TOML and invalid typed edits
+agents/definition-persistence.test.ts	creates exclusively, preserves exact text and rejects stale edits
+agents/definition-persistence.test.ts	allows roles only under their native user and project roots
+agents/definition-persistence.test.ts	keeps role trust, cancellation and symlink stale guards
+agents/definition-persistence.test.ts	checks trust and cancellation again after waiting for the mutation queue
+agents/definition-persistence.test.ts	refuses invalid syntax, known fields, changed id, and changed unknown data
+agents/definition-persistence.test.ts	can repair an invalid field while preserving unknown fields
+agents/definition-persistence.test.ts	refuses a symlinked creation root
+agents/definition-persistence.test.ts	rejects outside sources and refuses retargeted source symlinks
+agents/definitions-panel.test.ts	definition rows show first usable model and quota warnings without a type column
+agents/definitions-panel.test.ts	the definition row selects the same model as the runner when the first is soft
+agents/definitions-panel.test.ts	Chain field shows the later healthy model when the first is soft
+agents/definitions-panel.test.ts	maps a deduplicated inherited candidate back to the original entry
+agents/definitions-panel.test.ts	uses the inherited model
+agents/definitions-panel.test.ts	skips inherited models absent from the registry or without credentials
+agents/definitions-panel.test.ts	maps past unresolved inheritance and duplicate unavailable entries
+agents/definitions-panel.test.ts	keeps the first explicit entry when inheritance duplicates it
+agents/definitions-panel.test.ts	reports inherited quota for a selected session model
+agents/definitions-panel.test.ts	reports no usable model when inheritance cannot resolve
+agents/definitions-panel.test.ts	reports no usable model when every candidate is unavailable or unauthenticated
+agents/definitions-panel.test.ts	disabled quota policy ignores cached exhaustion in the summary
+agents/definitions-panel.test.ts	list enable shortcut preserves identity and detail exposes grouped field editors
+agents/definitions-panel.test.ts	printable definition names stay in both search queries
+agents/definitions-panel.test.ts	file and rewrite shortcuts call explicit actions and cancellation does not save
+agents/definitions-panel.test.ts	Chain opens the model screen and Escape returns to fields
+agents/external-editor.test.ts	edits a private draft with VISUAL flags without touching the source
+agents/external-editor.test.ts	editor opens its controlling terminal under a real PTY
+agents/external-editor.test.ts	editor failure restores the terminal, removes the buffer and reports recovery
+agents/external-editor.test.ts	abort kills the editor group and discards late output
+agents/external-editor.test.ts	owning panel dismissal waits for the editor to close and discards its draft
+agents/external-editor.test.ts	cleans up editor descendants after a successful exit
+agents/external-editor.test.ts	falls back to EDITOR and skips an already cancelled request
+agents/external-editor.test.ts	requires a TUI and a configured editor
+agents/frontmatter.test.ts	parses the design
+agents/frontmatter.test.ts	diagnoses legacy keys without mapping them
+agents/frontmatter.test.ts	invalid fields fall back with precise diagnostics, including nested keys
+agents/frontmatter.test.ts	utility defaults, mixed types and skill visibility stay independent
+agents/frontmatter.test.ts	an empty body keeps prompt.body and type patches preserve or re-derive reach
+agents/frontmatter.test.ts	skips malformed YAML and non-mapping documents
+agents/index.test.ts	child factory shares the host registry runtime without a patched accessor
+agents/index.test.ts	child factory reports a missing host model runtime
+agents/inspect.test.ts	extracts and filters transcript entries, skipping malformed entries
+agents/inspect.test.ts	invalid regex falls back to literal, case-insensitive substring search
+agents/inspect.test.ts	marks assistant errors and includes custom and summary system entries
+agents/inspect.test.ts	formats one-line item text and truncates item lines at 400 characters
+agents/loadout.test.ts	extension names cover scoped package, bare package and built-ins
+agents/loadout.test.ts	extension patterns select optional extensions and retain required hosts
+agents/loadout.test.ts	tool patterns edit defaults, select by owning extension and keep bash companions
+agents/loadout.test.ts	skill policy shows allowed and preloaded skills and hides denied ones
+agents/loadout.test.ts	skill globs apply consistently to allow, preload, and deny
+agents/loadout.test.ts	prompt composition: base replaces the preamble, append keeps it, replace uses the body
+agents/markdown-document.test.ts	edits nested scalars, lists, deletions and body without flattening neighbors
+agents/markdown-document.test.ts	frontmatter and body edits remain independent, including newly created nested mappings
+agents/markdown-document.test.ts	refuses aliases, referenced anchors and edits beneath referenced ancestors
+agents/markdown-document.test.ts	keeps alias-derived keys intact when adding a literal key
+agents/markdown-document.test.ts	deleting an absent descendant leaves a referenced ancestor untouched
+agents/markdown-document.test.ts	protects aliases introduced by an earlier edit
+agents/markdown-document.test.ts	does not expose mutable scalar values through inspection or input
+agents/model-chain-panel.test.ts	reorder saves actual order and keeps the moved candidate selected
+agents/model-chain-panel.test.ts	editing preserves colon-containing model IDs and saves supported thinking
+agents/model-chain-panel.test.ts	editing a listed model with unspecified thinking preserves the omission
+agents/model-chain-panel.test.ts	selecting a different listed model can leave thinking unspecified
+agents/model-chain-panel.test.ts	a chosen level can be changed back to unspecified thinking
+agents/model-chain-panel.test.ts	manual entry adds an unavailable model with a namespace and thinking suffix
+agents/model-chain-panel.test.ts	manual entry accepts unlisted ${reference.provider}/${reference.model} without thinking
+agents/model-chain-panel.test.ts	keeping the unavailable ${current.provider} reference does not write
+agents/model-chain-panel.test.ts	saving another candidate retains the existing unavailable reference
+agents/model-chain-panel.test.ts	manual editing replaces an unavailable reference without reordering the chain
+agents/model-chain-panel.test.ts	a listed model with an unadvertised current thinking level retains it
+agents/model-chain-panel.test.ts	manual entry rejects an invalid reference and allows cancellation
+agents/model-chain-panel.test.ts	manual entry does not overwrite a chain changed while the input was open
+agents/model-chain-panel.test.ts	aborting manual entry prevents a late save
+agents/model-chain-panel.test.ts	final candidate cannot be removed; cancellation never saves
+agents/model-chain-panel.test.ts	adding inherit and removing a selected candidate save complete chains
+agents/model-chain-panel.test.ts	canceling thinking selection leaves an unavailable existing candidate unchanged
+agents/model-chain-panel.test.ts	a refused manual save leaves the current candidate selected
+agents/model-chain-panel.test.ts	refused save leaves catalog state unchanged
+agents/model-chain-panel.test.ts	quota and selection render within requested widths
+agents/model-chain-panel.test.ts	known exhausted candidate is skipped in favor of the session model
+agents/model-chain-panel.test.ts	abort closes pickers without writing
+agents/notices.test.ts	completion frames are valid, carry the report, and truncate huge reports with a pointer
+agents/notices.test.ts	failed runs warn and name the error and model switches
+agents/notices.test.ts	ask frames tell the parent how to answer and show requested scope
+agents/notices.test.ts	durations format across units
+agents/panel.test.ts	root uses six breadcrumb destinations with live counts, no tabs, and bounded width
+agents/panel.test.ts	root enters annotations, returns one level, and restores selection and query
+agents/panel.test.ts	Settings delegates to the existing Workbench editor and then returns to root
+agents/panel.test.ts	annotation filtering groups by file, excludes other runs, and cycles kind
+agents/panel.test.ts	opening an annotation reads its file without writing it and returns to the list
+agents/panel.test.ts	headless root prints a read-only summary without mounting a panel
+agents/primary-integration.test.ts	primary switches update root scope and spawn catalog, and shutdown releases scope
+agents/primary-integration.test.ts	main leaves the system prompt unchanged and architect adds its body on the next turn
+agents/primary-integration.test.ts	child role and runner scope survive primary lifecycle events unchanged
+agents/primary-integration.test.ts	restored architect scope is enforced by the actual root write tool
+agents/primary-integration.test.ts	session start keeps the startup model; only an explicit switch applies the preference
+agents/primary-loadout.test.ts	a primary narrows tools and skills without touching extension registration
+agents/primary-loadout.test.ts	a primary prompt base replaces the preamble and missing bases fail loudly
+agents/primary-loadout.test.ts	prompt bases load from the host project config directory
+agents/primary-models.test.ts	manual architect model and thinking are restored only for their project
+agents/primary-models.test.ts	switchTo waits for model activation and restores manual memory through onChange
+agents/primary-models.test.ts	switch-caused model and thinking events are never remembered
+agents/primary-models.test.ts	delayed self-caused thinking events are excluded after activation finishes
+agents/primary-models.test.ts	corrupt store falls back to preference without throwing
+agents/primary-models.test.ts	manual thinking changes update memory while restored model events do not
+agents/primary-models.test.ts	quota ordering prefers a healthy candidate and unusable remembered models fall back
+agents/primary-models.test.ts	child sessions never apply or remember primary models
+agents/primary-models.test.ts	reset cancels an activation queued before session replacement
+agents/primary-models.test.ts	concurrent stores merge distinct project entries under the lock
+agents/primary.test.ts	lists enabled user-discoverable and user-triggerable primaries in catalog order
+agents/primary.test.ts	invalid switches preserve state and do not notify or persist
+agents/primary.test.ts	restores a user-triggered selection when main is ineligible
+agents/primary.test.ts	switch persists and restores on restart and fork from the current branch
+agents/primary.test.ts	cycle skips ineligible primaries, wraps, and unsubscribe stops notifications
+agents/primary.test.ts	missing or malformed persisted agents default to main
+agents/primary.test.ts	child sessions have no primary and ignore switches
+agents/primary-ui.test.ts	a persisted empty cycle key does not consume the default shortcut
+agents/primary-ui.test.ts	a persisted alternate cycle key replaces the default shortcut
+agents/primary-ui.test.ts	rebinding and disabling take effect immediately
+agents/primary-ui.test.ts	saved user, project and runtime bindings update the live listener
+agents/primary-ui.test.ts	restart and shutdown remove listeners and invalidate stale callbacks
+agents/primary-ui.test.ts	inactive and non-TUI sessions do not consume the cycle key
+agents/primary-ui.test.ts	cycle errors are reported only while the originating session remains active
+agents/primary-ui.test.ts	agent unknown notifies an error and leaves the primary unchanged
+agents/primary-ui.test.ts	standalone picker dismissal closes its filtered choice without switching or notifying
+agents/primary-ui.test.ts	Escape cancels the picker locally and confirmation still switches the filtered agent
+agents/primary-ui.test.ts	the picker accepts an asynchronous custom component factory
+agents/primary-ui.test.ts	the picker inherits an existing panel-flow owner
+agents/primary-ui.test.ts	a confirmed async switch runs after picker dismissal ownership ends
+agents/primary-ui.test.ts	a thinking shortcut collision explains precedence and warns only once
+agents/primary-ui.test.ts	a live rebind warns when it overrides an equivalent thinking binding
+agents/primary-ui.test.ts	agent completions match primary ids and descriptions
+agents/primary-ui.test.ts	child sessions hide the badge and ignore the primary shortcut
+agents/primary-ui.test.ts	the status badge follows commands and the cycle shortcut
+agents/quota.test.ts	skips a soft candidate when a later one is healthy
+agents/quota.test.ts	uses the first soft candidate when nothing later is healthy
+agents/quota.test.ts	degrades to the first candidate when all are exhausted
+agents/quota.test.ts	thresholds are read from the policy
+agents/quota.test.ts	queries only announced providers and caches rows
+agents/quota.test.ts	snapshots update the cache and rate-limited events start a cooldown
+agents/quota.test.ts	moves transport without losing cached state or accepting retired callbacks
+agents/quota.test.ts	ignores a reply resolved before rebinding but processed afterwards
+agents/quota.test.ts	stops publishing an old reply when a listener rebinds during notification
+agents/quota.test.ts	detaches, combines caller cancellation, and disposes terminally
+agents/quota.test.ts	resolves without data when nobody serves the bus
+agents/renderers.test.ts	completed spawn has distinct bounded densities and complete expanded output
+agents/renderers.test.ts	expanding a compact row reveals the complete report
+agents/renderers.test.ts	batch and list snapshots retain one compact row per run
+agents/renderers.test.ts	parent actions retain question, answer, annotation and note text
+agents/renderers.test.ts	Pi-generated errors and aborted calls stay visible at every density
+agents/renderers.test.ts	partial updates cannot replace a settled report
+agents/renderers.test.ts	short action headers, waiting snapshots and every preview fit all check widths
+agents/retained.test.ts	retains live runs, revokes waiters and delivers detached completions after acknowledgement
+agents/retained.test.ts	continues child setup after delivery throws
+agents/retained.test.ts	keeps a frame when delivery rebinds and then throws
+agents/retained.test.ts	validates and copies settings, checks invocation identity and isolates fallback roots
+agents/retained.test.ts	copies the live concurrency limit on bind and update
+agents/retained.test.ts	redacts ledger writes and delivered frames with the retained guard
+agents/retained.test.ts	shutdown awaits runner cleanup and preserves store and quota until retry succeeds
+agents/runner.test.ts	the cap holds parent questions, drains FIFO, and aborts queued runs without sessions
+agents/runner.test.ts	resume joins the FIFO queue and uses the live limit on the next admission
+agents/runner.test.ts	a completed wildcard run retains its tool cap after reload and resume
+agents/runner.test.ts	resume intersects and persists a narrower tool cap while queued
+agents/runner.test.ts	ordinary uncapped runs remain uncapped on resume
+agents/runner.test.ts	failure and active abort both release slots
+agents/runner.test.ts	dispose aborts the queue without admission and waits for a late factory session
+agents/runner.test.ts	failed construction retains cleanup through joined shutdowns and retries only failures
+agents/runner.test.ts	recognizes construction cleanup errors from another constructor
+agents/runner.test.ts	shutdown reports late construction cleanup without retrying it in the same call
+agents/runner.test.ts	does not invoke cleanup fields on unrelated or malformed factory errors
+agents/runner.test.ts	retains cleanup when the factory throws synchronously
+agents/runner.test.ts	late factory cleanup joins shutdown and remains retryable after failure
+agents/runner.test.ts	shutdown joins an in-flight background release before retrying it
+agents/runner.test.ts	failed background cleanup remains owned through concurrent shutdown and retry
+agents/runner.test.ts	shutdown reports every failed child and does not retry successful peers
+agents/runner.test.ts	a 429 switches to the next candidate, cools the provider and reports once
+agents/runner.test.ts	a schema error fails without switching candidates
+agents/runner.test.ts	abort during factory creation releases the late session and its bindings
+agents/runner.test.ts	aborting a pending parent question preserves the terminal status
+agents/runner.test.ts	exhausting every candidate fails the run with the last error
+agents/runner.test.ts	a waiting parent suppresses the completion frame
+agents/runner.test.ts	an already-aborted waiter returns the current run without suppressing completion
+agents/runner.test.ts	revoking a waiter in the completion turn does not suppress its notification
+agents/runner.test.ts	concurrent waiters are independent and remove their abort listeners
+agents/runner.test.ts	quiet runs remain silent after a waiter is revoked
+agents/runner.test.ts	ask pauses the run, steer answers it, and the scope binding holds meanwhile
+agents/runner.test.ts	fork writes the parent branch under an agt_ session header
+agents/run-panel.test.ts	Enter opens detail, Ctrl+T explicitly opens transcript, and both screens fit
+agents/run-panel.test.ts	run list and detail expose exact IDs while retaining handle and status
+agents/run-panel.test.ts	run identities are sanitized before list and detail rendering
+agents/run-panel.test.ts	waiting run answers through steer; abort requires confirmation
+agents/run-panel.test.ts	selection follows IDs across reordering and a removed dialog target never redirects
+agents/run-panel.test.ts	late dialogs and terminal changes cannot issue mutations
+agents/run-panel.test.ts	remapped app.clear waits for run dialogs before unwinding the owning flow
+agents/run-panel.test.ts	Esc cancellation of a run answer returns to its parent without aborting the session
+agents/run-panel.test.ts	abort during a dialog suppresses late controls and notifications
+agents/run-panel.test.ts	printable run names stay in the query and Ctrl+T opens the transcript
+agents/run-panel.test.ts	waiting detail Answer and finished detail Resume use their actions
+agents/run-panel.test.ts	model and scope operations retain thinking and route globs
+agents/runs.test.ts	handles count up per role and skip handles held by active runs
+agents/runs.test.ts	named agents are unique among active runs and resolve to the newest run
+agents/scope.test.ts	override lists add or deny with +/! and replace otherwise
+agents/scope.test.ts	patterns match on the root
+agents/skill-policy.test.ts	encodes one preload when an allowed name occurs twice
+agents/skill-policy.test.ts	parses booleans, empty lists, literals, wildcards, preloads, denies and roots
+agents/skill-policy.test.ts	rejects malformed entries and keeps the frontmatter fallback diagnostic
+agents/skill-policy.test.ts	round-trips ordered fields and duplicates without normalizing roots
+agents/skill-policy.test.ts	can encode every policy parsed from mixed duplicate entries
+agents/skill-policy.test.ts	refuses policies that cannot be represented without losing fields
+agents/skill-policy.test.ts	persists the same policy through TOML role edits
+agents/skill-policy.test.ts	preserves skill sequence comments and document boundaries
+agents/toml-document.test.ts	edits one own role field without materializing inherited fields or changing other entities
+agents/toml-document.test.ts	keeps no-ops exact, including deletions inside missing tables
+agents/toml-document.test.ts	applies nested additions and explicit deletions without changing omitted siblings
+agents/toml-document.test.ts	deletes only requested leaves even when their table becomes empty
+agents/toml-document.test.ts	creates missing tables and exact quoted ids without affecting existing entities
+agents/toml-document.test.ts	moves model entries with their comments and preserves unrelated text
+agents/toml-document.test.ts	preserves CRLF for edits and additions
+agents/toml-document.test.ts	refuses malformed documents and collisions before returning output
+agents/toml-document.test.ts	reports document collisions and invalid patches with distinct error codes
+agents/toml-document.test.ts	writes TOML datetime, large integer, and NaN values
+agents/toml-document.test.ts	rejects values that TOML cannot encode
+agents/toml-document.test.ts	keeps prototype-like names as own keys during existing and new table edits
+agents/toml-document.test.ts	applies encoded optional deletions without materializing inherited fields
+agents/toml-document.test.ts	exposes canonical encoding without changing Markdown behavior
+agents/tool.test.ts	resume reloads explicit composition and spawn overrides from the run ledger
+agents/tool.test.ts	legacy and specialization-only runs retain identity defaults on resume
+agents/tool.test.ts	replace-mode resume keeps explicit references without adding persona text
+agents/tool.test.ts	spawn and list show the runner
+agents/tool.test.ts	a subagent
+agents/tool.test.ts	an architect root refuses worker spawns and allows explorer spawns
+agents/tool.test.ts	depth limits apply to spawn, batch and resumed grandchildren
+agents/tool.test.ts	built-in handoff and prewalk run at the depth limit with code triggers
+agents/tool.test.ts	custom code-triggerable prewalk does not require utility type or discovery
+agents/tool.test.ts	prewalk still runs for a child at the depth limit, without the agent tool
+agents/tool.test.ts	prewalk runs quietly first and its digest reaches the child
+agents/transcript.test.ts	real child fixtures render native bash headers, edit diffs and conversation text
+agents/transcript.test.ts	all densities fit 36, 57, 80 and 140 columns and compact differs from full
+agents/transcript.test.ts	line cache is keyed by width and density and invalidates without rereading history
+agents/transcript.test.ts	renderer invalidation evicts width caches without reconstructing tool state
+agents/transcript.test.ts	active branch loading ignores abandoned branches and unfinished JSONL tails
+agents/transcript.test.ts	live tools reconcile with message events once and ignore late partial results
+agents/transcript.test.ts	streaming assistant snapshots replace earlier text and do not retain mutable events
+agents/transcript.test.ts	settlement reloads finalized disk history, including events received during loading
+agents/transcript.test.ts	Workbench system frames and annotations use rendered text, not stored envelopes
+agents/transcript.test.ts	same-timestamp frames keep distinct sequence identities and untrusted controls are removed
+agents/transcript.test.ts	missing history is visible without dropping live messages and disposal blocks late reads
+agents/viewer.test.ts	live events follow the tail until scrolling up; End and G resume following
+agents/viewer.test.ts	search jumps to first edit match, highlights it, and n/N wrap through matches
+agents/viewer.test.ts	close removes both live listeners, disposes the model and restores page keys
+agents/viewer.test.ts	steering is inline, abort requires confirmation, and terminal runs disable both
+agents/viewer.test.ts	annotations toggle, terminal ledger transitions reload once, and live renders are throttled
+agents/viewer.test.ts	refused controls stay visible and a late failure cannot repaint a closed panel
+agents/viewer.test.ts	compact viewer fits the available rows at every supported width
+agents/viewer.test.ts	compact viewer keeps its identity, transcript, search and controls usable
+agents/viewer.test.ts	compact viewer keeps search and control failures visible
+agents/viewer.test.ts	compact navigation pauses and resumes live following
+agents/viewer.test.ts	full-height preference survives resize, density and content changes
+agents/viewer.test.ts	real fixture fits the full-height frame at 36/57/80/140 and d cycles density
+ask-abort.test.ts	an already-aborted ask_user signal resolves cancelled without mounting
+ask-abort.test.ts	abort during config loading resolves cancelled before the TUI mounts
+ask-abort.test.ts	session replacement during configuration loading neither mounts nor records in the new session
+ask-abort.test.ts	abort after the TUI mounts cancels a dirty ask without confirmation
+ask-abort.test.ts	abort racing remote startup completes the flow once
+ask-abort.test.ts	abort after a normal finish does not resolve the ask twice
+ask-abort.test.ts	overlapping parent and child forms isolate cancellation, settings and history
+ask/answer-commands.test.ts	answer commands do not open custom UI outside TUI mode
+ask/answer-extraction.test.ts	selectExtractionModel uses first configured model with auth
+ask/answer-extraction.test.ts	selectExtractionModel respects the current session model scope
+ask/answer-extraction.test.ts	selectExtractionModel rejects a fallback outside the current session scope
+ask/answer-extraction.test.ts	selectExtractionModel skips unconfigured preferences even when auth resolution succeeds
+ask/answer-extraction.test.ts	selectExtractionModel accepts configured preferences without an API key
+ask/answer-extraction.test.ts	selectExtractionModel rejects an unconfigured fallback even when auth resolution succeeds
+ask/answer-extraction.test.ts	extraction business rules flag option spam
+ask/answer-extraction.test.ts	repairExtractionParams caps options while preserving other
+ask/answer-extraction.test.ts	repairExtractionParams drops generic conversational prompts
+ask/answer-extraction.test.ts	selectExtractionModel validates fallback model auth
+ask/answer-extraction.test.ts	extraction context includes the tool and preceding turn
+ask/answer-extraction.test.ts	tool-call arguments become the extraction candidate
+ask/answer-extraction.test.ts	tool-call arguments take precedence over text
+ask/answer-extraction.test.ts	multiple tool calls are rejected
+ask/answer-extraction.test.ts	fenced text remains a fallback
+ask/answer-extraction.test.ts	semantic validation issues are returned for retry feedback
+ask/ask-flow.test.ts	auto-submit resolves the flow when the answering transition lands on the review tab
+ask/ask-flow.test.ts	a completed ask flow resolves at most once
+ask/ask-payload-store.test.ts	branch payload lookup returns the latest valid matching source
+ask/ask-payload-store.test.ts	branch payload lookup allows freeform only for answer extraction payloads
+ask/ask-payload-store.test.ts	branch payload lookup ignores invalid stored payloads
+ask/ask-settings-command.test.ts	/ask-settings uses Workbench settings and rejects non-interactive UI
+ask/ask-tool.test.ts	ask option schema and tool guidance support grounded recommendations
+ask/ask-tool.test.ts	ask params schema constrains question types
+ask/ask-tool.test.ts	ask schemas emit only valid JSON Schema types without undefined unions
+ask/ask-tool.test.ts	ask tool stores valid payloads as soon as they are called
+ask/ask-tool.test.ts	ask tool returns pending questions in non-interactive mode
+ask/ask-tool.test.ts	ask tool waits for a headless bridge answer and returns normalized details
+ask/ask-tool.test.ts	headless bridge can cancel an ask
+ask/ask-tool.test.ts	headless remote asks cancel when aborted or when configured timeout expires
+ask/ask-tool.test.ts	ask tool does not open custom UI outside TUI mode
+ask/ask-tool.test.ts	ask tool includes custom answer fallback for preview questions
+ask/ask-tool.test.ts	ask tool rejects invalid payloads before UI opens with structured issues
+ask/ask-tool.test.ts	ask tool reports missing option values with structured issues
+ask/ask-tool.test.ts	ask tool reports empty questions with structured issues
+ask/ask-tool.test.ts	ask tool reports invalid question types with structured issues
+ask/ask-tool.test.ts	ask tool reports preview validation with structured issues
+ask/ask-tool.test.ts	ask tool accepts blank optional presentation fields
+ask/ask-tool.test.ts	ask tool prepares missing and blank option labels before schema validation
+ask/ask-tool.test.ts	public schema requires semantic identifiers and labels
+ask/ask-tool.test.ts	ask transcript preserves pending instructions and targeted elaboration notes
+ask/ask-tool.test.ts	ask transcript sanitizes answer labels in full mode
+ask/ask-tool.test.ts	ask tool uses the Workbench transcript renderers
+ask/autocomplete.test.ts	ask autocomplete explicitly triggers on file mention marker
+ask/auto-submit.test.ts	auto submit completes answered submit-tab state when enabled
+ask/auto-submit.test.ts	auto submit does nothing when disabled
+ask/auto-submit.test.ts	auto submit does not trigger when notes exist
+ask-collapse-redraw.test.ts	collapsing reprints the transcript that the open panel pushed into scrollback
+ask-collapse-redraw.test.ts	cancelling reprints the transcript that the open panel pushed into scrollback
+ask-collapse-redraw.test.ts	submitting reprints the transcript that the open panel pushed into scrollback
+ask-collapse-redraw.test.ts	an ESC-prefixed Alt+Down in one read scrolls instead of cancelling
+ask/config-migrate.test.ts	config migration framework accepts the current schema version
+ask/config-migrate.test.ts	config migration maps previous-version config files into current shape
+ask/config-migrate.test.ts	config migration adds v5 defaults to v4 configs
+ask/config-migrate.test.ts	config migration adds remote ask defaults to v5 files
+ask/config-migrate.test.ts	config migration maps legacy flat keymaps into context keymaps
+ask/config-migrate.test.ts	config migration framework rejects unsupported future schema versions
+ask/config-migrate.test.ts	config migration framework rejects unversioned config files
+ask/dismiss-guard.test.ts	dirty flow state is false for untouched ask flow
+ask/dismiss-guard.test.ts	dirty flow state is true for saved answers or editor drafts
+ask/dismiss-guard.test.ts	confirm dismiss when dirty respects dirty state and config
+ask/dismiss-guard.test.ts	dismiss confirmation is active while pending
+ask/dismiss-notice-behavior.test.ts	dismiss notice stays visible on same tab and clears after tab change
+ask/editor-state.test.ts	syncStateToSelection opens input when custom option is active
+ask/editor-state.test.ts	saveEditorDraft stores question note drafts without advancing
+ask/editor-state.test.ts	submitEditorDraft advances submitted custom answers
+ask/editor-state.test.ts	submitted answer can sync directly into next freeform input
+ask/editor-state.test.ts	syncStateToSelection does not reopen answered freeform input
+ask/editor-state.test.ts	tab navigation can sync from review back into freeform input
+ask/editor-state.test.ts	submitEditorDraft saves notes without completing the ask flow
+ask/editor-state.test.ts	getEditorDraft reads saved note and custom text from view
+ask-history.test.ts	separates projects and sessions, canonicalizes cwd, and restricts modes
+ask-history.test.ts	defaults to XDG_DATA_HOME
+ask-history.test.ts	rejects missing or unsafe session ids and unresolvable cwd without writing
+ask-history.test.ts	concurrent writes stay whole records with all data, and old bytes are never rewritten
+ask-history.test.ts	records cancelled, pending and invalid questionnaires with their normalized result
+ask-history.test.ts	tightens a loose existing history file and keeps its content
+ask-history.test.ts	removes known and credential-shaped secrets from values but keeps keys and structure
+ask-history.test.ts	malformed inventories fail with a value-free message and write nothing
+ask-history.test.ts	missing optional inventories still write
+ask-history.test.ts	a filesystem failure returns a value-free message and writes nothing
+ask-history-wiring.test.ts	records an invalid payload once with the actual params
+ask-history-wiring.test.ts	records non-interactive calls without a bridge as pending, not cancelled
+ask-history-wiring.test.ts	records a remote submitted answer with full params and answers
+ask-history-wiring.test.ts	records a remote cancellation and an aborted headless wait as cancelled
+ask-history-wiring.test.ts	records TUI submitted, elaborated and cancelled results once each, redacted
+ask-history-wiring.test.ts	writes nothing when questionnaire storage is disabled
+ask-history-wiring.test.ts	an unusable history target warns without losing the response
+ask-history-wiring.test.ts	history freezes session file, leaf and cwd before resolving the project path
+ask-history-wiring.test.ts	history freezes the branch leaf before loading storage policy
+ask-history-wiring.test.ts	shutdown aborts an in-flight extraction provider and suppresses its late error
+ask-history-wiring.test.ts	replay cannot record or deliver after replacement during history config loading
+ask-history-wiring.test.ts	/answer stops stale effects during ${stage}, shutdown=${shutdown}
+ask-history-wiring.test.ts	/answer records the extracted form with the assistant entry id
+ask-history-wiring.test.ts	/answer records a cancelled extracted form
+ask-history-wiring.test.ts	/answer records an invalid extracted candidate but not a failed extraction
+ask-history-wiring.test.ts	/answer:again and /ask:replay keep the original payload source entry
+ask-history-wiring.test.ts	history loads disk storage policy even without a mounted form
+ask-history-wiring.test.ts	replays write nothing when storage is disabled
+ask-history-wiring.test.ts	a replay still delivers its answer when the history cannot be written
+ask-history-wiring.test.ts	records recovered submissions and cancellations with the original tool call id
+ask-history-wiring.test.ts	recovery cannot dismiss or deliver into a replacement session
+ask-history-wiring.test.ts	shutdown during recovery history loading suppresses writes with unchanged session identity
+ask-history-wiring.test.ts	recovery writes nothing when storage is disabled
+ask/index.test.ts	registration leaves the system prompt and its sections untouched
+ask/index.test.ts	registration leaves a forced system prompt and its sections untouched
+ask/input.test.ts	empty typing mode uses arrows and tab for navigation
+ask/input.test.ts	non-empty typing mode keeps arrows and tab in editor
+ask/input.test.ts	empty note editing mode uses arrows and tab for navigation
+ask/input.test.ts	non-empty note editing mode keeps arrows and tab in editor
+ask/input.test.ts	ctrl+c dismisses the flow from both navigation and editing modes
+ask/input.test.ts	question mark opens ask settings outside non-empty editors
+ask/input.test.ts	question type shortcut uses configured main keymap
+ask/input.test.ts	note shortcuts use n for option notes and Shift+N for question notes
+ask/input.test.ts	custom configured editor submit shortcut is used at runtime
+ask/input.test.ts	custom editor submit key saves while Enter inserts a newline
+ask/input.test.ts	ask flow forwards focus and invalidation to its editor
+ask/input.test.ts	custom configured note shortcuts are used at runtime
+ask/input.test.ts	a question-type notice does not count as dirty-dismiss confirmation
+ask/keymaps.test.ts	ask key bindings are memoized per config value
+ask/multiple-custom.test.ts	add answer appends one individual custom row per save next to predefined selections
+ask/multiple-custom.test.ts	blank add answer does not create a row
+ask/multiple-custom.test.ts	toggle, edit and remove one custom row never touch the other
+ask/multiple-custom.test.ts	serialization includes only selected custom entries and keeps custom provenance
+ask/multiple-custom.test.ts	deselected custom rows persist for dirty tracking but are not answered
+ask/multiple-custom.test.ts	legacy customText on a multi answer is normalized into the first custom row
+ask/multiple-custom.test.ts	single questions keep one overwritable custom slot
+ask/multiple-custom.test.ts	multi to single keeps at most one answer and confirms before discarding extras
+ask/multiple-custom.test.ts	multi to single without extra answers needs no confirmation and keeps the single answer
+ask/multiple-custom.test.ts	single to multi moves the custom slot into a stable custom row
+ask-note.test.ts	Review action edits a flow note without submitting and serializes it
+ask-note.test.ts	clearing the note removes it without committing answers
+ask/notifications.test.ts	notification payload uses question label before prompt
+ask/notifications.test.ts	notification payload falls back to prompt and compacts whitespace
+ask/notifications.test.ts	disabled notifications are skipped
+ask/notifications.test.ts	command notification receives env and swallows failures
+ask/pending-ask.test.ts	pending ask scan selects the newest unresolved ask_user call
+ask/pending-ask.test.ts	pending ask scan uses the latest unresolved call within one assistant message
+ask/pending-ask.test.ts	pending ask scan ignores tool-shaped content from failed assistant responses
+ask/pending-ask.test.ts	pending ask scan prefers its valid persisted payload
+ask/pending-ask.test.ts	pending ask scan validates recorded arguments as payload fallback
+ask/pending-ask.test.ts	pending ask scan skips a newer invalid call for an older valid call
+ask/pending-ask.test.ts	pending ask scan ignores tool results and persisted dismissals
+ask/pending-ask.test.ts	pending dismissal does not hide the payload from manual replay
+ask/pending-ask.test.ts	pending ask resume scans only startup, resume, and fork TUI events
+ask/pending-ask.test.ts	resumed submit persists dismissal, delivers an answer, and emits remote lifecycle events
+ask/pending-ask.test.ts	resumed cancel persists dismissal and does not reopen on a second resume
+ask/pending-ask.test.ts	shutdown releases recovery ownership before the old flow settles
+ask/question-type.test.ts	${type} cycle keeps ${focus} focus usable after collapsing custom rows
+ask/question-view-model.test.ts	question view model marks active custom option as inline editor
+ask/question-view-model.test.ts	question view model marks multi custom answer as checked
+ask/question-view-model.test.ts	question view model exposes saved question notes
+ask/question-view-model.test.ts	preview view model selects stacked vs custom layouts
+ask/remote-ask.test.ts	remote runtime discovers and records an already-loaded bridge
+ask/remote-ask.test.ts	remote answer response validates and serializes explicit option values
+ask/remote-ask.test.ts	remote answer response replaces stale UI answers
+ask/remote-ask.test.ts	remote answer response rejects guessed or unknown option values
+ask/remote-ask.test.ts	remote cancel completes the flow as cancelled
+ask/remote-ask.test.ts	started event questions are cloned
+ask/remote-ask.test.ts	remote runtime disposes active flows and submit listener
+ask/remote-ask.test.ts	remote submit resolves an active ask flow and emits lifecycle events
+ask/remote-ask.test.ts	remote multi custom texts and questionnaire note serialize through toAskResult
+ask/remote-ask.test.ts	remote answer rejects malformed custom texts and notes without mutating state
+ask/remote-ask.test.ts	remote single customText contract is unchanged
+ask/remote-ask.test.ts	remote multi customText stays on the legacy slot
+ask/remote-ask.test.ts	blank questionnaire note is omitted and does not mutate a stale note
+ask/remote-ask.test.ts	submit parsing rejects a non-string questionnaire note before apply
+ask/render-frame.test.ts	wide header keeps all tabs and framing arrows on the tab row
+ask/render-frame.test.ts	narrow tab strip keeps active middle tab visible
+ask/render-frame.test.ts	narrow tab strip keeps submit tab visible when active
+ask/render-frame.test.ts	tab strip avoids truncation at narrow boundary widths
+ask/render-frame.test.ts	footer hints wrap into exact lines on narrow screens
+ask/render-frame.test.ts	footer keeps earlier hint chunk on the first wrapped line
+ask/render-frame.test.ts	footer hints can be hidden without affecting frame rendering
+ask/render-helpers.test.ts	renderEditorBlock strips editor borders
+ask/render-helpers.test.ts	renderEditorBlock shows a muted placeholder when empty
+ask/render-helpers.test.ts	renderEditorBlock reapplies background after editor reset sequences
+ask/render-helpers.test.ts	editing footers do not advertise tab navigation
+ask/render-helpers.test.ts	editing footers use configured key labels
+ask/render-helpers.test.ts	fitToWidth matches truncateToWidth for framed, ansi and oversized lines
+ask/render-question.test.ts	custom option stays labeled before selection
+ask/render-question.test.ts	standard options show recommendation metadata without changing answers
+ask/render-question.test.ts	selected custom option keeps its label and renders editor below
+ask/render-question.test.ts	open question note renders inline label and editor
+ask/render-question.test.ts	open option note renders flush below the option
+ask/render-question.test.ts	selected multiline custom option renders full editor block
+ask/render-question.test.ts	freeform-only question renders label without numbering or pointer and separates input
+ask/render-question.test.ts	preview questions show custom and recommended options
+ask/render-question.test.ts	preview custom option reuses the normal inline editor
+ask/render-submit.test.ts	submit screen renders the compact action labels without extra prompt copy
+ask/render-submit.test.ts	submit screen keeps review and actions grouped side by side on wide screens
+ask/render-submit.test.ts	submit screen stacks review above actions on narrow screens
+ask/render-submit.test.ts	submit screen can show a review shortcut hint below the actions
+ask/render-submit.test.ts	submit screen shows notes only for answered questions in submit mode
+ask/render-submit.test.ts	submit screen shows all notes when elaborate action is selected
+ask/render-submit.test.ts	submit screen renders multi-select option notes under their related answers
+ask/render-submit.test.ts	submit action column keeps all four actions on consecutive rows at the wide breakpoint
+ask/result.test.ts	summarizeResult formats selected answers
+ask/result.test.ts	submitted results surface unanswered questions without serializing answers
+ask/result.test.ts	submitted results surface every question when all are unanswered
+ask/result.test.ts	single questions presented as multi preserve requested type in results
+ask/result.test.ts	presentation override summary uses one compact note
+ask/result.test.ts	summaries include custom text answers
+ask/result.test.ts	multi-select summaries include selected options and custom text
+ask/result.test.ts	summaries and result text include question and selected option notes
+ask/result.test.ts	unselected option notes are omitted from the submitted result
+ask/result.test.ts	question-note-only results still render note content
+ask/result.test.ts	elaborate results include unselected notes in summary and render output
+ask/result.test.ts	elaborate results keep committed answers alongside elaboration context
+ask/result.test.ts	elaboration summary includes custom answers in note context
+ask/result.test.ts	elaboration summary includes answered custom text even without notes
+ask/result.test.ts	elaborate continuation preserves unrelated committed answers
+ask/result.test.ts	elaboration preserves recommendation metadata
+ask/result.test.ts	global elaboration notes retain question and current-answer context
+ask/result.test.ts	invalid tool payload result is attributed to the tool call
+ask/result.test.ts	cancelled result hides unanswered questions
+ask/review-shortcuts.test.ts	review shortcut double press requires the same digit twice
+ask/review-shortcuts.test.ts	review shortcut double press switches pending action when digit changes
+ask/review-shortcuts.test.ts	review shortcut hint reflects pending confirmation state
+ask-runtime.test.ts	parent and subagent questionnaire settings and snapshots stay isolated
+ask/state.test.ts	normalize defaults via initial state
+ask/state.test.ts	answer freeform questions render only the custom input option
+ask/state.test.ts	freeform questions are rejected unless explicitly allowed
+ask/state.test.ts	freeform questions cannot mix normal options
+ask/state.test.ts	preview questions keep their type and option previews
+ask/state.test.ts	createInitialState rejects duplicate question ids
+ask/state.test.ts	createInitialState rejects duplicate option values within one question
+ask/state.test.ts	preview questions require preview text for every option
+ask/state.test.ts	normalize trims ids, prompts, and option text
+ask/state.test.ts	normalize treats blank optional presentation text as absent
+ask/state.test.ts	normalization preserves any number of recommended options without selecting them
+ask/state.test.ts	single-select number shortcut stores answer and advances to next tab
+ask/state.test.ts	multi-select space toggles current option and enter advances to submit
+ask/state.test.ts	single-select space toggles the active option without advancing
+ask/state.test.ts	presentSingleAsMulti handles requested single questions as multi-select
+ask/state.test.ts	question type hotkey toggles single and multi while preserving requested type
+ask/state.test.ts	question type hotkey toggles preview questions with multi only
+ask/state.test.ts	question type hotkey requires confirmation before clearing multi answers
+ask/state.test.ts	confirmed multi-to-single type change preserves custom text and notes
+ask/state.test.ts	submit can complete even when some questions are unanswered
+ask/state.test.ts	submit tab can complete in elaborate mode
+ask/state.test.ts	selecting other enters input mode and custom submit stores typed answer
+ask/state.test.ts	escape saves typed custom answer without advancing
+ask/state.test.ts	multi-select keeps existing selections when leaving custom input empty
+ask/state.test.ts	multi-select keeps existing selections and stays on tab when submitting custom text
+ask/state.test.ts	empty custom draft clears the stored answer but preserves notes
+ask/state.test.ts	question note can be saved without selecting an answer and is submitted
+ask/state.test.ts	option notes can exist before selection but only selected option notes are submitted
+ask/state.test.ts	deselecting an option keeps its note in state but omits it from submission
+ask/state.test.ts	multi-select toggles saved custom text selection with space or number shortcuts
+ask/state.test.ts	multi-select keeps custom text when toggling additional options
+ask/state.test.ts	preview questions can store selected option notes for submission
+ask/state.test.ts	preview questions support custom answers
+ask/state.test.ts	tab navigation wraps including submit tab
+ask/state.test.ts	tab navigation works with a single question
+ask/state.test.ts	submit tab number shortcuts trigger matching review actions
+ask/state.test.ts	escape cancels from main flow but only exits input and note modes when editing
+ask/state.test.ts	dismissFlow cancels the tool even from editing modes
+ask/text.test.ts	wrapText wraps prose
+ask/text.test.ts	wrapText preserves blank lines and indentation
+ask/text.test.ts	wrapText breaks long words
+ask-trust.test.ts	questionnaire runtime ignores untrusted project commands and refreshes trust on each call
+ask-viewport.test.ts	questionnaire display text cannot inject terminal controls at any viewport width
+ask-viewport.test.ts	plainText strips VT controls while retaining layout and Unicode
+ask-viewport.test.ts	preview panes sanitize descriptions and multiline content at every width
+ask-viewport.test.ts	active note editor sanitizes pasted terminal controls before rendering
+ask-viewport.test.ts	saved notes stay sanitized when reopened
+ask-viewport.test.ts	all note editors sanitize fragmented paste without consuming editing keys
+ask-viewport.test.ts	note editor rejects controls in text and encoded printable keys
+ask-viewport.test.ts	large note pastes remain safe and undo as one editor action
+ask-viewport.test.ts	note editor respects rebound Pi keys without inserting unbound DEL
+ask-viewport.test.ts	stacked previews scroll by reachable arrow chords without moving the selection
+ask-viewport.test.ts	explicit capped height is fixed, bounded and within the width on every tab
+ask-viewport.test.ts	effective defaults leave host chrome visible at 24 and 48 terminal rows
+ask-viewport.test.ts	minimum row cap and transcript reservation bound the expanded panel
+ask-viewport.test.ts	hidden footer hints preserve status, disclosure and warnings
+ask-viewport.test.ts	panel never exceeds a tiny terminal
+ask-viewport.test.ts	ui settings come from the runtime
+ask-viewport.test.ts	selected option stays visible and overflow is counted in the rules
+ask-viewport.test.ts	long prompts and options stay reachable by keys and wheel
+ask-viewport.test.ts	review keeps every action row in view and the selected action selected
+ask-viewport.test.ts	prompt context stays on the context row while the prompt is scrolled away
+ask-viewport.test.ts	scroll hints name the real keys
+ask-viewport.test.ts	collapse keeps every answer and selection, ignores keys and expands again
+ask-viewport.test.ts	collapsed header counts answered questions
+ask-viewport.test.ts	cancel while collapsed reopens for a dirty confirmation, then discards
+ask-viewport.test.ts	keys typed in the answer editor, including z, stay in the editor
+ask-viewport.test.ts	freeform editor sanitizes fragmented paste and raw C1 controls before rendering
+ask-viewport.test.ts	normal multiline Unicode answer editing keeps its value
+ask-viewport.test.ts	arrow scrolling preserves editor drafts and typing returns to the caret
+ask-viewport.test.ts	keys typed in a note editor, including z, stay in the editor
+ask-viewport.test.ts	badge click collapses and expands without losing an editor draft
+ask-viewport.test.ts	badge hit bounds are exact and mouse works only on a fullscreen host
+ask-viewport.test.ts	editor caret stays inside the window and returns after scrolling away
+ask-viewport.test.ts	Review note shortcuts and action share the note editor and preserve typed z
+ask-viewport.test.ts	rebound note save keeps Enter as a newline and clears cursor while collapsed
+ask-viewport.test.ts	plain page keys scroll navigation views on a regular host only
+ask-viewport.test.ts	the panel is as tall as its content, at most the terminal allows, and never shrinks mid-flow
+core/cd-command.test.ts	parse cd ${JSON.stringify(args)}
+core/cd-command.test.ts	reject cd ${JSON.stringify(args)}
+core/cd-command.test.ts	complete subcommands and branch names, including quoted names
+core/cd-command.test.ts	headless missing branch gives explicit creation command without mutation
+core/cd-command.test.ts	interactive missing branch confirms, creates, then switches
+core/cd-command.test.ts	a failed worktree removes the branch it just created
+core/cd-command.test.ts	declining creation leaves the location unchanged
+core/cd-command.test.ts	explicit creation is headless-safe and existing branches need no prompt
+core/cd-command.test.ts	legacy branch path selects the repo and stays unchanged in cd params
+core/cd-command.test.ts	direct paths and reset delegate without Git inspection
+core/cd-command.test.ts	direct TUI commands do not acquire an interactive flow
+core/cd-command.test.ts	current and bare headless cd render the same repository status
+core/cd-command.test.ts	current outside a repo omits repo and branch
+core/cd-command.test.ts	remote detached worktree status keeps authority and home shortening
+core/cd-command.test.ts	navigator and branch picker delegate selection and silently cancel
+core/cd-command.test.ts	RPC with UI still does not open interactive panels
+core/cd-command.test.ts	remapped dismissal closes confirmation, unwinds its parent, and leaves the session usable
+core/cd-command.test.ts	escape cancels confirmation locally without dismissing the parent
+core/cd-command.test.ts	a rejected confirmation on dismissal unwinds without an error toast
+core/cd-command.test.ts	dismissal during branch creation waits for rollback and never switches
+core/cd-command.test.ts	dismissal during confirmed creation rolls back before unwinding its parent
+core/cd-command.test.ts	dismissal during a successful cd does not roll back its created branch
+core/cd-command.test.ts	dismissal during failed cd rolls back and warns if deletion fails
+core/cd-command.test.ts	dismissal during failed branch creation preserves the existing branch and stays silent
+core/cd-command.test.ts	dismissal during navigator, repository, and picker awaits blocks later mutations
+core/cd-command.test.ts	a thrown worktree failure rolls back the branch created by this command
+core/cd-command.test.ts	no repo, invalid args and creation errors never switch
+core/cd-pickers.test.ts	directory navigation descends, goes up with left, then commits
+core/cd-pickers.test.ts	filtering keeps the pinned rows after the matches
+core/cd-pickers.test.ts	failed descent keeps the parent available and reports the error
+core/cd-pickers.test.ts	root has no parent entry and cancel closes a filtered directory picker
+core/cd-pickers.test.ts	headless selection and unavailable UI are safe
+core/cd-pickers.test.ts	branch picker pins creation and describes existing checkout destinations
+core/cd-pickers.test.ts	branch picker does not offer creation for exact or implausible names
+core/cd.test.ts	cd validates combinations, NULs and location syntax without I/O
+core/cd.test.ts	cd model text retains exact locations and non-zero instruction facts
+core/channel-picker.test.ts	settings opens the structured channel picker and saves through the staged scope
+core/channel-picker.test.ts	channels use checkboxes and preserve selected order without saving until returning
+core/channel-picker.test.ts	custom commands can be added, edited, cancelled and removed without JSON
+core/channel-picker.test.ts	configured close key cancels command editing without accepting the draft
+core/channel-picker.test.ts	custom navigation keys do not intercept command typing, while close cancels editing
+core/channel-picker.test.ts	picker consumes press events so the host cannot steal a quick second click
+core/channel-picker.test.ts	compact channel list maps mouse clicks to rendered rows after resizing
+core/channel-picker.test.ts	paging follows the compact list viewport
+core/channel-picker.test.ts	a one-row requested body keeps the command input visible
+core/channel-picker.test.ts	channel picker and command input fit required widths with stable height
+core/codemode.test.ts	completed codemode rows ignore late partial results
+core/codemode.test.ts	grouped grep files count as files and mixed outputs have no misleading total
+core/codemode.test.ts	header counts calls and outputs; captured children use Workbench headers in a tree
+core/codemode.test.ts	metadata child details ignore captured results but keep the call metadata
+core/codemode.test.ts	full shows sub-second child times in milliseconds and a titled bash call
+core/codemode.test.ts	full restores captured commands abbreviated against their recorded root
+core/codemode.test.ts	a wrapped detail keeps one marker and aligns its continuation under the text
+core/codemode.test.ts	compact groups long same-tool runs and keeps every failure visible
+core/codemode.test.ts	normal hides the oldest successes behind a count unless grouping is enabled; full shows all
+core/codemode.test.ts	grouping by tool collects interleaved calls; grouping off never groups
+core/codemode.test.ts	running and cancelled calls are never hidden; running calls find their capture
+core/codemode.test.ts	normal shows ten script lines and the configured output budget; full shows everything
+core/codemode.test.ts	settled codemode layouts are reused and respond to width, settings, captures, and results
+core/codemode.test.ts	script highlighting follows a mutable theme after invalidation
+core/codemode.test.ts	codemode counts wrapped Unicode, whitespace, and blank output rows
+core/codemode.test.ts	a failed script leads with its error and colours the error output
+core/codemode.test.ts	the labelled codemode example renders grouped and width-safe without executing
+core/commands.test.ts	registered workbench root owns nested jobs panels and preserves one-level escape
+core/commands.test.ts	job controls are captured once per top-level invocation across nested menus
+core/commands.test.ts	interactive preview selects a tool and mode, then cancels without recording another preview
+core/commands.test.ts	preview persists references only, excludes model context and preserves errors
+core/commands.test.ts	all-tool preview references every display tool and removed setters fail visibly
+core/commands.test.ts	nested lifecycle capture records results without calling tools or adding model messages
+core/commands.test.ts	nested replay redacts persisted structured data without changing live events
+core/commands.test.ts	nested replay shares learned credentials across concurrent calls and resets pending calls
+core/commands.test.ts	nested replay fails closed when the inventory cannot load at either boundary
+core/commands.test.ts	RPC summaries emit visible notifications without model messages
+core/commands.test.ts	workbench agent routes to the primary switcher and agents to the subagent panel
+core/commands.test.ts	command completions are position-specific and retain readable job identity
+core/commands.test.ts	trust commands persist, list, replace and remove rules without model context
+core/commands.test.ts	trust rejects invalid input and malformed settings without overwriting files
+core/commands.test.ts	trust headless output is a UI-only session entry
+core/commands.test.ts	frame visibility commands save all, kind and source rules in explicit scopes
+core/commands.test.ts	frame listing reads current branch, effective states and last ten; completion sees sources
+core/feature-settings.test.ts	agent settings default to hybrid composition and the shared quota policy
+core/feature-settings.test.ts	agent maximum depth accepts only whole numbers from 1 to 8
+core/feature-settings.test.ts	Work widget settings use scoped values and validate the display contract
+core/feature-settings.test.ts	agent settings round-trip through workbench.json
+core/feature-settings.test.ts	agent concurrency accepts only whole numbers from 1 to 64
+core/feature-settings.test.ts	invalid quota values are diagnosed and inconsistent thresholds fall back together
+core/feature-settings.test.ts	quota saves reject invalid pairs and preserve valid consumer thresholds
+core/feature-settings.test.ts	quota edits validate their target and dependent higher layers
+core/feature-settings.test.ts	concurrent user and project quota saves cannot create an invalid pair
+core/feature-settings.test.ts	loaded cross-layer quota conflicts warn and show the actual fallback
+core/feature-settings.test.ts	invalid runtime quota layers report and show their fallback
+core/feature-settings.test.ts	one-scope save of a keymap, a command channel and a suffixed model keeps unknown nested fields and layering
+core/feature-settings.test.ts	locations.worktreeParent defaults to .worktrees and user values round-trip over the default
+core/feature-settings.test.ts	conflicting keys are refused for every scope and layer instead of saving an unusable map
+core/feature-settings.test.ts	ask UI row caps reject values below the expanded frame minimum in every settings layer
+core/feature-settings.test.ts	invalid keymaps in a file warn and fall back as a whole while other settings stay usable
+core/feature-settings.test.ts	explicit false, 0 and empty lists are values that override lower layers and are written back
+core/feature-settings.test.ts	malformed nested objects block saving and leave the file byte for byte unchanged
+core/feature-settings.test.ts	feature inputs validate ranges, models, channels, key ids and type patterns with ParseResult
+core/feature-settings.test.ts	stored values are typed JSON that parse back to the same canonical text
+core/feature-settings.test.ts	frame and instruction fields reject unknown enums and respect inclusive bounds
+core/feature-settings.test.ts	structured instruction and trust strings validate and canonicalize
+core/feature-settings.test.ts	every feature leaf has metadata, and defaults parse with their own contract
+core/feature-settings.test.ts	frames, instructions and trust panels expose only their catalog sections
+core/feature-settings.test.ts	agents settings panel lists composition and quota fields
+core/feature-settings.test.ts	Work settings are separate and stage mode changes
+core/feature-settings.test.ts	an invalid quota draft stays staged when saving fails
+core/feature-settings.test.ts	agent fraction controls step without binary floating-point tails
+core/feature-settings.test.ts	ask and tldr sections list only their rows and stage typed, picked and invalid values per field
+core/feature-settings.test.ts	Jobs settings dismissal unwinds the owner without stopping its running job
+core/feature-settings.test.ts	dismissal unwinds nested settings in the ${section} picker while Esc stays local
+core/feature-settings.test.ts	caller cancellation closes settings locally without dismissing the owning flow
+core/feature-settings.test.ts	dismissal during settings load never opens a late panel
+core/feature-settings.test.ts	a pre-aborted caller does not open settings or dismiss the reusable owner
+core/feature-settings.test.ts	abort during custom component construction disposes the component before done
+core/feature-settings.test.ts	settings construction failures propagate and remove the dismissal listener
+core/feature-settings.test.ts	standalone settings owns and removes its dismissal listener
+core/feature-settings.test.ts	a ${outcome} save completing after dismissal does not update the closed panel
+core/grep-output.test.ts	a match limit preserves trailing context from the live grep fixture
+core/grep.test.ts	local search reuses Pi
+core/grep.test.ts	literal OR and exclusions; explicit include overrides gitignore while no glob respects it
+core/grep.test.ts	regex default, case, literal, context and exact limit probe
+core/grep.test.ts	reject malformed queries, files context and abort
+core/grep.test.ts	byte and line truncation are explicit
+core/grep.test.ts	SSH command boundary preserves rg semantics and legacy fallback
+core/grep.test.ts	native include filters before content capture and basename exclusions cover nested files
+core/grep.test.ts	local execution needs rg but no Bash and reports missing rg
+core/grep.test.ts	in-flight abort terminates the subprocess group
+core/host-commands.test.ts	switch forms remain unhandled and hosts aliases open the injected panel
+core/host-commands.test.ts	host-first and legacy note/hide forms resolve alternative names
+core/host-commands.test.ts	show prints definition, block, note, visibility and note file
+core/host-commands.test.ts	host shell settings persist through aliases, survive note edits and clear to defaults
+core/host-commands.test.ts	remote config opens host settings and shell prompts persist or cancel
+core/host-commands.test.ts	note editor saves or cancels
+core/host-commands.test.ts	rename changes only the primary Host token and moves its note
+core/host-commands.test.ts	rename refuses note overwrite but keeps SSH rename; typed SSH refusal aborts
+core/host-commands.test.ts	rename leaves alternative-name note files in place
+core/host-commands.test.ts	headless add accepts case-insensitive fields and quoted note; name required
+core/host-commands.test.ts	interactive add prompts missing name and all fields, skips empty and cancels
+core/host-commands.test.ts	explicit host-first subcommands work for hosts named after commands
+core/host-commands.test.ts	interactive add returns handled on app.clear without notifying or writing
+core/host-commands.test.ts	interactive add with a name skips the name prompt
+core/host-commands.test.ts	host completions follow host-first and old-order grammar
+core/host-notes.test.ts	host frontmatter annotates, hides and ignores aliases; a new file changes the fingerprint
+core/host-notes.test.ts	host note edits keep body and other keys, follow symlinks and remove emptied files
+core/index.test.ts	reload frame renderers tolerate pre-restore state and use the restored root
+core/index.test.ts	background shell metadata survives promotion and job controls
+core/index.test.ts	promoted bash stays listed and queues completion while the agent is busy
+core/index.test.ts	failed batch emission retains every completion until one successful retry
+core/index.test.ts	retained jobs transfer completion authority from an old waiter to the new runtime
+core/index.test.ts	startup flushes completions that settled between retained runtime bindings
+core/index.test.ts	a revoked bash invocation cannot start work after its admission update
+core/index.test.ts	a binding revoked during frame emission cannot acknowledge the batch
+core/index.test.ts	runtime-owned jobs retry failed cleanup on shutdown
+core/index.test.ts	job command completions are available before session start
+core/index.test.ts	foreground payload formatting failure retains the job until a successful retry
+core/index.test.ts	foreground decoration failure retains the job until a successful retry
+core/index.test.ts	foreground errors with completed state and output acknowledge and evict
+core/index.test.ts	waiter decoration failure leaves its completion pending for notification
+core/index.test.ts	completed tool results do not also emit completion notifications
+core/index.test.ts	a successful error result with finished state and output acknowledges the job
+core/index.test.ts	bash without yield_seconds waits past one second and respects its hard deadline
+core/index.test.ts	registered grep preserves enhanced options and resolved local metadata
+core/index.test.ts	registered wrappers preserve real file execution and attach resolved URI metadata
+core/index.test.ts	relative paths resolve against the session cwd, not the process cwd
+core/index.test.ts	an idle session queues only the latest instructions at its first prompt
+core/index.test.ts	the next prompt after idle compaction queues the complete latest baseline
+core/index.test.ts	idle remote preparation never queues instructions onto a restored local branch
+core/index.test.ts	busy remote changes announce the location before steered instructions
+core/index.test.ts	instruction preparation failure warns but still commits the location
+core/index.test.ts	foreground bash blocks root changes until completion
+core/index.test.ts	preparing root changes reject reads and committed roots admit them
+core/index.test.ts	background and promoted bash release root admission
+core/index.test.ts	parallel reads share root admission
+core/index.test.ts	remote commits v2 roots, routes path tools, and stamps busy and idle frames
+core/index.test.ts	a child session in its own directory keeps it while SSH roots are inherited
+core/index.test.ts	session startup restores each root before live settings reconfigure instructions
+core/index.test.ts	legacy resume and v2 tree navigation restore roots and rewrite pending location frames
+core/index.test.ts	cd enters and reuses branch worktrees while jobs retain their launch root
+core/index.test.ts	cd admission has one winner in parallel and sequential reads use the committed root
+core/index.test.ts	cd status and job controls work while foreground bash blocks mutation
+core/index.test.ts	cd invalid destinations and combinations leave revision and root unchanged
+core/index.test.ts	cd canonicalizes directories, expands remote home and exposes preparation status
+core/index.test.ts	idle wb:cd parses quoted paths and queues a next-prompt location notice
+core/index.test.ts	wb:cd to a missing directory reports a plain reason
+core/index.test.ts	busy wb:cd announces location before instructions; tool cd has no location frame
+core/index.test.ts	a bound session writes inside its scope and is refused outside it
+core/jobs-panel.test.ts	jobs panels use standard terminal bounds when no host layout budget exists
+core/jobs-panel.test.ts	jobs panels reject an unavailable host terminal budget
+core/jobs-panel.test.ts	compact native-budget detail and monitor mouse coordinates follow the rendered frame
+core/jobs-panel.test.ts	compact native-budget stop choices and result use rendered mouse coordinates
+core/jobs-panel.test.ts	compact native-budget write retains input and aligns toggle and choice clicks
+core/jobs-panel.test.ts	job panels fit tiny terminals in every mode
+core/jobs-panel.test.ts	detail height follows content growth but survives shrinking and resize
+core/jobs-panel.test.ts	monitor sizes to output, retains height across filtering and grows for new output
+core/jobs-panel.test.ts	stop and write retain content-sized heights across choices and resize
+core/jobs-panel.test.ts	compact panels use rendered coordinates for mouse actions
+core/jobs-panel.test.ts	detail actions follow a frame with its top rule trimmed
+core/jobs-panel.test.ts	monitor filter follows a frame with its top rule trimmed
+core/jobs-panel.test.ts	stop choices use body coordinates with the top rule trimmed
+core/jobs-panel.test.ts	write choices and toggle use body coordinates with the top rule trimmed
+core/jobs-panel.test.ts	trimmed frames retain header offsets for actions, filter and choices
+core/jobs-panel.test.ts	selected job and write draft survive compact resize at check widths
+core/jobs-panel.test.ts	dismissal from filtered job details closes the whole browser without changing the job
+core/jobs-panel.test.ts	remapped dismissal propagates through a nested outer flow
+core/jobs-panel.test.ts	a signal-aware nested settings panel dismisses without reopening jobs
+core/jobs-panel.test.ts	session abort closes every jobs screen and leaves the job untouched
+core/jobs-panel.test.ts	abort during custom panel construction waits for the panel to mount
+core/jobs-panel.test.ts	closing a jobs screen removes its flow abort listener
+core/jobs-panel.test.ts	escape clears a write draft before returning
+core/jobs-panel.test.ts	a pending write cannot repaint after dismissal
+core/jobs-panel.test.ts	named job: filter, details, cancel stop is inert, confirmed stop runs once
+core/jobs-panel.test.ts	monitor follows with a bounded sanitized tail, pauses, filters and stops polling on close
+core/jobs-panel.test.ts	monitor reports an evicted log instead of failing
+core/jobs-panel.test.ts	write sends the draft explicitly, labels signals, and refuses a closed stdin
+core/jobs-panel.test.ts	an ambiguous or unknown selector opens a picker and never acts on a guess
+core/jobs-panel.test.ts	clicking a choice twice stops the job once
+core/jobs-panel.test.ts	settings returns to the Jobs menu and the list caps finished jobs
+core/jobs.test.ts	never persists a known credential split across process output chunks
+core/jobs.test.ts	redacts split UTF-8 child-only environment secrets from fd ${fd} and listeners
+core/jobs.test.ts	redacts a split learned ${name} before persistence
+core/jobs.test.ts	withholds output when stderr interrupts a split stdout credential
+core/jobs.test.ts	withholds a credential split between stdout and stderr
+core/jobs.test.ts	withholds interleaved output while a UTF-8 character is incomplete
+core/jobs.test.ts	preserves benign mixed output when stdout has no trailing newline
+core/jobs.test.ts	preserves mixed output without newlines, including at EOF
+core/jobs.test.ts	streams large benign ${name} mixed output in order at resolved boundaries
+core/jobs.test.ts	withholds when an unresolved stderr prefix precedes more than the buffer limit
+core/jobs.test.ts	withholds later output instead of reordering an unresolved source at the buffer limit
+core/jobs.test.ts	enforces the interleaving buffer limit in UTF-8 bytes
+core/jobs.test.ts	does not release split credentials when an interleaving exceeds the buffer
+core/jobs.test.ts	preserves interleaved stdout and stderr at complete redaction boundaries
+core/jobs.test.ts	refuses to launch when the auth or values inventory is malformed
+core/jobs.test.ts	contains listener and redaction callback failures without writing raw output
+core/jobs.test.ts	preserves UTF-8 across the SSH handshake while redacting stderr
+core/jobs.test.ts	shutdown closes admission before a held manager can start a job
+core/jobs.test.ts	shutdown coalesces attempts, reports failed and unfinished kills, and permits retry
+core/jobs.test.ts	stdin writes produce incremental output and EOF completes
+core/jobs.test.ts	a failed job formatter leaves the completion pending and retained
+core/jobs.test.ts	named jobs retain full commands and UI reads never acknowledge completion
+core/jobs.test.ts	job controls follow the current manager for each operation
+core/jobs.test.ts	non-interactive commands see EOF on stdin instead of hanging
+core/jobs.test.ts	aborted wait leaves the command running
+core/jobs.test.ts	timeout kills an entire process group
+core/jobs.test.ts	log previews are bounded and full output remains on disk
+core/jobs.test.ts	listJobs summarizes only background jobs without log tails or marking reported
+core/jobs.test.ts	listJobs caps finished background jobs and formatCommandPreview bounds length
+core/legacy-migration.test.ts	imports ask, model, instructions path and TOML while Workbench values and unknown keys win
+core/legacy-migration.test.ts	a partial Workbench tldr.model is never completed with the legacy provider or id
+core/legacy-migration.test.ts	model import keeps colons in the id and stores thinking separately
+core/legacy-migration.test.ts	second run does not rewrite the file or touch its mtime
+core/legacy-migration.test.ts	flat v1-3 keymaps become contextual and the root file is a fallback
+core/legacy-migration.test.ts	future, invalid or malformed sources warn, leave everything untouched and retry after repair
+core/legacy-migration.test.ts	invalid known ask leaves are not imported or completed and retry after repair
+core/legacy-migration.test.ts	an unreadable or malformed workbench.json is never overwritten
+core/legacy-migration.test.ts	malformed nested destination sections refuse the entire migration without rewriting
+core/legacy-migration.test.ts	TOML import does not depend on the Bun global
+core/legacy-migration.test.ts	nothing to migrate creates no file; an existing file only gains one-time markers
+core/legacy-migration.test.ts	existing markers keep unknown fields and completed sources are not imported again
+core/legacy-migration.test.ts	keys named __proto__ are kept as data and never reach Object.prototype
+core/legacy-migration.test.ts	a symlinked workbench.json stays a symlink and its target is updated
+core/location-footer.test.ts	footer renders the configured statusline and appends contributed rows
+core/location-footer.test.ts	wraps into available physical rows and updates the budget on resize
+core/location-footer.test.ts	exposes live preview conditions and notifies redraw subscribers
+core/location-footer.test.ts	clicks activate the item under the pointer and ignore empty cells
+core/location-footer.test.ts	dropped items lose their hit region and a missing frame leaves only contributed rows
+core/location.test.ts	resolves default, relative, absolute, and local home paths
+core/location.test.ts	file URIs force local paths and decode escaped path characters
+core/location.test.ts	parses SSH user, alias and port without rewriting the host
+core/location.test.ts	resolves remote relative paths with POSIX semantics and retains home paths
+core/location.test.ts	rejects malformed URIs, unsafe SSH authorities, invalid ports, and SCP syntax
+core/location.test.ts	quotes shell metacharacters as one inert POSIX argument
+core/location.test.ts	reads sorted SSH aliases from relative, quoted, globbed, nested and cyclic includes
+core/location.test.ts	hosts group the names of one Host line under its first new name and keep the block
+core/location.test.ts	fingerprint detects edited, added glob-matched and newly created include files
+core/menu.test.ts	menu sanitizes untrusted text before measuring and styling it
+core/menu.test.ts	detail sanitizes headers, actions and fields before styling
+core/menu.test.ts	trusted preambles retain styling and focused search retains the cursor marker
+core/menu.test.ts	menu normalizes line breaks and sanitizes empty text and hint labels
+core/menu.test.ts	restored and pasted search text cannot inject terminal controls
+core/menu.test.ts	themed label markers sanitize their text and retain color on selection
+core/menu.test.ts	raw C1 input never reaches the search widget and editing keys still work
+core/menu.test.ts	filter, select and return restore the same query and selection
+core/menu.test.ts	height is fixed and no line exceeds the width at 40, 60 and 130 columns
+core/menu.test.ts	a click selects, a second click activates, the wheel moves the selection
+core/menu.test.ts	group headers are skipped by navigation, paging, wheel and clicks
+core/menu.test.ts	group headers consume scroll and page rows
+core/menu.test.ts	filtering keeps only headers for matching items
+core/menu.test.ts	preamble lines fit above the items and do not intercept item clicks
+core/menu.test.ts	a function preamble renders live at the frame width and follows redraws
+core/menu.test.ts	body row preferences never exceed the terminal after frame chrome
+core/menu.test.ts	native layout boundary returns the current complete host budget
+core/menu.test.ts	standalone frame panels use host rows until a live row source is injected
+core/menu.test.ts	mounted menus follow the live editor budget without losing selection or focus
+core/menu.test.ts	mounted details follow the live editor budget without losing selection or focus
+core/menu.test.ts	mounted menus and details honor zero and tiny editor budgets
+core/menu.test.ts	mounted panels use terminal bounds without requiring a patched host
+core/menu.test.ts	live menus retain total height across content and terminal changes
+core/menu.test.ts	menus grow for new content and new components size independently
+core/menu.test.ts	a menu opened in a tiny terminal restores its preferred height
+core/menu.test.ts	header changes do not change the visible height of a short menu
+core/menu.test.ts	retained detail height follows body growth, not header changes
+core/menu.test.ts	detail padding after header removal does not expand the twelve-row viewport
+core/menu.test.ts	an eight-row terminal fits a one-item menu and still confirms
+core/menu.test.ts	small menus keep the selected item, identity, and input usable at every width
+core/menu.test.ts	small detail panels keep actions and selected fields usable at every width
+core/menu.test.ts	compact frame reports retained rows in chrome trim order
+core/menu.test.ts	mouse targets follow a compact frame without its top rule
+core/menu.test.ts	visible compact menu and detail rows respond to mouse at all terminal sizes
+core/menu.test.ts	compact frames retain mouse targets and keyboard hints
+core/menu.test.ts	panels handle fewer rows than their identity and content require
+core/menu.test.ts	a two-row detail shows the focused zone
+core/menu.test.ts	an action-only detail uses its second row for the action
+core/menu.test.ts	short menus trim the preamble and page by the remaining item rows
+core/menu.test.ts	navigation follows the user
+core/menu.test.ts	menu line keys skip group headers and Tab changes search focus
+core/menu.test.ts	panel bindings resolve live, inherit input Tab, and honor explicit unbinding
+core/menu.test.ts	query editing wins over printable and cursor-key panel bindings
+core/menu.test.ts	a remapped query cursor key takes precedence over panel navigation
+core/menu.test.ts	each empty-query render uses one fresh dynamic snapshot
+core/menu.test.ts	filtered dynamic frames snapshot each distinct query even when the source reuses data
+core/menu.test.ts	dynamic selection refreshes on input and watch updates
+core/menu.test.ts	clicking a rendered search row does not refresh its dynamic source
+core/menu.test.ts	dynamic growth does not turn a rendered footer into a body target
+core/menu.test.ts	dynamic hit-testing uses one fresh snapshot per event
+core/menu.test.ts	query sources can pin a dynamic action ahead of matches
+core/menu.test.ts	live redraw follows the selected id and falls back when it disappears
+core/menu.test.ts	live selection follows mouse and restores after an empty list
+core/menu.test.ts	live menus unsubscribe once on escape or disposal
+core/menu.test.ts	shortcuts expose the selected item id
+core/menu.test.ts	empty-query shortcuts follow bindings and leave filtered cursor movement alone
+core/menu.test.ts	menus can cancel a filtered query immediately
+core/menu.test.ts	literal menu shortcuts preserve selection and leave search typing alone
+core/menu.test.ts	literal detail shortcuts work from fields and respect disabled actions
+core/menu.test.ts	detail switches focus with Tab and activates only editable fields
+core/menu.test.ts	detail line navigation follows the active zone and skips disabled actions
+core/menu.test.ts	detail follows live panel section and line rebinding
+core/menu.test.ts	detail action clicks use the rendered row when a live header changes
+core/menu.test.ts	detail mouse selects before activating actions and editable fields
+core/menu.test.ts	detail skips disabled actions, wraps, and keeps the selected action visible
+core/menu.test.ts	detail Shift+Tab returns focus to the action zone
+core/menu.test.ts	detail action bindings work from the fields zone
+core/menu.test.ts	detail fits narrow widths and follows live field ids
+core/menu.test.ts	detail preserves action id across reordering and unsubscribes on dispose
+core/menu.test.ts	flow dismissal closes menus and details without reopening the parent
+core/menu.test.ts	escape in a shared menu returns to its parent within the same flow
+core/menu.test.ts	flow dismissal during menu construction closes only after the panel mounts
+core/menu.test.ts	a dismissed flow cannot mount a shared menu
+core/menu.test.ts	shared panels remove their abort listener after a normal close
+core/menu.test.ts	session replacement closes menus and details and releases live subscriptions
+core/menu.test.ts	already cancelled menus never mount
+core/menu.test.ts	the scroll cue in a rule outlives long crumbs at narrow widths
+core/menu.test.ts	focused panels take PageUp/PageDown from the fullscreen viewport until every claim is released
+core/menu.test.ts	fullscreen routing yields live panel line keys until focus is released
+core/menu.test.ts	live page claims preserve ${description} bindings after ${first} releases first
+core/menu.test.ts	claims on separate managers release independently
+core/menu.test.ts	page claims restore existing instance methods
+core/menu.test.ts	onShortcut edits in place instead of closing the menu
+core/menu.test.ts	paired shortcuts share one hint label and the row keeps the newest keys
+core/model-list-picker.test.ts	mounted model list follows a changing editor budget and compact mouse targets
+core/model-list-picker.test.ts	retains its parent frame across filtering, manual entry, and terminal resizing
+core/model-list-picker.test.ts	grows with the parent viewport and retains that height when returning
+core/model-list-picker.test.ts	honors a changing parent viewport without shrinking the retained frame
+core/model-list-picker.test.ts	validates manual references, rejects duplicates, and applies suffixes unchanged
+core/model-list-picker.test.ts	filters both lists, reorders actual entries and can cancel or discard edits
+core/model-list-picker.test.ts	works without discovered models and the explicit cancel action keeps changes local
+core/model-list-picker.test.ts	tracks live settings bindings and disposes without late callbacks
+core/model-list-picker.test.ts	renders safe fixed-height frames at supported widths and handles mouse selection
+core/model-picker.test.ts	model selection preserves colon IDs and clamps effort on model changes
+core/model-picker.test.ts	chooseModel closes its child on flow dismissal without aborting its session
+core/model-picker.test.ts	standalone model selection starts content-sized
+core/model-picker.test.ts	mounted model selection follows the live editor budget and mouse targets
+core/model-picker.test.ts	nested model selection retains its parent frame through filtering and resizing
+core/model-picker.test.ts	long selections survive filtering, effort changes, resizing, and mouse selection
+core/model-picker.test.ts	keeps the selected thinking level visible on a narrow compact frame
+core/model-picker.test.ts	filtering and effort changes retain fixed geometry across sizes; escape clears before closing
+core/operations.test.ts	remote ${useFindFallback ? 
+core/operations.test.ts	remote glob rejects invalid fd patterns
+core/operations.test.ts	remote glob applies the result limit after matching
+core/operations.test.ts	remote find uses ${executable} with fd-compatible arguments
+core/operations.test.ts	remote find stops transferring after the matching limit
+core/operations.test.ts	aborting a remote find stops the traversal process
+core/operations.test.ts	remote find rejects oversized unterminated paths
+core/operations.test.ts	remote ${useFindFallback ? 
+core/operations.test.ts	remote ${useFindFallback ? 
+core/panel-flow.test.ts	nested dismissal waits for the native dialog to close and unwinds only at the owner
+core/panel-flow.test.ts	escape stays local and live remapping makes dismissal win overlapping keys
+core/panel-flow.test.ts	native cancellation on escape returns its result and does not dismiss its parent
+core/panel-flow.test.ts	pre-dismissal prevents opening a panel and cleanup still runs
+core/panel-flow.test.ts	session cancellation reaches the native dialog without dismissing the flow
+core/panel-flow.test.ts	pre-aborted session signal reaches the dialog without fabricating its return value
+core/panel-flow.test.ts	a captured flow and combined signal remain usable from outside async context
+core/panel-flow.test.ts	a native dialog opened by an external callback uses its captured flow
+core/panel-flow.test.ts	native dialog failures are not replaced by dismissal
+core/panel-flow.test.ts	ordinary errors propagate and listeners are removed on failure
+core/panel-height.test.ts	retained sizing absorbs header changes and restores the preference after resize
+core/panel-height.test.ts	retained sizing never returns negative or overflowing budgets
+core/path-display.test.ts	shell display shortens only standalone literal paths and keeps quotes and operators
+core/path-display.test.ts	shell display leaves opaque shell constructs intact
+core/path-display.test.ts	home-directory paths use tilde shorthand without changing recorded targets
+core/path-display.test.ts	local targets pick the shorter of root-relative and absolute
+core/path-display.test.ts	remote targets keep their authority and only relate to the same authority
+core/path-display.test.ts	a forced local target beside a remote root is marked local and absolute
+core/path-display.test.ts	fish shortening is progressive and keeps the basename
+core/path-display.test.ts	fish shortening falls back to dropping segments and never exceeds the width
+core/previews.test.ts	previews pair exact call IDs and prefer last invocation even without its result
+core/previews.test.ts	nested replay preserves start order, errors, and exclusion from model context
+core/previews.test.ts	transcript samples resolve against the root of v2 location records
+core/previews.test.ts	live appearance preview reacts to tool, spacing and deterministic spinner time without changing snapshots
+core/previews.test.ts	only missing invocations use explicit examples and every example is width-safe
+core/read-metrics.test.ts	read measures actual lines from one IO: ${JSON.stringify(args)} ${content.length} bytes
+core/remote-panel.test.ts	host descriptions and SSH definitions cannot inject terminal controls
+core/remote-panel.test.ts	panel lists hosts, shows the definition, hides a host and connects
+core/remote-panel.test.ts	reads the complete SSH definition, returns locally on Escape, and unwinds on app.clear
+core/remote-panel.test.ts	rebound app.clear closes remote child dialogs and unwinds without reopening
+core/renderers.test.ts	bash headers shorten literal command paths without changing the recorded command
+core/renderers.test.ts	job headers use full commands and full detail retains shortened paths
+core/renderers.test.ts	directory result paths retain their trailing slash
+core/renderers.test.ts	grep renders literal pattern arrays and files-only counts
+core/renderers.test.ts	path-list results use the recorded root and retain remote identity
+core/renderers.test.ts	files-only grep shortens directories while retaining the filename
+core/renderers.test.ts	headers retain numeric timeout, yield and grep context values
+core/renderers.test.ts	headers omit malformed numeric fields during replay
+core/renderers.test.ts	${name} ${mode}: lifecycle, widths, errors, expansion
+core/renderers.test.ts	cd completed transition keeps its new root, previous location and worktree facts
+core/renderers.test.ts	cd status rows omit previous and full rows share the body margin
+core/renderers.test.ts	cd call headers distinguish status, reset, path and branch
+core/renderers.test.ts	approved headers
+core/renderers.test.ts	glyph slot aligns names for every state and the margin covers the whole block
+core/renderers.test.ts	normal density previews match the approved line budgets; full shows everything
+core/renderers.test.ts	finished foreground shells keep their ID when narrow and never claim stdin is open
+core/renderers.test.ts	bash normal shows the last five visual lines; full shows all
+core/renderers.test.ts	settled bash layouts are reused and respond to result, width, mode, and appearance changes
+core/renderers.test.ts	result and preview highlighting follow a mutable theme after invalidation
+core/renderers.test.ts	bash counts wrapped Unicode, whitespace, and blank rows in its visual tail
+core/renderers.test.ts	empty and limited results warn; silent and zero-output success does not
+core/renderers.test.ts	read respects the actual range reported by metrics over the requested one
+core/renderers.test.ts	job tools reflect job state, exit status and the tool
+core/renderers.test.ts	bash exit failures lead with the exit status; promoted and aborted keep their identity
+core/renderers.test.ts	errors show their first line in the header and the rest in the body
+core/renderers.test.ts	edit counts come from metrics, then arguments and the returned diff, never from guesses
+core/renderers.test.ts	paths use the shortest form for the recorded root and keep the remote authority
+core/renderers.test.ts	named remote jobs and failing or empty searches stay identifiable at 40 columns; full reveals exact values
+core/renderers.test.ts	normal density shows the full command only when the header cannot
+core/renderers.test.ts	ls, find and grep bodies shorten long paths in normal and keep them whole in full
+core/renderers.test.ts	job finished notices name the job and its state; legacy text still renders
+core/renderers.test.ts	completed argument targets do not follow later default-location changes
+core/renderers.test.ts	binary controls cannot reach terminal output
+core/renderers.test.ts	persisted metadata keeps location, root, job and metrics and excludes duplicate output
+core/renderers.test.ts	preparing and queued rows use dimmed running frames and settled rows stay static
+core/renderers.test.ts	queued phase choreography keeps its style and static spinners do not subscribe
+core/renderers.test.ts	running rows animate on the shared clock and release it when they finish
+core/replay.integration.test.ts	nested read calls are captured for replay without entering model context
+core/retained-jobs.test.ts	rebinds a retained manager and forwards admitted work to the current port
+core/retained-jobs.test.ts	forwards shell selection through the current port without contacting a network
+core/retained-jobs.test.ts	captures fresh facades, propagates getter errors and checks lifetime and session
+core/retained-jobs.test.ts	rejects invalid capabilities rather than treating them as absent
+core/retained-jobs.test.ts	finalization closes admission, coalesces failures and retries cleanup
+core/retained-jobs.test.ts	explicit shutdown cannot rebind a retained root
+core/retained-jobs.test.ts	fallback binding owns terminal, coalesced runtime cleanup
+core/secret-guard.test.ts	are redacted from values.json, auth.json and credential-looking env vars
+core/secret-guard.test.ts	merge when one contains or straddles another, and never cascade
+core/secret-guard.test.ts	leave existing placeholders unchanged, even when a value is part of one
+core/secret-guard.test.ts	are found under XDG_STATE_HOME when no state dir override is set
+core/secret-guard.test.ts	missing optional files are not an error
+core/secret-guard.test.ts	redacts a ${name} and remembers it for redact
+core/secret-guard.test.ts	leaves hyphenated prose and placeholders alone
+core/secret-guard.test.ts	never writes a secret store
+core/secret-guard.test.ts	preserves complete-string redaction across every character boundary
+core/secret-guard.test.ts	merges overlapping values across a large streaming boundary
+core/secret-guard.test.ts	enforces the inventory limit when streams learn through a shared guard
+core/secret-guard.test.ts	redacts credential shapes even when an earlier occurrence is embedded in prose
+core/secret-guard.test.ts	withholds unfinished private keys and oversized candidates with bounded buffering
+core/secret-guard.test.ts	refuses inventories too large for bounded streaming
+core/secret-guard.test.ts	evidence, items, prompt and previous summary carry no secret
+core/secret-guard.test.ts	${name} is refused with a value-free error
+core/secret-guard.test.ts	a failed reload discards the previous snapshot
+core/secret-guard.test.ts	redact before load is refused
+core/settings-fidelity.test.ts	legacy explicit z binding wins over the new implicit collapse default
+core/settings-fidelity.test.ts	TLDR part budgets reject values below the generator minimum
+core/settings-fidelity.test.ts	questionnaire settings honor rebound modal close
+core/settings.test.ts	frame, instruction and trust defaults expose typed sections
+core/settings.test.ts	project frame overrides apply while trust rules remain user and runtime only
+core/settings.test.ts	change listeners observe coherent state after loads, saves and runtime updates
+core/settings.test.ts	layers resolve default < user < project < runtime and legacy aliases read as canonical modes
+core/settings.test.ts	bad known keys produce explicit warnings and fall back to lower layers
+core/settings.test.ts	save merges into the file and preserves unknown keys and untouched values
+core/settings.test.ts	save creates a missing file and rejects invalid requests
+core/settings.test.ts	save refuses to overwrite malformed or unreadable config
+core/settings.test.ts	save re-reads the files so external edits are neither lost nor stale
+core/settings.test.ts	overlapping saves are serialized and lose nothing
+core/settings.test.ts	independent stores preserve concurrent disjoint saves
+core/settings.test.ts	independent processes preserve concurrent disjoint saves
+core/settings.test.ts	failed atomic replacement preserves the original and removes its temporary file
+core/settings.test.ts	a context change during a staged save leaves the original file untouched
+core/settings.test.ts	runtime saves stay in memory and the layer round-trips
+core/settings.test.ts	display modes accept legacy spellings and files always get canonical names
+core/settings.test.ts	shared settings layer like tools and expose the typed effective shape
+core/settings.test.ts	invalid shared values warn per key, fall back to lower layers and bounds are inclusive
+core/settings.test.ts	glyphs must be one printable grapheme of at most two columns
+core/settings.test.ts	field previews stage promotion and removal without changing the store or files
+core/settings.test.ts	field previews retain false, zero, empty settings and normalized values
+core/settings.test.ts	field previews recompute keymap rejection at each scope
+core/settings.test.ts	field previews resolve quota coherence independently at selected and full scopes
+core/settings.test.ts	field previews honor project trust and reject project trust rule proposals
+core/settings.test.ts	saveFields merges shared values into the file and keeps unknown keys
+core/settings.test.ts	saveFields rejects project trust rules atomically and supports user and runtime scopes
+core/settings.test.ts	saveFields rejects invalid input before touching disk and runtime saves stay in memory
+core/settings.test.ts	save refuses files whose shared sections are not objects
+core/settings.test.ts	user scope can promote and then inherit a runtime-masked value
+core/settings.test.ts	scope selection refuses an untrusted project by keyboard and mouse
+core/settings.test.ts	explicitly choosing an inherited value creates a lower-scope override
+core/settings.test.ts	scope previews resolve quota conflicts instead of blending staged fields
+core/settings.test.ts	staging a key binding recomputes dependent scoped defaults
+core/settings.test.ts	inherit removes a stored key binding hidden by keymap rejection
+core/settings.test.ts	resolved drafts are cleared before choosing a different scope
+core/settings.test.ts	channel and model pickers use and save their chosen scope
+core/settings.test.ts	extraction models stage an ordered list, cancel changes and save the selected scope
+core/settings.test.ts	extraction model picker keeps settings geometry and reads rebound close keys live
+core/settings.test.ts	settings fit the live editor budget and use compact physical mouse rows
+core/settings.test.ts	one-row focused search remains clickable and editable
+core/settings.test.ts	compact budgets preserve a focused settings value editor
+core/settings.test.ts	nested settings pickers use the live editor budget
+core/settings.test.ts	mounted settings use host budgets or the standard terminal size
+core/settings.test.ts	mounted channel command stays editable and focused through native budget changes
+core/settings.test.ts	frame keeps one height with breadcrumb, staged count and a closing rule after the hint
+core/settings.test.ts	options for a bottom tool open as a pushed screen inside the same body
+core/settings.test.ts	long lists show overflow counts without changing the height
+core/settings.test.ts	scope is chosen before editing and remains fixed through saves and reopening
+core/settings.test.ts	esc asks before discarding staged changes
+core/settings.test.ts	save and back from the dirty prompt saves to the selected scope
+core/settings.test.ts	single letters do not edit from the list and backspace stages inheritance
+core/settings.test.ts	mouse: click selects, second click opens options, wheel moves, hover never selects
+core/settings.test.ts	navigation follows the keybindings manager
+core/settings.test.ts	narrow widths show the source in the description instead of a tag
+core/settings.test.ts	warnings from a bad config are visible when the panel opens
+core/settings.test.ts	staged edits that the store now matches are no longer pending
+core/settings.test.ts	saving is guarded against concurrent submits
+core/settings.test.ts	a failed save keeps the draft bound to its scope for retry
+core/settings.test.ts	project scope refuses trust rules while user scope can edit them
+core/settings.test.ts	appearance rows stage a picked glyph, a validated custom glyph and a typed margin until saved
+core/settings.test.ts	esc unwinds a custom glyph edit to the picker, then to the list, without staging
+core/settings.test.ts	arrow keys cycle glyphs and placements, step numbers and warn at the bounds
+core/settings.test.ts	wide terminals show the staged preview beside the list and the store stays untouched until saved
+core/settings.test.ts	spinner picker animates visible choices and releases its clocks when hidden or disposed
+core/settings.test.ts	live preview receives selected tool and staged spinner/spacing without saving
+core/settings.test.ts	appearance rows preview the last selected tool, grep when none was selected
+core/settings.test.ts	narrow terminals open the preview on its own screen with p, from the list only
+core/settings.test.ts	resizing keeps the preview focus and scroll position while the layout switches
+core/settings.test.ts	preview placement Separate and Off change where, or whether, the preview shows
+core/settings.test.ts	without a preview renderer the panel offers no preview
+core/settings.test.ts	a throwing preview renderer shows an error and keeps the frame
+core/settings.test.ts	mouse: wheel scrolls the preview pane, clicking it focuses it, clicking the list returns
+core/settings.test.ts	Apply density to all stages each tool individually and stays adjustable
+core/settings.test.ts	the jobs-only view edits just the jobs settings
+core/settings.test.ts	shared rows show scoped sources, inherited values and shadowed saves
+core/settings.test.ts	backspace on the bulk row removes the selected scope
+core/settings.test.ts	codemode settings layer, store group tools as an array and warn on bad values
+core/settings.test.ts	codemode rows drive the preview and the group tools list is edited as text
+core/settings.test.ts	long help text wraps instead of being cut at 60 columns
+core/ssh-config-write.test.ts	includes after the header, before defaults, without duplicating the Include
+core/ssh-config-write.test.ts	rename preserves spacing, quoting, alternative aliases, comments and CRLF
+core/ssh-config-write.test.ts	preserves mixed existing line endings
+core/ssh-config-write.test.ts	follows a dangling include symlink to its new target
+core/ssh-config-write.test.ts	refuses a stale Host line without modifying it
+core/ssh-config-write.test.ts	follows config and included-file symlinks and keeps target modes
+core/ssh-config-write.test.ts	rename edits the included file and detects aliases across files
+core/ssh-config-write.test.ts	existing wildcard Include is reused
+core/ssh-config-write.test.ts	rejects invalid names, collisions, injected directives and invalid ports
+core/ssh-shell.test.ts	SSH uses Bash even with a different SHELL and preserves command quoting and status
+core/ssh-shell.test.ts	SSH falls back to sh when Bash is absent without retrying failed commands
+core/ssh-shell.test.ts	explicit command shells override Bash and missing overrides fail without fallback
+core/ssh-shell.test.ts	shell executables reject flags, relative paths and shell syntax
+core/ssh.test.ts	buffered SSH preserves stdin and reports command failures
+core/ssh.test.ts	streaming SSH sends a stop request and waits for the remote command
+core/ssh.test.ts	streaming SSH propagates remote and consumer errors
+core/ssh.test.ts	streaming SSH reports when the remote command does not stop
+core/ssh.test.ts	streaming SSH honors abort while receiving stdout
+core/state-dir.test.ts	Workbench state paths honor XDG and fall back when unset or empty
+core/state-dir.test.ts	in-memory sessions keep Workbench data in the state dir instead of the process cwd
+core/text-reader.test.ts	every terminal size can navigate to the last of more than 1000 lines
+core/text-reader.test.ts	mounted reader uses the changing editor budget for height and page scrolling
+core/text-reader.test.ts	line, page, home, end, wheel and live remapped keys scroll the text
+core/text-reader.test.ts	live page remaps reach the focused reader before the fullscreen viewport
+core/text-reader.test.ts	wraps multiline text with tabs and strips hostile terminal sequences
+core/text-reader.test.ts	height is retained across shrinking and regrowing, and hints update live
+core/text-reader.test.ts	escape is local and dismissal unwinds the owning flow exactly once
+core/text-reader.test.ts	owner cancellation closes once without dismissing the flow
+core/working-location.test.ts	validates version, locations, revision and reason at the boundary
+core/working-location.test.ts	forks and tree branches retain their own current and shared origin
+core/working-location.test.ts	v2 wins over legacy, skips malformed records and ignores non-custom entries
+core/working-location.test.ts	legacy-only uses last valid entry and flags the launch origin
+core/working-location.test.ts	record-free sessions inherit a snapshot or establish the launch origin
+core/working-location.test.ts	shared leases block transitions until every idempotent release
+core/working-location.test.ts	preparing blocks path operations and other transitions through commit
+core/working-location.test.ts	restore invalidates preparation and stale release cannot end a new transition
+core/working-location.test.ts	restoring does not release outstanding foreground work
+core/working-location.test.ts	commit appends before publishing, preserves origin and notifies subscribers
+core/working-location.test.ts	failed persistence leaves committed state unchanged
+core/working-location.test.ts	returned locations cannot mutate the owner or another snapshot
+core/worktrees.test.ts	reports checkout state and branch worktrees from either checkout
+core/worktrees.test.ts	returns undefined outside a checkout, including bare repositories
+core/worktrees.test.ts	omits detached HEAD and prunable worktree assignments
+core/worktrees.test.ts	creates from HEAD without checkout and refuses existing or invalid names
+core/worktrees.test.ts	reuses dirty primary without changing tracked or untracked files
+core/worktrees.test.ts	creates ignored worktree without touching original branch or dirty files
+core/worktrees.test.ts	unignored parent fails with exact fix and creates nothing
+core/worktrees.test.ts	supports absolute external parent and paths containing newlines
+core/worktrees.test.ts	rejects missing or invalid branches and existing unrelated destinations
+core/worktrees.test.ts	rejects slug collisions and prunable worktrees; allows locked and detached records
+core/worktrees.test.ts	honours pre-abort without invoking Git
+core/worktrees.test.ts	kills a local Git process group on timeout or abort
+core/worktrees.test.ts	forwards abort and bounded deadlines to the shared executor
+core/worktrees.test.ts	quotes every argument exactly and preserves stdout, stderr and exit codes
+instructions/diff.test.ts	middle replacement has correct header and lines
+instructions/diff.test.ts	unified hunks round-trip empty, newline, separated and CRLF changes
+instructions/discover.test.ts	project boundary, precedence, includes, dedupe and nested exclusions
+instructions/discover.test.ts	POSIX port supports root and home-outside-project fallback boundaries
+instructions/discover.test.ts	local reads report caps, strip BOM, skip missing and directories, and honor abort
+instructions/discover.test.ts	nested discovery and includes skip linked worktrees of the enclosing checkout
+instructions/manager.test.ts	remote planning preserves unread entries, availability ${available}
+instructions/manager.test.ts	moving roots withdraws readable project files and replays without deletion
+instructions/manager.test.ts	nested files stay inside the host boundary; includes withdraw and unreadable files remove
+instructions/manager.test.ts	remote roots read project files remotely and globals locally, without remote watch dirs
+instructions/manager.test.ts	global and remote project files at the same path retain distinct identities
+instructions/manager.test.ts	suspension fences a duplicate load before persistence and ledger changes
+instructions/manager.test.ts	a cancelled self-edit cannot acknowledge or clear a newer edit
+instructions/manager.test.ts	nested discovery begun before suspension cannot publish after resumption
+instructions/manager.test.ts	a cancelled scan does not reschedule while suspended
+instructions/manager.test.ts	an interrupted first scan never adds files from the abandoned root
+instructions/manager.test.ts	a root change during ${phase} discards the entire stale scan
+instructions/manager.test.ts	a duplicate whose twin withdraws relocates once and survives replay
+instructions/manager.test.ts	withdrawn records require no content
+instructions/manager.test.ts	worktree moves and relocation chains retain the original content frame
+instructions/manager.test.ts	relocations with a source missing through ${missing} reload in full
+instructions/manager.test.ts	a stale nested relocation is resent by the baseline even with on-read nesting
+instructions/manager.test.ts	reconciliation resends a stale relocation without requiring a baseline call
+instructions/manager.test.ts	queued relocations retain provenance when the source is on the branch
+instructions/manager.test.ts	changed bytes carry fresh provenance while silent edits cannot relocate
+instructions/manager.test.ts	a prepared plan applies without further filesystem reads and only once
+instructions/manager.test.ts	different trust cannot relocate identical bytes
+instructions/manager.test.ts	a duplicate without current-epoch provenance promotes in full once
+instructions/manager.test.ts	planning is read-only and a root change rejects the plan without effects
+instructions/manager.test.ts	relocated records require a valid reference and positive content sequence
+instructions/manager.test.ts	baseline is ordered, idempotent and restored from frames
+instructions/manager.test.ts	changes emit once, additions load and removals warn
+instructions/manager.test.ts	compaction starts a full-content epoch and nested reloads on touch
+instructions/manager.test.ts	reinject retains nested host identity and refreshes content
+instructions/manager.test.ts	self-edit suppresses watcher diffs and emits exactly one notice
+instructions/manager.test.ts	silent edits persist and rebuild; diff edits use instruction frames
+instructions/manager.test.ts	trust ignores files and marks untrusted frames; truncation is explicit
+instructions/manager.test.ts	checks coalesce concurrent callers without overlapping reads
+instructions/manager.test.ts	absent ambient candidates stay watched and ignored records do not restore
+instructions/manager.test.ts	BOM normalization does not produce a false change
+instructions/manager.test.ts	aborted baseline emits nothing and invalid records are ignored
+instructions/manager.test.ts	host files load once and local checks skip remote entries
+instructions/manager.test.ts	epochs come from compaction positions, not stored values
+instructions/manager.test.ts	byte-identical files are recorded, not sent, until they diverge
+instructions/messages.test.ts	auto selects full for small changes and diff for a small change in a large file
+instructions/messages.test.ts	bodies and summaries remain plain text
+instructions/remote-watch-script.test.ts	remote shell forwards events and reaps its monitor on stdin EOF
+instructions/remote-watch-script.test.ts	unexpected exit restarts with backoff and abort owns teardown
+instructions/remote-watch-script.test.ts	split change records survive chunk boundaries and disposal kills an uncooperative group
+instructions/remote-watch.test.ts	auto detects once and falls back; forced inotify names host and recovery
+instructions/remote-watch.test.ts	a failed stop retains the child and a later dispose retries it
+instructions/remote-watch.test.ts	a failed EOF still leaves the existing process-group kill fallback armed
+instructions/remote-watch.test.ts	refresh retries a failed stop even if paths return to their old value
+instructions/remote-watch.test.ts	watch parses split NUL events, filters files, refreshes paths and reaps children
+instructions/retained.test.ts	retains the real watcher across revocable A to B handoffs
+instructions/retained.test.ts	a new bind revokes admission immediately and drains the old real runtime operation
+instructions/retained.test.ts	a new preparation adopts resource settings changed since the last operation
+instructions/retained.test.ts	a superseded in-flight resume cannot detach the newer binding
+instructions/retained.test.ts	fallback roots stay suspended on release and close on explicit shutdown
+instructions/retained.test.ts	a failed fallback attachment disposes resources without returning a binding
+instructions/retained.test.ts	a failed fallback attachment retains retryable ownership after cleanup failures
+instructions/retained.test.ts	a fulfilled but incomplete startup is not considered ready
+instructions/retained.test.ts	finalization fences a resume already in flight and prevents readiness
+instructions/retained.test.ts	finalization settles a rejected queued bind and retries one watcher stop failure
+instructions/runtime.test.ts	an idle new session delivers only the latest baseline at its first prompt
+instructions/runtime.test.ts	settled local edits coalesce against the last delivered instructions
+instructions/runtime.test.ts	idle compaction waits to deliver the latest full baseline
+instructions/runtime.test.ts	the next prompt restores a deferred baseline including host instructions
+instructions/runtime.test.ts	idle inotify changes are rechecked at the next prompt
+instructions/runtime.test.ts	reattachment refreshes trust, launch boundary and host aliases without replacing watchers
+instructions/runtime.test.ts	an aborted first startup cannot be reattached before a fresh start
+instructions/runtime.test.ts	a startup suspended before initialization cannot be adopted
+instructions/runtime.test.ts	reattachment refreshes restored host aliases without reconnecting an offline host
+instructions/runtime.test.ts	an idle reattachment defers alias and trust delivery until the next prompt
+instructions/runtime.test.ts	reattachment defers publication if the session becomes idle during discovery
+instructions/runtime.test.ts	host instructions suppressed during reattachment are retried at the next prompt
+instructions/runtime.test.ts	a completed disabled startup can reattach and enable resources
+instructions/runtime.test.ts	reattachment replaces resources when their settings change
+instructions/runtime.test.ts	a failed host replacement rejects reattachment and remains owned for cleanup
+instructions/runtime.test.ts	suspension preserves cleanup errors from an in-flight reattachment
+instructions/runtime.test.ts	an aborted reattachment cannot commit after a newer binding
+instructions/runtime.test.ts	a newer reattachment supersedes an older in-flight attachment
+instructions/runtime.test.ts	same-host reattachment waits for cancelled watcher cleanup: ${outcome}
+instructions/runtime.test.ts	only the current same-host reattachment retries a cancelled activation
+instructions/runtime.test.ts	suspension drains a silent self-edit before rebinding and retains its watcher
+instructions/runtime.test.ts	suspension drains a pending host load without activating partial resources
+instructions/runtime.test.ts	concurrent resume waits for a cancelled scan and keeps the local watcher live
+instructions/runtime.test.ts	a watcher scan finishing after settlement does not acknowledge unseen bytes
+instructions/runtime.test.ts	watcher errors after settlement cannot inherit a prompt delivery scope
+instructions/runtime.test.ts	an idle resumed host loads new host notes and reports connection failures at the prompt
+instructions/runtime.test.ts	an unreachable restored host does not block local prompt changes
+instructions/runtime.test.ts	prompt remote ledger reads follow watcher mode ${watchMode}
+instructions/runtime.test.ts	off does not recheck remote host instructions on a later prompt
+instructions/runtime.test.ts	off does not recheck remote instructions at an unchanged SSH root
+instructions/runtime.test.ts	off withdraws remote ancestors on a local transition without remote reads
+instructions/runtime.test.ts	off still checks idle local changes at an SSH root without reading the host
+instructions/runtime.test.ts	settings changes replace cached host resources at the next boundary
+instructions/runtime.test.ts	a same-content replacement host file is delivered after the old file is withdrawn
+instructions/runtime.test.ts	enabling instructions after disabled startup installs a local watcher
+instructions/runtime.test.ts	concurrent stops retry only failed watcher cleanup
+instructions/runtime.test.ts	a synchronous local cleanup failure does not skip remote cleanup
+instructions/runtime.test.ts	stop shares a failing in-flight resource replacement cleanup
+instructions/runtime.test.ts	stop waits for a pending watcher and preserves a failed disposal
+instructions/runtime.test.ts	a late failed disposal after reconfiguration remains owned until stop
+instructions/runtime.test.ts	reconfiguration disposes watchers while idle and on-turn reads use the new mode
+instructions/runtime.test.ts	disabling and re-enabling instructions disposes and revalidates watchers
+instructions/runtime.test.ts	turning watch off invalidates an in-flight remote check
+instructions/runtime.test.ts	a connection superseded by a settings change cannot replace the new transport
+instructions/runtime.test.ts	a prompt waiting on a replacement host stops without reviving a closed session
+instructions/runtime.test.ts	a watcher created after reconfiguration is disposed and cannot restore old settings
+instructions/runtime.test.ts	remote ancestor withdraws on a local transition, availability ${available}
+instructions/runtime.test.ts	aborted preparation changes no ledger, hosts or watchers and drops its transport
+instructions/runtime.test.ts	stop drops an unreconciled preparation without activation or frames
+instructions/runtime.test.ts	reconciliation excludes interleaved watcher deliveries
+instructions/runtime.test.ts	reconciliation reports additions, withdrawals and relocations once
+instructions/runtime.test.ts	reconciliation activates SSH and replaces local scopes idempotently
+instructions/runtime.test.ts	aborting an in-flight plan leaves no activated host or transport
+instructions/runtime.test.ts	a moved manager revision rescans instead of applying an old plan
+instructions/runtime.test.ts	a new preparation drops a transport abandoned without an abort
+instructions/runtime.test.ts	Pi trust follows canonical files and preserves trusted launch ancestors
+instructions/runtime.test.ts	retargeted symlinks are canonicalized again on the next pass
+instructions/runtime.test.ts	baseline replaces Pi context files and announces the section
+instructions/runtime.test.ts	a read loads nested files and SSH host notes deliver only their body
+instructions/runtime.test.ts	a host note containing only frontmatter delivers an empty instruction
+instructions/runtime.test.ts	a tree move followed by compaction sends the baseline once
+instructions/runtime.test.ts	a queued change alone does not stand in for the baseline after compaction
+instructions/ssh-fs.test.ts	SSH validates transport responses and preserves empty/exact-cap text
+instructions/ssh-fs.test.ts	SSH reads batch safely, preserve BOM/caps and distinguish absent files
+instructions/ssh-fs.test.ts	nested ancestor reads use one batch and retain first-filename precedence
+instructions/trust.test.ts	defaults follow Pi only for local sources
+instructions/trust.test.ts	literal specificity wins over order; later equal specificity wins
+instructions/trust.test.ts	SSH host and path rules are isolated from local and global sources
+instructions/trust.test.ts	trust parser and formatter canonicalize valid forms and reject malformed input
+instructions/watch.test.ts	watcher coalesces bursts, refreshes dirs, and clears timers on dispose
+instructions/watch.test.ts	watcher surfaces failures other than missing dirs
+message-framing/core.test.ts	escapes attributes and closing tags without changing other body text
+message-framing/core.test.ts	formats seconds and the date
+message-framing/core.test.ts	allocates monotonic frames with stable timestamps and default trust
+message-framing/core.test.ts	frame requests and stored details accept only string roots when present
+message-framing/core.test.ts	projects trusted frames only, preserves identities and is byte-stable
+message-framing/core.test.ts	frames following an assistant reply stay user-role
+message-framing/core.test.ts	rejects malformed details and non-string envelopes
+message-framing/core.test.ts	prefers persisted nonce and continues after the maximum sequence
+message-framing/core.test.ts	recovers from frame details or generates a nonce for a fresh branch
+message-framing/core.test.ts	emits visible frames with idle, busy and explicit turn delivery
+message-framing/core.test.ts	native system support requires an explicit compatibility flag
+message-framing/core.test.ts	prompt sections contain inner text and the session nonce
+message-framing/render.test.ts	hidden has zero lines even when expanded; collapsed expands to body
+message-framing/render.test.ts	${style} fits ${width} columns with identity intact
+message-framing/render.test.ts	diff fences are stripped and lines use the add/remove and hunk tokens
+message-framing/render.test.ts	normal body caps at 40 visible lines with exact overflow; expanded is full
+message-framing/render.test.ts	file targets are root-relative and retain remote authority
+message-framing/render.test.ts	stamped roots keep path labels after the current root changes; legacy frames follow it
+message-framing/render.test.ts	untrusted is visible before secondary summary metrics
+message-framing/render.test.ts	invalid details fall back to sanitized wrapped plain content
+message-framing/render.test.ts	title and source fallbacks are clean
+message-framing/render.test.ts	titles label the target; the root itself and home paths render in full with tilde
+message-framing/render.test.ts	info glyphs are blue
+message-framing/render.test.ts	a click toggles one row; the expand binding resets it
+message-framing/render.test.ts	render caches widths and invalidate refreshes display settings
+showcase/app.test.ts	primary cycling uses only eligible catalog definitions and keeps model/thinking separate
+showcase/app.test.ts	thinking picker opens from the border and selects a Pi thinking level
+showcase/app.test.ts	agents and tasks commands open native browsers and return to the editor
+showcase/app.test.ts	tree opens by command and idle double Escape, with native search/filter input ownership
+showcase/app.test.ts	message jump bars show hover feedback without activating the jump or painting teal background
+showcase/app.test.ts	slash dispatch respects aliases, unknown input, and exit without rendering first
+showcase/app.test.ts	long and multiline editor input keeps the cursor and closed borders visible
+showcase/app.test.ts	tree selection stays visible through a narrow resize and persists on reopen
+showcase/app.test.ts	agents, settings, tasks, and tree submenus weld directly onto the editor top border
+showcase/app.test.ts	disposing a child viewer also disposes its suspended native parent
+showcase/app.test.ts	pasted keys are inserted without submission and model thinking hints have handlers
+showcase/app.test.ts	supported sizes preserve the composer border and stay within the viewport
+showcase/transcript.test.ts	completed work starts collapsed and reveals native frames and tree fixtures
+showcase/transcript.test.ts	submitted work opens, settles collapsed, and interruption never reports success
+showcase/transcript.test.ts	native tree includes fixture entries and selection forks without removing branches
+showcase/transcript.test.ts	workblocks cover all tools and native frame styles fit terminal widths
+statusline/builtins.test.ts	usage totals include assistant, tool, utility and compaction usage and refresh after append
+statusline/builtins.test.ts	cost reports money only and stays out of the line on a subscription with nothing billed
+statusline/builtins.test.ts	the primary agent segment uses the definition
+statusline/builtins.test.ts	the model drops the thinking suffix when it cannot fit
+statusline/builtins.test.ts	fish-style path leaves room for the configured branch at common terminal widths
+statusline/builtins.test.ts	builtins keep remote identity, context semantics, run questions and other extension statuses
+statusline/config.test.ts	provides the approved immutable default layout
+statusline/config.test.ts	preserves unknown JSON through immutable edits without mutating input
+statusline/config.test.ts	reports malformed known fields at their paths
+statusline/config.test.ts	rejects IDs duplicated across lines with the duplicate path
+statusline/editor.test.ts	stages reordering and adding, then saves the complete layout to the chosen scope
+statusline/editor.test.ts	moves items across lines and reorders lines in the staged layout
+statusline/editor.test.ts	ctrl+d removes the selected line and the selected item
+statusline/editor.test.ts	left and right cycle an item
+statusline/editor.test.ts	discard confirmation leaves the stored bytes untouched
+statusline/editor.test.ts	app.clear closes a pending native edit without reopening the editor
+statusline/editor.test.ts	app.clear closes a pending discard confirmation without reopening its parent
+statusline/editor.test.ts	abort closes the menu and cleans up its subscription
+statusline/editor.test.ts	preview retains safe segment styling while removing hostile controls
+statusline/editor.test.ts	preview matches the footer across widths and live location changes
+statusline/editor.test.ts	full-width trusted preambles leave plain preamble indentation unchanged
+statusline/editor.test.ts	preview reads live providers and row budgets, including tiny terminals
+statusline/editor.test.ts	editing a common option previews without persisting it
+statusline/editor.test.ts	edits built-in boolean options and can remove a staged max-width
+statusline/editor.test.ts	untrusted projects are not offered for saving
+statusline/editor.test.ts	an external change to the source refuses to overwrite it
+statusline/editor.test.ts	an aborted save does not notify after its late result
+statusline/editor.test.ts	a dismissed flow does not notify or reopen after a late save
+statusline/registry.test.ts	discovers hosts in both startup orders and subscribes before ready
+statusline/registry.test.ts	enforces ownership and validates definitions without rendering
+statusline/registry.test.ts	makes duplicate registration and unchanged updates idempotent
+statusline/registry.test.ts	protects snapshots and rejects stale handles after replacement or restart
+statusline/registry.test.ts	detaches query on stop and invalidates the host
+statusline/registry.test.ts	repaints only while a host is active and survives restarts until disposed
+statusline/render.test.ts	fits mixed multiline output at every terminal width and retains priority
+statusline/render.test.ts	reserves gaps outside content widths and omits missing segments
+statusline/render.test.ts	handles merge, hidden merge targets, zero, conditions and right alignment
+statusline/render.test.ts	drops low priority when minimum columns cannot fit and compacts constrained survivors
+statusline/render.test.ts	drops a segment that would shrink to an unreadable sliver instead of truncating it
+statusline/render.test.ts	passes item options and uses registration type instead of item identity
+statusline/render.test.ts	does not leave separators on later multiline rows
+statusline/render.test.ts	omits a wide character that cannot fit without leaving a separator
+statusline/render.test.ts	wraps whole segments within the row limit
+statusline/render.test.ts	forwards in-use providers to each segment render
+statusline/render.test.ts	hit rectangles map final dropped, merged, wrapped and multiline content at all widths
+statusline/render.test.ts	hit rectangles exclude alignment padding and trimmed trailing spaces
+statusline/render.test.ts	styles, bounds and sanitizes external content and isolates failures
+statusline/settings.test.ts	layout is one immutable scoped value preserving unknown nested fields
+statusline/settings.test.ts	invalid layouts, malformed files and untrusted projects never get overwritten
+tasks/panel.test.ts	workbench completes tasks when the task handler is installed
+tasks/panel.test.ts	started blocked tasks retain a cue until their open blockers finish
+tasks/panel.test.ts	started blocked todos retain a cue until their open blockers finish
+tasks/panel.test.ts	root navigation, search, details and width limits
+tasks/panel.test.ts	deep task identities survive narrow rows and retain their hierarchy
+tasks/panel.test.ts	long lists page within the cap and filtered selection advances by ID
+tasks/panel.test.ts	selected identity survives live removal and detail closes when item is deleted
+tasks/panel.test.ts	todo cycle and task subtask gate use the tool executors
+tasks/panel.test.ts	detail includes assigned agent state and pending question
+tasks/panel.test.ts	configured app.clear from task detail dismisses the entire panel flow
+tasks/panel.test.ts	full-text task readers retain multiline content, current data and detail selection
+tasks/panel.test.ts	full-text actions track available todo and task content
+tasks/panel.test.ts	full-text ${target} reader closes to list when the task is deleted
+tasks/panel.test.ts	configured app.clear dismisses the full-text ${target} reader flow
+tasks/panel.test.ts	session cancellation closes a full-text reader and releases task subscriptions
+tasks/panel.test.ts	headless text retains all section headings and notes
+tasks/renderers.test.ts	a nested blocked task update shows code, marker and assignee within 36 and 140 columns
+tasks/renderers.test.ts	an error result shows the error glyph and text in every density
+tasks/renderers.test.ts	compact todo update is one line with item, status and done count; normal caps rows
+tasks/runtime.test.ts	shares a store and its watcher across runtimes until native finalization
+tasks/runtime.test.ts	isolates session and lifetime identities and permits a fresh session after shutdown
+tasks/runtime.test.ts	native root disposal is terminal even if the host returns the retained value again
+tasks/runtime.test.ts	finalization rejects a commit waiting for the ledger lock
+tasks/runtime.test.ts	fallback stores are session scoped, disposed by the runtime, and reopen after shutdown
+tasks/runtime.test.ts	propagates invalid and stale native capabilities instead of using a fallback
+tasks/runtime.test.ts	refreshes the retained guard before writing after an inventory change
+tasks/runtime.test.ts	loads the guard before ledger writes and retries after inventory repair
+tasks/store.test.ts	concurrent commits from two processes
+tasks/store.test.ts	state survives compaction and replays identically; files are private and redacted
+tasks/store.test.ts	a failing redactor aborts the write instead of storing plain text
+tasks/store.test.ts	codes nest, blockers gate completion, and completing a blocker releases dependants
+tasks/store.test.ts	project tasks are shared across sessions; session tasks are not
+tasks/tools.test.ts	todo flow: blocked item shows as blocked, refuses completion, then completes
+tasks/tools.test.ts	tasks tree and project prune keep codes unique
+tasks/widget.test.ts	summary counts work without traversing task dependencies or assignments
+tasks/widget.test.ts	started todos and tasks show only open blocker cues until blockers finish
+tasks/widget.test.ts	expanded dependency lookups grow linearly with a chained task snapshot
+tasks/widget.test.ts	expanded structure is reused and invalidated by task and run revisions
+tasks/widget.test.ts	expanded ordering responds to activity and preserves equal-priority order
+tasks/widget.test.ts	expanded unassigned runs follow the current cutoff and display setting
+tasks/widget.test.ts	expanded blocker statuses use all tasks while labels use visible tasks
+tasks/widget.test.ts	nested ask and activity outrank done overflow and widths are bounded
+tasks/widget.test.ts	lifecycle handles live tools, mouse folds, actions, mode cycling and subscription cleanup
+tasks/widget.test.ts	done toggle, assignment precedence, summaries and idle state
+tasks/widget.test.ts	overflow prioritizes active branches across groups
+tldr/command.test.ts	busy generation fixes its cutoff before settings load and leaves the main run alone
+tldr/command.test.ts	setup takes the lease synchronously and cancellation does not wait for settings
+tldr/command.test.ts	compaction during generation discards the card and preserves the checkpoint
+tldr/command.test.ts	a captured head removed from the branch cannot advance the checkpoint
+tldr/command.test.ts	session replacement during setup blocks generation and late notifications
+tldr/command.test.ts	regeneration while busy retains the base and excludes post-cutoff entries
+tldr/command.test.ts	registers the manual command and card only, with no generation hooks
+tldr/command.test.ts	commands reload trusted settings for the next invocation without changing an active generation
+tldr/command.test.ts	an isolated request carries only the interval, its own instructions and redacted text
+tldr/command.test.ts	a malformed secret inventory stops before any request or progress
+tldr/command.test.ts	failure and cancellation never advance the checkpoint, and later runs resume correctly
+tldr/command.test.ts	a late result is discarded after a context edit, fork or session switch
+tldr/command.test.ts	shutdown invalidates running commands without stale context notifications or cleanup
+tldr/command.test.ts	a settings load completing after shutdown cannot start generation
+tldr/command.test.ts	large intervals are condensed with bounded concurrency
+tldr/command.test.ts	the first failing part aborts its siblings and stops the run
+tldr/command.test.ts	a stalled part is stopped by the configured timeout
+tldr/command.test.ts	model selection keeps ids with colons, honours thinking support and validates auth
+tldr/command.test.ts	model and config without arguments use the shared picker and settings panel
+tldr/command.test.ts	native TLDR model selection receives the owning flow signal
+tldr/command.test.ts	remapped app.clear closes the TLDR instruction editor before it can write
+tldr/command.test.ts	Escape stays local in the TLDR instruction editor
+tldr/command.test.ts	registered instructions handler owns remapped app.clear without changing the session
+tldr/command.test.ts	registered model handler owns remapped app.clear without saving or notifying
+tldr/command.test.ts	Escape backs out of the registered instructions editor without dismissing its flow
+tldr/command.test.ts	remapped app.clear closes the TLDR model picker without saving or notifying
+tldr/command.test.ts	instructions are edited at the configured path and kept private
+tldr/command.test.ts	the transcript card keeps its original frame and every row regardless of expansion
+tldr/command.test.ts	card reflow and invalidation preserve the final content at narrow widths
+tldr/command.test.ts	progress uses the configured spinner on the shared clock and releases it on every path
+tldr/core.test.ts	frame evidence retains job events without instruction or alias context
+tldr/core.test.ts	context frame kinds remain excluded even when explicitly included
+tldr/core.test.ts	event frames omit absent headings and clip their bodies
+tldr/core.test.ts	unfinished calls cross checkpoints as background without repeating new work
+tldr/core.test.ts	first invocation covers the branch; subsequent invocation includes messages arriving before the card
+tldr/core.test.ts	reloading the same branch does not summarize the card itself
+tldr/core.test.ts	context edits omit old content and preserve late corrections to already summarized messages
+tldr/core.test.ts	nested folds retain chronology and checkpoints without unrelated sibling histories
+tldr/core.test.ts	folded edits apply locally and cannot overwrite a shared ancestor
+tldr/core.test.ts	a missing parent never causes an unrelated root path to be imported
+tldr/core.test.ts	parent reports are deduplicated only when every child report is available
+tldr/core.test.ts	extension messages follow the evidence filter; hidden and empty ones are dropped by default
+tldr/recap.test.ts	suggested length grows proportionally with work and has no fixed ceiling
+tldr/recap.test.ts	blocks start at each user request and are packed without splitting them
+tldr/recap.test.ts	folded phase summaries get their own blocks without treating quoted roles as boundaries
+tldr/recap.test.ts	oversized evidence retains every character and keeps fitting items atomic
+tldr/recap.test.ts	an oversize block is split into continued pieces
+tools-inspector/cli.test.ts	tool selector belongs to its flag and never consumes other flags
+tools-inspector/inspector.test.ts	collectTools sorts, flags active tools, derives sources and keeps label and output schema
+tools-inspector/inspector.test.ts	entry points under src use the package directory as the extension identity
+tools-inspector/inspector.test.ts	repr preserves required, optional, enums, arrays, nested objects and result fields
+tools-inspector/inspector.test.ts	json keeps every field including active, and escapes C1 controls
+tools-inspector/inspector.test.ts	list is only tool names and formats parse strictly
+tools-inspector/inspector.test.ts	borderless table is aligned, bounded and uncolored without a theme
+tools-inspector/inspector.test.ts	adds label and output schema once, however often it is installed
+tools-inspector/inspector.test.ts	the filtered list opens the right tool with its schemas, JSON and repr views
+tools-inspector/inspector.test.ts	an inactive tool is shown as inactive and has no output schema
+tools-inspector/inspector.test.ts	a long description drills down to its own scrollable screen
+tools-inspector/inspector.test.ts	a description with hidden lines expands in place and collapses again
+tools-inspector/inspector.test.ts	up and down scroll through a tall item before moving to the next
+tools-inspector/inspector.test.ts	screens retain content height and clip hostile text at all target widths
+tools-inspector/inspector.test.ts	content sizing grows, retains its preferred frame and restores after resize
+tools-inspector/inspector.test.ts	small terminals keep the minimum body
+tools-inspector/inspector.test.ts	navigation follows the user
+tools-inspector/inspector.test.ts	clicks select then open, hover only highlights, the wheel moves the selection
+tools-inspector/inspector.test.ts	Ctrl+C closes from any depth, also when the host sees it first
+tools-inspector/inspector.test.ts	unknown names and non-interactive sessions open nothing
+tools-inspector/panel.test.ts	standalone inspector uses remapped app.clear and ignores the old Ctrl+C binding
+tools-inspector/panel.test.ts	remapped app.clear closes nested inspector at every view without reopening its owner
+tools-inspector/panel.test.ts	Escape clears list search and backs out of detail subviews locally
+tools-inspector/panel.test.ts	tool rows and tabs follow a compact frame without its top rule
+tools-inspector/panel.test.ts	detail item clicks and subview scrolling follow compact physical rows
+tools-inspector/panel.test.ts	omitted tab headers do not leave active tab targets
+tools-inspector/panel.test.ts	headers and retained footers are not list or detail body targets
+tools-inspector/panel.test.ts	mounted inspector follows a changing editor budget and compact mouse targets
+tools-inspector/panel.test.ts	frames and mouse targets stay bounded through terminal resizes

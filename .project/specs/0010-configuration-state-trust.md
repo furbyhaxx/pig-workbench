@@ -5,7 +5,7 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "User removed session access restrictions"
       changes: ["Replaced the session privacy boundary with plain catalog access", "Dropped cross-project session authorization from the trust matrix"]
+    - revision: 4
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for trust scope and concurrent saves"]
 ---
 
 # 1. Scope and precedence
@@ -193,3 +196,11 @@ Reload creates a new generation: dormant settings remain, contribution handles a
 - Schema/UI/docs generated from same catalog or consistency-tested; per-feature tests prove changed consumers applied settings.
 
 Cross-cutting decisions requiring approval: final storage/retention defaults, capability-specific trust grants, custom notification execution, inference provider configuration and platform-specific lock/atomicity behavior. Draft defaults are not permission to alter user configuration.
+
+# 10. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench settings tests. Normative.
+- **G10.1** The project layer can never define trust rules; only the user and runtime layers can.
+- Saves re-read the file and are serialised, so concurrent disjoint saves both survive, including across processes. A symlinked config file stays a symlink and its target is updated.
+- Explicit `false`, `0` and `[]` override lower layers and are written back.
+- Conflicting key bindings are refused at every scope. Inherit and promote work between scopes. Runtime saves stay in memory.

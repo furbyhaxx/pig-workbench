@@ -5,7 +5,7 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T15:26:05+01:00"
   updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "User defined session:// routes and removed session restrictions"
       changes: ["Resolved D6 without authorization", "Updated WB-07 acceptance"]
+    - revision: 8
+      reason: "M0.1 donor parity audit completed at test level"
+      changes: ["Recorded the audit result, open decisions and the remaining source-level gap"]
 ---
 
 # 1. Outcome and authority
@@ -67,7 +70,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, ten draft specifications and three static design/wireframe artifacts. No service/tool implementation yet.
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** File the upstream issues (needs user go-ahead: external publication); M0.1 donor parity audit; M0.4 contract freeze; M0.5 design review.
+- **now:** File the upstream issues (needs user go-ahead: external publication); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass.
 
@@ -179,6 +182,8 @@ Create packages when they have concrete responsibilities, not empty scaffolding 
 2. Record source revisions plus local diff status, relevant license notices and fixture origins.
 3. Enumerate hashline grammar/recovery/preview behaviors, read adapters/selectors, dynamic commands and instruction hooks into a feature matrix tied to WB IDs.
 4. Mark each row as donor behavior, intentional improvement, or unresolved design—not simply “ported”.
+
+**Status (2026-11-02):** test-level audit done: [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), 3,269 donor test titles mapped. Gaps were added to SPEC-0002, 0003, and 0005–0010 as "Donor parity" sections. Open: the decisions in audit §4 and the G5.10 streaming probe. Line-by-line source reading happens per work package, when code is ported.
 
 **Deliverable:** the ten existing `.project/specs/0001-*.md` through `0010-*.md` contracts revised with full donor/probe evidence and an approved backend/format matrix. The draft behavior/command inventories exist; source-parity audit and runtime verification remain. Do not reuse allocated specification IDs. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
 

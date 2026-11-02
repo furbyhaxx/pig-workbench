@@ -5,9 +5,9 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes and approved backend matrix"
       changes: ["Specified how builtin delegation honours the captured location", "Bound PTY and file-watch behaviour to the approved backends"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for secret guard, cd branch flow, worktrees, SSH config, remote shell and bash"]
 ---
 
 # 1. Scope and references
@@ -163,3 +166,48 @@ Reload/shutdown default: terminate owned jobs and record final/interrupted state
 - Retained stale PID cannot control a reused process; unknown outcomes stay unknown.
 
 POSIX local+SSH is the primary target. Windows requires job-object/process and path implementations before claiming equivalent support; absence is an explicit release matrix decision. PTY/watchdog libraries and any remote helper installation remain approval gates, not silent dependencies.
+
+# 9. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench `core/*` at `bc7ce0e` and oh-my-pi `bash-*` tests. Normative.
+
+**Jobs and output**
+- **G8.1 Secret guard.**
+  - Inventory: PiG credential stores, credential-shaped environment variables and Workbench state. Placeholders are preserved. Overlapping or straddling values merge without cascading.
+  - Credential shapes such as private keys are withheld until complete, using a bounded buffer. Interleaved stdout/stderr is withheld, never reordered, at a buffer limit counted in UTF-8 bytes.
+  - A malformed or oversized inventory **refuses the launch**.
+  - A failing listener or redaction callback never writes raw output. A failed reload discards the previous snapshot. Redacting before the inventory is loaded is refused. Secrets are never written to any store.
+- **G8.2** Non-interactive commands get EOF on stdin instead of hanging.
+- **G8.3** Aborting a `jobs wait` call leaves the job running.
+- **G8.4** Shutdown closes admission first, coalesces kill attempts, reports failed and unfinished kills, and permits a retry.
+- **G8.11 Jobs panel.**
+  - The monitor follows a bounded, sanitised tail and supports pause and filter. An evicted log is reported.
+  - Stop confirmation runs exactly once, even on a double click. A write draft is sent explicitly, signals are labelled, and a closed stdin is refused.
+  - An ambiguous selector opens a picker. Session abort closes the screens and leaves the job untouched.
+
+**Locations and worktrees**
+- **G8.5 cd to a branch.**
+  - Headless with a missing branch: return the exact creation command and change nothing. Interactive: confirm, then create.
+  - A branch created by this command is deleted again if worktree creation fails or is cancelled. Pre-existing branches are never touched.
+  - Dismissal during creation waits for the rollback and never switches.
+- **G8.6 Worktrees.**
+  - The `.worktrees` parent must be git-ignored. If not, fail with the exact fix and create nothing. An absolute external parent is configurable (`locations.worktreeParent`).
+  - A bare repository is not a checkout. Prunable worktrees are rejected; locked and detached ones are allowed. Paths containing newlines work.
+  - Git runs in its own process group, killed on timeout or abort.
+- **G8.14** Forks and tree branches keep their own current location and share the origin. A session without records inherits a snapshot or establishes the launch origin. Returned locations are immutable.
+
+**SSH and hosts**
+- **G8.7 SSH config.**
+  - Discovery: aliases through relative, quoted, glob, nested and cyclic Includes. A fingerprint over the config and all included files drives reload.
+  - Writes preserve CRLF and mixed line endings and follow config/include symlinks while keeping modes, including a dangling include target. A stale Host line is refused. An existing wildcard Include is reused; a new Include goes after the header and before the defaults.
+  - Injected directives, invalid names or ports, and collisions are rejected. Rename edits the included file and keeps alternative aliases.
+- **G8.8 Remote shell.** Bash regardless of `$SHELL`. Fall back to `sh` only when bash is absent, and never retry a command that failed. An explicit per-host shell has no fallback. Shell values must be absolute paths with no flags or shell syntax.
+- **G8.9 Host notes** live at `<state>/hosts/<name>.md` with TOML frontmatter. Edits keep the body and other keys, follow symlinks, and remove a file that becomes empty. Rename moves the note and refuses to overwrite one. Unparsable frontmatter contributes nothing and is reported.
+- **G8.10** Host descriptions and SSH definitions are sanitised against terminal-control injection.
+
+**Bash**
+- **G8.15 Command routing guard** (`bash.routeToTools`, default on). A standalone `cat file`, a recursive grep, `find`, or an unquoted `> file` / heredoc write is refused with a suggestion to use read/grep/find/write. Pipe stages consuming stdin, `/dev` sinks, and quoted or commented text are not matched. The guard never blocks when the suggested tool is unavailable. Both the original and the leading-`cd`-normalised command are checked.
+- **G8.16** Terminal graphics (Sixel, kitty) are extracted before sanitisation and kept even on timeout or failure.
+- **G8.17** Non-interactive environment defaults: pager off, no prompts. `exec` cannot replace the supervisor. A grandchild holding stdout open does not block completion. Grandchildren are killed on timeout and abort.
+- **G8.18 Result shape.** A non-zero exit is an error result with details, not a thrown tool failure. A timeout is a warning state with one notice; cancellation is distinct from timeout. A pipeline ending in `head`/`tail` keeps the final-stage output. Late results never flush into a replacement session or branch.
+- **G8.19** The cwd may be a locatable URI (`skill://`, `local://`) and resolves to its backing path. A non-locatable or read-only scheme as cwd or redirect target fails explicitly. Shell text is never rewritten.

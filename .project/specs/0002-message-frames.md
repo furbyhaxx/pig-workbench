@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes measured host delivery modes"
       changes: ["Mapped delivery values to host mechanisms with observed ordering", "Specified idle behaviour, nextTurn branch guard and compaction re-projection", "Replaced host gates with resolved findings and remaining upstream issues"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for escaping, timestamps and sequences"]
 ---
 
 # 1. Purpose and dependency
@@ -165,3 +168,8 @@ Wireframes and action/state behavior: [SKETCH-0002](../sketches/extension-apis/R
 | Multiple simultaneous producers | Stable sequence, bounded queue, no starvation by progress spam |
 
 Host findings: inclusion acknowledgement via the `context` hook, custom-role persistence and branch behaviour are probed (see mapping above). Native system/developer role projection remains unverified and stays unadvertised. Upstream issue: queued `nextTurn` crosses branches (P20).
+
+# 9. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), nukular frame-ledger tests:
+- G2.1 Body and attribute escaping is injective: every hostile body (delimiters, nonce-like strings, whitespace runs) round-trips byte-exact through render → parse. Timestamps carry an explicit offset and may carry fractional seconds; invalid calendar dates and offsets are rejected. Concurrent sequence reservations share one strictly positive counter, and an exhausted counter fails; it never wraps or reuses a number. Untrusted frames always project as user-role content and are marked. Each wire kind has a golden fixture.

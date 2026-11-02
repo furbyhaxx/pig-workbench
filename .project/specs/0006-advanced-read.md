@@ -5,9 +5,9 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T22:40:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "Backend coverage checks completed"
       changes: ["Updated syntax, archive and HTML rows from the coverage checks"]
+    - revision: 4
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for column cap, HTTP, grep, find, paths, SQLite, write and media"]
 ---
 
 # 1. Scope and evidence
@@ -154,3 +157,52 @@ Cache invalidation uses source revision/digest and provider events plus revalida
 - Benchmarks record large-file tail/range memory, parse cache hit/miss, directory listing, remote search and archive indexing.
 
 Final support/backend matrix and adapter-specific query schemas must be approved in M0. No unresolved backend may be advertised as working at release.
+
+# 9. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi read/grep/glob/fetch/sqlite/write tests at `553f0d1`. Normative.
+
+- **G6.1** Per-line column cap, `read.maxColumns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
+- **G6.2 HTTP.**
+  - Prefer a page-specific `<link rel="alternate" type="text/markdown">`. Never substitute a site-wide `llms.txt` or feed for a deep page; a section-scoped `llms.txt` is an allowed fallback.
+  - Render RSS/Atom as title, date, summary and link; `:raw` returns the feed itself.
+  - 204 is an empty success; 5xx is a failure.
+  - Drop `data:` and base64 image payloads but keep their alt text. Keep collapsed-panel rows; drop `<template>` and `<script>` text.
+  - Dispatch on sniffed bytes: zip → archive listing, SQLite → SQLite view, notebook → cells, image → image block, documents converted once. UTF-8 `application/octet-stream` stays text.
+  - Decode with the Content-Type charset and drop a BOM.
+  - Retry a bare 403 or a 429 once with the next user agent.
+  - Follow a wrapper page that only links one document.
+  - Cache the fetched body per URL and revision, so later ranges and tails use the same body coordinates.
+- **G6.3 HTML views:** a CSS-selector scope, a heading outline, and section selection by heading text. `<pre>` whitespace and non-breaking spaces are kept.
+- **G6.4 grep.**
+  - Path lists, plus `!`-prefixed exclusions. A dangling exclusion is reported. An exclusion filters what is below a named path, never the named path itself.
+  - Pages of 20 files, with a per-file match cap and a notice naming the capped files.
+  - Long lines are windowed around the match, UTF-8-safe.
+  - Several paths fan out per path and never walk a shared ancestor such as `/`; overlapping targets are deduplicated.
+  - Virtual resources are searchable with line ranges. Immutable sources (`artifact://`, docs) get no hashline anchors.
+  - **One regex dialect everywhere:** RE2 syntax (Go `regexp`). Patterns using features rg supports but RE2 does not are rejected, not silently run with different semantics.
+  - Snapshot tags come from content, so a same-length rewrite with its mtime restored still gets a new tag.
+- **G6.5 find/path lists.**
+  - `;` and `,` are strong delimiters, applied leniently; whitespace splits conservatively. Braces and escaped delimiters are never split. An existing path containing spaces stays whole. NAME_MAX is respected.
+  - A clamped limit is disclosed, and the hint never suggests a value that clamps back.
+  - A caller abort is honoured before and during the native scan. Hitting the deadline reports a timeout, not a missing path.
+  - Windows separators are normalised.
+- **G6.6** A model-mangled leading colon (`:/abs`, `:rel`) is stripped. A literal dangling symlink stays literal. Literal names that look like archive or SQLite selectors are read literally when they exist.
+- **G6.7** Result headers name out-of-cwd targets absolutely or home-relative, so a follow-up edit lands on the same file. In-cwd targets stay relative.
+- **G6.8 Multi-range.** Include bracket openers and closers just outside a range (tree-sitter spans for indentation languages). A range past EOF gets an inline notice. Multi-range on a directory is rejected.
+- **G6.9 Summaries.** A brace-pair elision renders as one numbered line. The elision footer names recovery ranges using the resolved path. The summary cache key includes the parser language. Markdown is summarised only when enabled.
+- **G6.10 SQLite.**
+  - A clean WAL database whose sidecars were removed is readable (query-only).
+  - `.db` is sniffed by magic bytes, otherwise read as text.
+  - Row lookup on a composite primary key is an error.
+  - Table names are validated, never interpolated. `where`/`order` come through the selector and cannot bypass pagination; semicolons inside quoted literals are allowed.
+  - Wide rows switch to vertical blocks.
+  - Small tables get an exact count; above the probe cap, report the planner estimate or a lower bound.
+- **G6.11 write.**
+  - Returns a fresh `[path#TAG]` header usable by edit. Byte counts are UTF-8.
+  - A selector-suffixed missing target with empty content fails closed and points at read. A semicolon-joined selector list is rejected. Literal colon names stay writable.
+  - Writing back bounded or summarised read output is rejected without changing the file.
+- **G6.12** Converted PDF Markdown is cached per revision across full and selector reads.
+- **G6.13 Video.** Line-range selectors are rejected with a video hint; image questions on video are rejected; a corrupt video is a probe failure and emits no bytes; media symlinked outside the root is refused.
+- **G6.14** A FIFO reached through a suffix-match symlink or a SQLite name is rejected without blocking. Invalid-UTF-8 lines report their on-disk byte length. Hashing uses BOM-stripped text, so a whole-file tag validates.
+- **G8.12 Remote search.** `fd`, with a `find` fallback. The limit applies after matching and transfer stops at the limit. Abort kills the traversal. An oversized unterminated path is rejected.

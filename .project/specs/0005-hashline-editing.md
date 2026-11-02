@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes verified builtin replacement"
       changes: ["Recorded how Workbench edit/write replace the host builtins"]
+    - revision: 3
+      reason: "M0.1 donor parity audit"
+      changes: ["Added donor parity rules for payload repair, recovery, leniency, streaming, path policy, notebooks and per-model mode"]
 ---
 
 # 1. Authority and scope
@@ -156,3 +159,57 @@ Acceptance:
 - Direct and codemode calls yield identical safety/results; renderer preview never changes filesystem.
 
 Open approval gates: syntax/grammar and diff/hash backend selection, model-assisted repair default, oversized snapshot policy and optional backup retention. They are explicit decisions, not permission to omit the full engine.
+
+# 9. Donor parity (M0.1)
+
+From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi `crates/pi-edit` and `edit-*` tests at `553f0d1`. These rules are normative and carry the donor test names as fixture anchors.
+
+**G5.1 Apply-time payload repair.** Each repair is reported as a warning:
+- Duplicated boundary lines echoed around a range replacement are dropped. An echo too short to fill the widened range is refused, with or without a parser.
+- A deleted closing line is kept when the payload omits it, and not when the payload restates it.
+- A uniformly omitted base indent is restored from the unchanged structural rows. Intentional indentation-only replacements are kept.
+- When a trailing comma is what keeps a one-row replacement from parsing, the error names it. The edit is still rejected if dropping the comma would not parse.
+- A body shallower than its block slides past the closing line, across several closer levels, stopping at body depth, with a warning. It never crosses a line that another hunk targets.
+
+**G5.2 Recovery.** Body comparison has a character (not byte) budget shared across all hunks and is skipped past that budget. A body written for the tagged line is remapped; one written for the current line is refused. A remap that breaks the parse, or that moves into a sibling construct, is refused. An isolated unique line with no neighbour offset is refused. A duplicated range is remapped only when its context matches. A refused remap leaves the clipboard untouched; an accepted remap publishes its registers. An unchanged anchor replays onto the current text. Tag collision within one canonical resource: see the D5.b decision in the audit.
+
+**G5.3 Parser leniency.** Each case is recognised and warned about, never silent:
+- lenient range separators and dangling ranges;
+- a bare range header becomes an implicit `PUT`;
+- copied read elisions are ignored;
+- `CUT` with a colon is accepted;
+- a `CUT` supersedes a placeholder `PUT` on the exact same range ("kept only the last");
+- a trailing bare blank before the next hunk is dropped;
+- `ABORT` terminates the input;
+- legacy `DEL`/`COPY` headers become orphan rows;
+- `apply_patch` envelope noise and nested headers are recovered;
+- same-path sections merge, and conflicting tags fail;
+- multi-group headers are rejected instead of inventing a path;
+- `#` is allowed only in tagged paths;
+- a literal payload that looks like an op warns.
+
+Overlapping hunks are still rejected.
+
+**G5.4 Streaming.** Partial JSON arguments are repaired incrementally. Matcher paths and entries are available from partial input for approval and inspection. A streaming preview keeps completed sections when a trailing header arrives. Incomplete empty-body ops are dropped while streaming; body-less ops are kept.
+
+**G5.5 Snapshot store.** Identical snapshots dedupe, are promoted, and union their seen lines. Seen-line provenance is shared across lookups. Budgets count UTF-8 bytes. `MV` relocates store entries and merges duplicates. An oversized file is not read at all. Zero limits disable snapshots.
+
+**G5.6 Path policy.**
+- Generated files are guarded, detected by name and by a leading generated-code comment. A hand-authored file with a generated-looking name (e.g. `openapi.json`) is allowed; an ambiguous basename needs the content marker.
+- FIFOs are refused without blocking.
+- A unique suffix is recovered; an ambiguous suffix is refused.
+- Symlink-equivalent paths share one canonical key.
+- URI-shaped targets are never treated as working-tree paths.
+- Read-only and process handlers are refused at the approval gate. A URL target that carries a line selector is refused. `local:/../` traversal is refused. A working-tree destination raises the approval tier (G5.13).
+
+**G5.7 Notebooks.** `.ipynb` cells are edited as source while outputs, metadata and key order are preserved. Marker-like source lines are escaped. A new notebook is nbformat 4.5. JSON serialisation is byte-stable for unchanged content.
+
+**G5.8 Diff preview.** Unchanged gaps between distant edits collapse. A matching bracket line beyond the context is added. Compact previews count, renumber and collapse long added runs. Unified diffs are numbered and have no duplicate boundary rows.
+
+**G5.9 Per-model mode.** `edit.modeRules` maps model-family patterns to a mode and ships the donor list as defaults: Kimi/K3, MiMo, DeepSeek, Step 3.7 Flash, Codex Spark, MiniMax and GLM 5.3 Flash use replace. An explicit user mode wins. Rules apply only when the resolved mode is hashline.
+
+**G5.10 Early abort while streaming (conditional on a host probe).** When the final streamed preview already fails, abort the assistant stream and re-drive with the diagnostic. The recovery budget is per prompt and is skipped once the prompt is superseded or the session generation changes. Execution always uses the final arguments and re-resolves URL targets.
+
+**G5.11** Warn when an edit turns a parseable file unparseable (valid → invalid only). The optional transition log is off by default.
+
+**G5.12** `MV` keeps the source's mode bits, including setuid, and completes when the destination refuses chmod.
