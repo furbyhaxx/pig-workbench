@@ -1,0 +1,9 @@
+# CGO_ENABLED=0 go build -trimpath -ldflags='-s -w', gotreesitter v0.56.0, linux/amd64
+empty     1216672 bytes
+none      2588832 bytes
+one      11006112 bytes
+core8    11784352 bytes
+curated  17387680 bytes
+full     19935392 bytes
+# curated = 45 standalone grammar packages; full = grammars registry (206)
+# parse check: cpp translation_unit 113

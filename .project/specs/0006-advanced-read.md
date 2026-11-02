@@ -5,9 +5,9 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T22:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Backend matrix approved by the user; M0.2 probes verified builtin replacement"
       changes: ["Bound adapters to the approved backends and listed remaining coverage checks", "Recorded builtin replacement and delegation behaviour"]
+    - revision: 3
+      reason: "Backend coverage checks completed"
+      changes: ["Updated syntax, archive and HTML rows from the coverage checks"]
 ---
 
 # 1. Scope and evidence
@@ -29,16 +32,16 @@ Backends are approved as proposed in the [backend evaluation](../analyses/2026-1
 
 | Adapter | Approved backend | Measured caveat Workbench must handle |
 |---|---|---|
-| Syntax summaries/blocks | `odvcencio/gotreesitter` + grammars (curated subset) | C++ may yield ERROR nodes → block selector reports ambiguity; diffs use a unified-diff parser, not tree-sitter |
+| Syntax summaries/blocks | `odvcencio/gotreesitter` + full `grammars` registry (206 languages, ≤ 18 MiB) | C++ may yield ERROR nodes → block selector reports ambiguity; diffs use a unified-diff parser, not tree-sitter |
 | SQLite | `ncruces/go-sqlite3` with read-only authorizer | Reject any non-empty statement tail |
 | JSON query | `itchyny/gojq` | No `env`/`input`; preserve number lexemes |
-| Archives | `mholt/archives` + `kdomanski/iso9660` + stdlib ar reader | Normalise member names, never follow member links, cap expansion; cpio and the rest of the required format list still need coverage tests |
+| Archives | `mholt/archives`; ISO `go-filesystems/iso9660`; cpio `go-filesystems/cpio`; CAB `NextronSystems/go-cab`; RPM `sassoftware/go-rpmutils`; ASAR `depthbomb/go-asar`; ar/deb own reader; LZH, ARJ, `.Z` and unsupported 7z/RAR/CAB methods via external 7-Zip (additions pending approval) | Normalise member names, never follow member links, cap expansion; multi-volume RAR opens by name with an FS; unsupported method → 7-Zip if present, else `backendUnavailable` |
 | ELF/PE/Mach-O | stdlib `debug/*` + `golang.org/x/arch` | Pseudocode only through optional external Ghidra; otherwise report `backendUnavailable` |
 | PDF | `klippa-app/go-pdfium` (WASM) | Lazy init (~1.8 s, ~290 MB); corrupt files give typed errors |
 | SVG raster | resvg (WASI) under `wazero` | No resource dir, read-only font mount, 256 MiB memory cap |
 | WebP / HEIC | `golang.org/x/image/webp` / `gen2brain/heic` | HEIC decode 130–250 ms; LGPL WASM notice shipped |
 | Video | external `ffprobe`/`ffmpeg` | Seek past end exits 0 without output — check the file |
-| HTML | `html-to-markdown/v2` + `go-readability/v2` | Output quality not yet measured |
+| HTML | `html-to-markdown/v2`; semantic main element first, `go-readability/v2` only as fallback | Resolve links against the page URL (not `WithDomain`), strip chrome and permalinks, layout tables as text, report script-only redirects |
 | Profiles | `google/pprof/profile` | — |
 
 Builtin replacement (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
