@@ -5,15 +5,18 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes and approved backend matrix"
+      changes: ["Specified how builtin delegation honours the captured location", "Bound PTY and file-watch behaviour to the approved backends"]
 ---
 
 # 1. Scope and references
@@ -29,6 +32,8 @@ No subagent/process-as-agent abstraction. Jobs are shell processes owned by this
 WorkingLocation fields: authority (local or SSH endpoint identity), canonical cwd, display cwd, projectRoot, origin, monotonically increasing revision and branch binding. Endpoint identity includes user, hostname, port and selected SSH config identity; two aliases are not assumed identical merely because they display the same hostname.
 
 Every tool captures one immutable location/config revision at admission. Relative paths/commands resolve there for the entire call, including nested work. Explicit file:/// and ssh:// URIs choose their own authority and never inherit a mismatched cwd. Do not call os.Chdir or mutate PiG host cwd.
+
+Delegation to host builtins ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P18): the `cwd` passed to `sdk.Create*ToolDefinition` is ignored whenever a context exists — host tools always use the session cwd. Local file tools therefore resolve relative paths to absolute paths under the captured location before delegating, and local `bash` sets `BashSpawnContext.Cwd` through `BashToolOptions.SpawnHook`. Both were verified directly and from codemode children; `ctx.Cwd()` stays the session cwd throughout.
 
 Default cwd/origin is host session cwd. Branch entries preserve location transitions; resume validates availability before activation. An unavailable stored location is displayed as unavailable and blocks relative execution until explicit reset/change. Do not silently execute locally after an SSH failure.
 
@@ -95,6 +100,8 @@ Process launch:
 3. Spawn dedicated process group (or platform job object), attach pipe/PTY.
 4. Establish crash-cleanup supervisor before acknowledging background success.
 5. Drain stdout/stderr without deadlock, journal terminal facts, close descriptors and reap.
+
+Backends ([backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md) §6, approved): PTY jobs use `github.com/aymanbagabas/go-pty` (Ctrl-C, EOF, SIGWINCH verified); pipe jobs expose close-stdin and signal as distinct operations because control bytes on a pipe are only data. Host-delegated foreground `bash` already kills its child on caller abort (P17).
 
 Hard timeout terminates owned process group with grace (default 2 s) then escalates. Normal cancellation has the same bounded cleanup. A process that daemonizes out of the group is an explicit platform/supervision gap to test; no unsupported universal “no orphans” claim.
 

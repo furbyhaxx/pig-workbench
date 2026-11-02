@@ -5,15 +5,18 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes verified builtin replacement"
+      changes: ["Recorded how Workbench edit/write replace the host builtins"]
 ---
 
 # 1. Authority and scope
@@ -21,6 +24,8 @@ document:
 Draft normative behavior for the full hashline engine, exact-text edit mode and coordinated write path. Not an implementation report. Depends on [resources](0004-resource-providers.md), [presentation](0003-tool-presentation.md), [reads](0006-advanced-read.md), [instructions](0007-ambient-context.md) and [state/trust](0010-configuration-state-trust.md).
 
 Verified donor surfaces: `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi/crates/pi-edit/prompts/hashline.md`, `src/modes/hashline/{types,parser,block,clipboard,recovery,mismatch,patcher,preview}.rs`, `src/store.rs` and `crates/pi-ast/src/block.rs`. The prompt/types were inspected for this specification; full parser/recovery fixtures remain the implementation parity oracle, not claimed as completely audited here. No new parser/hash/diff dependency is authorized by this document.
+
+Builtin replacement (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
 
 “Full” includes block editing, registers, cross-file patches, file operations, seen-line checks, stale-snapshot recovery, diagnostics, previews and loop protection. A range-only editor cannot satisfy this specification.
 

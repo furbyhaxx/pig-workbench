@@ -5,15 +5,18 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
       changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes measured host delivery modes"
+      changes: ["Mapped delivery values to host mechanisms with observed ordering", "Specified idle behaviour, nextTurn branch guard and compaction re-projection", "Replaced host gates with resolved findings and remaining upstream issues"]
 ---
 
 # 1. Purpose and dependency
@@ -62,6 +65,16 @@ Required: `eventKey,kind,source,body`. Optional fields:
 
 EventKey deduplicates within (session, producer key, eventKey). Same key/same payload returns the existing receipt; same key/different payload is conflict. Dedup survives ordinary reload via persisted records. Fork scope is explicit: replayed facts are not re-published as new events.
 
+## Host delivery mapping (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P5, P19–P21, P30)
+
+| Delivery | Host mechanism | Running | Idle |
+|---|---|---|---|
+| nextBoundary | `SendMessage(customType, body, display, {DeliverAs: "steer", TriggerTurn: false})` | Lands after the current tool batch, before the next assistant call; persisted as `role: custom` | Persisted immediately; seen with the next prompt; no turn |
+| nextPrompt | Workbench-held queue, returned as `{"message": {customType, content, display}}` from the next `before_agent_start` | Same as idle | Lands directly after the next user prompt and is persisted (P30). A `steer` sent from that hook would land *before* the prompt instead |
+| followUp | `SendMessage(..., {DeliverAs: "followUp", TriggerTurn: true})` | After the run | Starts a turn |
+
+Workbench does not use host `nextTurn`: its in-memory queue survives tree navigation and is delivered on the new branch (P20), which violates the branch guard below. Workbench always sets `TriggerTurn` explicitly and validates `DeliverAs` itself; the host accepts unknown values silently (P19). Custom messages reach the model as user-role content; stored history keeps `role: custom` and `customType` for replay.
+
 Body is plain text, maximum 32 KiB per frame by default inside the 64 KiB control envelope; oversized publications fail limitExceeded. Producers may provide a resource continuation URI and an explicitly partial body; Workbench must not silently cut an instruction or present partial input as a full baseline.
 
 ```json
@@ -95,7 +108,7 @@ validated → persisted pending → selected for context → delivered
                       └→ superseded (only eligible pending notices)
 ```
 
-Admission acknowledgement is returned only after persistence succeeds (or in-memory session store accepts it in no-session mode, labeled non-durable). Delivery acknowledgement means included by Workbench in a specific outgoing context, not provider success. If the host cannot expose that boundary, report `queuedToHost` instead of claiming delivered; capability negotiation must disclose this limitation.
+Admission acknowledgement is returned only after persistence succeeds (or in-memory session store accepts it in no-session mode, labeled non-durable). Delivery acknowledgement means included by Workbench in a specific outgoing context, not provider success. If the host cannot expose that boundary, report `queuedToHost` instead of claiming delivered; capability negotiation must disclose this limitation. Observed boundary: the `context` hook runs for every outgoing provider request (not for compaction summary requests, P21), so Workbench records `delivered` when a frame is present in the message list it returns from that hook. Provider receipt is never confirmed.
 
 When idle, nextBoundary waits for the next prompt; it never wakes a turn. During a run it uses the next safe context boundary after the current tool batch. Branch-scoped publications are cancelled/not delivered to a different branch after navigation. Session-scoped notices remain pending but must be re-evaluated for applicability. A stale producer binding gets staleGeneration.
 
@@ -111,7 +124,7 @@ The instruction service is responsible for discovery, file classes, ancestor/roo
 
 For capped BACKLOG.md or custom views, diff **previous delivered view → new delivered view**. Source version and view version are distinct. Changes outside the cap update hidden-count/version facts without manufacturing unseen hunks. Expanding a UI row is not the same as injecting the full source.
 
-On compaction, the epoch advances and active instruction producers/retained baselines reconstruct full current views. Do not replay every historic diff or rely on a baseline removed from context. Source unregister does not erase history: pending instructions are cancelled, active contributions are withdrawn through a new frame before being removed from the active set. If the host cannot deliver that withdrawal immediately, it remains a pending consistency action.
+Ephemeral projections (instruction views, pinned ambient context) are appended by the `context` hook on every request; the host does not persist them, and after compaction the hook sees `compactionSummary` plus kept messages (P21). On compaction, the epoch advances and active instruction producers/retained baselines reconstruct full current views. Do not replay every historic diff or rely on a baseline removed from context. Source unregister does not erase history: pending instructions are cancelled, active contributions are withdrawn through a new frame before being removed from the active set. If the host cannot deliver that withdrawal immediately, it remains a pending consistency action.
 
 # 6. Projection and trust
 
@@ -151,4 +164,4 @@ Wireframes and action/state behavior: [SKETCH-0002](../sketches/extension-apis/R
 | Host lacks outgoing-request acknowledgement | queuedToHost visible; no false delivered state |
 | Multiple simultaneous producers | Stable sequence, bounded queue, no starvation by progress spam |
 
-Host gates: outgoing-context inclusion acknowledgement, native role representation, branch/retry boundaries and producer lifecycle must be probed. Missing host support is a blocking integration issue, not permission to disable instruction injection silently.
+Host findings: inclusion acknowledgement via the `context` hook, custom-role persistence and branch behaviour are probed (see mapping above). Native system/developer role projection remains unverified and stays unadvertised. Upstream issue: queued `nextTurn` crosses branches (P20).

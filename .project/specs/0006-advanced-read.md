@@ -5,15 +5,18 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "Backend matrix approved by the user; M0.2 probes verified builtin replacement"
+      changes: ["Bound adapters to the approved backends and listed remaining coverage checks", "Recorded builtin replacement and delegation behaviour"]
 ---
 
 # 1. Scope and evidence
@@ -22,7 +25,23 @@ Draft specification for enhanced read/grep/find/ls. Depends on [resource provide
 
 Inspected donor contract: `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi/packages/coding-agent/src/prompts/tools/read.md`, `src/tools/read-selector.ts`, read.ts imports/dispatch surface and read-summary/json/sqlite/archive modules; nugent scheme ToolPath/Selector/Pager. The donor prompt and selector distinguish raw bare numbers and comma lists; Workbench adopts those precise semantics below rather than nugent's simpler onward-number interpretation.
 
-Backend/language/codec choices remain M0 approval decisions. Required capabilities and observable errors below are specified independently of implementation libraries.
+Backends are approved as proposed in the [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md) (user decision 2026-11-02, including HEIC via `gen2brain/heic` with embedded libheif/libde265 WASM and system libheif when present). Required capabilities and observable errors below remain the contract; the libraries are how they are met:
+
+| Adapter | Approved backend | Measured caveat Workbench must handle |
+|---|---|---|
+| Syntax summaries/blocks | `odvcencio/gotreesitter` + grammars (curated subset) | C++ may yield ERROR nodes → block selector reports ambiguity; diffs use a unified-diff parser, not tree-sitter |
+| SQLite | `ncruces/go-sqlite3` with read-only authorizer | Reject any non-empty statement tail |
+| JSON query | `itchyny/gojq` | No `env`/`input`; preserve number lexemes |
+| Archives | `mholt/archives` + `kdomanski/iso9660` + stdlib ar reader | Normalise member names, never follow member links, cap expansion; cpio and the rest of the required format list still need coverage tests |
+| ELF/PE/Mach-O | stdlib `debug/*` + `golang.org/x/arch` | Pseudocode only through optional external Ghidra; otherwise report `backendUnavailable` |
+| PDF | `klippa-app/go-pdfium` (WASM) | Lazy init (~1.8 s, ~290 MB); corrupt files give typed errors |
+| SVG raster | resvg (WASI) under `wazero` | No resource dir, read-only font mount, 256 MiB memory cap |
+| WebP / HEIC | `golang.org/x/image/webp` / `gen2brain/heic` | HEIC decode 130–250 ms; LGPL WASM notice shipped |
+| Video | external `ffprobe`/`ffmpeg` | Seek past end exits 0 without output — check the file |
+| HTML | `html-to-markdown/v2` + `go-readability/v2` | Output quality not yet measured |
+| Profiles | `google/pprof/profile` | — |
+
+Builtin replacement (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
 
 # 2. Read schema and parsing
 

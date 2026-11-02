@@ -5,15 +5,18 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes verified host context-file control and projection timing"
+      changes: ["Specified structural suppression through systemPromptOptions.contextFiles", "Specified per-request projection via the context hook and resume detection"]
 ---
 
 # 1. Purpose and inputs
@@ -130,7 +133,7 @@ When a mutating call targets a file with a new/changed applicable instruction vi
 3. Return typed instructionContextChanged plus actionable retry information.
 4. Model receives the frame and prepares a new call. That call revalidates scope/revision before commit.
 
-A host-native before-tool mechanism may avoid the retry only if it proves the model had a chance to incorporate the instruction, not merely that an event fired before the syscall. Multi-file hashline preflight discovers all targets first, so no first file commits before a later file exposes missing instructions. Codemode cannot bypass this barrier by hiding targets; tool-level hooks remain authoritative.
+The retry is required: the host offers no before-tool hook that lets the model see new context before the mutating call executes. A host-native before-tool mechanism may avoid the retry only if it proves the model had a chance to incorporate the instruction, not merely that an event fired before the syscall. Multi-file hashline preflight discovers all targets first, so no first file commits before a later file exposes missing instructions. Codemode cannot bypass this barrier by hiding targets; tool-level hooks remain authoritative.
 
 Bash cannot statically reveal every future touched path. Inject cwd ancestry before launch, optionally accept explicit declared roots, and reconcile changes after execution. Document this coverage limit; do not claim arbitrary shell writes were preflighted. Known instructions should guide the agent to use edit/write where path-sensitive barriers matter.
 
@@ -174,7 +177,9 @@ On compaction, invalidate diff bases and seen state; rebuild global/root/pins pl
 
 # 9. Trust, host integration and external notifications
 
-Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. If duplicate suppression cannot be verified, stop activation of instruction replacement and report a host integration blocker. Disabling Workbench instructions restores host behavior at a safe boundary with visible reconciliation.
+Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. Verified mechanism ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P23): in every `before_agent_start`, remove exactly the owned paths from `data["systemPromptOptions"]["contextFiles"]`; the host re-renders the prompt without them. The edit is per prompt and must be repeated; never return a `systemPrompt` string (the value is a `*sdk.SystemPrompt`, and a string would replace the whole prompt). If another extension re-adds a suppressed path, report the conflict and keep both copies rather than fight over it.
+
+Projection timing (P5, P21): instruction views and pins are appended by the `context` hook to every outgoing provider request, exactly once per request. The host does not persist them, compaction summary requests do not pass through the hook, and after compaction the hook sees `compactionSummary` plus kept messages — so the "rebuild after compaction" rule is satisfied by recomputing the projection on the next hook call. Resume (`--continue`) reports `session_start.reason = "startup"` (P22); Workbench detects resume by finding its own records on the restored branch, not by the reason. Disabling Workbench instructions restores host behavior at a safe boundary with visible reconciliation.
 
 ContentRole and source trust remain separate: BACKLOG.md is context, not a new system-command authority. Pinning, filesystem proximity, frame nonce and identical-byte dedup never elevate trust. User/global/remote steering authority follows SPEC-0010.
 

@@ -4,21 +4,24 @@ document:
   id: "ANA-2026-11-02-backend-evaluation"
   title: "M0.3 reader, syntax and job backend evaluation"
   description: "Measured candidates for syntax, PDF, SVG, images, video, archives, binaries, PTY, file watching, SQLite and jq, with a recommended dependency matrix pending approval"
-  status: "draft"
-  revision: 1
+  status: "published"
+  revision: 2
   created_at: "2026-11-02T17:50:00+01:00"
-  updated_at: "2026-11-02T17:50:00+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "document creation"
       changes: ["Recorded backend measurements and recommendations for D1, D2 and D7"]
+    - revision: 2
+      reason: "User approved the matrix as proposed, including HEIC with libheif"
+      changes: ["Recorded approval and set status to published"]
 ---
 
 # 1. Scope and method
 
-Answers PLAN-0001 decisions D1 (syntax), D2 (reader backends) and D7 (job input). Each candidate was built with `CGO_ENABLED=0` (PiG Go extensions are packed pure Go) and run against real files on this host. Programs: `evidence/programs/`; raw output: `evidence/results/`; SVG renders: `evidence/renders/`. **Nothing here is approved; adding any dependency needs user sign-off.**
+Answers PLAN-0001 decisions D1 (syntax), D2 (reader backends) and D7 (job input). Each candidate was built with `CGO_ENABLED=0` (PiG Go extensions are packed pure Go) and run against real files on this host. Programs: `evidence/programs/`; raw output: `evidence/results/`; SVG renders: `evidence/renders/`. **Approved by the user on 2026-11-02 as proposed, including HEIC via `gen2brain/heic` (embedded libheif/libde265 WASM, LGPL; system libheif used when present).** Dependencies are added when the adapter that needs them is implemented, not up front.
 
 Host: Linux x86_64, Go toolchain from `PATH`, ffmpeg/ffprobe installed, no libheif.
 
@@ -80,8 +83,8 @@ gojq kept `12345678901234567890` and `1.10` verbatim, `1e400` without overflow. 
 
 # 8. Open items before approval
 
-1. Approve/decline each dependency in §2 (user decision).
-2. HEIC: decide whether embedding LGPL WASM (libheif/libde265) is acceptable, or require system libheif.
+1. ~~Approve/decline each dependency in §2~~ — approved.
+2. ~~HEIC licensing~~ — accepted; ship the LGPL notice with the binary.
 3. cpio backend.
 4. Grammar subset and binary size budget.
 5. Measure HTML→Markdown and readability quality on real pages.

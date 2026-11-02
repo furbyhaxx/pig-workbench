@@ -5,15 +5,18 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes measured session and skill catalog access"
+      changes: ["Recorded that any extension can list all sessions with full text and set the Workbench boundary"]
 ---
 
 # 1. Scope and precedence
@@ -164,6 +167,8 @@ Known-secret guard:
 - Streaming redaction retains boundary overlap so split tokens do not leak.
 - Raw file contents/tool results intended for the model are not silently altered into editable source: if redaction changes source text, mark it a derived non-editable view.
 - Masking cannot promise detection of unknown secrets. Users must be warned before export/share and no automatic external publication is permitted.
+
+Session catalog boundary ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P24–P25): the host lets any extension call `SessionManagerList` (project) and `SessionManagerListAll` (every project), including in `--no-session` runs, and each entry carries `allMessagesText`. The host is therefore not the privacy boundary; Workbench is. Workbench reads only project scope by default, requires explicit per-request user authorization (a dialog in TUI/RPC; refused in print/JSON) before touching another project's sessions, never forwards `allMessagesText` wholesale to the model, and pages bounded excerpts with their session path. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), never from a directory scan.
 
 Question/answer session history is potentially sensitive. Extra archive off by default, raw logs off by default, debug payload capture off by default. Opt-in debug evidence goes only to a private local path with bounded retention; never stdout protocol stream. API errors include safe context, not full environment/config snippets.
 

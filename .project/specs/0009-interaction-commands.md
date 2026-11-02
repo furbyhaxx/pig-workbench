@@ -5,15 +5,18 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
       changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes measured dialogs, commands, flags and codemode observation"
+      changes: ["Bound RPC/print dialog behaviour to observed host semantics", "Recorded /tools registration and the --list-tools output blocker", "Recorded codemode child observation limits"]
 ---
 
 # 1. Scope and sources
@@ -89,7 +92,9 @@ Timeout default 5 minutes for remote interaction, configurable user-side; timeou
 
 TUI: kit questionnaire, preview pane, tabs, notes and review.
 RPC: sequential native dialogs implement the same state; multi uses repeated choice/toggle plus Done, notes use editor, preview text is inspectable before choosing, and final confirm reviews answers. Distinguish cancelled/absent responses from empty text. No ctx.Custom call in RPC.
-Print/JSON: if no authorized remote bridge exists, return interactionUnavailable promptly. Do not wait on UI calls the host drops. If bridge exists, bounded remote interaction is possible and is explicitly reported.
+Print/JSON: if no authorized remote bridge exists, return interactionUnavailable promptly. Do not wait on UI calls the host drops.
+
+Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
 
 Answer history archive outside the session is off by default. Session payloads can contain sensitive user text; display redaction does not promise erasure from the already recorded transcript. Optional archive/export policy belongs to SPEC-0010 and must not duplicate sensitive drafts silently.
 
@@ -129,7 +134,7 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /workbench show | Effective snapshot; no model-context side effect |
 | /workbench settings [work|edit|read|ask|tldr|jobs|frames|instructions|trust|statusline|tools] | Staged scoped settings; no-UI explicit text/alternative |
 | /tools, /workbench tools [name] [--format text|json|markdown] | Searchable actual registry; full schema detail or formatted dump |
-| --list-tools | Print registry without starting inference, deterministic format; explicit format selection via associated flag |
+| --list-tools | Print registry without starting inference, deterministic format; explicit format selection via associated flag. **Blocked on host:** the flag is parsed and `ctx.Shutdown()` in `session_start` prevents inference, but print/JSON mode has no channel for extension output (P27). Ship once the host provides one; until then the flag reports the limitation in TUI/RPC and `/tools` covers interactive use |
 | /workbench preview <compact|normal|full|all> [tool] | Retained/synthetic sample rendering only, no execution |
 | /workbench jobs [list|monitor|kill|write|settings] [id], /wb:jobs | Shared jobs service and policy |
 | /cd [path|--branch name|--reset], /wb:cd | Location service; TUI picker or status |
@@ -149,6 +154,8 @@ Script-relevant state uses tools/resource APIs rather than interactive slash com
 # 9. Inspector, codemode and status composition
 
 Tools inspector reflects actual schemas, active exposure, namespace, source and Workbench presentation registration. Unknown metadata is labeled unknown. Schema formatting handles unions, objects, arrays and optional fields without losing inspectability. JSON dump is machine-readable and contains no terminal styling.
+
+Observed (P6, P7, P9, P15): child calls raise `tool_call`, `tool_execution_start/end` with `parentToolCallId`, and a same-name Workbench builtin override is used for children too. A child blocked through `tool_call` produces no `tool_result` event and the script sees `reason: {}` (upstream issue) — Workbench records its own block reason by `toolCallId`. `/tools` registers without collision and appears in TUI autocomplete (P26).
 
 Codemode remains PiG's builtin execution engine. Workbench adds semantic nested captures and renders via SPEC-0003, including script facts derived from real source parsing where supported. Do not replace QuickJS or invent filesystem access. Cancellation/error/parent-child IDs come from verified host hooks; if child provenance is unavailable, report missing capture, not parse guessed IDs. Display settings affect rendering only.
 

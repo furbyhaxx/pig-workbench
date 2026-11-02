@@ -5,15 +5,18 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T18:10:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
       changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 host probes measured bus ordering, cancellation and reload"
+      changes: ["Recorded observed bus semantics", "Added explicit cancel method and late-reply rule", "Made reload fire-and-forget with re-registration on load", "Replaced resolved M0 blockers with remaining host issues"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -28,6 +31,8 @@ Companions: [frames](0002-message-frames.md), [presentation](0003-tool-presentat
 - **Registration:** a session-generation-scoped contribution handle; not an executable callback encoded in JSON.
 - **Client:** optional Workbench adapter owned by another extension.
 - **Local API:** direct typed Go calls for bundled services. Shared-process packing does not authorize sharing globals between unrelated extensions.
+
+Observed runtime ([host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P4, P13–P14): a reply emitted inside the receiver's listener reaches the caller's reply listener before the caller's Emit returns, both when packed and across processes. Aborting the caller's request returns its Emit with `host call events.emit cancelled with its parent request`, but the receiving listener keeps running and still emits its reply. A second Emit reaches a listener that is still busy.
 
 Verified source: staged SDK `event_bus.go`, `tool_renderer_resolvers.go`, `tool_renderers.go` under `host:/home/furbyhaxx/.pig/state/pigsdk/sdk-899c7964784a0050`; bundled `extension-api.md` and `runtime-cells.md`. PiG's bus carries JSON across Go realms, listeners finish before Emit returns, and listener errors are not application replies. These constraints determine this protocol.
 
@@ -83,7 +88,13 @@ Reply has exactly one of `ok:true,result` or `ok:false,error`. Errors contain `c
 5. Bulk resource operations run under the tool/request handler; provider progress can emit during execution. Workbench's progress listener updates caches and returns, never re-enters the provider.
 6. Reload and queued frames return an admission receipt, not a fabricated completion.
 
-TimeoutMs is a cooperative execution budget, not a promise to preempt an arbitrary bus listener. SDK cancellation propagation and nested-call reentrancy must be verified by M0 in isolated and packed cells. A listener that hangs can block Emit; abandoning it in an unowned goroutine is forbidden. If the host cannot satisfy cancellation, require a host fix or explicitly negotiated supported transport before claiming the capability. No automatic second IPC daemon.
+TimeoutMs is a cooperative execution budget, not a promise to preempt an arbitrary bus listener. Host cancellation releases only the caller (P3); it never reaches the receiving listener. Therefore:
+
+- `cancel` is an explicit method: `{"method":"cancel","params":{"requestId":"…"}}`, sent by the original caller after its Emit was cancelled or its own deadline passed. It needs no reply.
+- A receiver doing more than bounded validation polls a per-request cancellation flag set by `cancel` (observed latency: one poll interval) and stops with `cancelled`. Work that may outlive the caller's budget is not run in the listener: admit it, reply with an operation receipt and run it under the session supervisor.
+- A reply arriving after the caller gave up is discarded by correlation ID. Mutations cancelled mid-flight report `outcome: unknown` via `operation.status`.
+
+A listener that hangs can block Emit; abandoning it in an unowned goroutine is forbidden. No automatic second IPC daemon.
 
 No background handler retains the request Context after return. Frame queues, reload work and registration maintenance belong to a session supervisor with shutdown draining and independent context. Do not advertise such deferred operations until that lifecycle is proven.
 
@@ -98,6 +109,7 @@ Methods:
 | describe | optional kind/key, cursor → bounded registration descriptors and nextCursor |
 | settings.get | registrationId → effective presentation settings and sources |
 | operation.status | operationId → receipt state for admitted deferred work |
+| cancel | requestId of the caller's own pending request → no reply; idempotent |
 
 Register validates the whole descriptor atomically. Identical register for (owner, instance, kind, key) is idempotent. Changed descriptor requires explicit replace using registrationId and previous descriptorRevision; invalid replacement leaves the old descriptor intact. Cross-owner collisions never silently replace registrations. Resource aliases participate in collision detection too.
 
@@ -110,7 +122,7 @@ detached --discover--> attached --register--> active
    +------ shutdown / generation change ------+
 ```
 
-Workbench emits ready after session initialization, closing before disposal when possible. Client clears cached registrations on generation change and re-registers once. Explicit unregister drains active requests before disposal; new requests fail unavailable. Runtime crash cleanup requires host lifecycle notification or discovery reconciliation; a surviving orphan registration fails closed on dispatch and becomes unavailable. Do not claim guaranteed crash detection from bus events alone.
+Workbench emits ready after session initialization, closing before disposal when possible. Reload re-invokes the factory in the same process (P13): package-level state survives and is not a reset point (P14), so generation and registry state live on the extension instance, never in globals. `ctx.Reload()` did not return in 1 of 28 runs while the old instance kept serving; nothing may wait on it. Clients re-register from the new instance's ready event, and a client that sees no ready re-discovers on its next request. Client clears cached registrations on generation change and re-registers once. Explicit unregister drains active requests before disposal; new requests fail unavailable. Runtime crash cleanup requires host lifecycle notification or discovery reconciliation; a surviving orphan registration fails closed on dispatch and becomes unavailable. Do not claim guaranteed crash detection from bus events alone.
 
 A bounded registration registry defaults to 128 contributions per owner, descriptor size 64 KiB and 8 in-flight provider operations per owner. Busy/limitExceeded errors name the limit. Settings can reduce limits; any increase requires supported configured capacity.
 
@@ -141,4 +153,6 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 - Deadline/cancel and provider failure produce typed results; unknown mutation outcomes are never presented as safely retryable.
 - Response limits, malformed envelopes, counters, duplicate IDs and lost notifications exercised.
 - Replay works with producer absent; settings remain dormant rather than being deleted.
-- M0 blockers: cancellation/reentrancy guarantees, reliable owner lifecycle, dynamic renderer invalidation, trustworthy source metadata. Record observed host behavior before publishing this contract.
+- Cancel after caller abort stops a busy listener and the late reply is discarded (packed and isolated).
+- Reload hang: Workbench state stays consistent when `ctx.Reload()` never returns.
+- Remaining host issues (not blockers): intermittent `ctx.Reload()` hang; no request-scoped listener cancellation in the bus. Owner identity still cannot be authenticated from bus payloads.

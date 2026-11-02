@@ -5,22 +5,25 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T18:45:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
       changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
+    - revision: 2
+      reason: "M0.2 probes measured renderer resolution and codemode rows"
+      changes: ["Recorded resolver caching, reload re-render and codemode child ownership", "Required registration before first render and history rendering from stored Details"]
 ---
 
 # 1. Goal and verified host mechanisms
 
 Let other extensions opt their tools into Workbench renderers and display settings without surrendering tool execution ownership. Workbench consumes a **semantic presentation model**, not remotely executed drawing callbacks. This draft depends on [SPEC-0001](0001-extension-services.md) and [integration UX](../sketches/extension-apis/README.md).
 
-Verified SDK: `Extension.ToolRenderer` resolves tool renderers, including foreign tools, and `next()` preserves the next renderer. Its returned marker cannot be wrapped to call foreign rendering (SDK divergence D89). `SetToolRenderers` updates locally registered tools; it is not sufficient evidence for arbitrary foreign-tool takeover. Use the resolver to opt in registered contributions and return next() for others. CallView/ResultView are supported; a renderer error triggers host fallback. Runtime resolver cache invalidation after registration changes still requires a live probe.
+Verified SDK: `Extension.ToolRenderer` resolves tool renderers, including foreign tools, and `next()` preserves the next renderer. Its returned marker cannot be wrapped to call foreign rendering (SDK divergence D89). `SetToolRenderers` updates locally registered tools; it is not sufficient evidence for arbitrary foreign-tool takeover. Use the resolver to opt in registered contributions and return next() for others. CallView/ResultView are supported; a renderer error triggers host fallback. Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P8–P11): the resolver is called once per tool name and cached for the process; a later claim change has no effect until `/reload`, after which history re-renders with the new renderer. Render width is terminal width − 2. In one run a historical call row re-rendered after reload received empty args.
 
 # 2. Ownership and registration
 
@@ -104,6 +107,8 @@ Resolver reads the in-memory registration and validated snapshot only. No bus/fi
 - Workbench absent: producer's own renderer/host default.
 - Another later resolver overrides Workbench: inspector reports actual resolver ownership if host exposes it; never claim enforced ownership based only on registration.
 
+Because resolution is cached, Workbench answers the resolver from its registry snapshot taken at `session_start`; a registration that arrives after a tool's first render reports `appliesAfterReload` in its register result and in `/workbench integrations`, and Workbench never triggers reload on its own. Call views must not depend on args for historical rows; they render from the stored presentation Details and show "arguments not retained" when both are missing.
+
 Historical rendering uses retained presentation version and safe snapshot labels, not current producer callbacks. If producer is absent but a compatible stored presentation exists, a guarded historical resolver may render it without claiming current tool execution. If the host resolver cannot select by stored data, default fallback remains available and the limitation is reported. Unknown schema versions render generic content with no guessed metrics. No destructive rewriting of session records.
 
 # 6. Display settings and third-party controls
@@ -125,6 +130,8 @@ Normal: header + bounded preview + explicit expand/continuation.
 Full: all retained content allowed by viewport; omitted upstream output still requires resource read.
 
 Header priority: tool/subject identity, terminal status, partial-effect warning, then metrics. Paths preserve authority and basename. Text is stripped of terminal sequences before styling. Color always pairs with a word/glyph. Theme tokens and user keybinding hints only.
+
+Codemode draws its child rows itself; extension resolvers are not consulted for them (P9). Unified child presentation therefore needs either an upstream hook for child rows or a Workbench-owned `codemode` renderer that reconstructs children from `tool_execution_start/end` events (they carry `parentToolCallId`; IDs look like `call_0_0/1` but are treated as opaque). Until one exists, child rows keep codemode's native rendering and the inspector shows Workbench's captured child data.
 
 Composite/codemode renderer uses the same child snapshots/presets. It must show failed/cancelled/running children even when successes collapse. Parent outcome derives from actual codemode result, not a guessed aggregate (a script may handle a child failure). Child failures remain visible even when parent succeeded. Missing historical children say “not retained”. Scripts/arguments are inspectable, never re-executed by preview.
 
