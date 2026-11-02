@@ -1,0 +1,154 @@
+---
+document:
+  type: "specification"
+  id: "SPEC-0002"
+  title: "Message frames and delivery API"
+  description: "External frame producers, provenance, delivery, replay and presentation"
+  status: "draft"
+  revision: 1
+  created_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T16:00:47+01:00"
+  created_by: "coding-assistant"
+  updated_by: "coding-assistant"
+  changelog:
+    - revision: 1
+      reason: "Define the public Workbench extension APIs before implementation"
+      changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
+---
+
+# 1. Purpose and dependency
+
+Implement one attributed frame pipeline for Workbench and cooperating extensions. External producers use [SPEC-0001](0001-extension-services.md); they never insert custom system-role text directly. This draft specifies intended v1 behavior; nothing here is implemented yet. Donor references: `host:/mnt/Projects/furbyhaxx/pi-workbench/src/message-framing/`, its `src/instructions/`, and `host:/mnt/Projects/nukular/nukular-ai/crates/nukular-agent-sdk/src/frame/instruction_ledger.rs`.
+
+Frames separate **facts**, **model delivery**, and **transcript presentation**. Hiding a row never removes instructions from context. Delivery to a model request does not prove the model read, obeyed or acted on it.
+
+# 2. Producer registration and API
+
+Register kind `frameProducer`:
+| Field | Contract |
+|---|---|
+| key | Stable dotted source prefix owned by producer, e.g. build-tools.build |
+| label, description | Plain text for inspection/settings |
+| kinds | Allowed subset: instruction, reminder, warning, error, notice, info |
+| defaultVisibility | shown, collapsed or hidden; user override wins |
+| requestedAuthority | data or instruction; host/user policy grants actual authority |
+| allowWake | Request permission to schedule follow-up, default false |
+
+External sources default to data authority. Requesting instruction authority is not self-authorization. Trusted project data and arbitrary command output are not inherently harness instructions. Producer prefixes cannot impersonate Workbench internal sources.
+
+Service methods:
+- `frames.publish`: registrationId + publish request → durable admission receipt.
+- `frames.status`: frameId → admitted/pending/delivered/cancelled/failed with reason.
+- `frames.cancel`: frameId → cancel only an undelivered frame owned by caller.
+- `frames.list`: branch scope + filters/cursor → bounded records.
+- `frames.get`: frameId → stored record, bounded body page and delivery state.
+
+A producer cannot edit an already delivered frame. Updates, corrections and withdrawals are new records linked to the earlier subject/version.
+
+# 3. Publish contract
+
+Required: `eventKey,kind,source,body`. Optional fields:
+| Field | Meaning |
+|---|---|
+| title, summary | Display labels; never substitutes for model body |
+| resource | Canonical resource URI concerned |
+| subjectKey | Stable semantic entity under source, e.g. build/412 |
+| scope | session, or explicit branch binding; default current branch |
+| delivery | nextBoundary (default), nextPrompt, followUp |
+| coalesceKey | Only pending replaceable notices; same source/subject/scope |
+| dataTrust | trusted or untrusted; actual trust is policy-constrained |
+| expiresAt | Optional pending-notice expiry; never silently expires instruction changes |
+| instruction | Structured replacement/diff/withdrawal metadata for granted instruction producers |
+
+EventKey deduplicates within (session, producer key, eventKey). Same key/same payload returns the existing receipt; same key/different payload is conflict. Dedup survives ordinary reload via persisted records. Fork scope is explicit: replayed facts are not re-published as new events.
+
+Body is plain text, maximum 32 KiB per frame by default inside the 64 KiB control envelope; oversized publications fail limitExceeded. Producers may provide a resource continuation URI and an explicitly partial body; Workbench must not silently cut an instruction or present partial input as a full baseline.
+
+```json
+{"v":1,"id":"publish-1","sessionId":"s-1","generation":"g-1","from":{"owner":"build-tools","instance":"i-1"},"method":"frames.publish","registrationId":"reg-1","params":{"eventKey":"build-412-finished","kind":"warning","source":"build-tools.build","subjectKey":"build/412","title":"Build 412 failed","body":"Build exited with code 1. Inspect build://412/log for compiler diagnostics.","resource":"build://412/log","dataTrust":"untrusted","delivery":"nextBoundary"}}
+```
+
+```json
+{"v":1,"id":"publish-1","sessionId":"s-1","generation":"g-1","to":{"owner":"build-tools","instance":"i-1"},"ok":true,"result":{"frameId":"f-12","sequence":12,"state":"pending","delivery":"nextBoundary","effectiveAuthority":"data"}}
+```
+
+Ordinary publish is a fact-delivery request, not permission to start an inference turn. followUp requires granted policy; denied wake fails permissionDenied unless caller explicitly retries with nextPrompt. No silent escalation.
+
+# 4. Stored frame and delivery ledger
+
+Versioned stored record:
+- schemaVersion, frameId, sequence, sessionId, original branch leaf/generation, createdAt.
+- producer owner/key and source; kind, body, title/summary, subjectKey/resource.
+- requested/effective authority and trust, eventKey, content digest.
+- requested delivery, scope, coalescing/expiry policy.
+- instruction metadata if relevant.
+- display defaults and retained provenance sufficient for replay without producer.
+
+Use canonical custom type `pig-workbench.frame` for new records; no donor-session migration is required. Sequence is allocated monotonically within the session and persisted; branch replay can contain gaps. frameId is globally unique enough to avoid sibling-branch collision. New forks retain provenance of replayed frames and allocate new IDs for new facts.
+
+Delivery records separately identify frameId, branch/context epoch, state and request association when the host exposes it. Do not conflate appendEntry success with actual context inclusion.
+
+```text
+validated → persisted pending → selected for context → delivered
+                      │                 │
+                      ├→ cancelled      └→ failed/retry pending
+                      └→ superseded (only eligible pending notices)
+```
+
+Admission acknowledgement is returned only after persistence succeeds (or in-memory session store accepts it in no-session mode, labeled non-durable). Delivery acknowledgement means included by Workbench in a specific outgoing context, not provider success. If the host cannot expose that boundary, report `queuedToHost` instead of claiming delivered; capability negotiation must disclose this limitation.
+
+When idle, nextBoundary waits for the next prompt; it never wakes a turn. During a run it uses the next safe context boundary after the current tool batch. Branch-scoped publications are cancelled/not delivered to a different branch after navigation. Session-scoped notices remain pending but must be re-evaluated for applicability. A stale producer binding gets staleGeneration.
+
+Coalesce only undelivered info/notice updates explicitly sharing a key. Preserve all errors and instruction transitions or compute a verifiably equivalent latest baseline. Queue overflow returns busy; do not silently drop frames. Default 256 pending frames/session and 2 MiB aggregate body memory, backed by bounded durable records.
+
+# 5. Instruction changes, caps and compaction
+
+Instruction metadata:
+`classId,canonicalUri,operation,baseVersion?,version,contentDigest,viewDigest,complete,continuation?`.
+Operation is baseline, changed, withdrawn, removed, relocated or selfEdit. Changed records retain the full replacement delivered view for reconstruction; model projection may use a unified diff with explicit base/new version. Relocation references an existing same-epoch/equal-trust content frame. It is not a path-only assertion.
+
+The instruction service is responsible for discovery, file classes, ancestor/root+nearest selection and pinning; the frame API transports its decisions. Other producers may supply instructions only under granted source policy and the same base-version checks. No arbitrary external “remove all instructions” operation.
+
+For capped BACKLOG.md or custom views, diff **previous delivered view → new delivered view**. Source version and view version are distinct. Changes outside the cap update hidden-count/version facts without manufacturing unseen hunks. Expanding a UI row is not the same as injecting the full source.
+
+On compaction, the epoch advances and active instruction producers/retained baselines reconstruct full current views. Do not replay every historic diff or rely on a baseline removed from context. Source unregister does not erase history: pending instructions are cancelled, active contributions are withdrawn through a new frame before being removed from the active set. If the host cannot deliver that withdrawal immediately, it remains a pending consistency action.
+
+# 6. Projection and trust
+
+Model envelope retains donor-readable shape:
+```text
+<system-warning src="build-tools.build" seq="12" n="A1B2C3D4" ts="2026-11-02T16:00:47+01:00" trust="untrusted">
+Build exited with code 1. Inspect build://412/log for compiler diagnostics.
+</system-warning>
+```
+
+Escape attributes and matching closing delimiters in body. Persist nonce/createdAt, never regenerate timestamps on replay. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
+
+Default external projection is framed data via the host-supported custom-message route. Native system/developer projection requires a verified capability and granted instruction authority; unsupported providers retain explicit envelope semantics without invented role support. Never change stored history roles to fit one provider. Preserve provider message-order constraints, including trailing assistant/tool sequences. Prompt wording must not tell the model that external data has higher authority than the user's instructions.
+
+# 7. Presentation and extension settings
+
+Registered producers appear under `/workbench frames` and `/workbench settings frames`, grouped by owner/source. Settings: density/style (row/rail/card), default visibility, per-kind/per-source overrides, source wake policy where user-authorized. Rendering uses stable stored data; source absence is an inspection detail, not a replay failure.
+
+Each row shows kind, subject/title, primary change/result and expand hint if hidden. Inspector shows authority, source, resource, sequence/time, delivery state, base/new versions and full bounded body. Visibility changes are explicitly transcript-only; disabling delivery is a distinct policy action requiring explanation.
+
+Wireframes and action/state behavior: [SKETCH-0002](../sketches/extension-apis/README.md). No UI callback may call the producer during rendering.
+
+# 8. Acceptance scenarios
+
+| Scenario | Required result |
+|---|---|
+| Producer loads before/after Workbench | Discovers and registers without order dependence |
+| Duplicate publish / changed duplicate | Existing receipt / conflict, never two deliveries |
+| Publish error then retry | No acknowledged-but-lost frame |
+| Idle ordinary frame / followUp denied | Waits for prompt / explicit permission error |
+| Branch switch during pending publication | No delivery to wrong branch |
+| Observer misses delivery event | frames.status reconciles state |
+| Compaction after diff | Current baseline reconstructed, not orphan diff |
+| Capped backlog reorder/change below cap | Reconstructible view diff and accurate omission notice |
+| External untrusted text includes tags/escapes | No authority escalation or terminal escape execution |
+| Source unload/reload | Retained history renderable; active instructions reconciled |
+| Host lacks outgoing-request acknowledgement | queuedToHost visible; no false delivered state |
+| Multiple simultaneous producers | Stable sequence, bounded queue, no starvation by progress spam |
+
+Host gates: outgoing-context inclusion acknowledgement, native role representation, branch/retry boundaries and producer lifecycle must be probed. Missing host support is a blocking integration issue, not permission to disable instruction injection silently.

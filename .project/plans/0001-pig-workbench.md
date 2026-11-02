@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T15:31:51+01:00"
+  updated_at: "2026-11-02T16:00:47+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "User requested UI/UX designs and wireframes"
       changes: ["Linked UI design artifact and added a design/prototype/capture approval gate before finalizing UI implementation"]
+    - revision: 3
+      reason: "User authorized the first public API specifications and integration designs"
+      changes: ["Linked service, frame, renderer and resource-provider contracts and API wireframes", "Recorded completed bootstrap and kept runtime probes/design approval explicit"]
 ---
 
 # 1. Outcome and authority
@@ -29,10 +32,19 @@ Scope reference: `.project/drafts/pig-workbench-proposal.md`, revision 2. That d
 
 UI/UX companion: `.project/sketches/workbench-ui/README.md` (SKETCH-0001). It covers the hub, settings/trust, tools, transcript and codemode, location/remote, jobs, frames/instructions, questionnaires, checkpoints, schemes and status composition, with responsive wireframes and mode equivalents. Static wireframes are not live verification.
 
+First API specification batch (drafts; runtime probes pending):
+- `.project/specs/0001-extension-services.md` — optional discovery, versioning, registrations and JSON event protocol.
+- `.project/specs/0002-message-frames.md` — external producers, delivery receipts, trust and replay.
+- `.project/specs/0003-tool-presentation.md` — shared renderers, lifecycle states and contributed display settings.
+- `.project/specs/0004-resource-providers.md` — pluggable scheme handlers, policy, paging and snapshot integrity.
+- `.project/sketches/extension-apis/README.md` — API flows, frame styles, state gallery and integration/provider/settings wireframes.
+
+These complement the broad UX sketch. They do not close M0 until host probes and contract review pass. `/workbench integrations` and `/workbench resources` are proposed inspection additions; include them in the command inventory review.
+
 ## Progress
 
-- **done:** Source reconnaissance and proposal revisions; no product code exists.
-- **now:** Review this implementation plan and its scope/decision gates.
+- **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, initial four API specifications and static integration wireframes. No service/tool implementation yet.
+- **now:** Review draft API contracts and UI designs; runtime validation and live captures remain required.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass.
 
@@ -145,7 +157,7 @@ Create packages when they have concrete responsibilities, not empty scaffolding 
 3. Enumerate hashline grammar/recovery/preview behaviors, read adapters/selectors, dynamic commands and instruction hooks into a feature matrix tied to WB IDs.
 4. Mark each row as donor behavior, intentional improvement, or unresolved design—not simply “ported”.
 
-**Deliverable:** `.project/specs/0001-workbench-contracts.md` after decisions are approved, with source references and format/command inventories. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
+**Deliverable:** the four existing `.project/specs/0001-*.md` through `0004-*.md` contracts revised with probe evidence, plus the next numbered specifications for hashline/read/instruction behavior and format/command inventories. Do not reuse their allocated IDs. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
 
 ### M0.2 — Isolated host probes
 
