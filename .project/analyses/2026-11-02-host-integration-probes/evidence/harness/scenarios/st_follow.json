@@ -1,0 +1,7 @@
+[[0.5,{"id":"p1","type":"prompt","message":"first"}],
+ [1.5,{"id":"f1","type":"prompt","message":"/probe-send followUp idleF"}],
+ [2,{"id":"f2","type":"prompt","message":"/probe-sendtrigger idleT"}],
+ [2,{"id":"f3","type":"prompt","message":"/probe-send steer idleS"}],
+ [2,{"id":"f4","type":"prompt","message":"/probe-send user-followUp idleU"}],
+ [2,{"id":"p2","type":"prompt","message":"second"}],
+ [2,{"id":"m","type":"get_messages"}]]

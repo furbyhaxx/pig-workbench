@@ -1,0 +1,15 @@
+{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1786579, "reason": "startup", "t": 1793639343.558866}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786579, "skills": ["reverse-engineer-anything"], "t": 1793639344.041472}
+{"ext": "m0b", "kind": "context", "pid": 1786579, "roles": ["user"], "t": 1793639344.043016}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786579, "reason": null, "t": 1793639344.046358}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786579, "skills": ["reverse-engineer-anything"], "t": 1793639345.541306}
+{"ext": "m0b", "kind": "context", "pid": 1786579, "roles": ["user", "assistant", "user"], "t": 1793639345.542137}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786579, "reason": null, "t": 1793639345.545112}
+{"err": "<nil>", "ext": "m0b", "idle": true, "kind": "send", "mode": "nextTurn", "pending": false, "pid": 1786579, "t": 1793639347.042754}
+{"err": "<nil>", "ext": "m0b", "idle": true, "kind": "send", "mode": "steer", "pending": false, "pid": 1786579, "t": 1793639347.542138}
+{"event": "session_tree", "ext": "m0b", "kind": "event", "pid": 1786579, "reason": null, "t": 1793639348.044285}
+{"cmd": "tree", "err": "<nil>", "ext": "m0b", "kind": "command", "pid": 1786579, "res": {"cancelled": false}, "t": 1793639348.044508, "target": "36a4c501"}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786579, "skills": ["reverse-engineer-anything"], "t": 1793639349.042438}
+{"ext": "m0b", "kind": "context", "pid": 1786579, "roles": ["user", "custom:wb-frame"], "t": 1793639349.043113}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786579, "reason": null, "t": 1793639349.045166}
+{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1786579, "reason": "quit", "t": 1793639352.54217}

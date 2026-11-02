@@ -1,0 +1,8 @@
+{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1786358, "reason": "startup", "t": 1793639311.761983}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786358, "skills": ["reverse-engineer-anything"], "t": 1793639312.242754}
+{"ext": "m0b", "kind": "context", "pid": 1786358, "roles": ["user"], "t": 1793639312.244651}
+{"cmd": "sleep 9.123; echo never", "ctxCwd": "/tmp/wb-probes/work", "ext": "m0b", "id": "call_0_0", "kind": "override", "phase": "start", "pid": 1786358, "t": 1793639312.247595, "tool": "bash"}
+{"cmd": "sleep 9.123; echo never", "cwd": "/tmp/wb-probes/work", "ext": "m0b", "kind": "spawn", "pid": 1786358, "t": 1793639312.248055}
+{"ctxErr": "context canceled", "err": "host call builtinTool.execute cancelled with its parent request", "ext": "m0b", "id": "call_0_0", "kind": "override", "phase": "end", "pid": 1786358, "reason": "context canceled", "t": 1793639314.242926, "tool": "bash", "type": "<nil>"}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786358, "reason": null, "t": 1793639314.244193}
+{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1786358, "reason": "quit", "t": 1793639316.242875}

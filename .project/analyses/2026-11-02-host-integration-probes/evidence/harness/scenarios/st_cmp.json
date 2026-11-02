@@ -1,0 +1,8 @@
+[[0.5,{"id":"p1","type":"prompt","message":"first"}],
+ [1.5,{"id":"e1","type":"prompt","message":"/probe-entry before-compact"}],
+ [0.5,{"id":"p2","type":"prompt","message":"second"}],
+ [1.5,{"id":"p3","type":"prompt","message":"third"}],
+ [1.5,{"id":"c1","type":"prompt","message":"/probe-compact"}],
+ [3,{"id":"b1","type":"prompt","message":"/probe-branch"}],
+ [0.5,{"id":"p4","type":"prompt","message":"fourth"}],
+ [2,{"id":"m","type":"get_messages"}]]

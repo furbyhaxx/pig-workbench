@@ -1,0 +1,17 @@
+{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1786168, "reason": "startup", "t": 1793639290.257497}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786168, "skills": ["reverse-engineer-anything"], "t": 1793639290.718164}
+{"ext": "m0b", "kind": "context", "pid": 1786168, "roles": ["user"], "t": 1793639290.719549}
+{"ctxCwd": "/tmp/wb-probes/work", "effective": "/tmp/wb-probes/work/loc/plain.txt", "ext": "m0b", "id": "call_0_0", "kind": "override", "path": "plain.txt", "phase": "start", "pid": 1786168, "t": 1793639290.723322, "tool": "read"}
+{"cmd": "pwd; for i in 1 2 3; do echo tick$i; sleep 0.3; done", "ctxCwd": "/tmp/wb-probes/work", "ext": "m0b", "id": "call_0_1", "kind": "override", "phase": "start", "pid": 1786168, "t": 1793639290.723369, "tool": "bash"}
+{"err": "<nil>", "ext": "m0b", "id": "call_0_0", "kind": "override", "phase": "end", "pid": 1786168, "t": 1793639290.723619, "tool": "read", "type": "sdk.AgentToolResult"}
+{"cmd": "pwd; for i in 1 2 3; do echo tick$i; sleep 0.3; done", "cwd": "/tmp/wb-probes/work", "ext": "m0b", "kind": "spawn", "pid": 1786168, "t": 1793639290.72374}
+{"ctxErr": "<nil>", "err": "<nil>", "ext": "m0b", "id": "call_0_1", "kind": "override", "phase": "end", "pid": 1786168, "reason": "", "t": 1793639291.630734, "tool": "bash", "type": "sdk.AgentToolResult"}
+{"ext": "m0b", "kind": "context", "pid": 1786168, "roles": ["user", "assistant", "toolResult", "toolResult"], "t": 1793639291.632411}
+{"ctxCwd": "/tmp/wb-probes/work", "effective": "/tmp/wb-probes/work/loc/plain.txt", "ext": "m0b", "id": "call_1_0/1", "kind": "override", "path": "plain.txt", "phase": "start", "pid": 1786168, "t": 1793639291.664561, "tool": "read"}
+{"err": "<nil>", "ext": "m0b", "id": "call_1_0/1", "kind": "override", "phase": "end", "pid": 1786168, "t": 1793639291.664933, "tool": "read", "type": "sdk.AgentToolResult"}
+{"cmd": "pwd", "ctxCwd": "/tmp/wb-probes/work", "ext": "m0b", "id": "call_1_0/2", "kind": "override", "phase": "start", "pid": 1786168, "t": 1793639291.66549, "tool": "bash"}
+{"cmd": "pwd", "cwd": "/tmp/wb-probes/work", "ext": "m0b", "kind": "spawn", "pid": 1786168, "t": 1793639291.665987}
+{"ctxErr": "<nil>", "err": "<nil>", "ext": "m0b", "id": "call_1_0/2", "kind": "override", "phase": "end", "pid": 1786168, "reason": "", "t": 1793639291.668644, "tool": "bash", "type": "sdk.AgentToolResult"}
+{"ext": "m0b", "kind": "context", "pid": 1786168, "roles": ["user", "assistant", "toolResult", "toolResult", "assistant", "toolResult"], "t": 1793639291.670194}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786168, "reason": null, "t": 1793639291.674457}
+{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1786168, "reason": "quit", "t": 1793639297.217768}

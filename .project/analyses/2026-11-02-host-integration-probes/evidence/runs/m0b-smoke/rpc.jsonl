@@ -1,0 +1,3 @@
+{"id": "c", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "handled"}}
+{"type": "extension_ui_request", "id": "bc19598d-a12c-4489-a20a-4c23c62601a2", "method": "notify", "message": "WB-TOOLS 9", "notifyType": "info"}
+{"id": "t", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "handled"}}

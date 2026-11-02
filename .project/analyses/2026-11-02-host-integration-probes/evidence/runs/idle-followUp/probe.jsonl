@@ -1,0 +1,6 @@
+{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1786797, "reason": "startup", "t": 1793639371.115942}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1786797, "skills": ["reverse-engineer-anything"], "t": 1793639371.59919}
+{"ext": "m0b", "kind": "context", "pid": 1786797, "roles": ["user"], "t": 1793639371.600778}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1786797, "reason": null, "t": 1793639371.603465}
+{"err": "<nil>", "ext": "m0b", "idle": true, "kind": "send", "mode": "followUp", "pending": false, "pid": 1786797, "t": 1793639373.099862}
+{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1786797, "reason": "quit", "t": 1793639377.09817}

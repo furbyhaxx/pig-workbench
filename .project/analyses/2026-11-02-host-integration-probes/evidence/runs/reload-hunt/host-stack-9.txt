@@ -1,0 +1,175 @@
+goroutine 37 gp=0x19a672e8d0e0 m=nil [chan receive]:
+runtime.gopark(0x19a67336f770?, 0x19a672e55008?, 0x78?, 0xca?, 0x48b90f?)
+	runtime/proc.go:474 +0xca fp=0x19a672e7ca38 sp=0x19a672e7ca18 pc=0x48e24a
+runtime.chanrecv(0x19a673081810, 0x19a672e7cf60, 0x1)
+	runtime/chan.go:667 +0x4ae fp=0x19a672e7cab0 sp=0x19a672e7ca38 pc=0x418cae
+runtime.chanrecv2(0x18?, 0x40cba90?)
+	runtime/chan.go:514 +0x12 fp=0x19a672e7cad8 sp=0x19a672e7cab0 pc=0x4187f2
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).handleIncoming(0x19a672f71208, 0x19a6730c1b08, 0x19a6732f6408)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host.go:4623 +0x207 fp=0x19a672e7cfb8 sp=0x19a672e7cad8 pc=0x1240167
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).acceptPackedExt.gowrap1()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:934 +0x1f fp=0x19a672e7cfe0 sp=0x19a672e7cfb8 pc=0x130c21f
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a672e7cfe8 sp=0x19a672e7cfe0 pc=0x495601
+created by github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).acceptPackedExt in goroutine 27
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:934 +0x19eb
+
+goroutine 46 gp=0x19a672e8dc20 m=nil [chan receive]:
+runtime.gopark(0x19a6732f1340?, 0x19a6734eb7b8?, 0x2?, 0x0?, 0x0?)
+	runtime/proc.go:474 +0xca fp=0x19a672e76a38 sp=0x19a672e76a18 pc=0x48e24a
+runtime.chanrecv(0x19a67337a3f0, 0x19a672e76f60, 0x1)
+	runtime/chan.go:667 +0x4ae fp=0x19a672e76ab0 sp=0x19a672e76a38 pc=0x418cae
+runtime.chanrecv2(0x19a672f71208?, 0x19a6732f2008?)
+	runtime/chan.go:514 +0x12 fp=0x19a672e76ad8 sp=0x19a672e76ab0 pc=0x4187f2
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).handleIncoming(0x19a672f71208, 0x19a6732f2008, 0x19a6733a0008)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host.go:4623 +0x207 fp=0x19a672e76fb8 sp=0x19a672e76ad8 pc=0x1240167
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).acceptPackedExt.gowrap1()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:934 +0x1f fp=0x19a672e76fe0 sp=0x19a672e76fb8 pc=0x130c21f
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a672e76fe8 sp=0x19a672e76fe0 pc=0x495601
+created by github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).acceptPackedExt in goroutine 27
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:934 +0x19eb
+
+goroutine 47 gp=0x19a6733ca000 m=nil [chan receive]:
+runtime.gopark(0x10000?, 0x124ebb6?, 0xaa?, 0x39?, 0x19a672f71208?)
+	runtime/proc.go:474 +0xca fp=0x19a672e4e678 sp=0x19a672e4e658 pc=0x48e24a
+runtime.chanrecv(0x19a6730630a0, 0x0, 0x1)
+	runtime/chan.go:667 +0x4ae fp=0x19a672e4e6f0 sp=0x19a672e4e678 pc=0x418cae
+runtime.chanrecv1(0x48acf9?, 0x12ed20f?)
+	runtime/chan.go:509 +0x12 fp=0x19a672e4e718 sp=0x19a672e4e6f0 pc=0x4187d2
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*packedProcessState).wait(0x19a6730a50e0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:214 +0x36 fp=0x19a672e4e740 sp=0x19a672e4e718 pc=0x1278936
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).watchPackedProcess(0x19a672f71208, 0x19a6730a50e0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:804 +0x5b fp=0x19a672e4e7c0 sp=0x19a672e4e740 pc=0x127f7bb
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).startGoPackedCellOnce.gowrap2()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:621 +0x1b fp=0x19a672e4e7e0 sp=0x19a672e4e7c0 pc=0x130bfbb
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a672e4e7e8 sp=0x19a672e4e7e0 pc=0x495601
+created by github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).startGoPackedCellOnce in goroutine 27
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:621 +0x4a85
+
+goroutine 64 gp=0x19a6733ca5a0 m=nil [select]:
+runtime.gopark(0x19a672f29a00?, 0x5?, 0x40?, 0x8d?, 0x19a672f297ea?)
+	runtime/proc.go:474 +0xca fp=0x19a672f29658 sp=0x19a672f29638 pc=0x48e24a
+runtime.selectgo(0x19a672f29a00, 0x19a672f297e0, 0x19a6734eb76e?, 0x0, 0x19a6734eb790?, 0x1)
+	runtime/select.go:351 +0xa97 fp=0x19a672f29798 sp=0x19a672f29658 pc=0x466057
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Conn).requestWithOrder(0x19a6733a0008, {0x42421b8, 0x19a6734fbdd0}, 0x19a6734d0fc0, 0x0, {0x0, 0x0}, 0x0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/conn.go:850 +0xc75 fp=0x19a672f29b00 sp=0x19a672f29798 pc=0x1207c75
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Conn).request(...)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/conn.go:733
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Conn).Request(0x19a672f71208?, {0x42421b8?, 0x19a6734fbdd0?}, 0x19a6734c45b8?)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/conn.go:661 +0x28 fp=0x19a672f29b50 sp=0x19a672f29b00 pc=0x1206a08
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).makeCommandHandler.func1({0x42421b8, 0x19a6734fbd10}, {0x0, 0x0})
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host.go:4253 +0x3cb fp=0x19a672f29cb8 sp=0x19a672f29b50 pc=0x12fe32b
+github.com/MichaelKinsy/PiG/coding/extension/host/inproc.(*Runner).ExecuteCommand(0x19a6733cdc08, {0x42421b8, 0x19a6734fbcb0}, {0x19a673365990, 0xc}, {0x0, 0x0})
+	github.com/MichaelKinsy/PiG/coding/extension/host/inproc/runner.go:898 +0x2a3 fp=0x19a672f29ed8 sp=0x19a672f29cb8 pc=0x1054ea3
+github.com/MichaelKinsy/PiG/coding/cli.headlessCommandCatalog.executeCommand(...)
+	github.com/MichaelKinsy/PiG/coding/cli/rpc_mode.go:159
+github.com/MichaelKinsy/PiG/coding/cli.(*rpcAdmission).command.func1({0x42421b8?, 0x19a6734fbc50?})
+	github.com/MichaelKinsy/PiG/coding/cli/rpc_admission.go:273 +0x9a fp=0x19a672f29f48 sp=0x19a672f29ed8 pc=0x1b2519a
+github.com/MichaelKinsy/PiG/coding/cli.rpcAwaitHandler[...].func2()
+	github.com/MichaelKinsy/PiG/coding/cli/rpc_admission.go:189 +0x69 fp=0x19a672f29fb0 sp=0x19a672f29f48 pc=0x1b35229
+sync.(*WaitGroup).Go.func1()
+	sync/waitgroup.go:258 +0x4a fp=0x19a672f29fe0 sp=0x19a672f29fb0 pc=0x49ecaa
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a672f29fe8 sp=0x19a672f29fe0 pc=0x495601
+created by sync.(*WaitGroup).Go in goroutine 1
+	sync/waitgroup.go:238 +0x7d
+
+goroutine 66 gp=0x19a6733cbc20 m=nil [chan receive]:
+runtime.gopark(0x7f06a046e108?, 0x8000000000070?, 0x40?, 0xe1?, 0x7f06a046e108?)
+	runtime/proc.go:474 +0xca fp=0x19a67358cdc0 sp=0x19a67358cda0 pc=0x48e24a
+runtime.chanrecv(0x19a67359c7e0, 0x19a67358d520, 0x1)
+	runtime/chan.go:667 +0x4ae fp=0x19a67358ce38 sp=0x19a67358cdc0 pc=0x418cae
+runtime.chanrecv1(0x19a6733d9dc0?, 0x19a6735a0960?)
+	runtime/chan.go:509 +0x12 fp=0x19a67358ce60 sp=0x19a67358ce38 pc=0x4187d2
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).stageCellsInOrder(0x19a672f71208, {0x42421b8, 0x19a6735c8c90}, {0x19a673552f00, 0x1, 0x1}, 0x19a67358eec8)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/cell_start.go:161 +0x155c fp=0x19a67358d9e8 sp=0x19a67358ce60 pc=0x11fb95c
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).Reload(0x19a672f71208, {0x4242110?, 0x19a6735c2380?})
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host.go:2901 +0x1f5a fp=0x19a67358efa0 sp=0x19a67358d9e8 pc=0x123287a
+github.com/MichaelKinsy/PiG/coding/cli.(*cliRuntimeBuilder).reloadBuildExtensions(0x4154ed8?, {0x4242110, 0x19a6735c2380}, 0x19a672ea3b08)
+	github.com/MichaelKinsy/PiG/coding/cli/headless_reload.go:37 +0x10e fp=0x19a67358f050 sp=0x19a67358efa0 pc=0x1ab8c2e
+github.com/MichaelKinsy/PiG/coding/cli.(*cliRuntimeBuilder).buildResourceLoader.func3({_, _})
+	github.com/MichaelKinsy/PiG/coding/cli/cli_resource_loader.go:58 +0x125 fp=0x19a67358f180 sp=0x19a67358f050 pc=0x1b15fa5
+github.com/MichaelKinsy/PiG/coding/cli.(*cliResourceLoader).ReloadWith(0x19a67344b2c0, {0x42421b8?, 0x19a673540060?}, {0xd7cbc0?, 0x4698d00?, 0x19a67354b4b0?})
+	github.com/MichaelKinsy/PiG/coding/cli/cli_resource_loader.go:140 +0x88 fp=0x19a67358f498 sp=0x19a67358f180 pc=0x1a75988
+github.com/MichaelKinsy/PiG/coding.reloadResourceLoader({0x42421b8?, 0x19a673540060?}, {0x4246100?, 0x19a67344b2c0?})
+	github.com/MichaelKinsy/PiG/coding/session_tool_registry.go:628 +0x5d fp=0x19a67358f4d8 sp=0x19a67358f498 pc=0x18441fd
+github.com/MichaelKinsy/PiG/coding.(*Session).Reload(0x19a6733f6308, {0x42421b8, 0x19a673540060}, {0x0, 0x0, 0x19a672e78780?})
+	github.com/MichaelKinsy/PiG/coding/session_tool_registry.go:587 +0x245 fp=0x19a67358f780 sp=0x19a67358f4d8 pc=0x1843b85
+github.com/MichaelKinsy/PiG/coding/cli.serveRPCMode.func24({0x42421b8, 0x19a673540060}, 0x19a6733f6308)
+	github.com/MichaelKinsy/PiG/coding/cli/rpc_mode.go:558 +0x6e fp=0x19a67358f818 sp=0x19a67358f780 pc=0x1b2d90e
+github.com/MichaelKinsy/PiG/coding.(*Runtime).reloadSession(0x19a673466b00, {0x42421b8, 0x19a673540060}, 0x19a6733f6308)
+	github.com/MichaelKinsy/PiG/coding/runtime_replacement.go:180 +0x53 fp=0x19a67358f848 sp=0x19a67358f818 pc=0x17eac33
+github.com/MichaelKinsy/PiG/coding.(*Runtime).ExtensionCommandActions.func6({0x42421b8?, 0x19a673540060?})
+	github.com/MichaelKinsy/PiG/coding/runtime_replacement.go:164 +0x2e fp=0x19a67358f878 sp=0x19a67358f848 pc=0x18542ee
+github.com/MichaelKinsy/PiG/coding.BindSessionExtensionActions.func26({0x42421b8, 0x19a673540060})
+	github.com/MichaelKinsy/PiG/coding/session_extension_host.go:376 +0x72 fp=0x19a67358f900 sp=0x19a67358f878 pc=0x185a292
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*UIBridge).handleReload(0x19a673008f08?, {0x42421b8?, 0x19a673540060?}, 0x19a672e789e0?)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/ui_bridge.go:2548 +0x44 fp=0x19a67358f948 sp=0x19a67358f900 pc=0x12bce04
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*UIBridge).handleCall(0x19a673008f08, {0x42421b8, 0x19a673540060}, {0x7ffd49abf8f5, 0x8}, 0x19a6733a0008, 0x19a6734ad5e0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/ui_bridge.go:1591 +0xb36 fp=0x19a67358fac8 sp=0x19a67358f948 pc=0x12b22d6
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).runCall(0x19a672f71208, 0x19a6732f2008, 0x19a6733a0008, {0x19a6734eb7a4, 0x2}, 0x19a6734ad5e0, 0x19a6734b7650)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host_calls.go:534 +0x28d8 fp=0x19a67358ff68 sp=0x19a67358fac8 pc=0x124e5b8
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).queueCallDone.func5.2()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host_calls.go:246 +0x85 fp=0x19a67358ffe0 sp=0x19a67358ff68 pc=0x1303a85
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a67358ffe8 sp=0x19a67358ffe0 pc=0x495601
+created by github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).queueCallDone.func5 in goroutine 65
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/host_calls.go:242 +0x1f9
+
+goroutine 73 gp=0x19a6735de000 m=nil [select]:
+runtime.gopark(0x19a6733a9788?, 0x3?, 0x72?, 0x3c?, 0x19a6733a9762?)
+	runtime/proc.go:474 +0xca fp=0x19a6733a95e8 sp=0x19a6733a95c8 pc=0x48e24a
+runtime.selectgo(0x19a6733a9788, 0x19a6733a975c, 0x0?, 0x0, 0x125b3fd?, 0x1)
+	runtime/select.go:351 +0xa97 fp=0x19a6733a9728 sp=0x19a6733a95e8 pc=0x466057
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).awaitConnection.func2()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/accept_client.go:72 +0xd8 fp=0x19a6733a97e0 sp=0x19a6733a9728 pc=0x12ed1f8
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a6733a97e8 sp=0x19a6733a97e0 pc=0x495601
+created by github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).awaitConnection in goroutine 70
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/accept_client.go:70 +0x18b
+
+goroutine 70 gp=0x19a6735de1e0 m=nil [IO wait]:
+runtime.gopark(0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	runtime/proc.go:474 +0xca fp=0x19a673533b08 sp=0x19a673533ae8 pc=0x48e24a
+runtime.netpollblock(0x0?, 0x0?, 0x0?)
+	runtime/netpoll.go:575 +0xf7 fp=0x19a673533b40 sp=0x19a673533b08 pc=0x44c857
+internal/poll.runtime_pollWait(0x7f06599fce00, 0x72)
+	runtime/netpoll.go:351 +0x85 fp=0x19a673533b60 sp=0x19a673533b40 pc=0x48d445
+internal/poll.(*pollDesc).wait(0x19a673565380?, 0x2cd01a0?, 0x0)
+	internal/poll/fd_poll_runtime.go:84 +0x27 fp=0x19a673533b98 sp=0x19a673533b60 pc=0x4cbc07
+internal/poll.(*pollDesc).waitRead(...)
+	internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Accept(0x19a673565380)
+	internal/poll/fd_unix.go:618 +0x27d fp=0x19a673533c40 sp=0x19a673533b98 pc=0x4cd8dd
+net.(*netFD).accept(0x19a673565380)
+	net/fd_unix.go:149 +0x29 fp=0x19a673533cf8 sp=0x19a673533c40 pc=0x83dac9
+net.(*UnixListener).accept(0x1?)
+	net/unixsock_posix.go:172 +0x16 fp=0x19a673533d30 sp=0x19a673533cf8 pc=0x851156
+net.(*UnixListener).Accept(0x19a6735c9560)
+	net/unixsock.go:275 +0x30 fp=0x19a673533d70 sp=0x19a673533d30 pc=0x8505f0
+net.Listener.Accept-fm()
+	<autogenerated>:1 +0x1c fp=0x19a673533d88 sp=0x19a673533d70 pc=0x1328bbc
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).awaitConnection(0x0?, {0x42421b8, 0x19a6735c8f60}, {0x4240ea8, 0x19a6735c9560}, 0x19a6730630a0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/accept_client.go:80 +0x195 fp=0x19a673533e30 sp=0x19a673533d88 pc=0x11e5275
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).acceptPackedExt(0x19a672f71208, {0x42421b8, 0x19a6735c8f60}, 0x19a67354db08, {0x4240ea8, 0x19a6735c9560})
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:835 +0xff fp=0x19a6735344b8 sp=0x19a673533e30 pc=0x127fa5f
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).startGoPackedCellOnce(0x19a672f71208, {0x42421b8, 0x19a6735c8f60}, 0x19a67359caf0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:560 +0x3bee fp=0x19a6735353d0 sp=0x19a6735344b8 pc=0x127cace
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).startGoPackedCell(0x19a672f71208, {0x42421b8, 0x19a6735c8f60}, 0x19a67359caf0)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/packed_go.go:314 +0x34 fp=0x19a673535448 sp=0x19a6735353d0 pc=0x1278d74
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).stagePackedGo(0x19a672f71208, {0x42421b8, 0x19a6735c8f60}, {{0x19a6735d23a0, 0x1a}, {0x19a6735a4d00, 0x40}, {0x1be40d5, 0x9}, {0x1be6947, ...}, ...}, ...)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/reload_cells.go:290 +0x418 fp=0x19a6735355a8 sp=0x19a673535448 pc=0x1297c18
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).stageCell.func1(...)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/reload_cells.go:136
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).stageCell(_, {_, _}, {{0x19a6735d23a0, 0x1a}, {0x19a6735a4d00, 0x40}, {0x1be40d5, 0x9}, {0x1be6947, ...}, ...}, ...)
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/reload_cells.go:158 +0xc91 fp=0x19a673535bf0 sp=0x19a6735355a8 pc=0x1294e71
+github.com/MichaelKinsy/PiG/coding/extension/host/subprocess.(*Host).stageCellsInOrder.func3.1()
+	github.com/MichaelKinsy/PiG/coding/extension/host/subprocess/cell_start.go:154 +0x1bd fp=0x19a673535fb0 sp=0x19a673535bf0 pc=0x12f2d3d
+sync.(*WaitGroup).Go.func1()
+	sync/waitgroup.go:258 +0x4a fp=0x19a673535fe0 sp=0x19a673535fb0 pc=0x49ecaa
+runtime.goexit({})
+	runtime/asm_amd64.s:1264 +0x1 fp=0x19a673535fe8 sp=0x19a673535fe0 pc=0x495601
+created by sync.(*WaitGroup).Go in goroutine 69
+	sync/waitgroup.go:238 +0x7d

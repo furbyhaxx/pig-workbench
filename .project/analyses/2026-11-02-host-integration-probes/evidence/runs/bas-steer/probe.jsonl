@@ -1,0 +1,10 @@
+{"event":"session_start","ext":"m0b","flag":false,"flagErr":"<nil>","hasUI":true,"kind":"event","mode":"rpc","pid":1794646,"reason":"startup","t":1793640070.288566}
+{"contextFiles":["/tmp/wb-probes/work/AGENTS.md"],"cwd":"/tmp/wb-probes/work","err":"<nil>","ext":"m0b","kind":"prompt","pid":1794646,"skills":["reverse-engineer-anything"],"t":1793640070.512182}
+{"err":"<nil>","ext":"m0b","kind":"send","mode":"bas-steer","pid":1794646,"t":1793640070.51241}
+{"ext":"m0b","kind":"context","pid":1794646,"roles":["custom:wb-frame","user"],"t":1793640070.514109}
+{"event":"agent_end","ext":"m0b","kind":"event","pid":1794646,"reason":null,"t":1793640070.516898}
+{"contextFiles":["/tmp/wb-probes/work/AGENTS.md"],"cwd":"/tmp/wb-probes/work","err":"<nil>","ext":"m0b","kind":"prompt","pid":1794646,"skills":["reverse-engineer-anything"],"t":1793640072.012798}
+{"err":"<nil>","ext":"m0b","kind":"send","mode":"bas-steer","pid":1794646,"t":1793640072.013211}
+{"ext":"m0b","kind":"context","pid":1794646,"roles":["custom:wb-frame","user","assistant","custom:wb-frame","user"],"t":1793640072.01465}
+{"event":"agent_end","ext":"m0b","kind":"event","pid":1794646,"reason":null,"t":1793640072.017381}
+{"event":"session_shutdown","ext":"m0b","kind":"event","pid":1794646,"reason":"quit","t":1793640073.511509}

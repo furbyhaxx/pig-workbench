@@ -1,0 +1,1 @@
+[{"tools":[{"name":"bash","args":{"command":"sleep 9.123; echo never"}}]},{"text":"after"}]

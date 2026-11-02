@@ -13,7 +13,7 @@ class H(BaseHTTPRequestHandler):
         body=json.loads(self.rfile.read(int(self.headers['content-length'])))
         with lock:
             i=idx[0]; idx[0]+=1
-            log.write(json.dumps({"i":i,"t":time.time(),"messages":body.get("messages"),"tools":[t["function"]["name"] for t in body.get("tools",[])]})+"\n"); log.flush()
+            log.write(json.dumps({"i":i,"t":time.time(),"messages":body.get("messages"),"tools":[t["function"]["name"] for t in body.get("tools",[])],"other":{k:v for k,v in body.items() if k not in ("messages","tools")}})+"\n"); log.flush()
         step=script[i] if i<len(script) else {"text":"done"}
         self.send_response(200); self.send_header('content-type','text/event-stream'); self.end_headers()
         def send(d):

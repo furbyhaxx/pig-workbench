@@ -1,0 +1,12 @@
+{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1788770, "reason": "startup", "t": 1793639461.214379}
+{"cmd": "branch", "err": "<nil>", "ext": "m0b", "kind": "command", "labels": ["before-compact"], "pid": 1788770, "t": 1793639461.690615, "types": {"compaction": 1, "custom": 1, "message": 9, "model_change": 1, "thinking_level_change": 1}}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1788770, "skills": ["reverse-engineer-anything"], "t": 1793639462.175699}
+{"ext": "m0b", "kind": "context", "pid": 1788770, "roles": ["compactionSummary", "assistant", "user", "assistant", "user"], "t": 1793639462.180955}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1788770, "reason": null, "t": 1793639462.194294}
+{"event": "session_tree", "ext": "m0b", "kind": "event", "pid": 1788770, "reason": null, "t": 1793639463.692377}
+{"cmd": "tree", "err": "<nil>", "ext": "m0b", "kind": "command", "pid": 1788770, "res": {"cancelled": false}, "t": 1793639463.692972, "target": "7716430f"}
+{"cmd": "branch", "err": "<nil>", "ext": "m0b", "kind": "command", "labels": [], "pid": 1788770, "t": 1793639464.675869, "types": {"message": 1, "model_change": 1, "thinking_level_change": 1}}
+{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1788770, "skills": ["reverse-engineer-anything"], "t": 1793639465.177086}
+{"ext": "m0b", "kind": "context", "pid": 1788770, "roles": ["user"], "t": 1793639465.178119}
+{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1788770, "reason": null, "t": 1793639465.180436}
+{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1788770, "reason": "quit", "t": 1793639468.676337}
