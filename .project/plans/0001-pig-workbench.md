@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Backend matrix approved; probe findings written into specs; remaining M0.2 probes run"
       changes: ["Marked D1, D2, D3 and D7 resolved with evidence links", "Updated M0 progress and remaining blockers"]
+    - revision: 7
+      reason: "User defined session:// routes and removed session restrictions"
+      changes: ["Resolved D6 without authorization", "Updated WB-07 acceptance"]
 ---
 
 # 1. Outcome and authority
@@ -80,7 +83,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-04 | Inline line/range/count/head/tail/raw selectors, multi-read, context boundaries, summaries, continuation, loop guard, supersede handling | M1–M3 | Source-coordinate/seen-line integrity, filename disambiguation and deterministic bounded batches |
 | WB-05 | Advanced read adapters: JSON queries, SQLite, archives, documents/PDF, images/SVG, notebooks, static web, binary inspection, video/profile views | M3 | Explicit format/operation matrix and representative end-to-end fixtures, not just adapter registration |
 | WB-06 | Shared capability-declared scheme router and extension integration contract | M1, M4 | One resolver/pager/policy path; handlers do not duplicate tool logic |
-| WB-07 | Project/global sessions, history, branches and search; `session://`, `history://`, `branch://` | M4 | Alternate session roots, active branch vs full history, scoped authorization, index correctness |
+| WB-07 | Project/global sessions, history, branches and search; `session://`, `history://`, `branch://` | M4 | Alternate session roots, active branch vs full history, project membership incl. nested worktrees, index correctness |
 | WB-08 | `skills://`/`skill://`, supporting files and enabled skill catalog | M4 | Trust-resolved catalog, safe containment, no disabled-skill rediscovery |
 | WB-09 | `jobs://` with logs/control backed by the same manager as one `jobs` tool | M5 | Tool and URI operations have identical ownership, cancellation and policy semantics |
 | WB-10 | `file://`, `ssh://`, `artifact://`, `local://`, `conflict://`, `cfg://`, `harness://`; aliases in proposal | M1–M5 | Capability-driven routing, mutation guards, scoped persistence and useful errors |
@@ -118,7 +121,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D3: host interception | Same-name overrides, instruction suppression, provider context projection and codemode observation are host-sensitive | Run isolated probes before relying on them. A host gap becomes a named blocker with proposed upstream change, not an omitted feature or invented SDK API |
 | D4: full hashline recovery | Parser tolerance, evidence-based relocation and model-assisted repair are different behaviors | Inventory all donor recovery paths and fixtures; preserve full functionality with explicit warnings/policy. Model-assisted repair must be opt-in, bounded and disclose inference. Reject ambiguous mutations |
 | D5: short snapshot tags | Four-hex normalized tags are not unique integrity identifiers | Keep the user-facing grammar, but bind tags to canonical paths, retained bytes and seen spans; detect collisions and raw-byte changes before mutation. Do not mark unseen bytes seen after a partial edit |
-| D6: session/global privacy | Global browsing can expose unrelated project transcripts | Specify project/global scope and explicit user authorization for cross-project content/search. Use host session roots and formats, not hardcoded paths or recursive scans on every read |
+| D6: session addressing | Agents need the current session, any session and project sessions | **Resolved:** `session://`, `session://{id}`, `session://project[/{id}]`, `session://all`; nested worktrees belong to the project; no consent gates (SPEC-0004 §9). Use host session listing, not hardcoded paths |
 | D7: terminal job input | Sending a control byte through a pipe is not a terminal signal/EOF | Distinguish stdin bytes, close, signals and PTY input. Preserve key controls with defined backend semantics and a tested PTY backend where needed; unsupported terminal operations fail explicitly |
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
@@ -276,7 +279,7 @@ Depends on M1; integrates with M3. Implement session/history/branch project/glob
 
 Use host-owned catalogs or a documented indexed reader when no API exists. Account for configured session roots, partially appended JSONL, renamed/deleted sessions, compaction, branch selection and no-session mode. Bind pages to a stable revision/cursor rather than renumbering an actively growing log mid-read. Global authorization applies to search snippets as well as full reads.
 
-**Exit:** schemes have end-to-end read/list/search/control tests, scoped authorization and pagination. No settings credential exposure or trust widening via project config. Reload acknowledges a scheduled action and executes at a verified safe boundary.
+**Exit:** schemes have end-to-end read/list/search/control tests and pagination. No settings credential exposure or trust widening via project config. Reload acknowledges a scheduled action and executes at a verified safe boundary.
 
 ## M5 — SSH, worktrees and jobs (later)
 
@@ -331,9 +334,9 @@ This is the concrete new feature, not just “add BACKLOG.md to a filename list�
 Every implemented slice includes behavior tests, docs and a scoped diff review. Run formatting/vet/unit tests first, then race/integration checks for concurrent or lifecycle changes. Validate actual SDK registration using `pig install ... --validate-only --json`. Do not weaken donor behavior tests to make a partial port pass; document intentional semantic improvements and add tests for them.
 
 - **Differential fixtures:** compare hashline operations, block spans, recovery and read selections against pinned donor fixtures/reference execution where practical. No live user files in mutation tests.
-- **Cross-feature scenarios:** read summary→range→hashline block edit; grep→edit; archive/member paging; JSON query continuation; cd→new instructions→remote edit; codemode multi-read→seen-state; jobs URI vs tool control; resume→pin→diff; global history authorization→search.
+- **Cross-feature scenarios:** read summary→range→hashline block edit; grep→edit; archive/member paging; JSON query continuation; cd→new instructions→remote edit; codemode multi-read→seen-state; jobs URI vs tool control; resume→pin→diff; nested-worktree session→`session://project` search.
 - **Failure matrix:** cancellation, partial I/O, malformed config/URI/input, storage quota, slow consumer, watcher loss, disconnect, stale revision, branch switch, reload, shutdown and crash.
-- **Security:** terminal escapes, path traversal/symlinks, SSH argument injection, read-only SQL enforcement, archive bombs, credential redaction, URI policy parity and unauthorized cross-project reads.
+- **Security:** terminal escapes, path traversal/symlinks, SSH argument injection, read-only SQL enforcement, archive bombs, credential redaction, and URI policy parity.
 - **TUI:** captures at 36/57/80/140 columns, plus short height (~16 rows), resize, long paths, hostile text and failures. Review captures, not just process exit codes.
 - **Modes:** TUI, RPC, print and JSON. Script-facing behavior must be reachable without slash-command UI.
 

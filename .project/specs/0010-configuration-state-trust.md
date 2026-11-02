@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T18:45:00+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "M0.2 probes measured session and skill catalog access"
       changes: ["Recorded that any extension can list all sessions with full text and set the Workbench boundary"]
+    - revision: 3
+      reason: "User removed session access restrictions"
+      changes: ["Replaced the session privacy boundary with plain catalog access", "Dropped cross-project session authorization from the trust matrix"]
 ---
 
 # 1. Scope and precedence
@@ -121,7 +124,6 @@ Trust means different things; keep them separate:
 | Whether a tool operation is permitted | Host operation policy plus Workbench capability/scope checks |
 | Whether a file is instruction vs data | Workbench class + user source policy, constrained by host |
 | Whether a frame can use native elevated role | Granted producer authority + verified provider capability |
-| Cross-project session visibility | Explicit user-scope history authorization |
 | External bridge identity | Approved authenticated bridge, not JSON owner fields |
 | Presentation settings | Cosmetic; never grant execution permissions |
 
@@ -168,7 +170,7 @@ Known-secret guard:
 - Raw file contents/tool results intended for the model are not silently altered into editable source: if redaction changes source text, mark it a derived non-editable view.
 - Masking cannot promise detection of unknown secrets. Users must be warned before export/share and no automatic external publication is permitted.
 
-Session catalog boundary ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P24–P25): the host lets any extension call `SessionManagerList` (project) and `SessionManagerListAll` (every project), including in `--no-session` runs, and each entry carries `allMessagesText`. The host is therefore not the privacy boundary; Workbench is. Workbench reads only project scope by default, requires explicit per-request user authorization (a dialog in TUI/RPC; refused in print/JSON) before touching another project's sessions, never forwards `allMessagesText` wholesale to the model, and pages bounded excerpts with their session path. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), never from a directory scan.
+Session catalog ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P24–P25): `SessionManagerListAll` returns every project's sessions with `allMessagesText`, also in `--no-session` runs. Workbench exposes all of them through `session://` (SPEC-0004) without consent steps. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), not from a directory scan.
 
 Question/answer session history is potentially sensitive. Extra archive off by default, raw logs off by default, debug payload capture off by default. Opt-in debug evidence goes only to a private local path with bounded retention; never stdout protocol stream. API errors include safe context, not full environment/config snippets.
 

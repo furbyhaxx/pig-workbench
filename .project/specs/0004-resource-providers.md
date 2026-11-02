@@ -5,11 +5,11 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T20:30:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Align shared selectors with the detailed advanced-read contract"
       changes: ["Specified raw and comma-list singleton semantics from donor parser and linked detailed behavior specs"]
+    - revision: 3
+      reason: "User defined session:// routes and removed session access restrictions"
+      changes: ["Added the session:// route grammar and project membership rule", "Removed cross-project consent and session-scope authorization"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -114,12 +117,11 @@ Partial first lines caused by a huge line are marked incomplete; do not mark the
 
 # 6. Policy and mutation integrity
 
-Capabilities describe possible operations, not authorization. Workbench enforces tool permission, trust, scope, project/global consent, path containment, resource limits and canonical target before dispatch. Provider enforces its own backing-system rules. Controls such as `jobs://id/kill`, `cfg://key/save` and `harness://reload` require declared handler mutation capabilities; no implicit write-to-any-URI.
+Capabilities describe possible operations, not authorization. Workbench enforces tool permission, path containment, resource limits and canonical target before dispatch. Provider enforces its own backing-system rules. Controls such as `jobs://id/kill`, `cfg://key/save` and `harness://reload` require declared handler mutation capabilities; no implicit write-to-any-URI.
 
 locate results:
 - Canonical resource reference or approved backing file reference with revision and permitted operations.
 - Router reauthorizes the backing target.
-- No local raw file path is accepted as permission to bypass cross-project/session limits.
 - Provider-returned aliases/redirects are bounded (max 8), cycle-checked and reauthorized on each step.
 
 Read-only execution (SQL/query/converters) must not cause hidden writes/downloads/credential forwarding. External networks require explicit provider/policy disclosure. Preview UI never runs mutations. Errors redact secrets without losing actionable target/operation information.
@@ -154,7 +156,7 @@ Page bytes default 50 KiB, lines 2000; control envelope 64 KiB. Provider chunks 
 
 | Family | Contract surface |
 |---|---|
-| session/history/branch | Project/global catalog/search, current active branch, explicit session/full/entry projections; authorized cross-project content |
+| session/history/branch | Current session, any session by ID, project and all-session catalogs and search, active branch, full/entry projections (grammar below) |
 | skills/skill | Enabled trust-resolved skills and contained supporting assets; no hidden skill rediscovery |
 | jobs/proc | Owned status/log/cursors and explicit stdin/EOF/cancel handler mutations |
 | file/ssh | Explicit authority overrides active location; local/remote tool parity |
@@ -164,6 +166,20 @@ Page bytes default 50 KiB, lines 2000; control envelope 64 KiB. Provider chunks 
 | harness/self/workbench | Status, instruction inspection/pins and deferred safe reload |
 | http/https | Static content with network policy, safe redirects and format adapters |
 
+## session:// grammar
+
+| URI | Target |
+|---|---|
+| `session://` | Current session: overview and entry table |
+| `session://{id}` | Any of the user's sessions, any project; full ID or unique prefix |
+| `session://project` | Catalog of the current project's sessions, most recent first |
+| `session://project/{id}` | A session of the current project; `notInProject` if it belongs elsewhere |
+| `session://all` | Catalog of all sessions, grouped by project cwd |
+
+`project` and `all` are reserved segments. Suffixes `/full` and `/entry/{entryId}` select the transcript or one entry; `:N-M`/`:-N` page entries; `?q=` searches a catalog's names and message text. Every session of the user is readable; there is no consent step or scope gate.
+
+Project membership: the project root is the top level of the main worktree (parent of `git rev-parse --git-common-dir`) when the cwd is in a git repository, otherwise the session cwd. A session belongs to the project when its header cwd is the root or lies beneath it, so sessions started in subdirectories and in worktrees nested inside the project (for example `.worktrees/feat-x`) count as the same project. Catalogs come from `SessionManagerListAll` filtered by that rule; `allMessagesText` feeds search and is never returned whole, because one transcript can exceed the output budget.
+
 Catalog `read harness://schemes` and `/workbench resources` show active registrations, aliases, capabilities, owner, limits and availability. This adds an inspection route, not a second provider administration system. Completion uses descriptors/cached bounded list results, never synchronous network discovery on every keystroke.
 
 # 10. Acceptance matrix
@@ -172,7 +188,7 @@ Catalog `read harness://schemes` and `/workbench resources` show active registra
 - Duplicate/reserved/alias collision, invalid capability combinations and unsupported operations fail atomically.
 - SSH ports, encoded traversal, query punctuation, literal filenames, raw ranges, huge lines, tail and disjoint selections.
 - Paging consistency across append/mutation/reload; unknown totals and cursor expiry surfaced.
-- Canonical redirect/locate cannot bypass scope/approval; global session search is protected as well as full reads.
+- `session://`, `session://{id}`, `session://project/{id}` and `session://all?q=` resolve correctly, including a session started in a nested worktree counting as the project's.
 - Full hashline source seen-state vs derived view false anchors; read-only resource cannot be edited through aliases.
 - Mutation idempotency, stale revision, cancellation-before/after commit and provider disconnect preserve honest outcomes.
 - Slow/noisy provider bounded concurrency and progress; no render-loop provider calls.
