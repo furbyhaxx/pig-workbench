@@ -2,278 +2,373 @@
 document:
   type: "draft"
   id: "DRAFT-0001"
-  title: "pig-workbench: a Go-native tool and harness foundation"
-  description: "Source-grounded adoption scope, architecture, contracts, risks and delivery proposal"
+  title: "pig-workbench: full Go-native workbench, hashline engine, scheme VFS, and ambient context injection"
+  description: "Complete adoption scope and architecture across pi-workbench, oh-my-pi, and nugent (excluding only subagents and task/todo tracking)"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T14:49:32+01:00"
-  updated_at: "2026-11-02T14:49:32+01:00"
+  updated_at: "2026-11-02T15:08:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Initial research and proposal"
       changes: ["Inspected reference implementations and staged PiG SDK; proposed adoption scope and delivery gates"]
+    - revision: 2
+      reason: "Restore full scope per user feedback"
+      changes:
+        - "Adopted the full oh-my-pi hashline edit engine (section headers [PATH#TAG], PUT/CUT/REM/MV, syntax block N*, @registers, seen-line guard, shift/auto-repair, no-op loop detection, and configurable edit mode)"
+        - "Adopted the full oh-my-pi + nugent read tool (inline selector grammar :N, :A-B, :A+C, :-N, :raw, :conflicts, :img, multi-range comma lists, delimited multi-path reads, structural code summaries, enclosing block context, SQLite/JSON/archive/binary/PDF/URL readers, loop guard, and complete-read supersede tracking)"
+        - "Added scheme:// handlers for sessions/history (history://, session://, branch:// across current, project, and global scopes), skills (skill:// and skills://), and jobs (jobs:// and proc://), alongside file://, ssh://, artifact://, local://, cfg://, conflict://, and harness://"
+        - "Restored /workbench as primary command plus top-level /tools, /remote, /cd, /answer, /answer:again, /tldr, /wb:jobs, /wb:cd, and --list-tools CLI flag"
+        - "Restored codemode nested call capture, scriptFacts parsing, and tree/cost rendering"
+        - "Redesigned instruction & ambient file injection to support user-defined file classes with placement policies (ancestors vs root+nearest vs pinned), item/line caps (+K more -> path), BACKLOG.md first-class rule, live diff frames, relocation/withdrawal, and deduplication"
 ---
 
-# Recommendation
+# Summary of Changes (Revision 2)
 
-Build one **Go factory extension**, `pig-workbench`, with a small set of cooperating services, not a line-by-line port or a second harness. Override PiG's seven file/shell builtins; add `cd`, `ask_user`, and exactly one `jobs` tool. Use one `/pig-workbench` command family. Reuse PiG's builtin factories, event bus, session storage and kit UI where they fit. Implement the genuinely new behavior in plain Go.
+The previous draft pruned away the defining mechanics of `oh-my-pi`, `nugent`, and `pi-workbench`. This revision restores the full capability set—excluding **only** subagents/agent definitions and task/todo tracking.
 
-The core is a resource router and execution-location service, shared by enhanced reads, safe edits, search, shell execution and jobs. Frames and questionnaires use those services but do not become dependencies of filesystem algorithms.
+1. **Command surface:** Primary command is `/workbench`, plus top-level commands `/tools`, `/remote`, `/cd` (`/wb:cd`), `/answer`, `/answer:again` (`/ask:replay`), `/tldr`, `/wb:jobs`, and the `--list-tools` flag.
+2. **Full Hashline Edit Engine:** Complete port of `oh-my-pi/crates/pi-edit/src/modes/hashline/` + `EditStore`: `[PATH#TAG]` 4-hex XXH32 snapshots, `N:LINE` numbering, `PUT N.=M:`, `PUT <N:`, `PUT >N:`, `PUT >$:`, syntax-block `PUT N*:`, `PUT >N*:`, `CUT N.=M [@reg]`, `CUT N* [@reg]`, register pastes, `REM`, `MV DEST`, seen-line enforcement, shift rescue, and no-op loop detection—plus configurable mode fallback (`hashline` default, `replace` exact-text mode).
+3. **Full Optimized `read` Tool (`oh-my-pi` + `nugent`):** Inline selector suffixes (`:N`, `:N-`, `:N-M`, `:N+K`, `:-N`, comma-separated multi-ranges, `:raw`, `:conflicts`, `:img`, `?q=`), delimited multi-path batch reads, contextual windowing (`+1` leading / `+3` trailing lines + enclosing AST/bracket block opener/closer lines), structural code summaries for bare large code files, directory/container pagination, SQLite (`file.db`, `:table`, `:table:key`, `?q=SELECT`), JSON/JSONL (`?q=<jq filter>&offset=&limit=`), archives (`archive.zip:member`), binary/hex/symbol inspection, PDF/documents, static URLs, read-loop guard, and complete-read supersede metadata.
+4. **First-Class `scheme://` VFS Router:**
+   - `history://` & `session://` (plus `branch://`): current branch, project sessions, and global sessions (`~/.pig/agent/sessions/`), with search, metadata index, and entry/range reads.
+   - `skill://` & `skills://`: list all trust-resolved skills, read `SKILL.md` (frontmatter stripped or `:raw`), and read/locate relative supporting files inside a skill's directory.
+   - `jobs://` & `proc://`: list background jobs, read status/stream logs (`jobs://<id>`, `jobs://<id>/streams`), write stdin (`write jobs://<id>`), or cancel (`write jobs://<id>/kill`).
+   - `file://`, `ssh://`, `artifact://`, `local://`, `conflict://`, `cfg://`, `harness://` (`status`, `reload`).
+5. **Codemode Integration:** Full port of `pi-workbench/src/core/codemode.ts` (`NestedCaptures`, `scriptFacts`, `codemodeCalls`, nested tool preview trees, per-call duration/cost/error rendering) + Workbench tool namespace exposure for PiG codemode scripts.
+6. **Enhanced Instruction & Ambient Context Injection:** Full port of `pi-workbench/src/instructions/` and `nugent`'s `InstructionLedger`, extended with **configurable ambient file classes** supporting:
+   - **`ancestors` policy** (default for `AGENTS.override.md`, `AGENTS.md`, `BACKLOG.md`): inject from boundary root down to touched directory / cwd.
+   - **`root+nearest` policy** (for multi-location project files where intermediate directories should be skipped): inject only the boundary/root instance and the nearest instance to the active/touched path.
+   - **Agent/user pinning** (`pin` / `unpin` via `/workbench instructions` or `harness://instructions/pin`): keep specific files pinned across `cd` transitions.
+   - **Item & line caps with pointer footer:** e.g. for `BACKLOG.md`, cap at `maxItems` (or `maxLines`) and append `(+K more → <path>)` so agents never trim files to save tokens.
+   - **Live diff frames** on file edits during a run, coalesced updates while idle, byte-identical deduplication (`SkipIdentical`), zero-copy relocation (`Relocated`), withdrawal on `cd`, and self-edit notices.
 
-No subagents, agent definitions, tasks or todos. No migration or historical compatibility machinery from either donor. Preserve formats we introduce after release, not formats we never shipped.
+---
 
-## Source observations
+# 1. Command & Tool Inventory
 
-Research used these local checkouts; no remote service received project content:
+## 1.1 Registered Tools (10 tools + `codemode` renderer)
 
-| Source | Inspected revision | Relevant evidence |
-|---|---|---|
-| pi-workbench | `e8ee24772cb28a0f1ba6ea497485328657fb60fb` | `src/index.ts`, `src/core/{cd,working-location,operations,jobs,grep}.ts`, `src/message-framing/`, `src/ask/schema.ts`, `docs/{features,frames}.md` |
-| oh-my-pi | `553f0d10e813a5e1fb65e545efe7c814bc03a879` | `packages/coding-agent/src/internal-urls/`, `tools/read.ts`, `edit/{schemas.ts,hashline-compact.md}`, `crates/pi-edit/src/modes/hashline/` |
-| nukular-ai / nugent | `0080fed7064639d184b5d3ce90099892507741e7` | `crates/nukular-nugent/src/schemes/{harness_scheme,skill_scheme}.rs` |
-| Running PiG | `0.5.3+1.4.0.74f46864` | Bundled extension/API/event/RPC UI documentation; staged Go SDK `sdk-899c7964784a0050` |
+| Tool | Source / Role |
+|---|---|
+| `read` | Overrides PiG `read`. Full `oh-my-pi` + `nugent` routed reader with inline selectors, hashline `[PATH#TAG]` headers, structural summaries, block context, multi-path, SQLite, JSON, archives, images, and `scheme://` URIs. |
+| `edit` | Overrides PiG `edit`. Full `oh-my-pi` hashline patch engine (`input` patch mode by default; configurable or schema-union `replace` mode with `path` + `edits[]`). |
+| `write` | Overrides PiG `write`. Routes through the scheme VFS (`file://`, `ssh://`, `local://`, `jobs://`, `conflict://`, `cfg://`, `harness://`), strips accidental hashline prefixes on text writes, rejects truncation footers, and records full-file seen snapshots in `EditStore`. |
+| `grep` | Overrides PiG `grep`. Local + SSH ripgrep/fallback search with `pattern` or literal `patterns[]` (OR), `output: "lines" \| "files"`, `exclude[]` globs, context lines, hashline-numbered matches (so grep output lines count as seen in `EditStore`), and exact completeness metrics. |
+| `find` | Overrides PiG `find`. Local + SSH + virtual scheme globbing with brace/class/doublestar compilation and explicit limit reporting. |
+| `ls` | Overrides PiG `ls`. Local + SSH + `scheme://` container listing. |
+| `bash` | Overrides PiG `bash`. Executes in the active Workbench working location (local or SSH), supports `background: true`, configurable foreground-to-background yield/promotion, process-group watchdog, SecretGuard redaction, and `EditStore` invalidation on filesystem-mutating commands. |
+| `cd` | Session working-location controller (`{}` status, `path`, `branch` worktree create/reuse under `.worktrees/<slug>`, `reset`), backed by branch-persisted `WorkingLocation` revisions and leases. |
+| `jobs` | Single unified background-job tool combining `pi-workbench`'s `job_status`, `job_wait`, `job_kill`, and `job_write` plus `list` and `output`: actions `list`, `status`, `wait`, `output`, `write` (stdin + special keys `Enter`, `Ctrl+C`, `Ctrl+D`, `Tab`, `Esc`, `Up`, `Down` + `eof`), and `kill` (`cancel` alias). |
+| `ask_user` | Full interactive questionnaire tool (`single`, `multi`, `preview`, freeform custom input, `recommended` badges, tab navigation, review screen, dismiss guard, auto-submit option, RPC dialog fallback, pending-ask recovery, and remote-ask event bus bridge). |
+| *(renderer)* `codemode` | Custom call/result renderer for PiG's built-in `codemode` tool using `NestedCaptures` and `scriptFacts`. |
 
-External source roots are `host:/mnt/Projects/furbyhaxx/pi-workbench`, `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi`, and `host:/mnt/Projects/nukular/nukular-ai`. The pi-workbench and nukular-ai trees contain unrelated local changes; they were not modified. Revision IDs identify baselines, not clean-tree guarantees.
+## 1.2 Slash Commands & CLI Flags
 
-Important verified facts:
+- **`/workbench`** — Master command and TUI menu:
+  - `/workbench settings [work|edit|read|ask|tldr|jobs|frames|instructions|trust|statusline]`
+  - `/workbench show` — Current effective settings, working location, active edit mode, and status summary.
+  - `/workbench preview <compact|normal|full|all> [tool]` — Render live or synthetic tool/codemode previews at each density.
+  - `/workbench tools [name] [--format text|json|markdown]` — Interactive tools & schema inspector panel or formatted dump.
+  - `/workbench jobs [list|monitor|kill|write|settings] [job]` — Live jobs TUI panel (output viewer, kill, stdin writer).
+  - `/workbench frames [ls|show|hide|collapse] [target]` — Inspect branch frames and configure per-kind/per-source visibility.
+  - `/workbench instructions [ls|pin|unpin|reload|rules]` — Inspect loaded/withdrawn instruction & ambient files, pin/unpin files, or inspect class rules.
+  - `/workbench trust [ls|add|rm]` — Manage instruction/host trust globs.
+  - `/workbench tldr [regenerate|instructions|config|model|cancel|help]` — Manual branch checkpoint summary generator.
+  - `/workbench statusline` — Optional statusline/footer segment editor (when enabled in config).
+- **Top-level commands (matching `pi-workbench`):**
+  - `/tools [name]` — Alias to `/workbench tools`.
+  - `/remote [alias[:/path] | off | reload | add | config | <host> show|note|shell|hide|unhide|rename]` — Full SSH host manager panel and CLI.
+  - `/cd [path | --branch <branch> | --reset]` and `/wb:cd` — Interactive directory/worktree picker or direct location switch.
+  - `/wb:jobs` — Alias to `/workbench jobs`.
+  - `/answer` and `/answer:again` (`/ask:replay`, `/ask-settings`) — Extract questions from the last assistant turn into an `ask_user` form, or replay the last questionnaire on the branch.
+  - `/tldr [...]` — Top-level entry point for `/workbench tldr`.
+- **Flags:**
+  - `--list-tools` — CLI flag to dump registered tool schemas (`tools-inspector`).
 
-- pi-workbench's entrypoint combines remote tools, jobs, instruction loading, statusline composition and excluded agent/task features. Copying that entrypoint would import the wrong boundaries.
-- Its working-location owner already has useful branch-local records, revisions and admission leases. Its `cd` deliberately does **not** change the host cwd.
-- Its bus service publishes callable JavaScript functions. PiG's Go `EventBus` crosses realms as JSON values; that service shape cannot be carried across unchanged.
-- PiG's `builtin_tool.go` exposes `CreateReadToolDefinition`, the other builtin factories, execution wrappers and operation callbacks. `BuiltinToolDefinition.ExecuteWith` prefers the **host context cwd** over the factory cwd. Merely constructing a builtin with the Workbench cwd is therefore insufficient.
-- PiG's bus is synchronous: listeners finish before `Emit` returns; listener errors do not propagate as service responses. Request/reply needs explicit response envelopes.
-- Current oh-my-pi hashline is not just `line:hash` labels: its compact contract uses `[PATH#TAG]`, snapshot tags, PUT/CUT operations, seen-line tracking, syntax blocks and move/delete operations. Importing the name does not require importing that entire language.
-- oh-my-pi's read pipeline includes selectors, archives, database queries, media, conversion and summarization. Those are separate product choices, not prerequisites for multi-read.
-- Nugent demonstrates a smaller capability-declared router, a skill catalog backed by a shared snapshot, and queued harness reload. Its task provider is explicitly outside this project.
+---
 
-This is source research, not runtime proof. No extension has been scaffolded, built or exercised. Integration gates below remain open.
+# 2. Full Hashline Edit Engine (`oh-my-pi` Port)
 
-# 1. Adoption scope
+We will port the `oh-my-pi` hashline engine (`crates/pi-edit/src/modes/hashline/` + `crates/pi-edit/src/store.rs`) to Go in `internal/hashline/`:
 
-| Area | Adopt | Adapt or leave out |
-|---|---|---|
-| Builtins | Override `read`, `write`, `edit`, `ls`, `find`, `grep`, `bash`; consistent metrics, limits, rendering and config | Reuse host behavior rather than duplicating every builtin implementation |
-| Read | Explicit multi-target requests, ranges/tail, paged text, images through supported host behavior, snapshot/anchor metadata | No delimiter guessing, fuzzy path substitution, automatic LLM summaries, database/media/converter stack in baseline |
-| Edit | Hash-anchored range replacement/insertion/deletion; exact-text multi-edit alternative; preflight validation | No fuzzy repair, syntax-block editing, clipboard language, implicit move/delete or whitespace normalization |
-| Search | Literal multi-pattern OR, regex mode, include/exclude globs, files-only results, context, exact completeness | No silent changes to ignore rules or regex dialect between local and SSH backends |
-| Locations | Local and SSH locations, explicit per-call override, persistent `cd`, reset, branch worktree entry | No process-wide `os.Chdir`; no automatic host config rewriting |
-| Frames | Structured attributed messages, branch replay, display densities/visibility, delivery policy | No claim that XML tags or a nonce are a security boundary |
-| Instructions | Nested AGENTS.md discovery, reconciliation on location changes, compaction/resume handling, trust and bounded updates | No CLAUDE.md/GEMINI.md aliases; no duplicate injection alongside host project context |
-| Event bus | Versioned JSON events and bounded request/reply services on PiG's existing bus | No second transport, function-valued payloads or unbounded event history |
-| Ask | One `ask_user` tool: single/multi/free-text answers, previews, review, cancellation, pending recovery | No duplicate `ask` tool; model-based `/answer` extraction and remote bridge integrations deferred |
-| Jobs | Foreground/background execution, status/list/output/wait/cancel/stdin, completion frames, durable logs | One `jobs` tool, not job_* siblings; no daemon/subagent/service manager |
-| Settings/UI | Layered extension JSON; compact/normal/full renderers; kit panels; tool/schema inspection | No general-purpose footer/editor replacement, configurable statusline framework or branding |
+## 2.1 Snapshot Tags & `EditStore`
+- **4-hex XXH32 tag (`[PATH#TAG]`):** Computed identically to `oh-my-pi` (`Xxh32(0)` over LF-normalized, BOM-stripped text with trailing spaces/tabs/CRs trimmed per line, masked `& 0xffff` as `%04X`).
+- **Session `EditStore`:** LRU-bounded store (256 paths, 4 versions per path, 64 MiB max retained bytes, 4 MiB max file size):
+  - Records full-file snapshots and `seen_lines` (`BTreeSet<uint32>`) whenever `read` or `grep` emits numbered lines, and unrestricted snapshots after `write` or `edit`.
+  - Retains session clipboard registers (`@name` across calls; anonymous register within a batch).
+  - Tracks consecutive identical no-op payloads per path (`NOOP_HARD_LIMIT = 3`) to break model edit loops.
 
-SSH and instruction lifecycle are included in the intended base because they make `cd` and frames coherent. Their implementation follows local correctness rather than blocking the first working slice. Host editing/rename panels, manual branch summaries and model pickers are not baseline requirements.
+## 2.2 Patch Grammar & Operations
+- **Section headers:** `[path#TAG]` (plus tolerance for `[*** Update File: path#TAG]` noise and optional `*** Begin Patch` / `*** End Patch` envelopes).
+- **Operations:**
+  - `PUT N.=M:` — Replace inclusive line range `N..=M` with `+` payload lines (`N.=N` for single line).
+  - `PUT <N:` / `PUT >N:` / `PUT <1:` / `PUT >$:` — Insert before line `N`, after line `N`, at BOF, or at EOF.
+  - `PUT N*:` — Replace the syntactic block opening at line `N`.
+  - `PUT >N*:` — Insert after the syntactic block opening at line `N` at sibling depth.
+  - `CUT N.=M [@name]` / `CUT N* [@name]` — Delete range or syntactic block and capture into anonymous or `@name` register.
+  - `PUT <N [@name]` / `PUT >N [@name]` / `PUT >N* [@name]` / `PUT N.=M @name` / `PUT N* @name` — Paste from register.
+  - `REM` — Delete the file.
+  - `MV <dest>` — Move/rename the file after applying section edits.
+- **Body & Prefix Rules:**
+  - Payload rows start with `+` (`+` alone is an empty line; `+-` / `++` escapes leading `-`/`+` bullets).
+  - Automatic recovery/warnings for common model mistakes (copied `N:` hashline prefixes inside `+` rows, bare ranges auto-lowered to `PUT`, empty `PUT` lowered to `CUT`, `-` diff rows stripped with warning).
 
-# 2. Architecture
+## 2.3 Block Resolution (`N*`)
+- Resolves the multi-line construct starting at line `N` (including leading decorators/attributes/doc-comments, or Markdown heading sections through deeper headings):
+  - **AST / structural resolver in Go:** Native Go parser for `.go` (`go/parser`), Markdown heading block scanner for `.md`, indentation/decorator-aware lexical + brace/statement-sequence block resolver for TS/JS/Rust/Python/C/JSON/TOML/YAML (matching `pi-ast/src/block.rs` rules: climb to outermost construct starting on `row` without swallowing statement-sequence containers, reject single-line spans with enclosing/next block suggestions).
+
+## 2.4 Safety, Seen-Line Guard & Auto-Repair
+- **Seen-line enforcement (`edit.enforceSeenLines = true`):** Rejects edits touching lines not yet displayed in `read`/`grep` (or cut by column caps/elisions), returning an `UnseenLinesReveal` diagnostic that prints the unseen lines around the anchors and marks them seen for the retry.
+- **Tag mismatch & shift rescue:** If `TAG` does not match the current file on disk:
+  - Checks if `TAG` matches an earlier `EditStore` snapshot of the file and uses Myers diff (`shifted_images`) to safely relocate replacement anchors when the targeted lines are inside an unchanged run and carry `>= 8` non-whitespace evidence chars.
+  - Checks if `TAG` came from a *different* file in `EditStore` (`tag_origin_paths`) and tells the model which file that tag belonged to.
+  - Otherwise returns a rich mismatch error with the current `[path#NEW_TAG]` and numbered context windows around every attempted anchor (recording those revealed lines as seen).
+- **Dual Edit Mode:** Supports `edit.mode = "hashline" | "replace" | "auto"` in config so models/users can use `hashline` patches (`{"input": "..."}`) or exact-text multi-replacement (`{"path": "...", "edits": [{"oldText": "...", "newText": "..."}]}`).
+
+---
+
+# 3. Full Optimized `read` Tool (`oh-my-pi` + `nugent` Port)
+
+`read` takes `{"path": "..."}` (or explicit `{"paths": [...]}`) and implements the complete pipeline:
+
+1. **Inline Selector Grammar (`parseSel` + `ToolPath`):**
+   - Literal file probe first so real filenames containing `:` always win.
+   - `:N` or `:N-` (from line `N`), `:N-M` (inclusive range), `:N+K` (`K` lines starting at `N`), `:-N` (last `N` lines), comma-separated multi-ranges (`:5-16,960-973`, `:1-12,-15`).
+   - `:raw` (verbatim without `[path#TAG]` header, line numbers, or context expansion; combinable as `:50-100:raw` or `:raw:50-100`).
+   - `:conflicts` (lists unresolved `<<<<<<<` merge conflict blocks and registers `conflict://<id>` URIs).
+   - `:img` (rasterizes `.svg`/`.svgz`) and `?q=<question>` (optional image question hook when configured).
+2. **Delimited Multi-Path Reads:**
+   - Supports reading multiple paths in one call (via `paths: string[]` or comma/whitespace-delimited path lists when each part resolves to a path/URI), running concurrently with deterministic output order and a shared output budget.
+3. **Hashline Output & Contextual Windowing:**
+   - Prepends `[displayPath#TAG]` and formats lines as `LINE:TEXT`.
+   - Single non-raw range automatically includes `1` leading and `3` trailing context lines.
+   - **Enclosing Block Context (`block-context`):** For windowed or multi-range non-raw reads, scans enclosing syntax/brackets and injects outer opener/closer boundary lines (`⋯` elision markers) so the model always sees the function/struct signature and closing brace around a slice.
+   - Records only fully emitted, non-truncated lines in `EditStore` (`recordFullySeenRows`).
+4. **Structural Code Summaries (Bare Reads of Large Code Files):**
+   - When reading a bare code file exceeding `read.summarize.minTotalLines` (and not prose/Markdown unless opted in), produces a declaration/signature skeleton with line-range fold markers (`… lines A-B elided …`) and a footer instructing the model to `read path:A-B` for bodies.
+5. **Specialized Content Readers:**
+   - **Directories & Virtual Containers:** Depth-1 or tree listing (child cap with `… N more`), pageable via `:N-M` / `:-N`.
+   - **SQLite (`.db`, `.sqlite`, `.sqlite3`):** Sniffs SQLite header; `file.db` lists tables + row counts; `file.db:table` shows schema + sample rows; `file.db:table:key` looks up by PK/rowid; `file.db?q=SELECT...` runs read-only queries (via `sqlite3` CLI or pure-Go reader).
+   - **JSON / JSONL / NDJSON (`file.json?q=<filter>`):** Runs `jq`/`jaq` or built-in query with `&raw=true`, `&compact=true`, `&offset=&limit=` pagination and continuation hints.
+   - **Archives (`.zip`, `.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz`, `.jar`, `.whl`):** Lists archive entries (`archive.zip`) and reads members with line selectors (`archive.zip:path/to/file.go:10-50`), backed by an inode/mtime/size-keyed LRU index cache.
+   - **Binaries (ELF/PE/Mach-O):** Sniffs magic bytes; instead of dumping garbage, renders header overview, symbols/exports/imports/strings (`bin:imports`, `bin:exports`, `bin:strings`, `bin:<sym>:asm` via `nm`/`objdump`/`readelf` when available), pageable by line range.
+   - **PDF / Documents & Static Web URLs (`http://`, `https://`):** Extracts readable text/markdown with `:raw` fallback and line-range paging.
+   - **Images (`.png`, `.jpg`, `.gif`, `.webp`, `.bmp`):** Decoded inline as image content blocks with dimension notes.
+6. **Read Loop Guard & Supersede Tracking:**
+   - Tracks repeated identical `(path, selector, contentHash)` reads in the session; after repeated identical reads, appends a loop-breaking hint (`[You have received this identical output N times...]`).
+   - Attaches `ReadDetails` (`complete`, `shown`, `totalLines`, `next`, `sourcePath`, `summary`) so a subsequent complete read of a file marks earlier partial reads as superseded.
+
+---
+
+# 4. `scheme://` Virtual Filesystem Router
+
+Unified `SchemeRouter` (`internal/scheme/`) modelled after `oh-my-pi`'s `InternalUrlRouter` and `nugent`'s `SchemeProvider` trait. Every scheme declares a `SchemeSpec` (`Backing`: `file | virtual | remote | device`, `Selectors`: `lines | none | opaque`, `Immutable`, `Unbounded`, `Linkable`, `WritePolicy`: `none | file | handler`).
+
+## 4.1 Sessions & History (`history://`, `session://`, `branch://`)
+Combines `oh-my-pi`'s `history-protocol.ts` and `nugent`'s `HistorySchemeProvider` + `BranchSchemeProvider`, adapted to PiG's session storage (`~/.pig/agent/sessions/<encoded-project-cwd>/*.jsonl`):
+
+- **Scopes & Listing:**
+  - `history://` or `session://` or `session://project` — Lists all sessions for the **current project** (active session + on-disk JSONL files in the project's session directory), sorted by recent activity, with session ID, name, timestamp (`Nm/Nh/Nd ago`), entry count, and first user prompt preview.
+  - `session://global` or `history://global` — Lists sessions across **all projects** under `<agent-dir>/sessions/`, grouped/annotated by project cwd.
+  - `session://search?q=<query>[&scope=project|global]` — Searches user/assistant/tool messages and session names across project or global JSONL files without hydrating full transcripts into memory.
+- **Current Session & Branch Inspection:**
+  - `branch://` or `history://current` — Lists the entry index of the active branch (entry IDs, roles/types, timestamps, tool names, token/summary markers) without hydrating large payloads.
+  - `history://current/full` (supports `:N-M`, `:-N`) — Renders the full current branch transcript in clean Markdown sections (`### user`, `### assistant`, `#### tool call`, `### tool result`, `### compaction summary`) with base64 images and encrypted thinking blobs redacted to metadata markers.
+- **Reading Specific Sessions & Entries:**
+  - `session://<session-id>` or `history://<session-id>` — Renders the overview and entry table of that session (project or global), or `/full` for its transcript (pageable with `:N-M` / `:-N`).
+  - `history://<session-id>/<entry-id>` or `branch://<entry-id>` — Reads one specific entry or tool result payload in full.
+
+## 4.2 Skills (`skill://` and `skills://` alias)
+Combines `oh-my-pi`'s `SkillProtocolHandler` and `nugent`'s `SkillSchemeProvider`:
+- `skill://` or `skills://` — Lists all discovered, trust-resolved skills (`name`, description, source scope, size).
+- `skill://<name>` or `skills://<name>` — Reads the skill's `SKILL.md` body (frontmatter stripped by default; `skill://<name>:raw` keeps frontmatter; `unbounded: true` so skill instructions are never truncated mid-rule).
+- `skill://<name>/<relative-path>` (and `skill://<namespace>/<name>/<relative-path>`) — Reads or locates relative supporting files, scripts, references, or assets inside the skill's directory, with strict path-traversal and package-root containment checks (`resolveContainedPath`).
+- Supports `locate()` so `read`, `grep`, and `find` can search inside `skill://<name>/references/**`.
+
+## 4.3 Background Jobs (`jobs://` and `proc://` alias)
+Combines `oh-my-pi`'s `proc-protocol.ts` with `pi-workbench`'s job manager:
+- `jobs://` or `proc://` — Lists all running and retained finished background jobs (`id`, `state`, `exit_code`, `duration_s`, `location`, `command`, `log_path`).
+- `jobs://<id>` — Reads job status header plus the tail/page of its output log (supports line selectors `:1-100`, `:-80`, `:raw`).
+- `jobs://<id>/log` or `jobs://<id>/streams` — Locates/reads the underlying durable log file directly through the streaming pager.
+- `write jobs://<id>` with `content` — Sends `content` to the running job's stdin.
+- `write jobs://<id>/eof` — Closes stdin (`EOF`).
+- `write jobs://<id>/kill` (no content required) — Terminates the job's process group (allowed even in read-only/plan modes because `cancels: true`).
+
+## 4.4 Additional Core Schemes
+- **`file://`** — Local filesystem access (bypasses active SSH working location when explicitly specified as `file:///abs/path`).
+- **`ssh://`** — `ssh://[user@]host[:port]/abs/path` and `ssh://host/~/path`. Routes `read`, `write`, `edit`, `ls`, `find`, `grep`, and `bash` over SSH using the shared `Remote` transport.
+- **`artifact://`** — Session-scoped overflow artifacts (`artifact://0`, `artifact://1:100-200`). Large tool outputs spill to `<state-dir>/artifacts/<session>/<id>.txt` and can be paged without re-spilling.
+- **`local://`** — Session-scoped writable scratchpad directory (`<tmpdir>/pig-workbench-local/<session-id>/...`, aliased from `local:/...` and mistyped `/cwd/local://...`), writable via `write` and `edit`.
+- **`conflict://`** — Git merge-conflict blocks registered by `read <path>:conflicts`. Read `conflict://<N>` or `conflict://<N>/<ours|theirs|base>`; resolve by calling `write conflict://<N>` with the merged text.
+- **`cfg://`** — Inspect (`read cfg://`, `read cfg://instructions`) and update (`write cfg://<key>` / `write cfg://<key>/save`) Workbench settings with user confirmation in TUI/RPC when mutating persistent config.
+- **`harness://` (aliases `self://`, `workbench://`)** —
+  - `read harness://status` — Active location, revision, edit mode, loaded instruction/ambient files, running jobs count, and reload epoch.
+  - `write harness://reload` (`1` / `true` / `reload`) — Queues a clean extension/resource reload at the next step boundary.
+  - `read harness://instructions` / `write harness://instructions/pin` — Inspect or pin/unpin ambient files.
+
+---
+
+# 5. Instruction & Ambient File Injection (`AGENTS.md`, `BACKLOG.md`, Custom Classes)
+
+We will port `pi-workbench/src/instructions/` + `nugent`'s `InstructionLedger` and upgrade it with **Rule-Based Ambient File Classes**.
+
+## 5.1 File Classes & Placement Policies
+Instead of treating all instruction files identically, `instructions.classes` defines ordered file rules. Built-in defaults:
+
+1. **Steering instructions (`AGENTS.override.md`, `AGENTS.md`):**
+   - `filenames`: `["AGENTS.override.md", "AGENTS.md"]` (first match per directory wins).
+   - `placement`: `"ancestors"` — Injects global (`<agent-dir>/AGENTS.md`), SSH host notes (`HOST_AGENTS.md`, `hosts/<alias>.md`), and every directory from boundary root (`project` | `home` | `root`) down to `cwd` and any directory touched by `read`/`ls`/`edit`/`write`/`grep`/`find`.
+   - `updateMode`: `"diff"` (unified diff during active runs if shorter than full text; full replacement otherwise).
+2. **Backlog pointers (`BACKLOG.md`):**
+   - `filenames`: `["BACKLOG.md"]`
+   - `placement`: `"ancestors"` — Auto-injected for the active/touched directory plus all ancestors up to the boundary root, matching the `dot-project` / `nukular` standard.
+   - `maxItems`: `25` (configurable; counts `- B-NNNN ...` or non-empty item lines). When a `BACKLOG.md` exceeds `maxItems` (or `maxLines` / `maxBytes`), the harness injects the first `N` items followed by:
+     `(+K more → <repo-relative-or-URI-path>)`
+     so agents know more items exist, can `read <path>` when needed, and **never** trim `BACKLOG.md` to keep it small.
+   - `updateMode`: `"diff"` — Emits a `<system-instruction>` diff frame whenever `BACKLOG.md` changes on disk (including when an agent or user adds/removes a pointer line).
+3. **User-Defined Multi-Location Files (`root_and_nearest` / `pinned`):**
+   - Users can configure additional file patterns in `instructions.classes` (or `instructions.additionalFiles`), e.g.:
+     ```json
+     {
+       "id": "architecture-notes",
+       "filenames": ["ARCHITECTURE.md", "DESIGN.md", ".context.md"],
+       "placement": "root+nearest",
+       "allowPin": true,
+       "maxLines": 200,
+       "updateMode": "diff"
+     }
+     ```
+   - **Placement modes supported per class:**
+     - `"ancestors"` — Every matching directory from boundary root to target directory (broadest first).
+     - `"root+nearest"` — If the file appears at multiple levels in the tree, inject **only** the broadest (root-most) file **and** the narrowest (nearest to the active `cwd` or touched file) file. Intermediate copies are skipped automatically, and moving deeper via `cd` or file touch withdraws the previous "nearest" file and injects the new "nearest" file (or emits a `relocated` frame if byte-identical).
+     - `"nearest"` — Only the closest ancestor match to the active/touched path.
+     - `"root"` — Only the boundary/project root match.
+   - **Pinning (`/workbench instructions pin <path>` or `write harness://instructions/pin`):**
+     - Either the user or the agent can pin a specific multi-location file instance (e.g. `crates/foo/BACKLOG.md` or `services/api/ARCHITECTURE.md`) for the session/branch.
+     - Pinned files stay active in the ledger across `cd` transitions (never withdrawn until unpinned or removed) and still receive live diff updates when modified.
+
+## 5.2 Ledger, Diff Updates, Deduplication & Compaction
+- **Suppression of Built-in Duplicate Context:** Strips PiG's default `project_context` system-prompt section (when `instructions.enabled = true`) so `AGENTS.md` is never injected twice, and adds the `harness_frames` and `instruction_files` system-prompt sections.
+- **Live Change Detection:**
+  - Local files: `fsnotify` / poll-debounced watcher (`debounceMs`), plus pre-turn verification at `before_agent_start` and post-tool checks on mutating tools (`write`, `edit`, `bash`).
+  - Remote SSH hosts: `inotifywait` stream when available (`watch.remote = "auto"`), falling back to `on-turn` stat/hash checks.
+- **Diff & Lifecycle Frames (`<system-instruction>`):**
+  - **Initial load:** Full content (or capped first `N` items/lines + `+K more → path` footer).
+  - **Changed on disk:** Unified diff (`+`/`-` hunks with configurable context lines) when shorter than full text; otherwise full text.
+  - **Self-edits:** When the agent itself edits a loaded file via `edit`/`write`, emits a concise 1-line `self-edit` notice (`instructions.selfEdits = "notice"`) and updates the ledger baseline without echoing the diff the agent just wrote.
+  - **Byte-identical deduplication (`SkipIdentical`):** Linked git worktrees (`.worktrees/<branch>`) or duplicate files with equal trust and identical bytes are skipped with an info row (`Skipped Identical Instructions: <path> · same as <other>`).
+  - **Relocation (`Relocated`):** On `cd`, if a newly applicable file is byte-identical to a withdrawn file in the same epoch, emits a 1-line relocation frame referencing the earlier `seq` instead of resending the body.
+  - **Withdrawal & Removal:** Emits a `withdrawn` frame when `cd` moves out of a file's scope (or when a nearer file supersedes the previous nearest in `root+nearest` mode), and a `warning` frame if a loaded file is deleted.
+  - **Compaction & Branch Replay:** Rebuilds the `InstructionLedger` from `wb-frame` entries on the active branch (`GetBranch()`) on startup, `/tree` navigation, `/fork`, and `/resume`. After compaction, increments the ledger epoch and re-injects the full active baseline (plus pinned files; nested files follow `afterCompaction = "reinject" | "on-touch"`).
+
+---
+
+# 6. Message Framing, Event Bus, `cd`, `ask_user`, `jobs`, `tldr`, and Renderers
+
+## 6.1 Harness Frames (`message-framing`)
+- Exact port of `pi-workbench/src/message-framing/`:
+  - Frame kinds & glyphs: `instruction` (`◆`), `reminder` (`↻`), `warning` (`▲`), `error` (`✗`), `notice` (`●`), `info` (`i`).
+  - Envelope: `<system-{kind} src="..." file="..." seq="..." n="..." ts="..." [trust="untrusted"]>\n{body}\n</system-{kind}>` with XML attribute escaping and `</system-` body escaping (`<\/system-`).
+  - Session 8-hex random nonce `n` announced in the `harness_frames` system prompt section and persisted across branch replay.
+  - Stored as custom entries (`customType: "wb-frame"`, structured `FrameDetails`), projected before provider requests to native mid-conversation `system`/`developer` role messages when supported by the model (`supportsMidConvoSystemMessages`) and `trust != "untrusted"` and not trailing an assistant message; otherwise user role.
+  - TUI rendering styles (`row`, `rail`, `card`) and visibility rules (`shown`, `collapsed`, `hidden` per source glob and kind).
+
+## 6.2 Event Bus (`ctx.Events()`)
+- Bridges `pi-workbench` event channels over PiG's `EventBus`:
+  - `workbench:frame` — Any extension can emit a `FrameRequest` (`kind`, `source`, `file`, `title`, `summary`, `body`, `trust`) and Workbench sequences, persists, renders, and delivers it.
+  - `workbench:location` — Broadcasts `{ location, origin, revision, reason }` on every `cd` / `/remote` transition.
+  - `workbench:service` / `workbench:service-request` — Exposes location resolution and statusline/footer row contributions to cooperating extensions.
+  - `pi-ask:*` (`bridge-discover`, `bridge-ready`, `started`, `completed`, `submit`, `submit-result`) — Full remote questionnaire contract for external bridges.
+
+## 6.3 Working Locations, SSH & `cd`
+- Full port of `WorkingLocation` (`workbench-location-v2` session records, origin tracking, revision counter, foreground leases, exclusive transition lock).
+- Full SSH host config parser & writer (`~/.ssh/config` + `Include` files), `<agent-dir>/hosts/<alias>.md` TOML frontmatter notes (`description`, `shell`, `hidden`), `/remote` TUI host manager panel, and SSH Multiplexing (`ControlMaster auto`) transport.
+- Git worktree resolution (`cd` with `branch`): locates repo root locally or over SSH, reuses existing worktree for `branch` or creates `<repo>/.worktrees/<slug>`, checks dirty status, and reconciles instruction/ambient files.
+
+## 6.4 Unified `jobs` Tool & Background Shell Supervisor
+- `bash` runs commands in the resolved local or SSH working location. Supports `background: true` and foreground yield timeout.
+- Process-group isolation (`Setpgid: true`) + pipe-based crash watchdog process so if the extension or PiG process dies with `SIGKILL`, child process groups (and remote SSH PIDs) are reaped without polling.
+- Single `jobs` tool with `action`:
+  - `list`: running jobs + up to `maxFinished` (default 20) recent jobs.
+  - `status`: single job details + last `lines` (default 40) of log output.
+  - `output`: read log output by `lines` tail or byte `offset` cursor.
+  - `wait`: wait up to `timeout` seconds for one or any running job to finish or produce output.
+  - `write`: send `input` string and/or `key` (`Enter`, `Ctrl+C`, `Ctrl+D`, `Tab`, `Esc`, `Up`, `Down`) or `eof: true` to job stdin.
+  - `kill`: send `SIGTERM` / `SIGKILL` (or specified signal) to the local or remote process group.
+- When a background job finishes, emits a `jobs.finished` notice frame and wakes the agent (when configured).
+
+## 6.5 `ask_user` & `/answer`
+- Full port of `pi-workbench/src/ask/`:
+  - Multi-question tabbed flow, `single` / `multi` / `preview` question types, `recommended` markers, always-available custom freeform input editor, review screen before submission, dismiss confirmation guard, and optional auto-submit on single-question single-select.
+  - Pending questionnaire persistence in session entries so interrupted sessions recover unanswered forms on resume.
+  - `/answer` extracts questions from the latest assistant message using the configured extraction model and opens the `ask_user` UI; `/answer:again` replays the latest form on the branch.
+  - RPC mode fallback using `ctx.Select` / `ctx.Input` / `ctx.Editor` / `ctx.Confirm`.
+
+## 6.6 `/tldr` Branch Checkpoints & `/tools` Inspector
+- `/tldr`: Segments the current branch since the last checkpoint, runs bounded parallel note extraction + synthesis on the configured model/thinking level, redacts secrets via `SecretGuard`, and appends a collapsible `tldr` recovery card entry.
+- `/tools` (`/workbench tools`, `--list-tools`): Inspects `ctx.GetAllTools()`, formats parameters/schemas in text, Markdown, or JSON, and provides a searchable kit `SelectList` + `ScrollView` detail inspector in the TUI.
+
+## 6.7 Renderers & Config
+- Compact, normal, and full call/result renderers for all Workbench tools plus `codemode`, using one consistent header grammar (`✓`/`✗`/`▲`/spinner + target + exact metrics from `Details`), fish-style path shortening at narrow widths, and strict width fitting at `36 / 57 / 80 / 140` columns.
+- Layered config (`defaults < <agent-dir>/pig-workbench.json < trusted <cwd>/.pig/pig-workbench.json < runtime`) with staged TUI settings editor (`/workbench settings`), unknown-key preservation, atomic `0600` writes, and file locking.
+
+---
+
+# 7. Proposed Repository Layout & Implementation Phases
 
 ```text
-PiG registration: tools · commands · lifecycle/context hooks · renderers
-                              |
-                    session-owned Workbench
-                /         |          |          \
-          config       locations    frames       ask
-                          |            ^
-                     resources      instruction ledger
-                   /     |      \
-                local   SSH    virtual handlers
-                   \     |      /
-                read · edit · write · search
-                          |
-                   execution / jobs
-                          |
-                output budgets + artifacts
+pig-workbench/
+  go.mod
+  extension.go                  # Extension() factory: registers tools, commands, events, renderers
+  AGENTS.md
+  README.md
+  internal/
+    config/                     # Layered JSON config, trust rules, settings panel
+    location/                   # WorkingLocation, file:// & ssh:// resolver, SSH config/transport, git worktrees
+    scheme/                     # SchemeRouter, ToolPath & Selector parser, Pager
+      file.go                   # file:// and ssh:// provider
+      history.go                # history://, session://, branch:// (current, project, global)
+      skill.go                  # skill:// and skills:// provider
+      jobs.go                   # jobs:// and proc:// provider
+      artifact.go               # artifact:// and local:// scratchpad providers
+      conflict.go               # conflict:// merge conflict registry & writer
+      cfg.go                    # cfg:// settings reader/writer
+      harness.go                # harness:// (status, reload, instructions pin)
+    hashline/                   # Full oh-my-pi hashline engine
+      store.go                  # XXH32 4-hex tags, EditStore snapshots, seen_lines, clipboard, no-op guard
+      tokenizer.go              # Patch tokenizer & prefix stripper
+      parser.go                 # PUT/CUT/REM/MV &N* block/range/gap executor
+      block.go                  # AST & lexical block resolver (N*, >N*, enclosing boundaries)
+      patcher.go                # Stage/commit, shift rescue, mismatch reveal, auto-repair
+    read/                       # Full read tool: selectors, multi-path, summaries, block context, sqlite/json/archive/binary/url
+    tools/                      # write, edit, grep, find, ls, bash, cd, jobs tool handlers
+    jobs/                       # Background job supervisor, watchdog, log tailer, /workbench jobs panel
+    frames/                     # wb-frame envelope, nonce, projection, TUI renderer, /workbench frames
+    instructions/               # Ambient & nested discovery, classes (ancestors, root+nearest, pinned), item caps (+K more), diff engine, ledger
+    ask/                        # ask_user tool, TUI kit view, RPC fallback, pending store, /answer extractor, remote bridge
+    codemode/                   # NestedCaptures, scriptFacts, codemode call/result renderer
+    tldr/                       # /tldr branch summary generator & card renderer
+    inspector/                  # /tools & --list-tools schema inspector
+    ui/                         # Shared width-fitting, plain() sanitizer, fish path shortener, header/row builders
 ```
 
-`extension.go` wires dependencies only. Start with files grouped by responsibility; extract `internal/resource`, `internal/location`, `internal/edit`, `internal/jobs`, `internal/frames`, `internal/ask`, and `internal/config` when each has enough code to justify a package. Do not generate a framework-sized directory tree before the features exist.
-
-One state owner per extension/session, no mutable process globals. Separate:
-
-- **Branch state:** location records, frame/instruction ledger, pending questionnaire identity.
-- **Session runtime:** running processes, cancellation roots, event subscriptions and UI state.
-- **Machine storage:** bounded logs, artifacts and indexes under host-derived state paths.
-
-Tree navigation restores branch facts; it does not rewind processes or recreate completed commands. Reload/shutdown drains session-owned work. Historical job records never imply a live process.
-
-## Builtin reuse boundary
-
-Wrap original builtin definitions where contracts are unchanged, preserve their streaming/error behavior, and attach Workbench metadata/renderers. Do not delegate by calling the public tool name being overridden: that can recurse.
-
-Use explicit location resolution or operation callbacks for changed-cwd and SSH behavior. Confirm the builtin wrapper's context and operation semantics before selecting a delegation path. Hashline editing, multi-read aggregation and URI routing are Workbench-owned algorithms; they are not thin render wrappers.
-
-Permissions are an explicit integration gate: establish how extension-owned filesystem/process work participates in PiG policy. Never assume direct Go I/O has inherited the builtin's authorization. Disable an unsupported execution path with a diagnostic rather than silently bypassing host controls. Project trust controls configuration/instructions; it is not equivalent to permission to execute a shell command.
-
-# 3. Model-facing contracts
-
-Keep builtin names because these are replacements. Proposed ergonomic exceptions to the normal extension-prefix convention are `cd` and `ask_user`; `jobs` is explicitly required by the request. Everything else uses the `pig-workbench` identity. Document these exceptions and detect conflicting registrations; do not register duplicate prefixed aliases.
-
-Schemas reject unknown properties, bound arrays/strings/numbers and enforce cross-field constraints in Go. Examples below describe proposed contracts, not existing SDK calls.
-
-## Read
-
-Accept exactly one of `path` or `targets`. Each target has a path and optional explicit range selection. A range API should express contiguous ranges, disjoint ranges and tail without appending ambiguous syntax to filenames.
-
-```json
-{"targets":[{"path":"src/a.go","ranges":[{"start":20,"end":65}]},{"path":"src/b.go","tail":40}]}
-```
-
-- Bounded worker pool; deterministic input-order results; stop workers on cancellation and join them.
-- One global output budget, not 50 KiB independently for every target. Start with 50 KiB / 2,000 textual lines per result, including headers and notices, and a small bounded target count.
-- Per-target status, canonical resource identity, returned spans, snapshot revision, completeness and continuation. One target failure does not erase successful targets or masquerade as total success.
-- Oversized content stays in the original resource when possible. Spill generated output once to `artifact://`; never recursively spill an artifact read.
-- Only fully emitted source lines become seen/editable anchors. Clipped lines, elisions and transformed content do not.
-- Preserve CRLF, final newline and Unicode in storage. Sanitize terminal display separately; never alter file bytes just to render them.
-- Streaming reads bound memory; tail uses a bounded buffer. Total line counts are optional unless actually measured.
-
-## Edit: safety first, smaller than oh-my-pi
-
-Use one `edit` tool with mutually exclusive modes:
-
-1. **Anchored edits (default):** resource path, snapshot revision, and typed replace/insert/delete operations referencing original line anchors.
-2. **Exact-text edits:** a list of unique `oldText`/`newText` replacements, all matched against the original snapshot, not against prior replacements.
-
-A structured operation schema is easier to validate and extend than initially importing PUT/CUT plus block syntax. Adopt the semantics, not its patch grammar. Use a sufficiently strong snapshot digest and compact line anchors; do not rely on a four-hex display tag as a write-integrity check.
-
-Preflight every operation against one original snapshot, reject overlaps/ambiguous text/unseen anchors, then commit once per file. Detect changed files before committing; return current anchored context for repair, never relocate edits heuristically. Serialize cooperating writers by canonical identity. Atomic replacement prevents torn writes but is **not** a filesystem compare-and-swap: document the residual race with external writers. Preserve modes and define symlink behavior explicitly.
-
-Support several edits in one file immediately. Multi-file edit batches can follow after single-file correctness, with all-file preflight and explicit per-file commit outcomes; do not advertise cross-file atomicity. A failed exact-text mode does not fall back to fuzzy or anchored mode.
-
-## Shell and jobs
-
-`bash` starts commands. Explicit `background: true` returns an owned job ID promptly. Default foreground work stays cancellable; offer opt-in promotion after a configured yield interval, not a hidden hard-coded conversion of every slow command.
-
-One `jobs` tool uses a discriminated `action`:
-
-| Action | Purpose |
-|---|---|
-| `list` | Bounded running/recent job summaries |
-| `status` | State, timestamps, location, exit facts and log cursor |
-| `output` | Bounded output since cursor or tail; next cursor and completeness |
-| `wait` | Cancellable bounded wait; explicitly report whether it timed out |
-| `cancel` | Idempotent process-group cancellation with escalation |
-| `stdin` | Write bounded text; explicit close/EOF operation |
-
-Do not offer `start` in both tools. Capture the immutable execution location at start. Distinguish success, nonzero exit, cancellation, timeout and interrupted/unknown after restart. Exit code remains null until known.
-
-Pipes are not a terminal: text input and EOF work; arrow-key emulation and Ctrl+D-as-a-byte are not promised. PTY support is a separate dependency/platform decision.
-
-Background jobs are adopted by a session supervisor before the launch handler returns. Request cancellation stops an unadopted launch; cancellation of a `jobs wait` stops waiting, not the running job. Shutdown kills and joins owned work; crash cleanup and remote orphan prevention need explicit platform tests. Do not resume from a persisted PID alone.
-
-Logs use private files, quotas and retention. Completion events are deduplicated; coalesce bursts into one frame. Keep raw command output untrusted. Prevent active jobs or their logs from leaking across session ownership boundaries.
-
-## Ask
-
-One `ask_user` tool, with stable question and option IDs, bounded questions/options, optional preview text, single/multi/free-text types, and explicit submitted/skipped/cancelled/unavailable results. Partial answers stay partial; cancellation is never converted to an answer.
-
-- TUI: kit-based flow with review and editable answers. Show captures before settling the layout.
-- RPC: native select/input/editor dialogs using the same questionnaire state machine; multi-select can use repeated selection plus an explicit Done action.
-- Print/JSON: return an actionable interaction-unavailable error promptly, without blocking or inventing answers.
-- Persist pending payloads minimally for recovery, bind submissions to session/request identity, reject duplicate/late submissions. No automatic cross-session bridge.
-- Persist completed answers only as needed for the normal transcript; do not add a separate plaintext history archive by default. Never ask for credentials.
-
-# 4. Resource schemes
-
-Use a session-owned registry with declared operations and backing kind. Tool dispatch consults capabilities instead of testing scheme strings throughout the code.
-
-A handler declares canonicalization, local/remote/virtual backing, read/list/search/locate capabilities, immutability and explicit mutation support. File-backed does not mean writable. A virtual resource's located source file is a link, not permission to edit it.
-
-| Scheme | Recommendation | Semantics |
-|---|---|---|
-| `file://` | Core | Explicit local paths, even while the default location is SSH |
-| `ssh://` | Core, after local slice | Explicit host/path; same location resolver as `cd` and shell |
-| `artifact://` | Core | Read-only session-scoped overflow output and logs, paged without re-spilling |
-| `local://` | Core | Writable session scratch, independent of cwd, bounded retention and traversal/symlink containment |
-| `skill://` | Include after catalog probe | Read/list only over PiG's actual enabled, trust-resolved skill catalog; contained supporting files if catalog provenance supports them |
-| `harness://status` | Include narrowly | Read-only extension state, capabilities and diagnostics; no credentials or full prompt dump |
-| `harness://reload` | Defer mutation | Nugent's queued-reload idea is useful, but safe boundary scheduling and authorization must be demonstrated first |
-| `proc://` | Omit initially | Would duplicate `jobs`; expose logs through artifact URIs and controls through one explicit tool |
-| `cfg://` | Defer | Read-only redacted extension settings may later be useful; no model-controlled host/trust/security writes |
-| `history://`, `attachment://`, `mcp://` | Later adapters | Only if the host exposes an authoritative scoped catalog; no transcript scraping or second MCP client |
-| `agent://`, task/todo schemes | Exclude | Explicit non-goals |
-| rule/memory/vault/security/issue/PR/device schemes | Exclude baseline | Require subsystems not requested here |
-
-Parse schemes strictly; reject unsupported ones with available capabilities. No automatic network fetch, MCP fallback, shell expansion, or URI typo repair. Decode once and test traversal, encoded separators, NUL, symlink escape and SSH authority injection. Keep ranges as tool arguments, not colon suffixes that collide with ports and real filenames.
-
-Initially extensible means a small Go handler interface and declarative capability table. Add cross-extension resource-provider registration only for a concrete consumer: that requires lifecycle, cancellation, ownership and quotas, not a global map of arbitrary callbacks.
-
-# 5. Locations, instructions, frames and events
-
-## Location transitions
-
-`cd {}` reports status; `path` changes location; `reset` restores origin; `branch` enters/reuses a local branch worktree. Path calls capture a location revision. A transition takes exclusive admission, validates destination and instruction changes, persists the commit, and publishes the new revision. Concurrent relative-path work receives a retryable location-changing error rather than observing half a transition. Jobs already started keep their captured root.
-
-Workbench cwd is not PiG cwd. Other extensions opt into the resolver over the bus. State that clearly in the tool description and status display. Do not claim `cd` changes host resource discovery, project trust, shell state in another extension or the entire PiG process.
-
-Keep project config anchored to the trusted host launch project. Moving to another directory or SSH host never implicitly loads that destination's extension settings or inherits launch-project trust. Worktree creation is explicit and collision-safe; no checkout deletion/reset or silent branch creation.
-
-## Instructions and frames
-
-Preserve pi-workbench's useful frame kinds: instruction, reminder, warning, error, notice, info. Store versioned facts including source, resource, sequence, timestamp, trust and body; render separately for model and UI. Avoid embedding command/file output as trusted instructions. Escape envelope fields and delimiters.
-
-The nonce is a provenance cue for the model, not authentication; copied tags remain untrusted data. Trusted extension code is already inside the harness trust boundary. Source registration is attribution, not a sandbox.
-
-Deliver ordinary frames at safe context boundaries without starting a new model turn. Job completion may request a follow-up according to explicit user policy. Bound and coalesce pending events, never silently discard instruction invalidations or errors.
-
-Default to the host-supported custom-message path. Native system/developer role projection is optional only after verifying accepted message shapes and provider behavior; never infer support from a provider name. TUI visibility is independent of model visibility.
-
-Instruction lifecycle should own AGENTS.md reconciliation only when host `project_context` suppression and reinjection are proven. The staged SDK exposes ordered system-prompt sections, but this alone does not prove complete interception of every retry/compaction path. Until the spike passes, keep host instruction behavior and avoid duplicate delivery; report any unavailable dynamic behavior rather than claiming parity.
-
-Target behavior: broad-to-narrow discovery, nested loads on relevant path access, local on-turn content checks first, debounced watching later, remote on-turn checks, additions/changes/withdrawals, selected-branch reconstruction and post-compaction baseline. Reuse unchanged content by identity/digest, not just basename. Cross-root and SSH instructions default to untrusted unless explicitly authorized in user/runtime policy. Project config cannot widen trust.
-
-## Bus contract
-
-Reuse `ctx.Events()` and channels under `pig-workbench:v1:*`: capability discovery, location changed, frame request, job changed and ask lifecycle. Payloads are bounded JSON with version, session identity and correlation IDs where applicable.
-
-Read-only resolver/service requests use explicit request/reply envelopes, deadlines and errors. Do not hold Workbench mutexes while emitting synchronous bus events. Do not expect listener errors to answer a request. External events are validated; a malformed request gets a diagnostic/response rather than disappearing silently.
-
-Keep initial bus services small: discover capabilities, snapshot/resolve location, request a frame. Do not publish unrestricted arbitrary shell execution as a convenience service. In-process feature code uses ordinary Go interfaces, not event round trips.
-
-# 6. Configuration, rendering and operational quality
-
-Config: defaults < user `<agent-dir>/pig-workbench.json` < trusted launch-project `<config-dir>/pig-workbench.json` < runtime. Use SDK path helpers. Security-widening policy is user/runtime only. Preserve unknown keys, reject malformed files, save atomically with private modes and inter-session locking. Reset deletes the scoped override. Start with feature enablement, display density, output/jobs budgets and trust policy; avoid inheriting the donors' entire settings inventory.
-
-Use compact/normal/full rows for tools and collapsed frame rows by default. Metrics come from structured details: bytes/lines returned, duration, match counts when known, job exit state, complete flag and continuation. Unknown totals stay absent. Error, cancelled and running states remain visible. Sanitize terminal sequences before styling, without mutating execution arguments or persisted source bytes.
-
-Kit views for settings, jobs and questionnaire flow. Native dialogs for simple questions. All lines fit 36/57/80/140 columns; short-terminal checks at roughly 16 rows. Cache render-ready data outside render calls. Use a short status contribution, not a replacement footer/editor; general-purpose extensions should not fight for those single-owner surfaces.
-
-No additional runtime dependencies proposed. OpenSSH is an optional external prerequisite for SSH, not an implicit embedded client. Reuse the host search backend when its semantics fit; if enhanced search requires an external executable not already supplied by PiG, request approval and declare it. Do not implement a silent divergent fallback. A local-only installation must work without SSH.
-
-Copied/adapted MIT code requires retained notices and an attribution inventory. Check file/subpackage notices before importing individual pieces; the root license alone is not a complete provenance audit.
-
-# 7. Delivery and acceptance
-
-These are proposed slices, not approved implementation tasks. No speculative time estimates before host probes.
-
-1. **Integration spikes and contracts.** Scaffold a Go factory after approval. Prove same-name overrides, original builtin delegation at a changed location, policy behavior, JSON bus request/reply, session replay, instruction suppression, frame delivery and RPC ask cancellation. Report host gaps separately; no host patch is assumed authorized.
-2. **Useful local base.** Shared output envelope and budgets, local router, enhanced multi-read, anchored/exact multi-edit, search, write/ls/find wrappers, config and renderers. Include stale-edit and partial-output regression tests.
-3. **Location and harness layer.** Local `cd`/worktrees, frame ledger, instruction ownership if the spike passes, artifact/local schemes and read-only harness diagnostics.
-4. **Shell lifecycle.** `bash` supervisor, single `jobs` tool, bounded logs/cursors, completion frames and headless behavior. Exercise cancel/shutdown/reload/crash paths.
-5. **Questionnaires and remote operations.** `ask_user` state machine and TUI/RPC flows; SSH transport integrated through the same resource/location contracts; skill scheme once its catalog source is proven. Keep these as independently reviewable slices.
-6. **Release hardening.** Live width captures, policy/trust probes, concurrency/race checks, benchmarks, source/notice audit and concise product documentation.
-
-Required evidence before claiming the intended base complete:
-
-- Go formatting, vet, unit tests and race detector using the staged SDK; PiG factory/registration validation with exact tool inventory and packability.
-- Builtin override tests proving no recursive dispatch and correct local/remote/cd execution roots.
-- Edits: stale snapshots, ambiguous text, overlapping operations, unseen/clipped lines, CRLF/no-final-newline, symlinks, concurrent writers and failed commit reporting.
-- Multi-read/search: deterministic ordering, partial failures, cancellation, global budget enforcement, exact completeness and continuations. No invented total counts.
-- Jobs: noisy stdout/stderr without deadlock, UTF-8 split boundaries, stdin/EOF, descendants killed, timeout vs cancel, repeated cancellation, quota behavior, no false restart recovery and bounded shutdown.
-- Branch/fork/resume/compaction: no duplicate instruction baselines, stale location commits, resurrected jobs or questionnaire answers from another branch/session.
-- RPC/print/JSON: ask never hangs without interaction; commands do not disappear into dropped notifications; script-required operations are tools.
-- Live TUI captures at 36/57/80/140 columns and short height, including hostile terminal text, narrow paths, long questions, errors and resize.
-- SSH tests: noninteractive auth, paths with quotes/newlines, ports/home expansion, disconnect, cancellation and remote cleanup. No weakened ignore/search semantics hidden in a fallback.
-- Benchmarks for large-file range/tail reading, multi-read throughput/memory, search volume, edit preflight and render cost. Record baselines before setting numeric latency budgets; bounded memory and no render-time I/O are immediate requirements.
-
-# Decision requested
-
-Approve this scope and architecture as the implementation direction, especially:
-
-1. One override set plus `cd`, `ask_user`, and exactly one `jobs` tool; no redundant alias tools.
-2. A small structured hash-anchored edit contract, not oh-my-pi's full patch/block language.
-3. Initial schemes `file`, `ssh`, `artifact`, `local`, read-only `harness`, and catalog-backed `skill`; process/config mutations stay explicit or deferred.
-4. SSH and dynamic instructions belong in the intended base, but follow local correctness and proven host integration.
-
-The main tradeoff is deliberate: this ports fewer donor mechanisms, but produces one consistent tool/resource/lifecycle model rather than three implementations wearing the same extension name.
+## Implementation Waves
+
+1. **Wave 1 — Core Foundation, Config, Location & `scheme://` Router:**
+   - Scaffold Go factory (`extension.go`), `internal/ui`, `internal/config`, `internal/location` (local + SSH + `cd` + worktrees), and `internal/scheme` (`ToolPath`, `Selector`, `Pager`, `file://`, `ssh://`, `artifact://`, `local://`, `harness://`, `cfg://`).
+2. **Wave 2 — Full Hashline Engine & Enhanced Builtin Tools (`read`, `edit`, `write`, `grep`, `find`, `ls`):**
+   - Implement `internal/hashline` (`EditStore`, 4-hex XXH32 tags, parser, block resolver, seen-line guard, shift rescue, `replace` fallback).
+   - Implement `internal/read` (inline selectors, multi-path, `[path#TAG]` formatting, enclosing block context, structural code summaries, SQLite/JSON/archive/binary/URL readers, loop guard, `conflict://` registration).
+   - Wire `write`, `grep` (with seen-line recording), `find`, and `ls`.
+3. **Wave 3 — Background Jobs (`bash`, `jobs`, `jobs://`), `session://`/`history://`, and `skill://`:**
+   - Implement process-group job supervisor, crash watchdog, unified `jobs` tool, `jobs://` (`proc://`) scheme, `/workbench jobs` panel.
+   - Implement `history://` / `session://` / `branch://` (current, project, global JSONL index & search) and `skill://` / `skills://`.
+4. **Wave 4 — Harness Frames & Enhanced Instruction / `BACKLOG.md` Injection:**
+   - Implement `wb-frame` envelope, nonce, role projection, and event bus (`workbench:frame`, `workbench:location`, `workbench:service`).
+   - Implement `internal/instructions` with configurable classes (`ancestors`, `root+nearest`, `nearest`, `root`), pinning (`/workbench instructions pin`), item/line caps (`+K more → path`) for `BACKLOG.md`, live diff frames, deduplication, relocation, and compaction recovery.
+5. **Wave 5 — `ask_user`, `/answer`, `codemode` Renderer, `/tldr`, `/tools`, `/remote` & Verification Gate:**
+   - Implement `ask_user` TUI/RPC flows, `/answer` & `/answer:again`, remote-ask bus protocol.
+   - Implement `codemode` nested capture & tree renderer, `/tldr`, `/tools` (`--list-tools`), `/remote` host panel, and run the full verification matrix (`36 / 57 / 80 / 140` TUI captures, race tests, `pig install --validate-only`).
