@@ -1,0 +1,33 @@
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1750453, "t": 1793636021.850718}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1750453, "reason": "startup", "t": 1793636021.853263}
+{"cmd": "entry", "err": "<nil>", "ext": "wb", "kind": "command", "n": 1, "pid": 1750453, "t": 1793636022.334105}
+{"event": "before_agent_start", "ext": "wb", "keys": ["messageType", "prompt", "type", "systemPromptOptions", "systemPrompt"], "kind": "event", "pid": 1750453, "t": 1793636022.834489}
+{"event": "agent_start", "ext": "wb", "keys": ["type"], "kind": "event", "pid": 1750453, "t": 1793636022.835253}
+{"event": "turn_start", "ext": "wb", "keys": ["type", "turnIndex", "timestamp"], "kind": "event", "pid": 1750453, "t": 1793636022.835523}
+{"event": "context", "ext": "wb", "kind": "event", "messages": 1, "pid": 1750453, "t": 1793636022.836819}
+{"event": "agent_end", "ext": "wb", "keys": ["type", "messages"], "kind": "event", "pid": 1750453, "t": 1793636022.839902}
+{"cmd": "entry", "err": "<nil>", "ext": "wb", "kind": "command", "n": 2, "pid": 1750453, "t": 1793636024.334528}
+{"cmd": "branch", "custom": [{"label": "a", "n": 1}, {"label": "b", "n": 2}], "entries": 7, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750453, "t": 1793636024.834993}
+{"event": "session_before_tree", "ext": "wb", "keys": ["type", "preparation"], "kind": "event", "pid": 1750453, "t": 1793636025.337621}
+{"event": "session_tree", "ext": "wb", "keys": ["type", "newLeafId", "oldLeafId"], "kind": "event", "newLeafId": "6ce211fc", "oldLeafId": "e4336f5f", "pid": 1750453, "t": 1793636025.338166}
+{"cmd": "tree", "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750453, "res": {"cancelled": false}, "t": 1793636025.338216, "target": "first-custom"}
+{"cmd": "branch", "custom": [{"label": "a", "n": 1}], "entries": 3, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750453, "t": 1793636026.335226}
+{"cmd": "reload-start", "ext": "wb", "kind": "command", "pid": 1750453, "t": 1793636026.834715}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1750453, "reason": "reload", "t": 1793636026.835259}
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1750453, "t": 1793636026.844684}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1750453, "reason": "reload", "t": 1793636026.847569}
+{"cmd": "reload-returned", "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750453, "t": 1793636026.847937}
+{"cmd": "branch", "custom": [{"label": "a", "n": 1}], "entries": 3, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750453, "t": 1793636029.835171}
+{"event": "session_before_fork", "ext": "wb", "keys": ["entryId", "position", "type"], "kind": "event", "pid": 1750453, "t": 1793636030.335163}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason", "targetSessionFile"], "kind": "event", "pid": 1750453, "reason": "fork", "t": 1793636030.336544}
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1750490, "t": 1793636030.347879}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason", "previousSessionFile"], "kind": "event", "pid": 1750490, "previousSessionFile": "/tmp/wb-probes/home/agent/sessions/--tmp-wb-probes-work--/2026-11-02T16-13-41-851Z_01a19d09-b65b-72cf-a220-85d07ea0b50a.jsonl", "reason": "fork", "t": 1793636030.351025}
+{"event": "session_start", "ext": "wb", "keys": ["reason", "previousSessionFile", "type"], "kind": "event", "pid": 1750490, "previousSessionFile": "/tmp/wb-probes/home/agent/sessions/--tmp-wb-probes-work--/2026-11-02T16-13-41-851Z_01a19d09-b65b-72cf-a220-85d07ea0b50a.jsonl", "reason": "fork", "t": 1793636030.351432}
+{"cmd": "branch", "custom": [{"label": "a", "n": 1}], "entries": 5, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750490, "t": 1793636033.33543}
+{"event": "session_before_switch", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1750490, "reason": "new", "t": 1793636033.83598}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason", "targetSessionFile"], "kind": "event", "pid": 1750490, "reason": "new", "t": 1793636033.836851}
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1750606, "t": 1793636033.847379}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason", "previousSessionFile"], "kind": "event", "pid": 1750606, "previousSessionFile": "/tmp/wb-probes/home/agent/sessions/--tmp-wb-probes-work--/2026-11-02T16-13-50-336Z_01a19d09-d780-72cf-a220-85d3cd6b1056.jsonl", "reason": "new", "t": 1793636033.85034}
+{"event": "session_start", "ext": "wb", "keys": ["reason", "previousSessionFile", "type"], "kind": "event", "pid": 1750606, "previousSessionFile": "/tmp/wb-probes/home/agent/sessions/--tmp-wb-probes-work--/2026-11-02T16-13-50-336Z_01a19d09-d780-72cf-a220-85d3cd6b1056.jsonl", "reason": "new", "t": 1793636033.850897}
+{"cmd": "branch", "custom": [], "entries": 2, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1750606, "t": 1793636036.83649}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1750606, "reason": "quit", "t": 1793636038.836056}

@@ -1,0 +1,4 @@
+sleep 30                     exit=-1 signaled=true sig=interrupt output="^C"
+cat                          exit 0 output="abc\r\nabc"
+sh -c trap 'stty size; exit 7' WINCH; while :; do sleep 0.1; done exit=7 signaled=false sig=signal -1 output="40 120"
+sh -c read -r line; echo got:$line exit 0 output="hello\r\ngot:hello"

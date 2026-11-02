@@ -1,0 +1,24 @@
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1749390, "t": 1793635964.856616}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1749390, "reason": "startup", "t": 1793635964.859313}
+{"event": "before_agent_start", "ext": "wb", "keys": ["systemPromptOptions", "systemPrompt", "messageType", "prompt", "type"], "kind": "event", "pid": 1749390, "t": 1793635965.339753}
+{"event": "agent_start", "ext": "wb", "keys": ["type"], "kind": "event", "pid": 1749390, "t": 1793635965.340348}
+{"event": "turn_start", "ext": "wb", "keys": ["type", "turnIndex", "timestamp"], "kind": "event", "pid": 1749390, "t": 1793635965.340675}
+{"event": "context", "ext": "wb", "kind": "event", "messages": 1, "pid": 1749390, "t": 1793635965.342025}
+{"event": "tool_execution_start", "ext": "wb", "keys": ["type", "toolCallId", "toolName", "args"], "kind": "event", "pid": 1749390, "t": 1793635965.344662, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"event": "tool_call", "ext": "wb", "input": {"sleepMs": 200}, "keys": ["type", "toolName", "toolCallId", "input"], "kind": "event", "pid": 1749390, "t": 1793635965.345951, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"ext": "producer", "id": "req-1793635965346769628", "kind": "bus", "pid": 1749390, "step": "emit-start", "t": 1793635965.346781}
+{"ext": "wb", "id": "req-1793635965346769628", "kind": "bus", "pid": 1749390, "step": "request-received", "t": 1793635965.347115}
+{"data": {"id": "req-1793635965346769628", "ok": true}, "ext": "producer", "kind": "bus", "pid": 1749390, "step": "reply-received", "t": 1793635965.547659}
+{"err": "<nil>", "ext": "wb", "id": "req-1793635965346769628", "kind": "bus", "pid": 1749390, "step": "reply-emitted", "t": 1793635965.548}
+{"ctxErr": "<nil>", "err": "<nil>", "ext": "producer", "id": "req-1793635965346769628", "kind": "bus", "pid": 1749390, "step": "emit-returned", "t": 1793635965.548639}
+{"event": "tool_result", "ext": "wb", "keys": ["isError", "type", "toolName", "toolCallId", "input", "content"], "kind": "event", "path": "", "pid": 1749390, "t": 1793635965.549315, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"event": "tool_execution_end", "ext": "wb", "keys": ["type", "toolCallId", "toolName", "result", "isError", "durationMs"], "kind": "event", "pid": 1749390, "t": 1793635965.549763, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"event": "turn_start", "ext": "wb", "keys": ["timestamp", "type", "turnIndex"], "kind": "event", "pid": 1749390, "t": 1793635965.550427}
+{"event": "context", "ext": "wb", "kind": "event", "messages": 3, "pid": 1749390, "t": 1793635965.550899}
+{"event": "tool_execution_start", "ext": "wb", "keys": ["toolCallId", "toolName", "args", "type"], "kind": "event", "pid": 1749390, "t": 1793635965.553086, "toolCallId": "call_1_0", "toolName": "producer_echo"}
+{"event": "tool_call", "ext": "wb", "input": {"block": true, "text": "x"}, "keys": ["type", "toolName", "toolCallId", "input"], "kind": "event", "pid": 1749390, "t": 1793635965.553618, "toolCallId": "call_1_0", "toolName": "producer_echo"}
+{"event": "tool_execution_end", "ext": "wb", "keys": ["type", "toolCallId", "toolName", "result", "isError"], "kind": "event", "pid": 1749390, "t": 1793635965.554363, "toolCallId": "call_1_0", "toolName": "producer_echo"}
+{"event": "turn_start", "ext": "wb", "keys": ["timestamp", "type", "turnIndex"], "kind": "event", "pid": 1749390, "t": 1793635965.554634}
+{"event": "context", "ext": "wb", "kind": "event", "messages": 5, "pid": 1749390, "t": 1793635965.555216}
+{"event": "agent_end", "ext": "wb", "keys": ["type", "messages"], "kind": "event", "pid": 1749390, "t": 1793635965.557858}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1749390, "reason": "quit", "t": 1793635966.83953}

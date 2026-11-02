@@ -1,0 +1,5 @@
+{"type": "entry_appended", "entry": {"type": "custom", "customType": "pig-workbench.probe", "data": {"label": "a", "n": 1}, "id": "c0badbf8", "parentId": "a0189cce", "timestamp": "2026-11-02T16:18:30.448Z"}}
+{"id": "e1", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "handled"}}
+{"id": "b3", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "handled"}}
+{"type": "entry_appended", "entry": {"type": "custom", "customType": "pig-workbench.probe", "data": {"label": "after", "n": 2}, "id": "4f623c79", "parentId": "c0badbf8", "timestamp": "2026-11-02T16:18:39.449Z"}}
+{"id": "e2", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "handled"}}

@@ -1,0 +1,17 @@
+{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1749882, "t": 1793635985.637453}
+{"event": "session_start", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1749882, "reason": "startup", "t": 1793635985.642623}
+{"event": "before_agent_start", "ext": "wb", "keys": ["messageType", "prompt", "type", "systemPromptOptions", "systemPrompt"], "kind": "event", "pid": 1749882, "t": 1793635986.124733}
+{"event": "agent_start", "ext": "wb", "keys": ["type"], "kind": "event", "pid": 1749882, "t": 1793635986.125726}
+{"event": "turn_start", "ext": "wb", "keys": ["type", "turnIndex", "timestamp"], "kind": "event", "pid": 1749882, "t": 1793635986.125907}
+{"event": "context", "ext": "wb", "kind": "event", "messages": 1, "pid": 1749882, "t": 1793635986.126972}
+{"event": "tool_execution_start", "ext": "wb", "keys": ["args", "type", "toolCallId", "toolName"], "kind": "event", "pid": 1749882, "t": 1793635986.129386, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"event": "tool_call", "ext": "wb", "input": {"sleepMs": 10000}, "keys": ["type", "toolName", "toolCallId", "input"], "kind": "event", "pid": 1749882, "t": 1793635986.130904, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"ext": "producer", "id": "req-1793635986132043098", "kind": "bus", "pid": 1749888, "step": "emit-start", "t": 1793635986.13206}
+{"ext": "wb", "id": "req-1793635986132043098", "kind": "bus", "pid": 1749882, "step": "request-received", "t": 1793635986.132808}
+{"ctxErr": "context canceled", "err": "host call events.emit cancelled with its parent request", "ext": "producer", "id": "req-1793635986132043098", "kind": "bus", "pid": 1749888, "step": "emit-returned", "t": 1793635988.124134}
+{"event": "tool_execution_end", "ext": "wb", "keys": ["durationMs", "type", "toolCallId", "toolName", "result", "isError"], "kind": "event", "pid": 1749882, "t": 1793635988.12479, "toolCallId": "call_0_0", "toolName": "producer_request"}
+{"event": "turn_start", "ext": "wb", "keys": ["type", "turnIndex", "timestamp"], "kind": "event", "pid": 1749882, "t": 1793635988.125385}
+{"event": "agent_end", "ext": "wb", "keys": ["type", "messages"], "kind": "event", "pid": 1749882, "t": 1793635988.126536}
+{"data": {"id": "req-1793635986132043098", "ok": true}, "ext": "producer", "kind": "bus", "pid": 1749888, "step": "reply-received", "t": 1793635996.134454}
+{"err": "<nil>", "ext": "wb", "id": "req-1793635986132043098", "kind": "bus", "pid": 1749882, "step": "reply-emitted", "t": 1793635996.135124}
+{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1749882, "reason": "quit", "t": 1793636001.124355}

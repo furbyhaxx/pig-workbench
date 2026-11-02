@@ -1,0 +1,1 @@
+{"i": 0, "t": 1793636008.9823785, "messages": [{"role": "system", "content": "<system prompt omitted>"}, {"role": "user", "content": [{"type": "text", "text": "go"}]}], "tools": ["read", "bash", "edit", "write", "producer_echo", "producer_request"]}

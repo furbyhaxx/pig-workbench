@@ -5,11 +5,11 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-02T17:55:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User requested an implementation plan before coding"
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "User requested the remaining specifications and designs"
       changes: ["Added six feature specifications and workflow wireframes", "Mapped the full draft set to delivery scope while retaining approval/probe gates"]
+    - revision: 5
+      reason: "First M0.2 host probes and M0.3 backend evaluation ran"
+      changes: ["Linked probe and backend analyses", "Updated progress with probed seams, remaining probes and pending dependency approval"]
 ---
 
 # 1. Outcome and authority
@@ -56,7 +59,9 @@ Together these ten specifications and three design artifacts cover the planned f
 ## Progress
 
 - **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, ten draft specifications and three static design/wireframe artifacts. No service/tool implementation yet.
-- **now:** Review the complete draft contract/design set, approve backend/safety decisions and run M0 probes; runtime validation and live captures remain required.
+- **done (M0.2, partial):** Bus request/reply and cancellation, frame delivery modes, codemode child observation, renderer resolution, branch lifecycle and reload probed — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md). Five upstream issues identified.
+- **done (M0.3, pending approval):** Backend matrix measured — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md).
+- **now:** User approval of the backend matrix; fold probe findings into SPEC-0001/0002/0003/0009; run the remaining M0.2 probes (builtin override, location, compaction/resume, catalogs, command/flag and dialog registration, followUp); contract and design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass.
 

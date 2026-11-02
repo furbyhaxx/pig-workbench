@@ -1,0 +1,8 @@
+If you're reading this, you're unnecessarily importing github.com/ncruces/go-sqlite3/embed.
+SELECT id, name, big, price FROM users WHERE id = 2 -> [id=2 name=u2 big=9007199254740995 price=2.1] tail="" err=<nil>
+SELECT count(*) FROM users                    -> [count(*)=7] tail="" err=<nil>
+DELETE FROM users                             -> rejected: sqlite3: authorization denied: not authorized
+ATTACH DATABASE '/tmp/x.db' AS x              -> rejected: sqlite3: authorization denied: not authorized
+SELECT load_extension('/tmp/evil.so')         -> rejected: sqlite3: SQL logic error: no such function: load_extension
+PRAGMA writable_schema=1                      -> rejected: sqlite3: authorization denied: not authorized
+SELECT 1; DELETE FROM users                   -> [1=1] tail=" DELETE FROM users" err=<nil>

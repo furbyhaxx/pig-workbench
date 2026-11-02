@@ -1,0 +1,35 @@
+{"cwd":"/tmp/wb-probes/work","ext":"wb","kind":"loaded","pid":1757406,"t":1793636522.727101}
+{"event":"session_start","ext":"wb","keys":["type","reason"],"kind":"event","pid":1757406,"reason":"startup","t":1793636522.735718}
+{"event":"before_agent_start","ext":"wb","keys":["messageType","prompt","type","systemPromptOptions","systemPrompt"],"kind":"event","pid":1757406,"t":1793636528.79847}
+{"event":"agent_start","ext":"wb","keys":["type"],"kind":"event","pid":1757406,"t":1793636528.799119}
+{"event":"turn_start","ext":"wb","keys":["type","turnIndex","timestamp"],"kind":"event","pid":1757406,"t":1793636528.799395}
+{"event":"context","ext":"wb","kind":"event","messages":1,"pid":1757406,"t":1793636528.800626}
+{"ext":"wb","kind":"resolve","pid":1757406,"t":1793636528.803165,"tool":"bash"}
+{"event":"tool_execution_start","ext":"wb","keys":["type","toolCallId","toolName","args"],"kind":"event","pid":1757406,"t":1793636528.803712,"toolCallId":"call_0_0","toolName":"bash"}
+{"event":"tool_call","ext":"wb","input":{"command":"echo first"},"keys":["toolCallId","input","type","toolName"],"kind":"event","pid":1757406,"t":1793636528.805976,"toolCallId":"call_0_0","toolName":"bash"}
+{"event":"tool_result","ext":"wb","keys":["isError","type","toolName","toolCallId","input","content","structuredContent"],"kind":"event","path":"","pid":1757406,"t":1793636528.807761,"toolCallId":"call_0_0","toolName":"bash"}
+{"event":"tool_execution_end","ext":"wb","keys":["toolName","result","isError","durationMs","type","toolCallId"],"kind":"event","pid":1757406,"t":1793636528.807957,"toolCallId":"call_0_0","toolName":"bash"}
+{"event":"turn_start","ext":"wb","keys":["turnIndex","timestamp","type"],"kind":"event","pid":1757406,"t":1793636528.808234}
+{"event":"context","ext":"wb","kind":"event","messages":3,"pid":1757406,"t":1793636528.808423}
+{"event":"agent_end","ext":"wb","keys":["type","messages"],"kind":"event","pid":1757406,"t":1793636528.810768}
+{"cmd":"claim","ext":"wb","kind":"command","pid":1757406,"t":1793636531.801421}
+{"event":"session_shutdown","ext":"wb","keys":["type","reason"],"kind":"event","pid":1757406,"reason":"reload","t":1793636532.804854}
+{"cwd":"/tmp/wb-probes/work","ext":"wb","kind":"loaded","pid":1757406,"t":1793636532.818892}
+{"ext":"wb","kind":"resolve","pid":1757406,"t":1793636532.820231,"tool":"bash"}
+{"event":"session_start","ext":"wb","keys":["type","reason"],"kind":"event","pid":1757406,"reason":"reload","t":1793636532.821479}
+{"error":false,"expanded":false,"ext":"wb","id":"call_0_0","kind":"render","partial":false,"phase":"result","pid":1757406,"t":1793636532.822311,"tool":"bash","width":98}
+{"argsComplete":false,"ext":"wb","id":"call_0_0","kind":"render","partial":false,"phase":"call","pid":1757406,"started":false,"t":1793636532.822337,"tool":"bash","width":98}
+{"event":"before_agent_start","ext":"wb","keys":["messageType","prompt","type","systemPromptOptions","systemPrompt"],"kind":"event","pid":1757406,"t":1793636536.808206}
+{"event":"agent_start","ext":"wb","keys":["type"],"kind":"event","pid":1757406,"t":1793636536.809077}
+{"event":"turn_start","ext":"wb","keys":["turnIndex","timestamp","type"],"kind":"event","pid":1757406,"t":1793636536.809208}
+{"event":"context","ext":"wb","kind":"event","messages":5,"pid":1757406,"t":1793636536.809694}
+{"event":"tool_execution_start","ext":"wb","keys":["type","toolCallId","toolName","args"],"kind":"event","pid":1757406,"t":1793636536.81286,"toolCallId":"call_2_0","toolName":"bash"}
+{"event":"tool_call","ext":"wb","input":{"command":"echo second"},"keys":["type","toolName","toolCallId","input"],"kind":"event","pid":1757406,"t":1793636536.813645,"toolCallId":"call_2_0","toolName":"bash"}
+{"argsComplete":true,"ext":"wb","id":"call_2_0","kind":"render","partial":true,"phase":"call","pid":1757406,"started":true,"t":1793636536.813734,"tool":"bash","width":98}
+{"event":"tool_result","ext":"wb","keys":["toolName","toolCallId","input","content","structuredContent","isError","type"],"kind":"event","path":"","pid":1757406,"t":1793636536.815782,"toolCallId":"call_2_0","toolName":"bash"}
+{"event":"tool_execution_end","ext":"wb","keys":["durationMs","type","toolCallId","toolName","result","isError"],"kind":"event","pid":1757406,"t":1793636536.816302,"toolCallId":"call_2_0","toolName":"bash"}
+{"error":false,"expanded":false,"ext":"wb","id":"call_2_0","kind":"render","partial":false,"phase":"result","pid":1757406,"t":1793636536.816674,"tool":"bash","width":98}
+{"event":"turn_start","ext":"wb","keys":["timestamp","type","turnIndex"],"kind":"event","pid":1757406,"t":1793636536.816711}
+{"argsComplete":true,"ext":"wb","id":"call_2_0","kind":"render","partial":false,"phase":"call","pid":1757406,"started":true,"t":1793636536.816733,"tool":"bash","width":98}
+{"event":"context","ext":"wb","kind":"event","messages":7,"pid":1757406,"t":1793636536.816965}
+{"event":"agent_end","ext":"wb","keys":["type","messages"],"kind":"event","pid":1757406,"t":1793636536.81899}

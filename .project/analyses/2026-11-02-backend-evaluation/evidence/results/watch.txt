@@ -1,0 +1,7 @@
+in-place write             events=[WRITE] content="v2"
+atomic temp+rename         events=[CREATE] content="v3"
+vim backup-rename          events=[RENAME CREATE WRITE] content="v4"
+delete                     events=[REMOVE] content=""
+recreate                   events=[CREATE WRITE] content="v5"
+nested (unwatched dir)     events=[] content="v5"
+max_user_watches=1048576

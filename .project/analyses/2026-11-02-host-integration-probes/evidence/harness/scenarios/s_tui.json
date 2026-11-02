@@ -1,0 +1,1 @@
+[{"tools": [{"name": "producer_echo", "args": {"text": "hello"}}, {"name": "read", "args": {"path": "plain.txt"}}, {"name": "bash", "args": {"command": "echo native"}}]}, {"tools": [{"name": "codemode", "args": {"code": "text(await tools.producer_echo({text:\"nested\"}))"}}]}, {"text": "all done"}]

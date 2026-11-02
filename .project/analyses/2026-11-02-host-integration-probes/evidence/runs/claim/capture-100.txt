@@ -1,0 +1,50 @@
+   ▄▀▀▀▀▄▄▀▀▀▀▄   escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  Press ctrl+o to show full startup help and loaded resources.
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  PiG can explain its own features and look up its docs. Ask it how to use or
+  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀  extend PiG.
+    ▀▀▀▀▀▀▀▀▀▀
+
+[Skills]
+  reverse-engineer-anything
+
+[Extensions]
+  probe-producer, probe-wb
+
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart tmux.
+
+
+ go
+
+
+
+ $ echo first
+
+ first
+
+ Took 0.0s
+
+
+ one
+
+
+ again
+
+
+
+ $ echo second
+
+ second
+
+ Took 0.0s
+
+
+ two
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+/tmp/wb-probes/work
+↑4 ↓4 0.0%/128k (auto)                                                                        mock-1

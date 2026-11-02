@@ -1,0 +1,1 @@
+[[0.5,{"id":"p1","type":"prompt","message":"hello"}],[1.5,{"id":"r1","type":"prompt","message":"/probe-reload"}],[4,{"id":"s","type":"get_state"}]]

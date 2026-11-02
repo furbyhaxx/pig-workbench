@@ -1,0 +1,3 @@
+[{"tools":[{"name":"producer_request","args":{"sleepMs":200}}]},
+ {"tools":[{"name":"producer_echo","args":{"text":"x","block":true}}]},
+ {"text":"done"}]

@@ -1,0 +1,14 @@
+[package]
+name = "svgrender"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+resvg = { version = "0.49.0", default-features = false, features = ["text", "system-fonts", "raster-images"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
