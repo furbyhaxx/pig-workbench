@@ -5,15 +5,18 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T16:17:52+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
       changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
+    - revision: 2
+      reason: "Align shared selectors with the detailed advanced-read contract"
+      changes: ["Specified raw and comma-list singleton semantics from donor parser and linked detailed behavior specs"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -57,7 +60,7 @@ Parse in order:
 4. Decode the resource path exactly once according to the provider's declared URI grammar. Keep raw requested spelling for diagnostics. Normalize scheme case, not arbitrary case-sensitive paths.
 5. Canonicalize through provider stat/read metadata; compare authorization against canonical target too.
 
-Selectors: `:N`, `:N-`, `:A-B`, `:A+C`, `:-N`, comma-separated ranges and `:raw` before/after a numeric selection. Positive one-based integers only; reject overflow/reversed/empty ranges. `:1-N` is head. Named selectors are provider capabilities, not an excuse to reinterpret unknown typos. Explicit tool selector fields should be supported for ambiguous URLs; conflicting suffix and explicit selection fails invalidRequest.
+Selectors: `:N`, `:N-`, `:A-B`, `:A+C`, `:-N`, comma-separated ranges and `:raw` before/after a numeric selection. A lone non-raw N means onward; N beside raw or inside a comma list means exactly that line (`:17:raw`, `:19,59`). Use `:17-:raw` for raw onward. Positive one-based integers only; reject overflow/reversed/empty ranges. `:1-N` is head. Named selectors are provider capabilities, not an excuse to reinterpret unknown typos. A single-target explicit `selector` field handles ambiguous URLs; any suffix plus explicit selector fails invalidRequest. Detailed selection and adapter contract: [SPEC-0006](0006-advanced-read.md); snapshot/edit contract: [SPEC-0005](0005-hashline-editing.md).
 
 For opaque HTTP query/fragment and literal virtual path ambiguity, clients use an explicit selector field or percent-encoded path delimiters. A provider cannot treat encoded `..` or `/` differently between authorization and execution.
 

@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-02T16:17:52+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "User authorized the first public API specifications and integration designs"
       changes: ["Linked service, frame, renderer and resource-provider contracts and API wireframes", "Recorded completed bootstrap and kept runtime probes/design approval explicit"]
+    - revision: 4
+      reason: "User requested the remaining specifications and designs"
+      changes: ["Added six feature specifications and workflow wireframes", "Mapped the full draft set to delivery scope while retaining approval/probe gates"]
 ---
 
 # 1. Outcome and authority
@@ -39,12 +42,21 @@ First API specification batch (drafts; runtime probes pending):
 - `.project/specs/0004-resource-providers.md` — pluggable scheme handlers, policy, paging and snapshot integrity.
 - `.project/sketches/extension-apis/README.md` — API flows, frame styles, state gallery and integration/provider/settings wireframes.
 
-These complement the broad UX sketch. They do not close M0 until host probes and contract review pass. `/workbench integrations` and `/workbench resources` are proposed inspection additions; include them in the command inventory review.
+Remaining feature specifications (drafts):
+- `.project/specs/0005-hashline-editing.md` — WB-02/03: full grammar, snapshots, seen guards, syntax blocks, registers, recovery and commits.
+- `.project/specs/0006-advanced-read.md` — WB-02/04/05: selectors, code summaries, adapters, search and paging.
+- `.project/specs/0007-ambient-context.md` — WB-11/13/14/18: class selection, pins, capped views, watchers, diff/context epochs.
+- `.project/specs/0008-locations-jobs.md` — WB-09/12: cwd/SSH/worktrees, process lifecycle and job controls.
+- `.project/specs/0009-interaction-commands.md` — WB-15/16/17: ask/answer/replay, checkpoints, codemode and complete command UX.
+- `.project/specs/0010-configuration-state-trust.md` — WB-02/19 and all domains: settings, durable state, trust and privacy.
+- `.project/sketches/workflow-details/README.md` — recovery, adapter, class/pin, worktree/job, notes/clarification, checkpoint and config-conflict wireframes.
+
+Together these ten specifications and three design artifacts cover the planned feature areas as reviewable drafts. They do not close M0 until host probes and contract review pass. `/workbench integrations` and `/workbench resources` are proposed inspection additions; include them in the command inventory review.
 
 ## Progress
 
-- **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, initial four API specifications and static integration wireframes. No service/tool implementation yet.
-- **now:** Review draft API contracts and UI designs; runtime validation and live captures remain required.
+- **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, ten draft specifications and three static design/wireframe artifacts. No service/tool implementation yet.
+- **now:** Review the complete draft contract/design set, approve backend/safety decisions and run M0 probes; runtime validation and live captures remain required.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass.
 
@@ -157,7 +169,7 @@ Create packages when they have concrete responsibilities, not empty scaffolding 
 3. Enumerate hashline grammar/recovery/preview behaviors, read adapters/selectors, dynamic commands and instruction hooks into a feature matrix tied to WB IDs.
 4. Mark each row as donor behavior, intentional improvement, or unresolved design—not simply “ported”.
 
-**Deliverable:** the four existing `.project/specs/0001-*.md` through `0004-*.md` contracts revised with probe evidence, plus the next numbered specifications for hashline/read/instruction behavior and format/command inventories. Do not reuse their allocated IDs. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
+**Deliverable:** the ten existing `.project/specs/0001-*.md` through `0010-*.md` contracts revised with full donor/probe evidence and an approved backend/format matrix. The draft behavior/command inventories exist; source-parity audit and runtime verification remain. Do not reuse allocated specification IDs. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
 
 ### M0.2 — Isolated host probes
 

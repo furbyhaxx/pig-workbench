@@ -5,18 +5,23 @@ document:
   title: "Workbench UI and UX design"
   description: "Reviewable terminal wireframes, navigation, interaction states and responsive/headless behavior"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T15:31:51+01:00"
-  updated_at: "2026-11-02T15:31:51+01:00"
+  updated_at: "2026-11-02T16:17:52+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User requested UI/UX designs and wireframes alongside implementation planning"
       changes: ["Defined surface inventory, terminal wireframes, interaction and responsive contracts, and design acceptance gate"]
+    - revision: 2
+      reason: "Link detailed feature designs and finalize advisory questionnaire semantics"
+      changes: ["Added API/workflow companions and clarified that required questions never block submission"]
 ---
 
 # Workbench UI/UX
+
+Detailed companions: [extension APIs and renderer states](../extension-apis/README.md), [remaining feature workflows](../workflow-details/README.md). Contracts: `.project/specs/0001-extension-services.md` through `0010-configuration-state-trust.md`.
 
 Companion to `.project/plans/0001-pig-workbench.md`. These are **proposed wireframes, not live captures or approved layouts**. Example paths, IDs, counts and times are fixture data. Text layouts illustrate information hierarchy; actual rendering must measure terminal columns, not copy padding from these diagrams.
 
@@ -341,7 +346,7 @@ Question tabs/steps are peers, not navigation depth. Single, multi, preview and 
 ────────────────────────────────────────────────────────
 ```
 
-Dismiss with answers offers Continue / Discard; cancellation is not a submitted response. Required/advisory semantics must match the final tool contract, not silently block a user. Recovery offers Resume pending / Discard; replay identifies original branch entry and creates a fresh submission identity. Remote bridge submissions show source and reject expired/duplicate IDs. `/answer` shows cancellable extraction progress and an inspectable failure; it does not invent choices when extraction fails. Sensitive answers are not copied into an extra history archive by default.
+Dismiss with answers offers Continue / Discard; cancellation is not a submitted response. Required is advisory only (SPEC-0009): mark importance, but never block submission or invent an answer. Recovery offers Resume pending / Discard; replay identifies original branch entry and creates a fresh submission identity. Remote bridge submissions show source and reject expired/duplicate IDs. `/answer` shows cancellable extraction progress and an inspectable failure; it does not invent choices when extraction fails. Sensitive answers are not copied into an extra history archive by default.
 
 ## 12. Checkpoints
 
