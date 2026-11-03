@@ -8,6 +8,8 @@ import (
 )
 
 // Class defines filenames, placement, content role and per-file view limits.
+// Placement is ancestors, root+nearest, nearest or root; Select is first or all.
+// Zero values inherit the matching built-in or general defaults.
 type Class struct {
 	ID        string
 	Filenames []string
@@ -20,15 +22,30 @@ type Class struct {
 }
 
 // Options defines the project boundary, authorized user directories and scan budget.
+// A zero MaxTotalBytes permits up to 4 MiB of source bytes per discovery.
 type Options struct {
 	ProjectRoot   string
 	UserRoots     []string
 	MaxTotalBytes int
+	AllowNested   bool
+	// ValidatePointers reports that target validation is deferred; it does not read targets.
+	ValidatePointers bool
+}
+
+// NestedRepositoryError reports a nested repository encountered before the supplied boundary.
+type NestedRepositoryError struct {
+	Dir         string
+	ProjectRoot string
+}
+
+// Error describes the boundary that needs an explicit caller decision.
+func (e *NestedRepositoryError) Error() string {
+	return fmt.Sprintf("nested repository %q lies below project boundary %q", e.Dir, e.ProjectRoot)
 }
 
 // Selected is a canonical file and its delivered view.
 // Digest is SHA-256 over exactly the source bytes read, which may be a bounded prefix.
-// OmittedItems is -1 if the complete source was not scanned.
+// OmittedItems is -1 for an item-capped class if the source scan was incomplete.
 type Selected struct {
 	Class        string
 	Path         string
@@ -42,7 +59,7 @@ type Selected struct {
 	Continuation string
 }
 
-// Reason describes why a candidate was selected or excluded.
+// Reason describes selection, exclusion, cap, malformed-pointer or deferred-validation decisions.
 type Reason struct {
 	Class       string
 	Path        string
@@ -115,7 +132,7 @@ func validatedClasses(classes []Class) ([]Class, error) {
 		}
 		names := make(map[string]bool)
 		for _, name := range class.Filenames {
-			if name == "" || name == "." || name == ".." || filepath.Base(name) != name || strings.ContainsAny(name, "/\\") || names[name] {
+			if name == "" || name == "." || name == ".." || filepath.Base(name) != name || !filepath.IsLocal(name) || strings.ContainsAny(name, "/\\\x00") || names[name] {
 				return nil, fmt.Errorf("class %q has an invalid or repeated filename %q", class.ID, name)
 			}
 			names[name] = true

@@ -1,6 +1,7 @@
 package instructions
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -8,7 +9,7 @@ import (
 	"unicode"
 )
 
-var pointerPattern = regexp.MustCompile(`^- B-[0-9]{4,} [^[:space:]]+ [^[:space:]]+ — .+ → [^[:space:]].*$`)
+var pointerPattern = regexp.MustCompile(`^- B-[0-9]{4,} [^[:space:]]+ [^[:space:]]+ — [^[:space:]].* → [^[:space:]].*$`)
 
 type viewLine struct {
 	text    string
@@ -16,14 +17,20 @@ type viewLine struct {
 	pointer bool
 }
 
-type cappedView struct {
-	content   string
-	truncated bool
-	omitted   int
-	fits      bool
+type viewDiagnostic struct {
+	status string
+	line   int
 }
 
-func makeView(data []byte, complete bool, class Class, continuation string) cappedView {
+type cappedView struct {
+	content     string
+	truncated   bool
+	omitted     int
+	fits        bool
+	diagnostics []viewDiagnostic
+}
+
+func makeView(ctx context.Context, data []byte, complete bool, class Class, continuation string, validatePointers bool) (cappedView, error) {
 	text := strings.TrimPrefix(string(data), "\ufeff")
 	text = strings.ReplaceAll(text, "\r\n", "\n")
 	sourceLines := strings.SplitAfter(text, "\n")
@@ -35,15 +42,25 @@ func makeView(data []byte, complete bool, class Class, continuation string) capp
 	}
 	itemClass := class.ID == "backlog" || class.MaxItems > 0
 	lines := make([]viewLine, 0, len(sourceLines))
+	var diagnostics []viewDiagnostic
 	totalItems := 0
 	for i, line := range sourceLines {
+		if i%256 == 0 {
+			if err := ctx.Err(); err != nil {
+				return cappedView{}, err
+			}
+		}
 		plain := strings.TrimSuffix(line, "\n")
 		pointer := itemClass && pointerPattern.MatchString(plain)
 		if pointer {
 			totalItems++
+			if validatePointers {
+				diagnostics = append(diagnostics, viewDiagnostic{status: "pointer-validation-deferred", line: i + 1})
+			}
 		}
 		entry := viewLine{text: line, lines: 1, pointer: pointer}
 		if itemClass && strings.HasPrefix(strings.TrimSpace(plain), "- B-") && !pointer {
+			diagnostics = append(diagnostics, viewDiagnostic{status: "malformed-pointer", line: i + 1})
 			if !strings.HasSuffix(entry.text, "\n") {
 				entry.text += "\n"
 			}
@@ -52,12 +69,17 @@ func makeView(data []byte, complete bool, class Class, continuation string) capp
 		}
 		lines = append(lines, entry)
 	}
-	build := func(bytesLimit, linesLimit int) (string, int, bool) {
+	build := func(bytesLimit, linesLimit int) (string, int, bool, error) {
 		var out strings.Builder
 		usedLines, visibleItems := 0, 0
 		omitted := !complete
 		stopped := false
-		for _, line := range lines {
+		for i, line := range lines {
+			if i%256 == 0 {
+				if err := ctx.Err(); err != nil {
+					return "", 0, false, err
+				}
+			}
 			if line.pointer && class.MaxItems > 0 && visibleItems >= class.MaxItems {
 				omitted = true
 				continue
@@ -73,12 +95,16 @@ func makeView(data []byte, complete bool, class Class, continuation string) capp
 				visibleItems++
 			}
 		}
-		return out.String(), visibleItems, omitted
+		return out.String(), visibleItems, omitted, nil
 	}
-	content, visible, truncated := build(class.MaxBytes, class.MaxLines)
+	content, visible, truncated, err := build(class.MaxBytes, class.MaxLines)
+	if err != nil {
+		return cappedView{}, err
+	}
 	if !truncated {
-		return cappedView{content: content, fits: true}
+		return cappedView{content: content, fits: true, diagnostics: diagnostics}, nil
 	}
+	bodyLimit := class.MaxBytes
 	for {
 		omitted := 0
 		if itemClass {
@@ -92,11 +118,15 @@ func makeView(data []byte, complete bool, class Class, continuation string) capp
 		// A final unterminated source line needs its own separator before the footer.
 		reserve := len(marker) + 2
 		if reserve > class.MaxBytes || class.MaxLines < 1 {
-			return cappedView{truncated: true, omitted: omitted, fits: false}
+			return cappedView{truncated: true, omitted: omitted, fits: false, diagnostics: diagnostics}, nil
 		}
-		next, nextVisible, _ := build(class.MaxBytes-reserve, class.MaxLines-1)
+		bodyLimit = min(bodyLimit, class.MaxBytes-reserve)
+		next, nextVisible, _, err := build(bodyLimit, class.MaxLines-1)
+		if err != nil {
+			return cappedView{}, err
+		}
 		if next == content && nextVisible == visible {
-			return cappedView{content: next, truncated: true, omitted: omitted, fits: true}
+			return cappedView{content: next, truncated: true, omitted: omitted, fits: true, diagnostics: diagnostics}, nil
 		}
 		content, visible = next, nextVisible
 	}

@@ -80,11 +80,30 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 	if err != nil {
 		return Set{}, err
 	}
+	if !info.IsDir() {
+		canonical, err := filepath.EvalSymlinks(target)
+		if err != nil || !contains(project.root, canonical) {
+			return Set{}, errors.New("file target resolves outside project boundary")
+		}
+		if physicalDir := filepath.Dir(canonical); physicalDir != dirs[len(dirs)-1] {
+			rel, err := filepath.Rel(project.root, physicalDir)
+			if err != nil {
+				return Set{}, err
+			}
+			dirs, err = projectDirectories(project, filepath.Join(project.input, rel))
+			if err != nil {
+				return Set{}, err
+			}
+		}
+	}
 	limit := opts.MaxTotalBytes
 	if limit == 0 {
 		limit = defaultMaxTotalBytes
 	}
 	d := discovery{classes: policies, remaining: limit, seen: make(map[string]int)}
+	if err := d.checkNested(ctx, project, dirs, opts.AllowNested); err != nil {
+		return Set{}, err
+	}
 	for _, userRoot := range opts.UserRoots {
 		if err := ctx.Err(); err != nil {
 			return Set{}, err
@@ -110,7 +129,20 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 		if err := ctx.Err(); err != nil {
 			return Set{}, err
 		}
-		view := makeView(src.data, src.complete, src.class, src.file.DisplayPath)
+		view, err := makeView(ctx, src.data, src.complete, src.class, src.file.DisplayPath, opts.ValidatePointers)
+		if err != nil {
+			return Set{}, err
+		}
+		if err := ctx.Err(); err != nil {
+			return Set{}, err
+		}
+		for _, diagnostic := range view.diagnostics {
+			detail := fmt.Sprintf("line %d", diagnostic.line)
+			if diagnostic.status == "pointer-validation-deferred" {
+				detail += ": target existence and status were not checked"
+			}
+			set.Reasons = append(set.Reasons, Reason{Class: src.class.ID, Path: src.file.Path, DisplayPath: src.file.DisplayPath, Status: diagnostic.status, Detail: detail})
+		}
 		if !view.fits {
 			set.Reasons = append(set.Reasons, Reason{Class: src.file.Class, Path: src.file.Path, DisplayPath: src.file.DisplayPath, Status: "capped", Detail: "view budget cannot contain its continuation"})
 			continue
@@ -123,6 +155,9 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 			set.Reasons = append(set.Reasons, Reason{Class: src.file.Class, Path: src.file.Path, DisplayPath: src.file.DisplayPath, Status: "capped", Detail: "view or source scan limit reached"})
 		}
 		set.Files = append(set.Files, src.file)
+	}
+	if err := ctx.Err(); err != nil {
+		return Set{}, err
 	}
 	return set, nil
 }
@@ -191,6 +226,34 @@ func projectDirectories(project scope, target string) ([]string, error) {
 	return dirs, nil
 }
 
+func (d *discovery) checkNested(ctx context.Context, project scope, dirs []string, allow bool) error {
+	for i := len(dirs) - 1; i > 0; i-- {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		path := filepath.Join(dirs[i], ".git")
+		rel, err := filepath.Rel(project.root, path)
+		if err != nil {
+			return err
+		}
+		info, err := project.fs.Lstat(rel)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("inspect nested repository boundary: %w", err)
+		}
+		if !info.IsDir() && !info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 {
+			continue
+		}
+		if !allow {
+			return &NestedRepositoryError{Dir: dirs[i], ProjectRoot: project.root}
+		}
+		d.reasons = append(d.reasons, Reason{Path: path, DisplayPath: filepath.ToSlash(rel), Status: "crossed-nested-repository", Detail: "caller explicitly allowed crossing this boundary"})
+	}
+	return nil
+}
+
 func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) error {
 	candidates := make([][][]candidate, len(dirs))
 	for i, dir := range dirs {
@@ -248,19 +311,22 @@ func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) e
 			}
 		}
 	}
+	first, last := make([]int, len(d.classes)), make([]int, len(d.classes))
+	for j := range d.classes {
+		first[j], last[j] = -1, -1
+		for i := range dirs {
+			if len(candidates[i][j]) > 0 {
+				if first[j] < 0 {
+					first[j] = i
+				}
+				last[j] = i
+			}
+		}
+	}
 	for i := range dirs {
 		for j, class := range d.classes {
-			first, last := -1, -1
-			for k := range dirs {
-				if len(candidates[k][j]) > 0 {
-					if first < 0 {
-						first = k
-					}
-					last = k
-				}
-			}
 			active := class.Placement == "ancestors" || class.Placement == "root" && i == 0 ||
-				class.Placement == "nearest" && i == last || class.Placement == "root+nearest" && (i == first || i == last)
+				class.Placement == "nearest" && i == last[j] || class.Placement == "root+nearest" && (i == first[j] || i == last[j])
 			for _, candidate := range candidates[i][j] {
 				if err := ctx.Err(); err != nil {
 					return err
@@ -283,13 +349,16 @@ func (d *discovery) selectCandidate(ctx context.Context, scope scope, class Clas
 	if index, ok := d.seen[candidate.canonical]; ok {
 		src := &d.sources[index]
 		src.class = intersectClass(src.class, class)
+		reason.Detail = "same canonical file as an earlier selection"
+		if src.file.Role != class.Role || src.file.Trust != scope.trust {
+			reason.Detail += "; conflicting role or trust uses the less privileged interpretation"
+		}
 		if class.Role == "context" {
 			src.file.Role = "context"
 		}
 		if scope.trust == "project" {
 			src.file.Trust = "project"
 		}
-		reason.Detail = "same canonical file as an earlier selection"
 		d.reasons = append(d.reasons, reason)
 		return nil
 	}
@@ -370,7 +439,7 @@ func readSource(ctx context.Context, scope scope, canonical string, limit int) (
 		if err != nil {
 			return data, false, err
 		}
-		complete = info.Size() <= int64(len(data)) && after.Size() <= int64(len(data))
+		complete = len(data) > 0 && info.Size() == int64(len(data)) && after.Size() == int64(len(data))
 	}
 	return data, complete, nil
 }
