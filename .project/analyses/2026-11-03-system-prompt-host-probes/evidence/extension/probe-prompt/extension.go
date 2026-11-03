@@ -16,9 +16,61 @@ import (
 const role = "A"
 
 var (
-	mu    sync.Mutex
-	calls int
+	mu         sync.Mutex
+	calls      int
+	lastForced string
 )
+
+func walkReplace(v any, from, to string) (any, int) {
+	switch t := v.(type) {
+	case string:
+		if t == from {
+			return to, 1
+		}
+		return t, 0
+	case map[string]any:
+		n := 0
+		for k, x := range t {
+			var c int
+			t[k], c = walkReplace(x, from, to)
+			n += c
+		}
+		return t, n
+	case []any:
+		n := 0
+		for i, x := range t {
+			var c int
+			t[i], c = walkReplace(x, from, to)
+			n += c
+		}
+		return t, n
+	}
+	return v, 0
+}
+
+func recordedSection(ctx sdk.Context, name string) string {
+	ents, _ := ctx.GetEntries()
+	val := ""
+	for _, raw := range ents {
+		var e struct {
+			Message struct {
+				Role     string            `json:"role"`
+				Sections map[string]*string `json:"sections"`
+			} `json:"message"`
+		}
+		if json.Unmarshal(raw, &e) != nil || e.Message.Role != "system" {
+			continue
+		}
+		if v, ok := e.Message.Sections[name]; ok {
+			if v == nil {
+				val = ""
+			} else {
+				val = *v
+			}
+		}
+	}
+	return val
+}
 
 func logf(kind string, fields map[string]any) {
 	mu.Lock()
@@ -115,7 +167,11 @@ func Extension() *sdk.Extension {
 			opts["forceSystemPrompt"] = v
 		}
 		if m["force"] {
-			return map[string]any{"systemPrompt": fmt.Sprintf("FORCED-%s-%d\n%s", role, n, sp)}, nil
+			text := fmt.Sprintf("FORCED-%s-%d\n%s", role, n, sp)
+			mu.Lock()
+			lastForced = text
+			mu.Unlock()
+			return map[string]any{"systemPrompt": text}, nil
 		}
 		return nil, nil
 	})
@@ -133,8 +189,62 @@ func Extension() *sdk.Extension {
 		return nil, nil
 	})
 
+	e.OnEvent("agent_start", func(ctx sdk.Context, data map[string]any) (any, error) {
+		sp, _ := ctx.GetSystemPrompt()
+		ents, _ := ctx.GetEntries()
+		n := 0
+		for _, raw := range ents {
+			if strings.Contains(string(raw), "\"mcp_servers\":") {
+				n++
+			}
+		}
+		logf("agent_start", map[string]any{"getSPmcp": strings.Contains(sp, "<mcp_servers>"), "entriesMcp": n})
+		return nil, nil
+	})
+
+	e.OnEvent("turn_start", func(ctx sdk.Context, data map[string]any) (any, error) {
+		sp, _ := ctx.GetSystemPrompt()
+		ents, _ := ctx.GetEntries()
+		n := 0
+		for _, raw := range ents {
+			if strings.Contains(string(raw), "\"mcp_servers\":") {
+				n++
+			}
+		}
+		logf("turn_start", map[string]any{"getSPmcp": strings.Contains(sp, "<mcp_servers>"), "entriesMcp": n})
+		return nil, nil
+	})
+
 	e.OnEvent("before_provider_request", func(ctx sdk.Context, data map[string]any) (any, error) {
-		logf("bpr", map[string]any{"keys": keysOf(data)})
+		sp, spErr := ctx.GetSystemPrompt()
+		o, oErr := ctx.GetSystemPromptOptions()
+		names := []string{}
+		if o.Sections != nil {
+			for _, x := range *o.Sections {
+				names = append(names, x.Name)
+			}
+		}
+		ents, _ := ctx.GetEntries()
+		lastSys := ""
+		for _, raw := range ents {
+			if strings.Contains(string(raw), "\"mcp_servers\":") {
+				lastSys = "has-mcp"
+			}
+		}
+		if modes()["bprsub"] {
+			mu.Lock()
+			from := lastForced
+			mu.Unlock()
+			mcp := recordedSection(ctx, "mcp_servers")
+			if from != "" && mcp != "" {
+				p, n := walkReplace(data["payload"], from, from+"\n\n"+mcp)
+				logf("bprsub", map[string]any{"replaced": n, "mcpLen": len(mcp)})
+				if n > 0 {
+					return p, nil
+				}
+			}
+		}
+		logf("bpr", map[string]any{"getSPmcp": strings.Contains(sp, "<mcp_servers>"), "getSPforced": strings.HasPrefix(sp, "FORCED"), "spErr": fmt.Sprint(spErr), "optSections": names, "oErr": fmt.Sprint(oErr), "entriesMcp": lastSys})
 		return nil, nil
 	})
 
@@ -146,6 +256,11 @@ func Extension() *sdk.Extension {
 		ctx.SetActiveTools(append(active, "probe_extra_"+strings.ToLower(role)))
 		after, _ := ctx.GetActiveTools()
 		logf("add_tool", map[string]any{"before": active, "after": after})
+		if modes()["toolframe"] {
+			f := false
+			err := ctx.SendMessage("wb-frame", "[TOOLS-FRAME + probe_extra_"+strings.ToLower(role)+"]", true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: &f})
+			logf("toolframe", map[string]any{"err": fmt.Sprint(err)})
+		}
 		return "added", nil
 	})
 	e.ToolPromptSnippet("probe_add_tool_"+strings.ToLower(role), "probe_add_tool: activate an extra tool")

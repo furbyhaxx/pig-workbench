@@ -2,18 +2,21 @@
 document:
   type: "analysis"
   id: "ANA-2026-11-03-system-prompt-host-probes"
-  title: "Probes PR1–PR6: can PiG host Workbench's system prompt takeover?"
+  title: "Probes PR1–PR8: can PiG host Workbench's system prompt takeover?"
   description: "Runtime evidence for forced prompts across a run and compaction, handler order between extensions, section patches with and without mid-conversation system messages, frames before the user prompt in RPC/print/TUI, host inputs for templates, and model facts"
   status: "published"
-  revision: 1
+  revision: 2
   created_at: "2026-11-03T13:16:00+01:00"
-  updated_at: "2026-11-03T13:16:00+01:00"
+  updated_at: "2026-11-03T13:38:33+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User approved SPEC-0014 direction and asked to proceed with the host probes"
       changes: ["Ran PR1–PR6 against pig 0.5.3+1.4.0 with a mock provider", "Catalog check for supportsMidConvoSystemMessages on PiG main@9b4efdd6"]
+    - revision: 2
+      reason: "User asked to run the open probes PR7 and PR8"
+      changes: ["PR7: tools frame mid-run under force", "PR8: mcp_servers from a later handler; recorded-section read and payload splice", "Consequences and fork candidates updated"]
 ---
 
 # 1. Method
@@ -34,6 +37,8 @@ document:
 | PR3 | Who gets section patches mid-conversation? | **Without the flag**, the request carries one system message, re-rendered with the latest sections every prompt (cache prefix breaks at each change). **With the flag**, the first system message stays; each change is appended as a `developer` message `Updated system prompt section "docs": …` before the user message. **Unchanged sections produce no patch.** Built-in catalog: Anthropic Claude 4.8+/5.x, OpenAI Responses and Codex GPT-5.4+, Kimi K2.6+/K3, DeepSeek V4 Pro (direct and via Copilot, OpenCode, OpenRouter, Fireworks, Azure); no other provider | `runs/sec-mock-1.txt`, `sec-mock-mid.txt`, `sec-stable.txt`, `midconvo-catalog.txt` |
 | PR4 | Does a `steer` frame from `before_agent_start` land before the user prompt? | **Yes, in RPC, print (`-p`) and TUI**, on the first prompt of a session, on later prompts and after compaction (after the compaction summary, before the user message). Persisted as `custom_message`; sent as a `user` message. The TUI renders it as a `[wb-frame]` block above the prompt | `runs/force-steer.txt` req 8, `print.txt`, `tui.txt`, `tui-screen.txt` |
 | PR5 | Do templates get every host input? | **Mostly.** Options carry selected and hidden tools, snippets, guidelines, prompt guidelines, custom prompt (SYSTEM.md), append text, context files with content, skills with `disableModelInvocation` and cwd. **Not in options:** PiG's docs paths and constant texts. The `mcp_servers` section is a custom section that PiG's built-in MCP extension sets in its own `before_agent_start` handler (`coding/mcpext/extension.go`), so Workbench sees it in `options.sections` only if that handler ran first (not probed: no MCP fixture). `--append-system-prompt` flags (joined by a blank line) replace `APPEND_SYSTEM.md` instead of adding to it. Hidden tools (codemode `only`) leave `<tools>` with `codemode` alone; without `read`, the skills hint says "Use bash to load a skill's file" and rules gain "Use bash for file operations". `disable-model-invocation` skills are in options but not in the prompt. Windows cwd not testable on this host | `fixtures/*-options.json`, `fixtures/prompt-excerpts.txt` |
+| PR7 | Under `force`, does a `tools` frame sent mid-run land before the next model call without changing the system text? | **Yes.** `SendMessage(steer)` from the tool that activated another tool lands after that tool's result and before the next model call; the system text of requests 0–2 has the same hash. A new user prompt re-forces | `runs/pr7.txt` |
+| PR8 | Does `mcp_servers` reach Workbench? | **No, not in `before_agent_start`.** PiG's built-in MCP handler runs after `-e` extensions: Workbench never sees the section in options. Under `sections` it is appended last; under `force` it is **missing from every request** (recorded in the session only). In `before_provider_request`, `GetSystemPrompt` returns the forced text and `GetSystemPromptOptions` lacks the section, but `GetEntries` already holds the recorded system message with every handler's sections. Replacing the exact forced string in the payload with forced text plus the recorded section puts `<mcp_servers>` into every request | `runs/pr8-sections.txt`, `pr8-force.txt`, `pr8-bprsub.txt` |
 | PR6 | Model facts for family matching? | **Complete.** `ctx.Model()`, `ModelProvider()`, `ModelQualified()`, `GetModelInfo()` (context window, max output, reasoning, costs) and `GetThinkingLevel()` work in `before_agent_start`. `ModelInfo` has no `api` or compat; `ModelRegistry().Find(provider, id)` returns both (`api`, `compat.supportsMidConvoSystemMessages`) | `runs/pr6.txt` |
 
 Also observed:
@@ -42,7 +47,7 @@ Also observed:
 
 # 3. Consequences for SPEC-0014
 
-1. `force` delivery works as specified, with three gaps to design for:
+1. `force` delivery works as specified, with gaps to design for (PR7 and PR8 refine them, see 7 and 8):
    - **Mid-run tool changes** reach the forced prompt only at the next user prompt. Tool declarations are current, so this is a stale description, not a missing tool. Fix candidates: re-render in `context_with_system` per turn (S3 showed it can replace the system message; needs a probe, PR7) or accept it.
    - **Later handlers**: Workbench cannot choose its load order. A later extension's force replaces Workbench's prompt; a later extension's sections are recorded but not sent. Detect it in `before_provider_request` (runs after every `before_agent_start` handler and sees the final payload) by comparing the system text with Workbench's render, not at the next `before_agent_start`.
    - **Transcript truth**: the session shows PiG's base prompt; `session://<id>/system-prompt` must serve Workbench's own record.
@@ -51,9 +56,11 @@ Also observed:
 4. Context frames via `beforePrompt` (steer) work in every mode and after compaction; no host change needed.
 5. `<docs>` content must come from Workbench's `docs://` registry (options carry no docs paths), which SPEC-0014 §7 already plans. `<mcp_servers>` comes from PiG's built-in MCP extension as a custom section and reaches templates through `host.sections` (PR2 order applies; to probe with an MCP fixture, PR8). `builtin/workbench` should place it explicitly rather than only appending unknown sections.
 6. `host.append` is whatever PiG resolved (flags replace the file); templates must not assume both.
+7. Mid-run tool changes: a `tools` frame sent `nextBoundary` is enough (PR7); no fork patch needed.
+8. Sections from handlers that run after Workbench (PiG's MCP extension at least) must be read from the recorded system message in `before_provider_request` and spliced into the payload by exact-string replacement of the served text. Inside an epoch the spliced text becomes the served text; a later change of such a section becomes a diff frame. The splice depends on the provider payload carrying the served text as one unchanged string; a miss must be reported, not ignored.
 
 # 4. Fork candidates (PLAN-0001 D13)
 
 - F-P1 (already in SPEC-0014 §11): complete ordered section list from `before_agent_start`, recorded in the session.
-- F-P2: re-render or re-invoke the forced prompt after a mid-run tool change, or expose the change to the forcing extension.
 - F-P3: record a forced prompt in the session (as sections or as a marked system message), so the transcript matches what was sent.
+- F-P4: a late `before_agent_start` phase (or ordering hint) so an extension sees the sections of every other handler, including built-ins; removes the payload splice.
