@@ -1,0 +1,29 @@
+req 0: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_b', 'probe_add_tool_a']
+   system: len=2632 head='FORCED-A-1⏎You are an expert coding assistant operating inside pig, a ' sections=['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd', 'probe']
+   user: 'first'
+req 1: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_b', 'probe_add_tool_a']
+   system: len=2632 head='FORCED-A-2⏎You are an expert coding assistant operating inside pig, a ' sections=['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd', 'probe']
+   user: 'first'
+   assistant: 'one'
+   user: 'second'
+--- probe log
+   {"kind": "session_start", "reason": "startup", "role": "B"}
+   {"kind": "session_start", "reason": "startup", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 1, "promptLen": 3844, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "B", "seenForced": null, "seenSections": {}, "thinking": "off", "thinkingErr": "<nil>"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 1, "promptLen": 2621, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd", "probe"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {"probe": "SECTION-B-1", "docs": "DOCS-B-1"}, "thinking": "off", "thinkingErr"
+   {"kind": "bpr", "role": "B"}
+   {"kind": "bpr", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 2, "promptLen": 3844, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "B", "seenForced": null, "seenSections": {}, "thinking": "off", "thinkingErr": "<nil>"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 2, "promptLen": 2621, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd", "probe"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {"probe": "SECTION-B-2", "docs": "DOCS-B-2"}, "thinking": "off", "thinkingErr"
+   {"kind": "bpr", "role": "B"}
+   {"kind": "bpr", "role": "A"}
+--- session
+   session
+   model_change
+   thinking_level_change
+   system: {"role": "system", "content": "", "sections": {"preamble": "You are an expert coding assistant operating inside pig, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.", "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash
+   user : '[{"type": "text", "text": "first"}]'
+   assistant : '[{"type": "text", "text": "one"}]'
+   system: {"role": "system", "content": "", "sections": {"docs": "<docs>\nDOCS-B-2\n</docs>", "probe": "<probe>\nSECTION-B-2\n</probe>"}, "timestamp": 1793707940025}
+   user : '[{"type": "text", "text": "second"}]'
+   assistant : '[{"type": "text", "text": "two"}]'

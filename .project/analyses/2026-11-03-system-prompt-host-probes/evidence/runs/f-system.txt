@@ -1,0 +1,14 @@
+req 0: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_a']
+   system: len=1132 head='CUSTOM SYSTEM PROMPT FROM SYSTEM.md⏎⏎⏎<project_context>⏎Project-specif' sections=['project_context', 'skills', 'available_skills', 'cwd']
+   user: 'first'
+--- probe log
+   {"kind": "session_start", "reason": "startup", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 1, "promptLen": 1132, "promptSections": ["project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {}, "thinking": "off", "thinkingErr": "<nil>"}
+   {"kind": "bpr", "role": "A"}
+--- session
+   session
+   model_change
+   thinking_level_change
+   system: {"role": "system", "content": "", "sections": {"preamble": "CUSTOM SYSTEM PROMPT FROM SYSTEM.md\n", "project_context": "<project_context>\nProject-specific instructions and guidelines:\n\n<project_instructions path=\"/tmp/wb-pr/work/AGENTS.md\">\n# Probe project\nUse tabs.\n\n</project_instructions>
+   user : '[{"type": "text", "text": "first"}]'
+   assistant : '[{"type": "text", "text": "one"}]'

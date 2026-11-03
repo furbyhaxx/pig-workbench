@@ -1,0 +1,17 @@
+PiG main@9b4efdd6 builtin catalog (ai.BuiltinModels, 2401 models): models with compat.supportsMidConvoSystemMessages = true,
+by provider and API. Produced by a throwaway test in ai/ (not committed upstream).
+anthropic anthropic-messages 7/17 [claude-fable-5 claude-fable-5-1 claude-haiku-5-5 claude-opus-4-8 claude-opus-5 claude-opus-5-5 claude-sonnet-5-5]
+azure openai-completions 1/1 [deepseek-v4-pro]
+deepseek openai-completions 1/2 [deepseek-v4-pro]
+fireworks openai-completions 3/10 [kimi-k3, kimi-k3-fast, kimi-k3-spot]
+github-copilot anthropic-messages 7/10 [claude-fable-5 claude-fable-5.1 claude-haiku-5.5 claude-opus-4.8 claude-opus-5 claude-opus-5.5 claude-sonnet-5.5]
+github-copilot openai-completions 1/3 [kimi-k3]
+github-copilot openai-responses 8/14 [gpt-5.6-luna gpt-5.6-sol gpt-5.6-terra gpt-6-astra gpt-6-luna gpt-6-sol gpt-6.1-sol gpt-6.1-terra]
+kimi-coding openai-completions 6/6
+moonshotai openai-completions 6/6, moonshotai-cn openai-completions 6/6
+openai openai-responses 12/43 [gpt-5.4 gpt-5.4-mini gpt-5.4-pro gpt-5.5 gpt-5.6-* gpt-6-* gpt-6.1-*]
+openai-codex openai-codex-responses 8/8
+opencode anthropic-messages 7/17, opencode openai-completions 1/25, opencode openai-responses 11/30
+opencode-go openai-completions 2/19, opencode-go openai-responses 2/5
+openrouter openai-completions 36/1152 (openai/gpt-5.4+ variants)
+All other provider/API rows of the catalog: 0.

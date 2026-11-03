@@ -1,0 +1,37 @@
+## f-append: sections ['tools', 'rules', 'docs', 'addendum', 'project_context', 'skills', 'available_skills', 'cwd'], 3828 bytes
+## f-default: sections ['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd'], 3785 bytes
+## f-hidden: sections ['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd'], 2928 bytes
+## f-noread: sections ['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd'], 3639 bytes
+## f-skills: sections ['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd'], 3952 bytes
+## f-system: sections ['project_context', 'skills', 'available_skills', 'cwd'], 1132 bytes
+
+## f-hidden <tools>
+<tools>
+- codemode: Run JavaScript that calls other tools
+
+In addition to the tools above, you may have access to other custom tools depending on the project.
+</tools>
+
+## f-noread <rules> first line and <skills> hint
+- Use bash for file operations like ls, rg, find
+The following skills provide specialized instructions for specific tasks.
+Use bash to load a skill's file when the task matches its description.
+When a skill file references a relative path, resolve it against the skill directory (parent of SKILL.md / dirname of the path) and use that absolute path in tool commands.
+
+## f-default <skills> hint
+The following skills provide specialized instructions for specific tasks.
+Use the read tool to load a skill's file when the task matches its description.
+When a skill file references a relative path, resolve it against the skill directory (parent of SKILL.md / dirname of the path) and use that absolute path in tool commands.
+
+## f-append <addendum>
+<addendum>
+FLAG-ONE
+
+FLAG-TWO
+</addendum>
+
+## f-skills: skill names in prompt
+['alpha', 'reverse-engineer-anything']
+
+## f-system: preamble
+CUSTOM SYSTEM PROMPT FROM SYSTEM.md

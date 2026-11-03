@@ -1,0 +1,14 @@
+req 0: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_a']
+   developer: len=3785 head='You are an expert coding assistant operating inside pig, a coding agen' sections=['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd']
+   user: 'first'
+--- probe log
+   {"kind": "session_start", "reason": "startup", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": true, "infoErr": "<nil>", "kind": "bas", "model": "mock-mid", "n": 1, "promptLen": 3785, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {}, "thinking": "high", "thinkingErr": "<nil>"}
+   {"kind": "bpr", "role": "A"}
+--- session
+   session
+   model_change
+   thinking_level_change
+   system: {"role": "system", "content": "", "sections": {"preamble": "You are an expert coding assistant operating inside pig, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.", "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash
+   user : '[{"type": "text", "text": "first"}]'
+   assistant : '[{"type": "text", "text": "one"}]'

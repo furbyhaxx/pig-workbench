@@ -1,0 +1,1 @@
+[[0.5, {"id": "p1", "type": "prompt", "message": "first"}], [6, {"id": "p2", "type": "prompt", "message": "second"}], [3, {"id": "p2b", "type": "prompt", "message": "second-b"}], [3, {"id": "c1", "type": "compact"}], [5, {"id": "p3", "type": "prompt", "message": "third"}], [3, {"id": "m", "type": "get_messages"}]]

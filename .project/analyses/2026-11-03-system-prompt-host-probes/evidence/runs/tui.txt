@@ -1,0 +1,30 @@
+req 0: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_a']
+   system: len=3785 head='You are an expert coding assistant operating inside pig, a coding agen' sections=['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd']
+   user: '[FRAME-A-1]'
+   user: 'first'
+req 1: tools=['read', 'bash', 'edit', 'write', 'probe_add_tool_a']
+   system: len=3785 head='You are an expert coding assistant operating inside pig, a coding agen' sections=['tools', 'rules', 'docs', 'project_context', 'skills', 'available_skills', 'cwd']
+   user: '[FRAME-A-1]'
+   user: 'first'
+   assistant: 'one'
+   user: '[FRAME-A-2]'
+   user: 'second'
+--- probe log
+   {"kind": "session_start", "reason": "startup", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 1, "promptLen": 3785, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {}, "thinking": "off", "thinkingErr": "<nil>"}
+   {"err": "<nil>", "kind": "steer", "n": 1, "role": "A"}
+   {"kind": "bpr", "role": "A"}
+   {"findApi": "openai-completions", "findReasoning": false, "infoErr": "<nil>", "kind": "bas", "model": "mock-1", "n": 2, "promptLen": 3785, "promptSections": ["tools", "rules", "docs", "project_context", "skills", "available_skills", "cwd"], "provider": "mock", "role": "A", "seenForced": null, "seenSections": {}, "thinking": "off", "thinkingErr": "<nil>"}
+   {"err": "<nil>", "kind": "steer", "n": 2, "role": "A"}
+   {"kind": "bpr", "role": "A"}
+--- session
+   session
+   model_change
+   thinking_level_change
+   custom_message {"type": "custom_message", "customType": "wb-frame", "content": "[FRAME-A-1]", "display": true, "id": "618c172b", "parentId": "c19a7d71", "timestamp": "2026-11-03T12:14:47.460Z"}
+   system: {"role": "system", "content": "", "sections": {"preamble": "You are an expert coding assistant operating inside pig, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.", "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash
+   user : '[{"type": "text", "text": "first"}]'
+   assistant : '[{"type": "text", "text": "one"}]'
+   custom_message {"type": "custom_message", "customType": "wb-frame", "content": "[FRAME-A-2]", "display": true, "id": "4b8c2af5", "parentId": "31ed166f", "timestamp": "2026-11-03T12:14:52.969Z"}
+   user : '[{"type": "text", "text": "second"}]'
+   assistant : '[{"type": "text", "text": "two"}]'
