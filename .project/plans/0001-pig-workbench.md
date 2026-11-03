@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 17
+  revision: 18
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T13:04:04+01:00"
+  updated_at: "2026-11-03T13:17:25+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -62,6 +62,9 @@ document:
     - revision: 17
       reason: "User: no upstream filing; host changes go to a personal PiG fork. SPEC-0014 drops the verbatim builtin"
       changes: ["D13 host changes in a personal PiG fork; upstream lists become fork candidates", "D12 and M1.5 follow SPEC-0014 revision 3"]
+    - revision: 18
+      reason: "System prompt probes PR1–PR6 ran; SPEC-0014 decisions accepted"
+      changes: ["Progress: PR1–PR6 done, PR7/PR8 open", "D12 decided"]
 ---
 
 # 1. Outcome and authority
@@ -100,7 +103,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
 - **now:** Set up the personal PiG fork for host fixes (D13); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
-- **designed:** [SPEC-0014](../specs/0014-system-prompts.md) system prompt templates; decisions Q1–Q6 and probes PR1–PR6 open.
+- **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR6: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are mid-run tool changes, later handlers and transcript truth (fork candidates F-P2/F-P3). PR7/PR8 open. SPEC-0014 decisions Q1–Q6 accepted.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass. Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3).
 
 A milestone can be implemented incrementally. Shipping the complete extension requires all scope rows to pass; an early milestone is not a reduced-scope release.
@@ -164,7 +167,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
 | D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | **Resolved 2026-11-03** (SPEC-0013 §10): own key in the agent dir, no imports, AES-256-GCM, `Secrets.toml` |
-| D12: system prompt ownership | Templates need a delivery that PiG accepts; custom sections cannot replace the preamble, reorder or delete sections | **Proposed** (SPEC-0014 §13): `builtin/workbench` keeps PiG's sections with Workbench content; `force` delivery on stock PiG, `sections` on the fork (F-P1) |
+| D12: system prompt ownership | Templates need a delivery that PiG accepts; custom sections cannot replace the preamble, reorder or delete sections | **Decided 2026-11-03 (user):** SPEC-0014 §13 Q1–Q6 as recommended; `force` on stock PiG (probed, PR1–PR6), `sections` on the fork (F-P1) |
 | D13: host changes | Probes found host gaps (P-series, S-series, F-P1) | **Decided 2026-11-03 (user):** fixed in a personal PiG fork, not filed upstream. The "upstream" lists in the probe analyses are fork candidates. Workbench keeps working on stock PiG and detects fork capabilities by flag |
 | D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 

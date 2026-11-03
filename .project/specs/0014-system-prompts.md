@@ -5,9 +5,9 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T13:03:50+01:00"
+  updated_at: "2026-11-03T13:17:15+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "User: no verbatim copy of PiG's prompt; keep PiG's sections adapted to Workbench; host changes go to a personal PiG fork"
       changes: ["builtin/pig and the parity check removed; builtin/workbench is the default and keeps PiG's sections with adapted content (§7)", "<docs> as docs:// URIs, new <resources> section, <cwd> holds the stable project root", "H-P1 becomes fork patch F-P1; no upstream filing", "Acceptance, probes, settings and decisions updated"]
+    - revision: 4
+      reason: "Probes PR1–PR6 ran; Q1–Q6 accepted by the user"
+      changes: ["§11 results, PR7/PR8 open, fork candidates F-P2/F-P3", "§2 facts from the probes", "§4.2 detect later handlers in before_provider_request", "§3.4 model.api and mid-conversation support from ModelRegistry.Find", "§7 mcp_servers placement", "§13 decisions accepted"]
 ---
 
 # 1. Purpose and scope
@@ -53,6 +56,9 @@ Source: PiG `main@9b4efdd6` (2026-11-02; the installed build is `0.5.3+1.4.0.74f
 | Unforced prompts are recorded as a `system` message with all sections, then patch messages by section name (`null` removes). Models with `supportsMidConvoSystemMessages` receive patches as mid-conversation system messages; others get the transcript collapsed into one system prompt | `coding/session_transcript.go`, `ai/transcript.go`, `docs/session-format.md` |
 | `SendMessage(steer)` from `before_agent_start` is persisted before the user prompt; a returned `message` lands right after it | probes P30 |
 | `GetSystemPromptOptions` returns the base options in commands | SDK `context.go` |
+| A forced prompt is not re-rendered after a mid-run tool change; sections set by a later handler are recorded but not sent; compaction uses its own summarizer prompt | PR1, PR2 |
+| Section patches reach flagged models as `developer` messages; other models get one re-rendered system message; unchanged sections send nothing | PR3 |
+| Options carry no docs paths; `--append-system-prompt` replaces `APPEND_SYSTEM.md` | PR5 |
 | Anthropic OAuth requests get a fixed first system block (`You are Claude Code, Anthropic's official CLI for Claude.`) before the prompt; only `before_provider_request` sees it | `ai/anthropic_client.go`, `ai/anthropic.go` `anthSystemBlocks` |
 
 # 3. Templates
@@ -99,7 +105,7 @@ Only typed values that are fixed for the request. No clock, environment variable
 
 | Variable | Content |
 |---|---|
-| `model` | `provider`, `id`, `name`, `api`, `family` (§3.5), `reasoning`, `context_window`, `max_output`, `thinking` (level) |
+| `model` | `provider`, `id`, `name`, `api`, `family` (§3.5), `reasoning`, `context_window`, `max_output`, `thinking` (level), `mid_convo_system` (compat flag). `api` and the flag come from `ModelRegistry().Find`, the rest from `GetModelInfo` and `GetThinkingLevel` (PR6) |
 | `tools` | `selected` (ordered), `declared` (selected minus hidden), `hidden`, `snippets` (name → text), `guidelines` (name → list) |
 | `host` | `custom_prompt`, `append`, `prompt_guidelines`, `docs` (whether PiG's docs bundle is present), `context_files` (path, content), `skills` (PiG's discovered list), `sections` (other extensions' custom sections, name → text), `mode` (`interactive`, `rpc`, `print`, `json`), `os`, `shell` |
 | `instructions` | Stable instruction set selected by SPEC-0007 at the epoch start: list of `{class, path, display_path, role, content}` |
@@ -153,7 +159,7 @@ Without F-P1, stock PiG keeps its own preamble, keeps its section order, appends
 ## 4.2 Failure and other extensions
 
 - **Render error** (syntax, strict undefined, limit, timeout): use the last good render of this epoch; without one, leave the host prompt. Notice names the template, line and cause. Never send an empty or partial prompt.
-- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/workbench` appends them where PiG would. A handler that runs after Workbench and edits sections is ignored by `force`; Workbench detects that at the next `before_agent_start` (sections it did not see) and reports the extension. Handler order is probe PR2.
+- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/workbench` appends them where PiG would. Handlers run in extension load order, which Workbench does not control (PR2). A later handler's force replaces Workbench's prompt; a later handler's sections are recorded but not sent under `force`. Workbench checks the system text of the final payload in `before_provider_request`, which runs after every `before_agent_start` handler, and reports the extension that changed it.
 
 ## 4.3 Epochs: what re-renders when
 
@@ -228,6 +234,7 @@ The default entry template. It keeps PiG's sections, order and markup, so models
 | `<project_context>` | "Project-specific instructions and guidelines:" and one `<project_instructions path=…>` per context file | Same markup, filled from the SPEC-0007 stable set (`instructions`), with `display_path` |
 | `<skills>` | `<available_skills>` with file locations | Same markup with `skill://<name>` locations and the load/unload rule (§8); left out when `skills.listing = "frame"` |
 | `<cwd>` | Host cwd | Project root: the host session cwd, which Workbench `cd` does not change (SPEC-0010 §1), so the section is stable for the session. The current Workbench location arrives as the `session.location` frame |
+| `<mcp_servers>` | Set by PiG's built-in MCP extension as a custom section: servers whose tools are not declared | Placed explicitly after `<tools>`, from `host.sections` (PR8) |
 | others | Custom sections of other extensions, appended | Appended where PiG would, from `host.sections` |
 
 - Each section is a block of the same name, so user templates change one section with `{% extends "builtin/workbench" %}` and `{% block rules %}{{ super() }}…{% endblock %}`.
@@ -306,15 +313,21 @@ Separate classes remain the tool when files need different placement, caps or ro
 
 | # | Question |
 |---|---|
-| PR1 | A forced prompt from `before_agent_start` reaches every request of the run, including after a mid-run tool change, and is absent from the transcript. What does the compaction request and its `systemMessage` contain? |
-| PR2 | Handler order between extensions; can Workbench run last, and what do later handlers see after a forced prompt? |
-| PR3 | Which providers get mid-conversation system messages for section patches; on the fork, that a reordered, preamble-replacing section set is recorded and patched correctly |
-| PR4 | `steer` from `before_agent_start` precedes the prompt in TUI, RPC and print modes, on the first prompt of a session and after compaction (extends P30) |
-| PR5 | Host inputs reach templates intact for fixtures: default tools, hidden tools, no `read`, `SYSTEM.md`, `APPEND_SYSTEM.md`, repeated `--append-system-prompt`, docs stripped, custom sections from another extension, skills with `disable-model-invocation`, Windows-style cwd |
-| PR6 | `ModelInfo` exposes enough to match families (provider and id); thinking level is readable in `before_agent_start` |
+| PR1 | Forced prompt per run; mid-run tool change; transcript; compaction | **Done:** every agent request of the run; not re-rendered after a mid-run tool change (declarations update, `<tools>` text waits for the next prompt); transcript keeps PiG's base sections; compaction uses PiG's summarizer prompt and stores the base sections |
+| PR2 | Handler order; what later handlers see | **Done:** extension load order; later handlers see the force; the last force wins; sections set after a force are recorded but not sent |
+| PR3 | Which providers get mid-conversation section patches | **Done:** flagged models get `developer` patch messages; others get one re-rendered system message; unchanged sections send nothing. Flagged: Claude 4.8+/5.x, GPT-5.4+ (Responses, Codex), Kimi K2.6+/K3, DeepSeek V4 Pro |
+| PR4 | `steer` frame before the prompt in TUI, RPC, print; first prompt; after compaction | **Done:** yes in all cases |
+| PR5 | Host inputs for templates | **Done:** all present except PiG's docs paths and constant texts; `--append-system-prompt` replaces `APPEND_SYSTEM.md`; Windows cwd not tested |
+| PR6 | Model facts | **Done:** provider, id, limits, reasoning, thinking level; `api` and compat through `ModelRegistry().Find` |
+| PR7 | Re-rendering the forced prompt per turn in `context_with_system` keeps it current after a mid-run tool change without breaking the cache of earlier turns | open |
+| PR8 | With an MCP fixture: does `mcp_servers` reach Workbench's handler in `options.sections`, and in which order relative to the built-in MCP extension? | open |
+
+Evidence: [system prompt host probes](../analyses/2026-11-03-system-prompt-host-probes/README.md).
 
 Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - **F-P1:** in `before_agent_start`, accept a complete ordered section list (preamble included, base sections deletable and reorderable) and record it as the session's system sections. Exposes a capability flag that Workbench checks.
+- **F-P2:** re-render a forced prompt after a mid-run tool change, or tell the forcing extension (unless PR7 makes it unnecessary).
+- **F-P3:** record a forced prompt in the session, so exports, forks and compaction show what was sent.
 
 # 12. Acceptance
 
@@ -327,9 +340,11 @@ Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - Instructions: `select = "all"` injects `AGENTS.md` and `CONVENTIONS.md` of one directory in list order; `first` keeps one.
 - Prompt changes are evaluated on fixed tasks (golden transcripts, A/B, cache-hit rate) before an adapter or `builtin/workbench` change ships.
 
-# 13. Open decisions
+# 13. Decisions
 
-| # | Question | Recommendation |
+Accepted by the user on 2026-11-03 ("go ahead") as recommended:
+
+| # | Question | Decision |
 |---|---|---|
 | Q1 | Template engine | gonja v2 (pure Go). Alternative: pongo2 (Django dialect, less Jinja-compatible) |
 | Q2 | Takeover on by default | Yes, with `builtin/workbench`; `prompt.enabled = false` restores PiG's own prompt |
