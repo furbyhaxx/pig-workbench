@@ -5,9 +5,9 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T13:32:48+01:00"
+  updated_at: "2026-11-03T13:38:33+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "User: mid-epoch changes as framed messages instead of system prompt rewrites, for models without mid-conversation system messages"
       changes: ["§4.3: system text changes only at epoch boundaries; tools, thinking, other extensions' sections and host options become frames", "§4.1: delivery auto (sections only for flagged models on the fork)", "PR7 replaced (tools frame mid-run); F-P2 dropped; Q3 updated"]
+    - revision: 6
+      reason: "Probes PR7 and PR8 ran"
+      changes: ["PR7 done: tools frames mid-run", "PR8 done: late sections read from the recorded system message and spliced in before_provider_request (§4.2)", "Fork candidate F-P4"]
 ---
 
 # 1. Purpose and scope
@@ -163,7 +166,9 @@ Without F-P1, stock PiG keeps its own preamble, keeps its section order, appends
 ## 4.2 Failure and other extensions
 
 - **Render error** (syntax, strict undefined, limit, timeout): use the last good render of this epoch; without one, leave the host prompt. Notice names the template, line and cause. Never send an empty or partial prompt.
-- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/workbench` appends them where PiG would. Handlers run in extension load order, which Workbench does not control (PR2). A later handler's force replaces Workbench's prompt; a later handler's sections are recorded but not sent under `force`. Workbench checks the system text of the final payload in `before_provider_request`, which runs after every `before_agent_start` handler, and reports the extension that changed it.
+- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/workbench` appends them where PiG would. **Late sections** (PR8): handlers that run after Workbench, including PiG's built-in MCP extension (`<mcp_servers>`), set sections Workbench never sees in `before_agent_start`. In `before_provider_request`, Workbench reads the session's recorded system message (`GetEntries`, which holds every handler's sections before the first request), takes the sections it did not render from, and replaces the exact served text in the payload with a render that includes them. At an epoch start the result becomes the epoch's served text; inside an epoch a changed late section becomes a diff frame (§4.3). If the payload does not contain the served text as one string, Workbench reports it and sends the late sections as a frame instead.
+
+Handlers run in extension load order, which Workbench does not control (PR2). A later handler's force replaces Workbench's prompt; a later handler's sections are recorded but not sent under `force`. Workbench checks the system text of the final payload in `before_provider_request`, which runs after every `before_agent_start` handler, and reports the extension that changed it.
 
 ## 4.3 Epochs: what re-renders when
 
@@ -242,7 +247,7 @@ The default entry template. It keeps PiG's sections, order and markup, so models
 | `<project_context>` | "Project-specific instructions and guidelines:" and one `<project_instructions path=…>` per context file | Same markup, filled from the SPEC-0007 stable set (`instructions`), with `display_path` |
 | `<skills>` | `<available_skills>` with file locations | Same markup with `skill://<name>` locations and the load/unload rule (§8); left out when `skills.listing = "frame"` |
 | `<cwd>` | Host cwd | Project root: the host session cwd, which Workbench `cd` does not change (SPEC-0010 §1), so the section is stable for the session. The current Workbench location arrives as the `session.location` frame |
-| `<mcp_servers>` | Set by PiG's built-in MCP extension as a custom section: servers whose tools are not declared | Placed explicitly after `<tools>`, from `host.sections` (PR8) |
+| `<mcp_servers>` | Set by PiG's built-in MCP extension as a custom section: servers whose tools are not declared | Placed explicitly after `<tools>`; arrives through the late-section splice (§4.2, PR8) |
 | others | Custom sections of other extensions, appended | Appended where PiG would, from `host.sections` |
 
 - Each section is a block of the same name, so user templates change one section with `{% extends "builtin/workbench" %}` and `{% block rules %}{{ super() }}…{% endblock %}`.
@@ -327,14 +332,15 @@ Separate classes remain the tool when files need different placement, caps or ro
 | PR4 | `steer` frame before the prompt in TUI, RPC, print; first prompt; after compaction | **Done:** yes in all cases |
 | PR5 | Host inputs for templates | **Done:** all present except PiG's docs paths and constant texts; `--append-system-prompt` replaces `APPEND_SYSTEM.md`; Windows cwd not tested |
 | PR6 | Model facts | **Done:** provider, id, limits, reasoning, thinking level; `api` and compat through `ModelRegistry().Find` |
-| PR7 | Under `force`, a `tools` frame sent `nextBoundary` from a mid-run tool activation lands before the next model call, and the system text of that request is unchanged | open |
-| PR8 | With an MCP fixture: does `mcp_servers` reach Workbench's handler in `options.sections`, and in which order relative to the built-in MCP extension? | open |
+| PR7 | `tools` frame mid-run under `force` | **Done:** lands after the activating tool's result, before the next model call; system text unchanged |
+| PR8 | `mcp_servers` from PiG's MCP extension | **Done:** its handler runs after Workbench, so the section is missing under plain `force`; recovered by the late-section splice (§4.2) |
 
 Evidence: [system prompt host probes](../analyses/2026-11-03-system-prompt-host-probes/README.md).
 
 Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - **F-P1:** in `before_agent_start`, accept a complete ordered section list (preamble included, base sections deletable and reorderable) and record it as the session's system sections. Exposes a capability flag that Workbench checks.
 - **F-P3:** record a forced prompt in the session, so exports, forks and compaction show what was sent.
+- **F-P4:** a late `before_agent_start` phase (or ordering hint) in which an extension sees every other handler's sections, including built-ins; replaces the payload splice.
 
 # 12. Acceptance
 

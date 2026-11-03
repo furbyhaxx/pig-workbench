@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 19
+  revision: 20
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T13:33:03+01:00"
+  updated_at: "2026-11-03T13:38:33+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -68,6 +68,9 @@ document:
     - revision: 19
       reason: "Mid-epoch prompt changes as frames (SPEC-0014 §4.3)"
       changes: ["Progress and D12: delivery auto, mid-run tool changes as frames, F-P2 dropped"]
+    - revision: 20
+      reason: "Probes PR7 and PR8 ran"
+      changes: ["Progress: prompt probes complete"]
 ---
 
 # 1. Outcome and authority
@@ -106,7 +109,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
 - **now:** Set up the personal PiG fork for host fixes (D13); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
-- **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR6: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3, probe PR7). PR7/PR8 open. SPEC-0014 decisions Q1–Q6 accepted.
+- **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR8: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3). PR7: mid-run `tools` frames work; PR8: late sections (`mcp_servers`) need the `before_provider_request` splice (fork candidate F-P4). SPEC-0014 decisions Q1–Q6 accepted.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass. Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3).
 
 A milestone can be implemented incrementally. Shipping the complete extension requires all scope rows to pass; an early milestone is not a reduced-scope release.
