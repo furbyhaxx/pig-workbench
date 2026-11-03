@@ -1,0 +1,17 @@
+== requests
+0 /v1/chat/completions auth= Bearer <SECRET> n=2 secret_in: ['0:system']  
+1 /v1/chat/completions auth= Bearer <SECRET> n=4 secret_in: ['0:system'] PH 
+2 /v1/chat/completions auth= Bearer <SECRET> n=2 secret_in: [] PH 
+== probe
+{"keys": ["text", "source", "type"], "kind": "input", "secret": false, "source": "rpc"}
+{"keys": ["systemPrompt", "messageType", "prompt", "type", "systemPromptOptions"], "kind": "before_agent_start", "promptLen": 3961, "promptSecret": true}
+{"keys": ["type", "messages"], "kind": "context", "secret": false}
+{"keys": ["type", "messages"], "kind": "context_with_system", "secret": true}
+{"keys": ["type", "payload"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"keys": ["source", "type", "text"], "kind": "input", "secret": true, "source": "rpc"}
+{"keys": ["prompt", "type", "systemPromptOptions", "systemPrompt", "messageType"], "kind": "before_agent_start", "promptLen": 3961, "promptSecret": true}
+{"keys": ["type", "messages"], "kind": "context", "secret": false}
+{"keys": ["type", "messages"], "kind": "context_with_system", "secret": true}
+{"keys": ["type", "payload"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"keys": ["type", "preparation"], "kind": "session_before_tree"}
+{"cmd": "tree-sum", "err": "<nil>", "kind": "command", "res": {"cancelled": false}, "target": "49b6c227"}

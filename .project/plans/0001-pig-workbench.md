@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T11:37:25+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -50,6 +50,9 @@ document:
     - revision: 13
       reason: "User decided SPEC-0013 Q1–Q4; all config files TOML"
       changes: ["D11 resolved", "M1 config is layered TOML"]
+    - revision: 14
+      reason: "Secrets probes S1–S6 run"
+      changes: ["Progress: S1–S6 done, H-S1/H-S2 upstream requests queued"]
 ---
 
 # 1. Outcome and authority
@@ -84,6 +87,7 @@ Together these ten specifications and three design artifacts cover the planned f
 
 - **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, ten draft specifications and three static design/wireframe artifacts. No service/tool implementation yet.
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
+- **done (M0.2, secrets):** [Secrets probes](../analyses/2026-11-03-secrets-host-probes/README.md) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
 - **now:** File the upstream issues (needs user go-ahead: external publication); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.

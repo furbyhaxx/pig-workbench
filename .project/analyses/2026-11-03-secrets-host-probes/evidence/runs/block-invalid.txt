@@ -1,0 +1,34 @@
+== requests
+3 /v1/chat/completions auth= Bearer <SECRET> n=2 secret_in: ['0:system', '1:user']  
+4 /v1/chat/completions auth= Bearer <SECRET> n=2 secret_in: ['0:system', '1:user']  
+== probe
+{"keys": ["type", "text", "source"], "kind": "input", "secret": true, "source": "rpc"}
+{"keys": ["systemPromptOptions", "systemPrompt", "messageType", "prompt", "type"], "kind": "before_agent_start", "promptLen": 3961, "promptSecret": true}
+{"keys": ["type", "messages"], "kind": "context", "secret": true}
+{"keys": ["type", "messages"], "kind": "context_with_system", "secret": true}
+{"keys": ["type", "payload"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"keys": ["type", "messages"], "kind": "context", "secret": true}
+{"keys": ["messages", "type"], "kind": "context_with_system", "secret": true}
+{"keys": ["type", "payload"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"command": "cat secret.txt; echo red-sec-probeprobeprobep | sha256sum", "keys": ["type", "command", "excludeFromContext", "cwd"], "kind": "user_bash"}
+{"keys": ["type", "messages"], "kind": "context", "secret": true}
+{"keys": ["type", "messages"], "kind": "context_with_system", "secret": true}
+{"keys": ["payload", "type"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"keys": ["type", "text", "source"], "kind": "input", "secret": false, "source": "rpc"}
+{"keys": ["type", "text", "source"], "kind": "input", "secret": false, "source": "rpc"}
+{"error": null, "kind": "infer", "stopReason": "stop"}
+{"error": null, "kind": "infer", "stopReason": "stop"}
+{"keys": ["type", "messages"], "kind": "context", "secret": true}
+{"keys": ["messages", "type"], "kind": "context_with_system", "secret": true}
+{"keys": ["type", "payload"], "kind": "before_provider_request", "payloadType": "map[string]interface {}", "secret": true}
+{"creds": [{"providerId": "mock", "type": "api_key"}, {"providerId": "probext", "type": "api_key"}], "err": "<nil>", "kind": "auth_list"}
+{"authKeys": ["apiKey"], "err": "<nil>", "keyIsCommand": false, "keyIsSecret": true, "keyLen": 40, "kind": "auth_get", "provider": "mock", "resultKeys": ["auth", "source"], "type": "api_key"}
+{"authKeys": ["apiKey"], "err": "<nil>", "keyIsCommand": false, "keyIsSecret": true, "keyLen": 40, "kind": "auth_get", "provider": "probext", "resultKeys": ["auth", "source"], "type": "api_key"}
+
+== session file: secret occurrences=3, placeholder occurrences=1
+== mcp server received: 
+== rpc: assistant stopReason=error error=Connection error.
+== rpc: assistant stopReason=error error=Connection error.
+== rpc: {"id": "ub", "type": "response", "command": "bash", "success": true, "data": {"output": "file token <SECRET>\nffceb5df2d884f4299aae76ad54eb74e1926cb26f5715099ba0d68ba9fd69ea7  -\n", "exitCode": 0, "cancelled": false, "truncated": false}}
+== rpc: assistant stopReason=error error=Connection error.
+== rpc: assistant stopReason=error error=Connection error.

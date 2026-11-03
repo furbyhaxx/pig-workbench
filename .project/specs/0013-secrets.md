@@ -5,9 +5,9 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T11:37:12+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "User decided Q1–Q4"
       changes: ["Own key at sdk.AgentDir()/secret.key", "No imports, no legacy placeholders", "AES-256-GCM (measured faster than XChaCha20-Poly1305)", "Secrets.toml v2 with nukii's schema; kebab-case keys"]
+    - revision: 3
+      reason: "Probes S1–S6 run (ANA-2026-11-03-secrets-host-probes)"
+      changes: ["Hook table matches observed coverage; entry-time redaction is the primary boundary", "Fail closed via ctx.Abort in before_provider_request", "Codemode substitution in children only", "Extension inference outside the boundary; host requests H-S1, H-S2", "Probe results replace the probe list"]
 ---
 
 # 1. Purpose
@@ -65,34 +68,44 @@ Detection policy is `Secrets.toml` version 2 with nukii's schema (`version`, `[e
 
 ## 4.1 Hooks
 
+Verified in [probes S1–S6](../analyses/2026-11-03-secrets-host-probes/README.md).
+
 | Path into a provider request | Hook | Action |
 |---|---|---|
-| User prompt (typed, pasted, RPC) | `input` | detect, learn, replace with placeholders |
-| Tool result content (all tools: builtin, Workbench, other extensions, MCP, codemode children) | `tool_result` | detect, learn, replace in `content` and model-visible structured content |
-| User `!` shell output | `user_bash` | same |
-| Every message and the system prompt (context files such as `AGENTS.md`, other extensions' custom messages, frames) | `context`, `context_with_system` | replace any remaining value |
-| Serialized provider payload (also compaction, branch summaries, extension inference through host models) | `before_provider_request` | final pass; fail closed (§4.4) |
+| User prompt (typed, pasted, RPC) | `input` (transform) | detect, learn, replace with placeholders |
+| Tool result content (builtin, Workbench, other extensions, MCP, codemode and its children) | `tool_result` (`content` patch) | detect, learn, replace in `content` and model-visible structured content |
+| User `!` command | `user_bash` returning `operations` | run the command with placeholders substituted; redact streamed output |
+| Every message of an agent turn, including the system message (context files such as `AGENTS.md`, other extensions' messages, frames) | `context_with_system` | replace any remaining value (`context` alone does not include the system message) |
+| Serialized payload of an agent turn | `before_provider_request` | final pass; fail closed (§4.4) |
+| Compaction and branch-summary requests | none fires | clean because they are built from session entries already redacted at entry (§4.2) |
+| Extension inference (`ModelRegistry`/`ModelRuntime` `Complete`/`Stream`) | none fires | outside the boundary (§4.5); Workbench's own inference redacts its request itself |
 
 Tool `details` and live progress updates (`tool_execution_update`) are not sent to providers and are not altered.
 
 ## 4.2 Entry-time redaction
 
-Content is replaced when it enters the session (prompt, tool result, user shell), so the stored transcript already holds placeholders and every later request, compaction, fork, export or other extension reading the session gets them too. The `context` and provider hooks are the backstop for anything that entered another way (e.g. another extension's hook running after Workbench's). Replacement is deterministic, so prompt caches stay stable.
+**This is the primary boundary.** Content is replaced when it enters the session (prompt, tool result, user shell), so the stored transcript already holds placeholders and every later request, compaction, branch summary, fork, export or other extension reading the session gets them too. No request hook fires for compaction or branch summaries, so nothing else protects them. `context_with_system` and `before_provider_request` are the per-turn backstop for content that entered another way (another extension's hook after Workbench's, the system prompt, new context files). Replacement is deterministic, so prompt caches stay stable.
+
+PiG stores the rendered system message, including `project_context`, in the session file and in compaction entries. It is rebuilt every turn and redacted by `context_with_system`; the stored copy is local only (§1).
 
 ## 4.3 Substitution
 
 - `tool_call`: every placeholder in the call's arguments is replaced with its real value right before execution, for every tool. The stored assistant message keeps the placeholders.
+- `codemode` itself is skipped: its children fire their own `tool_call` (with `parentToolCallId`) and are substituted there. Substituting in the script would store real values in the result's `nestedCalls` and `details`.
 - Workbench's own tools substitute inside their execution path too (bash command text, file content written by `write`/`edit`, jobs stdin), so behaviour does not depend on hook order.
 - Hashline edits: tags and seen-state are computed over the real file bytes; displayed rows carry placeholders; replacement text is substituted before validation and commit (SPEC-0005). `snapshots.view` returns the block already redacted, so its presence check (SPEC-0005 §10) compares like with like.
 
 ## 4.4 Failure
 
-- **Fail closed:** if the key or vault cannot be loaded, or a redaction pass errors, the provider request is withheld with a visible error naming the cause and `/workbench secrets` as the place to fix it. Tool calls still run (they need no redaction to execute) but their results are held until the boundary works again.
+- **Fail closed:** if the key or vault cannot be loaded, or a redaction pass errors:
+  - `before_provider_request` calls `ctx.Abort()` and returns an error, which withholds the request (probe: the turn ends `Request aborted`, nothing reaches the provider). Returning an error alone is not enough: PiG then sends the original payload. Workbench shows a notice naming the cause and `/workbench secrets`.
+  - `tool_result` replaces the content with an error stating that output was withheld because the secrets boundary is unavailable, so raw output never enters the session. `input` refuses the prompt with the same notice.
+  - Recovery needs no restart: the next request after the key and vault load again goes through.
 - `secrets.enabled = false` turns the whole feature off explicitly; then nothing is redacted and the activity line shows `secrets off`.
 
 ## 4.5 Limits (stated to the agent and the user)
 
-Transformed values (base64, split, hashed) and secrets inside images escape detection. The fixed system-prompt section tells the agent not to transform secrets.
+Transformed values (base64, split, hashed) and secrets inside images escape detection. Another extension's own inference request (`ModelRegistry.Complete`) passes no hook: content it took from the session is already redacted, content it read elsewhere is not (host request H-S1). The fixed system-prompt section tells the agent not to transform secrets.
 
 ## 4.6 Agent awareness
 
@@ -155,18 +168,24 @@ User command `/workbench secrets`: list by scope (name, kind, source, env, place
 
 Detection policy lives in `Secrets.toml` (§2), not in `pig-workbench.toml`.
 
-# 9. Host probes (before relying on the boundary)
+# 9. Host probes
 
-| # | Probe |
-|---|---|
-| S1 | A `tool_result` patch is what PiG persists in the session file and sends later |
-| S2 | `before_provider_request` fires for normal turns, compaction, branch summaries, title generation and extension inference through host models, and can withhold the request with an error |
-| S3 | `context_with_system` exposes and replaces the system prompt text (context files) |
-| S4 | `tool_call` input changes reach builtin, Workbench, other-extension, MCP and codemode child tools |
-| S5 | `input` transform covers typed, pasted and RPC prompts |
-| S6 | `GetProviderAuth` returns the expanded value of a `!command` key for built-in and extension providers |
+Run 2026-11-03 against pig 0.5.3+1.4.0: [ANA-2026-11-03-secrets-host-probes](../analyses/2026-11-03-secrets-host-probes/README.md).
 
-A probe that fails becomes a named host blocker with an upstream request; the boundary is not declared complete without it.
+| # | Probe | Result |
+|---|---|---|
+| S1 | `tool_result` patch persisted and sent later | yes; also `input` transforms and `user_bash` output |
+| S2 | `before_provider_request` coverage and withholding | agent turns only; error or panic is fail-open; `ctx.Abort()` withholds |
+| S3 | `context_with_system` replaces the system prompt | yes |
+| S4 | `tool_call` changes reach every tool kind | yes, including MCP and codemode children |
+| S5 | `input` covers typed, pasted and RPC prompts | yes |
+| S6 | `GetProviderAuth` expands `!command` keys | yes, models.json and extension providers |
+
+Host requests (not filed; external publication needs user go-ahead):
+- **H-S1:** fire `before_provider_request` (or a dedicated hook) for compaction, branch summaries and extension-initiated model streams.
+- **H-S2:** let a `before_provider_request` error withhold the request, or add a `{block, reason}` result.
+
+The boundary does not depend on either: entry-time redaction covers compaction and branch summaries, and `ctx.Abort()` covers withholding.
 
 # 10. Decisions (user, 2026-11-03)
 
@@ -179,7 +198,7 @@ A probe that fails becomes a named host blocker with an upstream request; the bo
 
 # 11. Acceptance
 
-- A secret in a file, command output, pasted prompt, `AGENTS.md`, env file or `auth.json` never appears in any captured provider payload (dump of `before_provider_request` across turns, compaction and extension inference).
+- A secret in a file, command output, pasted prompt, `AGENTS.md`, env file or `auth.json` never appears in any provider request captured at a mock provider: agent turns, compaction, branch summaries and Workbench's own inference (the probe harness of §9 is the starting point).
 - The agent uses a placeholder in bash, `write`, `edit`, an HTTP call through another extension and a codemode child call; each receives the real value; the transcript keeps the placeholder.
 - Same value, same placeholder across sessions and after restart; equal to nukii's placeholder for a test key shared with nukii's test vectors.
 - Vault or key failure withholds provider requests visibly; recovery resumes without restart.
