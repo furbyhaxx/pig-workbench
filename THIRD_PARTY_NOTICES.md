@@ -2,6 +2,34 @@
 
 Runtime dependencies are version-matched through Go modules. Latest release and maintenance/supersession checks were performed against the Go module proxy and upstream repositories on 03.11.2026. No upstream deprecation or replacement notice was found for these selected projects; gofrs/flock is the maintained successor to theckman/go-flock.
 
+## pi-secret-guard detection patterns
+
+High-confidence token patterns in `internal/secrets/detection.go` are adapted from the local pi-secret-guard project. Source: `host:/mnt/Projects/furbyhaxx/pi-secret-guard/`. Licensed under MIT.
+
+```text
+MIT License
+
+Copyright (c) 2026 Furby Haxx
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## github.com/BurntSushi/toml v1.6.0
 
 Source: https://github.com/BurntSushi/toml
