@@ -13,7 +13,8 @@ Numbered specifications define public contracts and accepted design direction. D
 - `0011-inter-session-messaging.md` — live-session endpoints, `agent://` messaging and the coordinator.
 - `0012-projects-uri-namespace.md` — project identity and storage, `.project/` conventions, every scheme's tree, `docs://` and guides.
 - `0013-secrets.md` — keeping credentials out of provider requests: detection, `red-sec-` placeholders, substitution, vault, env injection, `secret://`, `ask_user` secret questions.
+- `0014-system-prompts.md` — system prompt templates and delivery, context frames, progressive skill disclosure, several instruction files per directory.
 - Workflow UI: `../sketches/workflow-details/README.md`; shared/API UI: `../sketches/workbench-ui/README.md` and `../sketches/extension-apis/README.md`.
-- Change source coordinates or selector semantics → review 0004/0005/0006 together; change applicability/epochs → review 0002/0005/0007/0010 together.
+- Change source coordinates or selector semantics → review 0004/0005/0006 together; change applicability/epochs → review 0002/0005/0007/0010 together; change prompt sections, frames or skill disclosure → review 0002/0007/0012/0014 together.
 - Change common protocol → review all consumers, wire examples and acceptance matrices in the same change.
 - Distinguish verified SDK mechanisms from proposed Workbench methods. Link host blockers explicitly; never invent SDK support.
