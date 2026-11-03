@@ -168,6 +168,69 @@ func TestDetectorHonoursExclusionsAndMinimumLength(t *testing.T) {
 	}
 }
 
+func TestDetectorReusesActiveRecordsWithoutGrowingVault(t *testing.T) {
+	master := bytes.Repeat([]byte{32}, 32)
+	path := testVaultPath(t)
+	detector, _ := newTestDetector(t, master, path, DetectionPolicy{})
+	value := "ghp_" + strings.Repeat("2", 36)
+	if err := detector.Learn([]byte(value), "github_token", "env"); err != nil {
+		t.Fatal(err)
+	}
+	grown := vaultLines(t, path)
+	for range 3 {
+		if err := detector.Learn([]byte(value), "github_token", "env"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := detector.Redact("token " + value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if lines := vaultLines(t, path); lines != grown {
+		t.Fatalf("repeated observation grew the vault from %d to %d records", grown, lines)
+	}
+}
+
+func TestDetectorPreservesExplicitRecordMetadata(t *testing.T) {
+	master := bytes.Repeat([]byte{33}, 32)
+	path := testVaultPath(t)
+	detector, vault := newTestDetector(t, master, path, DetectionPolicy{})
+	key := mustHMACKey(t, master)
+	value := "ghp_" + strings.Repeat("3", 36)
+	placeholder := Placeholder(key, []byte(value))
+	if err := vault.Put(Record{
+		Placeholder: placeholder, Kind: "github_token", Source: "user", Scope: "project",
+		ProjectID: "project-a", Name: "ci-token", Env: "CI_TOKEN",
+	}, []byte(value)); err != nil {
+		t.Fatal(err)
+	}
+	initial := vaultLines(t, path)
+	if got, err := detector.Redact("token " + value); err != nil || got != "token "+placeholder {
+		t.Fatalf("redaction = %q, err %v", got, err)
+	}
+	if err := detector.Learn([]byte(value), "token", "env"); err != nil {
+		t.Fatal(err)
+	}
+	record := mustLoad(t, vault)[placeholder]
+	if record.Kind != "github_token" || record.Source != "user" || record.Scope != "project" ||
+		record.ProjectID != "project-a" || record.Name != "ci-token" || record.Env != "CI_TOKEN" {
+		t.Fatalf("explicit metadata was rewritten by detection or Learn")
+	}
+	if lines := vaultLines(t, path); lines != initial {
+		t.Fatalf("reuse appended %d records", lines-initial)
+	}
+	// A soft delete is not permanent: the next detection learns the value again.
+	if err := vault.Delete(placeholder); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := detector.Redact("token " + value); err != nil {
+		t.Fatal(err)
+	}
+	record = mustLoad(t, vault)[placeholder]
+	if record.Deleted || record.Source != "detected" || record.Scope != "global" {
+		t.Fatalf("deleted record was not learned again: deleted=%v source=%q", record.Deleted, record.Source)
+	}
+}
+
 func TestDetectorRedactsShortStoredValues(t *testing.T) {
 	master := bytes.Repeat([]byte{30}, 32)
 	detector, vault := newTestDetector(t, master, testVaultPath(t), DetectionPolicy{})
@@ -295,6 +358,9 @@ func TestDetectorFailsClosedOnVaultFailures(t *testing.T) {
 	if err := detector.Learn([]byte("another-secret-value"), "token", "user"); err == nil {
 		t.Fatal("Learn succeeded while the vault rejected writes")
 	}
+	if err := detector.Learn([]byte("learned-before-the-torn-line"), "token", "user"); err == nil {
+		t.Fatal("reusing an active record hid the incomplete final record")
+	}
 
 	corruptPath := testVaultPath(t)
 	corrupt, corruptVault := newTestDetector(t, master, corruptPath, DetectionPolicy{})
@@ -415,6 +481,15 @@ func TestDetectorConcurrentCalls(t *testing.T) {
 			t.Fatal("vault contains a plaintext concurrent value")
 		}
 	}
+}
+
+func vaultLines(t *testing.T, path string) int {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes.Count(data, []byte{'\n'})
 }
 
 func mustLoad(t *testing.T, vault *Vault) map[string]Record {

@@ -189,14 +189,28 @@ func patternExpression(spec Pattern, names map[string]struct{}) (*regexp.Regexp,
 
 // Learn stores value in the vault under its placeholder with the given kind and
 // source. Values shorter than 8 characters, whole placeholders and excluded
-// values are not secrets and are ignored. Vault failures are returned and
-// nothing is learned.
+// values are not secrets and are ignored. An active record for the value wins:
+// repeated observations append nothing and never overwrite an explicit name,
+// scope, env or source. A soft-deleted record is learned again, so excluding its
+// placeholder is what permanently stops autodetection. Vault failures and an
+// incomplete final record fail the call instead of hiding corruption.
 func (d *Detector) Learn(value []byte, kind, source string) error {
 	if len(value) < minSecretLength || isPlaceholder(string(value)) || d.excludedValue(string(value)) {
 		return nil
 	}
+	placeholder := Placeholder(d.hmacKey, value)
+	records, err := d.vault.Load()
+	if err != nil {
+		return err
+	}
+	if len(d.vault.Warnings()) != 0 {
+		return &ErrRecordInvalid{}
+	}
+	if record, ok := records[placeholder]; ok && !record.Deleted {
+		return nil
+	}
 	return d.vault.Put(Record{
-		Placeholder: Placeholder(d.hmacKey, value),
+		Placeholder: placeholder,
 		Kind:        kind,
 		Source:      source,
 		Scope:       "global",
