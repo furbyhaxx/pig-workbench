@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -111,7 +112,7 @@ func (FileProvider) Read(ctx context.Context, request ReadRequest) (ReadResult, 
 	if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
 		return readDirectory(ctx, path, request)
 	}
-	page, err := ReadFile(ctx, Target{Requested: request.URI, Scheme: "file", Path: path, URI: request.URI, Selection: request.Selector}, request.Budget)
+	page, err := ReadFile(ctx, Target{Requested: request.Requested, Scheme: "file", Path: path, URI: request.URI, Selection: request.Selector}, request.Budget)
 	if err != nil {
 		return ReadResult{}, err
 	}
@@ -119,17 +120,26 @@ func (FileProvider) Read(ctx context.Context, request ReadRequest) (ReadResult, 
 }
 
 func localPath(uri string) (string, error) {
-	trimmed, ok := strings.CutPrefix(uri, "file://")
-	if !ok {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return "", errors.New("invalid file URI encoding")
+	}
+	if parsed.Scheme != "file" || parsed.Opaque != "" {
 		return "", errors.New("file provider requires a file:// URI")
 	}
-	if !filepath.IsAbs(trimmed) {
+	if parsed.User != nil || parsed.Host != "" && parsed.Host != "localhost" {
+		return "", errors.New("file URI must be local")
+	}
+	if parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
+		return "", errors.New("file URI does not accept a query or fragment")
+	}
+	if !filepath.IsAbs(parsed.Path) {
 		return "", errors.New("file URI requires an absolute path")
 	}
-	if strings.ContainsRune(trimmed, 0) {
+	if strings.ContainsRune(parsed.Path, 0) {
 		return "", errors.New("file path contains NUL")
 	}
-	return filepath.Clean(trimmed), nil
+	return filepath.Clean(parsed.Path), nil
 }
 
 // readDirectory renders a directory as a stable, pageable listing view.
