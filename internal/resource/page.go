@@ -14,6 +14,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
@@ -28,6 +30,7 @@ type Page struct {
 	RequestedURI      string   `json:"requestedUri"`
 	CanonicalURI      string   `json:"canonicalUri"`
 	Revision          string   `json:"revision"`
+	Tag               string   `json:"tag,omitempty"`
 	CoordinateSpace   string   `json:"coordinateSpace"`
 	ShownRanges       []Range  `json:"shownRanges"`
 	FullyShownRanges  []Range  `json:"fullyShownRanges"`
@@ -55,9 +58,14 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 		return page, err
 	}
 	defer f.Close()
-	digest, total, err := inspect(ctx, f)
+	digest, total, retained, err := inspect(ctx, f)
 	if err != nil {
 		return page, err
+	}
+	if !target.Selection.Raw && retained != nil {
+		if normalized, err := hashline.Normalize(retained); err == nil {
+			page.Tag = normalized.Tag
+		}
 	}
 	page.CanonicalURI = FileURI(canonical)
 	page.Revision = hex.EncodeToString(digest[:])
@@ -72,6 +80,8 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 	header := "[" + displayText(page.CanonicalURI) + "]\n"
 	if target.Selection.Raw {
 		header = ""
+	} else if page.Tag != "" {
+		header = "[" + displayText(page.CanonicalURI) + "#" + page.Tag + "]\n"
 	}
 	const footerBytes = 256
 	available := budget.Bytes - len(header) - footerBytes
@@ -219,8 +229,11 @@ finished:
 	return page, nil
 }
 
-func inspect(ctx context.Context, r io.Reader) ([32]byte, int, error) {
+func inspect(ctx context.Context, r io.Reader) ([32]byte, int, []byte, error) {
 	h := sha256.New()
+	retained := make([]byte, 0, 4096)
+	keep := true
+	const retainCeiling = 4 << 20
 	buffer := make([]byte, 64*1024)
 	pending := make([]byte, 0, 4)
 	lines := 0
@@ -228,17 +241,25 @@ func inspect(ctx context.Context, r io.Reader) ([32]byte, int, error) {
 	any := false
 	for {
 		if err := ctx.Err(); err != nil {
-			return [32]byte{}, 0, err
+			return [32]byte{}, 0, nil, err
 		}
 		n, err := r.Read(buffer)
 		if n > 0 {
 			data := buffer[:n]
 			h.Write(data)
+			if keep {
+				if len(retained)+n > retainCeiling {
+					keep = false
+					retained = nil
+				} else {
+					retained = append(retained, data...)
+				}
+			}
 			lines += bytes.Count(data, []byte{'\n'})
 			last = data[n-1]
 			any = true
 			if bytes.IndexByte(data, 0) >= 0 {
-				return [32]byte{}, 0, errors.New("binary source contains NUL; choose a binary adapter")
+				return [32]byte{}, 0, nil, errors.New("binary source contains NUL; choose a binary adapter")
 			}
 			if len(pending) > 0 {
 				data = append(pending, data...)
@@ -251,7 +272,7 @@ func inspect(ctx context.Context, r io.Reader) ([32]byte, int, error) {
 				}
 				rune, size := utf8.DecodeRune(data)
 				if rune == utf8.RuneError && size == 1 {
-					return [32]byte{}, 0, errors.New("source is not valid UTF-8")
+					return [32]byte{}, 0, nil, errors.New("source is not valid UTF-8")
 				}
 				data = data[size:]
 			}
@@ -260,18 +281,18 @@ func inspect(ctx context.Context, r io.Reader) ([32]byte, int, error) {
 			break
 		}
 		if err != nil {
-			return [32]byte{}, 0, err
+			return [32]byte{}, 0, nil, err
 		}
 	}
 	if len(pending) > 0 {
-		return [32]byte{}, 0, errors.New("source ends with incomplete UTF-8")
+		return [32]byte{}, 0, nil, errors.New("source ends with incomplete UTF-8")
 	}
 	if any && last != '\n' {
 		lines++
 	}
 	var digest [32]byte
 	copy(digest[:], h.Sum(nil))
-	return digest, lines, nil
+	return digest, lines, retained, nil
 }
 
 func appendSpan(spans *[]Range, line int) {

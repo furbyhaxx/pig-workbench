@@ -93,3 +93,26 @@ func TestSpecialFileAndCancellation(t *testing.T) {
 		t.Fatal("ignored cancellation")
 	}
 }
+
+func TestTaggedHeaderOnlyForExactNonRawReads(t *testing.T) {
+	source := "package a\r\n\r\nfunc f() {}\r\n"
+	page := readFixture(t, source, "", Budget{Bytes: 4096, Lines: 100})
+	if page.Tag == "" || len(page.Tag) != 4 {
+		t.Fatalf("missing hashline tag: %q", page.Tag)
+	}
+	if !strings.Contains(page.Content, "#"+page.Tag+"]") {
+		t.Fatalf("tag absent from header: %q", page.Content)
+	}
+	raw := readFixture(t, source, ":raw", Budget{Bytes: 4096, Lines: 100})
+	if raw.Tag != "" || strings.Contains(raw.Content, "#") {
+		t.Fatalf("raw read exposed a tag: %+v", raw)
+	}
+	changed := readFixture(t, "package b\n", "", Budget{Bytes: 4096, Lines: 100})
+	if changed.Tag == page.Tag {
+		t.Fatal("different content produced the same tag")
+	}
+	stable := readFixture(t, "package a\n\nfunc f() {}\n", "", Budget{Bytes: 4096, Lines: 100})
+	if stable.Tag != page.Tag {
+		t.Fatalf("tag is not stable across CRLF/LF: %q vs %q", stable.Tag, page.Tag)
+	}
+}
