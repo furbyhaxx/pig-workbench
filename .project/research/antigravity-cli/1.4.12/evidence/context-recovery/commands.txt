@@ -1,0 +1,85 @@
+Working directory for these commands:
+/mnt/Projects/furbyhaxx/pig-workbench/.project/research/antigravity-cli/1.4.12
+
+Source binary is addressed as "$HOME/.local/bin/agy". The binary symbol cache was
+already present and was not rebuilt. The commands below are the actual substantive
+read-only probes; output redirection and redaction were used for retained evidence.
+Inspection also used the `read`, `ls`, and `grep` tools directly.
+
+$ stat -c '%s %n' "$HOME/.local/bin/agy"
+$ sha256sum "$HOME/.local/bin/agy"
+$ "$HOME/.local/bin/agy" --version
+$ "$HOME/.local/bin/agy" --help
+$ python3 -c 'import json,pathlib; d=json.loads((pathlib.Path.home()/".gemini/antigravity-cli/settings.json").read_text()); print("keys:", sorted(d)); print("selected:", {k:d[k] for k in ("agentMode","toolPermission","sandboxMode","allowNonWorkspaceAccess") if k in d})'
+
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep 'AGENTS\.md|GEMINI\.md|toolPermission|SKILL\.md'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep '(?i)(<system-reminder>|todo list|current date|working directory|context file|compaction summary|user rules|workspace rules)'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep '(?i)(request-review|deterministic pre-check|denied_repeat|permission preset|ANTIGRAVITY_PERM_GRANTS)'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep '(?i)(reminder:|<system_reminder>|<reminder>|task list|todo list|current local time|file has been edited)'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep '(?i)(auto mode|auto-mode|auto permission|vetted mode|vetted policy|turbo mode|plan mode|accept-edits|proceed-in-sandbox|strict mode)'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep 'disable-slash-command|disable-model-invocation|model-invocable|user-invocable|argument-hint|allowed-tools'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep 'model_decision|always_on|trigger: glob|trigger: always_on|trigger: model_decision'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep 'ANTIGRAVITY_PERM_GRANTS|ANTIGRAVITY_CREDENTIAL_SCOPE|GOOGLE_DISABLE_SECCOMP_POLICY|ANTIGRAVITY_SANDBOX|AGY_SANDBOX|HTTPS_PROXY|HTTP_PROXY|NO_PROXY|SSL_CERT_FILE'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" funcs '(rule|prompt|context|skill|slash|remind|attach|compact|policyguardian|permission|sandbox|hook)' | grep -iE '(cortex|language_server|/cli/)'
+
+The following converted the existing cache to xwalk's different input shape. It did
+not rebuild the cache. The temporary file was subsequently removed.
+
+$ python3 - <<'PY'
+import json
+c=json.load(open('tools/funcs.json'))
+json.dump([[x['addr'],x['span'],x['name']] for x in c['funcs']],__import__('sys').stdout)
+PY
+$ python3 tools/xwalk.py --bin "$HOME/.local/bin/agy" --funcmap /tmp/agy-1412-funcmap-context.json refs 'AGENTS\.md|GEMINI\.md|toolPermission|SKILL\.md|Working Directory: %s'
+
+The first command above had stdout redirected to
+`/tmp/agy-1412-funcmap-context.json` during the actual run.
+
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find codeium_common.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find cortex.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find config.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find language_server.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find project.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find hooks.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find tools.proto
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x641a046
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x647546d
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x63f079b
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5ea9699
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5f1e37c
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5ed64bb
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5f93caa
+
+`proto-schemas.txt` retains selected complete named messages/enums using balanced
+braces. pbdump can greedily run into neighboring descriptors; field attribution was
+limited to explicitly named matching blocks.
+
+The `function-strings.txt`, `additional-strings.txt`, `mentions-and-edits.txt`,
+`slash-strings.txt`, and `sandbox-strings.txt` files record every exact `strs`
+function name invoked. The following are the complete `disas` targets used to establish
+string pointers and lengths:
+
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/utils/utils.BuildWorkspacePrompt'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).Content'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatMemoriesAsPrompt'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*DirectoryRulesStringConverter).ToOutputString'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).ToOutputString'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).appendLintErrorMessages'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).getOutputStringHelper'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/slashcommands/slashcommands.workflowModelFacingText'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/slashcommands/slashcommands.GetSkillSlashCommands'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/slashcommands/slashcommands.init'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cli/store/store.PermissionPresetFor'
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas 'google3/third_party/jetski/cortex/permissions/permissions.(*permissionManager).checkSingleTargetOnce'
+
+Exact byte ranges and their lengths are listed in `exact-templates.txt`; the separate
+`skill-template.txt` was extracted between embedded template markers. The verifier
+below rereads five critical pointer/length pairs and the complete skill template.
+
+$ for f in SKILL.md docs/rules.md docs/skills.md docs/hooks.md docs/plugins.md docs/json_configs.md; do printf '\n--- %s ---\n' "$f"; python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).read_text())' "$HOME/.gemini/antigravity-cli/builtin/skills/agy-customizations/$f"; done
+$ for f in migrate-workflows/SKILL.md run-workflow/SKILL.md plugin/SKILL.md; do printf '\n--- %s ---\n' "$f"; python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).read_text())' "$HOME/.gemini/antigravity-cli/builtin/skills/$f"; done
+$ date -Iseconds
+$ python3 evidence/context-recovery/verify.py
+
+No model inference, hook execution, CLI session, SQLite access, settings writes,
+configuration changes, dependency installation, or cache regeneration was performed.

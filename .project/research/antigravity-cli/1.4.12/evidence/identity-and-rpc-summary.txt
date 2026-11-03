@@ -1,0 +1,18 @@
+$ "$HOME/.local/bin/agy" --version
+1.4.12
+$ stat -c %s "$HOME/.local/bin/agy"
+234144144
+$ sha256sum "$HOME/.local/bin/agy" | awk '{print $1}'
+1edfb30477447825f0aaa05fd9a91d82f9adf26686f41cd4f5c70b90abe383e8
+$ python3 evidence/compare-rpcs.py | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({k:d[k] for k in ("baseline_count","new_count","added","removed")}, indent=2))'
+{
+  "baseline_count": 359,
+  "new_count": 363,
+  "added": [
+    "GetGitHubPullRequests",
+    "GetGoogleChatLinkInfo",
+    "GetWorkspaceGitHubPullRequests",
+    "RunTrigger"
+  ],
+  "removed": []
+}

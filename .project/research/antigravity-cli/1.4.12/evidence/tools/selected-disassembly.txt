@@ -1,0 +1,130 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" funcs "ListDirToolConverter.*GetToolDefinition|FindToolConverter.*GetToolDefinition|ToJSONSchemaString.*DirectoryPath"
+0x8719320	160	google3/third_party/jetski/cortex/tools/tools.(*ListDirToolConverter).GetToolDefinition
+0x871bca0	224	google3/third_party/jetski/cortex/tools/tools.(*FindToolConverter).GetToolDefinition
+0x8722a20	160	google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { DirectoryPath string "jsonschema:\"required\" jsonschema_description:\"Path to list contents of, should be absolute path to a directory\"" }]
+
+$ objdump -d -M intel --start-address=0x87193a0 --stop-address=0x8719440 "$HOME/.local/bin/agy"
+
+
+
+Disassembly of section .text:
+
+00000000087193a0 <crosscall2@@Base+0x1d48de0>:
+ 87193a0:	49 3b 66 10          	cmp    rsp,QWORD PTR [r14+0x10]
+ 87193a4:	0f 86 89 00 00 00    	jbe    8719433 <crosscall2@@Base+0x1d48e73>
+ 87193aa:	55                   	push   rbp
+ 87193ab:	48 89 e5             	mov    rbp,rsp
+ 87193ae:	48 83 ec 30          	sub    rsp,0x30
+ 87193b2:	44 0f 11 7c 24 20    	movups XMMWORD PTR [rsp+0x20],xmm15
+ 87193b8:	48 8d 05 81 99 e6 01 	lea    rax,[rip+0x1e69981]        # a582d40 <__lxstat@plt+0x20bb80>
+ 87193bf:	48 8d 5c 24 20       	lea    rbx,[rsp+0x20]
+ 87193c4:	e8 d7 96 00 00       	call   8722aa0 <crosscall2@@Base+0x1d524e0>
+ 87193c9:	48 89 5c 24 10       	mov    QWORD PTR [rsp+0x10],rbx
+ 87193ce:	48 89 44 24 18       	mov    QWORD PTR [rsp+0x18],rax
+ 87193d3:	48 8d 05 36 53 3c 03 	lea    rax,[rip+0x33c5336]        # bade710 <__lxstat@plt+0x1767550>
+ 87193da:	e8 a1 60 12 fe       	call   683f480 <_cgo_topofstack@@Base-0x740e0>
+ 87193df:	48 c7 40 10 08 00 00 	mov    QWORD PTR [rax+0x10],0x8
+ 87193e6:	00 
+ 87193e7:	48 8d 0d a9 9a 44 fd 	lea    rcx,[rip+0xfffffffffd449aa9]        # 5b62e97 <_cgo_topofstack@@Base-0xd506c9>
+ 87193ee:	48 89 48 08          	mov    QWORD PTR [rax+0x8],rcx
+ 87193f2:	48 c7 40 20 df 01 00 	mov    QWORD PTR [rax+0x20],0x1df
+ 87193f9:	00 
+ 87193fa:	48 8d 0d b3 c0 71 fd 	lea    rcx,[rip+0xfffffffffd71c0b3]        # 5e354b4 <_cgo_topofstack@@Base-0xa7e0ac>
+ 8719401:	48 89 48 18          	mov    QWORD PTR [rax+0x18],rcx
+ 8719405:	48 8b 4c 24 10       	mov    rcx,QWORD PTR [rsp+0x10]
+ 871940a:	48 89 48 30          	mov    QWORD PTR [rax+0x30],rcx
+ 871940e:	83 3d 4b 94 f7 05 00 	cmp    DWORD PTR [rip+0x5f7944b],0x0        # e692860 <_ZTISt10bad_typeid@@Base+0x29aea60>
+ 8719415:	75 09                	jne    8719420 <crosscall2@@Base+0x1d48e60>
+ 8719417:	48 8b 4c 24 18       	mov    rcx,QWORD PTR [rsp+0x18]
+ 871941c:	eb 0f                	jmp    871942d <crosscall2@@Base+0x1d48e6d>
+ 871941e:	66 90                	xchg   ax,ax
+ 8719420:	e8 bb a1 19 fe       	call   68b35e0 <_cgo_topofstack@@Base+0x80>
+ 8719425:	48 8b 4c 24 18       	mov    rcx,QWORD PTR [rsp+0x18]
+ 871942a:	49 89 0b             	mov    QWORD PTR [r11],rcx
+ 871942d:	48 89 48 28          	mov    QWORD PTR [rax+0x28],rcx
+ 8719431:	c9                   	leave
+ 8719432:	c3                   	ret
+ 8719433:	e8 e8 86 19 fe       	call   68b1b20 <_cgo_topofstack@@Base-0x1a40>
+ 8719438:	e9 63 ff ff ff       	jmp    87193a0 <crosscall2@@Base+0x1d48de0>
+ 871943d:	cc                   	int3
+ 871943e:	cc                   	int3
+ 871943f:	cc                   	int3
+
+$ objdump -d -M intel --start-address=0x871bd20 --stop-address=0x871be00 "$HOME/.local/bin/agy"
+
+
+
+Disassembly of section .text:
+
+000000000871bd20 <crosscall2@@Base+0x1d4b760>:
+ 871bd20:	4c 8d 64 24 e8       	lea    r12,[rsp-0x18]
+ 871bd25:	4d 3b 66 10          	cmp    r12,QWORD PTR [r14+0x10]
+ 871bd29:	0f 86 a8 00 00 00    	jbe    871bdd7 <crosscall2@@Base+0x1d4b817>
+ 871bd2f:	55                   	push   rbp
+ 871bd30:	48 89 e5             	mov    rbp,rsp
+ 871bd33:	48 81 ec 90 00 00 00 	sub    rsp,0x90
+ 871bd3a:	48 8d 5c 24 20       	lea    rbx,[rsp+0x20]
+ 871bd3f:	44 0f 11 3b          	movups XMMWORD PTR [rbx],xmm15
+ 871bd43:	44 0f 11 7b 10       	movups XMMWORD PTR [rbx+0x10],xmm15
+ 871bd48:	44 0f 11 7b 20       	movups XMMWORD PTR [rbx+0x20],xmm15
+ 871bd4d:	44 0f 11 7b 30       	movups XMMWORD PTR [rbx+0x30],xmm15
+ 871bd52:	44 0f 11 7b 40       	movups XMMWORD PTR [rbx+0x40],xmm15
+ 871bd57:	44 0f 11 7b 50       	movups XMMWORD PTR [rbx+0x50],xmm15
+ 871bd5c:	44 0f 11 7b 60       	movups XMMWORD PTR [rbx+0x60],xmm15
+ 871bd61:	48 8d 05 f8 70 e6 01 	lea    rax,[rip+0x1e670f8]        # a582e60 <__lxstat@plt+0x20bca0>
+ 871bd68:	e8 d3 78 00 00       	call   8723640 <crosscall2@@Base+0x1d53080>
+ 871bd6d:	48 89 5c 24 10       	mov    QWORD PTR [rsp+0x10],rbx
+ 871bd72:	48 89 44 24 18       	mov    QWORD PTR [rsp+0x18],rax
+ 871bd77:	48 8d 05 92 29 3c 03 	lea    rax,[rip+0x33c2992]        # bade710 <__lxstat@plt+0x1767550>
+ 871bd7e:	66 90                	xchg   ax,ax
+ 871bd80:	e8 fb 36 12 fe       	call   683f480 <_cgo_topofstack@@Base-0x740e0>
+ 871bd85:	48 c7 40 10 0c 00 00 	mov    QWORD PTR [rax+0x10],0xc
+ 871bd8c:	00 
+ 871bd8d:	48 8d 0d 3b e5 4a fd 	lea    rcx,[rip+0xfffffffffd4ae53b]        # 5bca2cf <_cgo_topofstack@@Base-0xce9291>
+ 871bd94:	48 89 48 08          	mov    QWORD PTR [rax+0x8],rcx
+ 871bd98:	48 c7 40 20 ea 01 00 	mov    QWORD PTR [rax+0x20],0x1ea
+ 871bd9f:	00 
+ 871bda0:	48 8d 0d 21 a6 71 fd 	lea    rcx,[rip+0xfffffffffd71a621]        # 5e363c8 <_cgo_topofstack@@Base-0xa7d198>
+ 871bda7:	48 89 48 18          	mov    QWORD PTR [rax+0x18],rcx
+ 871bdab:	48 8b 4c 24 10       	mov    rcx,QWORD PTR [rsp+0x10]
+ 871bdb0:	48 89 48 30          	mov    QWORD PTR [rax+0x30],rcx
+ 871bdb4:	83 3d a5 6a f7 05 00 	cmp    DWORD PTR [rip+0x5f76aa5],0x0        # e692860 <_ZTISt10bad_typeid@@Base+0x29aea60>
+ 871bdbb:	75 07                	jne    871bdc4 <crosscall2@@Base+0x1d4b804>
+ 871bdbd:	48 8b 4c 24 18       	mov    rcx,QWORD PTR [rsp+0x18]
+ 871bdc2:	eb 0d                	jmp    871bdd1 <crosscall2@@Base+0x1d4b811>
+ 871bdc4:	e8 17 78 19 fe       	call   68b35e0 <_cgo_topofstack@@Base+0x80>
+ 871bdc9:	48 8b 4c 24 18       	mov    rcx,QWORD PTR [rsp+0x18]
+ 871bdce:	49 89 0b             	mov    QWORD PTR [r11],rcx
+ 871bdd1:	48 89 48 28          	mov    QWORD PTR [rax+0x28],rcx
+ 871bdd5:	c9                   	leave
+ 871bdd6:	c3                   	ret
+ 871bdd7:	e8 44 5d 19 fe       	call   68b1b20 <_cgo_topofstack@@Base-0x1a40>
+ 871bddc:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+ 871bde0:	e9 3b ff ff ff       	jmp    871bd20 <crosscall2@@Base+0x1d4b760>
+ 871bde5:	cc                   	int3
+ 871bde6:	cc                   	int3
+ 871bde7:	cc                   	int3
+ 871bde8:	cc                   	int3
+ 871bde9:	cc                   	int3
+ 871bdea:	cc                   	int3
+ 871bdeb:	cc                   	int3
+ 871bdec:	cc                   	int3
+ 871bded:	cc                   	int3
+ 871bdee:	cc                   	int3
+ 871bdef:	cc                   	int3
+ 871bdf0:	cc                   	int3
+ 871bdf1:	cc                   	int3
+ 871bdf2:	cc                   	int3
+ 871bdf3:	cc                   	int3
+ 871bdf4:	cc                   	int3
+ 871bdf5:	cc                   	int3
+ 871bdf6:	cc                   	int3
+ 871bdf7:	cc                   	int3
+ 871bdf8:	cc                   	int3
+ 871bdf9:	cc                   	int3
+ 871bdfa:	cc                   	int3
+ 871bdfb:	cc                   	int3
+ 871bdfc:	cc                   	int3
+ 871bdfd:	cc                   	int3
+ 871bdfe:	cc                   	int3
+ 871bdff:	cc                   	int3

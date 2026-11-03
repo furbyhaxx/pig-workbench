@@ -1,0 +1,64 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/utils/utils.BuildWorkspacePrompt
+### google3/third_party/jetski/cortex/utils/utils.BuildWorkspacePrompt  0x7d61740+1952
+  0x5c80cfb	%s is not a directory
+  0x5c4c185?	Active Workspaces:*Viewed code item**Running MCP tool*### User Input
+  0x5b2167a	- %s
+  0x5e24320	The user does not have any active workspace. If the user's request involves creating a new project, you should create a reasonable subdirectory inside the default project directory at %v. If you do this, you should also recommend the user to set that subdirectory as the active workspace.
+  0x5cf467c	Command Working Directory: %s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*DirectoryRulesStringConverter).ToOutputString'
+### google3/third_party/jetski/cortex/chatconverters/chatconverters.(*DirectoryRulesStringConverter).ToOutputString  0x7fd4100+1088
+  0x5e0c65a?	These rules provide important context when working with this part of the codebase, so take them into account as you work
+  0x5b2167a	- %s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).Content  0x89694e0+1856
+  0x5b94a7e	user_rules
+  0x5e09cdd?	The following are user-defined rules that you MUST ALWAYS FOLLOW WITHOUT ANY EXCEPTION. These rules take precedence over
+  0x5ded1b4?	Review them carefully and always take them into account when you generate responses and code:- You should **NEVER** give
+  0x5e0d6fa?	The following user-defined rules exceeded the rules token budget and were excluded from inline injection. View the file 
+  0x5de4c9a?	The following are conditional rules, formatted as: - [absolute path]: [description].- **Heading Structure**: Use a singl
+  0x5e08ef5?	The description provides conditions under which the rule applies. If you believe a rule should apply, view the file for 
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatMemoriesAsPrompt'
+### google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatMemoriesAsPrompt  0x8969c20+736
+  0x5d2ef39	<R
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatDemotedMemoriesAsPrompt'
+### google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatDemotedMemoriesAsPrompt  0x8969f00+992
+  0x5b7d112	- 
+  0x5b2da4f?	- %s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatConditionalMemoriesAsPrompt'
+### google3/third_party/jetski/cortex/mixins/mixins.(*UserRulesSection).formatConditionalMemoriesAsPrompt  0x896a2e0+704
+  0x5b7d112	- 
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*SkillsSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*SkillsSection).Content  0x896b460+1536
+  0x5bca2db?	skill_searchsend_messagemanage_inboxReading fileReading pageAbsolutePathNotebookPathSCM_TYPE_GITPLAN_MODE_ONLANGUAGE_CPP
+  0x5daa7cf	google3/learning/gemini/agents/skills/skill_finder/SKILL.md
+  0xafc3a00	Custom
+  0x5b3aa66	Skills
+  0xae373b8?	light
+  0xafc3a00?	CustomParam
+  0x5c222e5	PreloadedSkills
+  0x5c222f4	TruncatedPrompt
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*SubagentReminderSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*SubagentReminderSection).Content  0x896cb80+192
+  0x5c39171	subagent_reminder
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*TerminalSandboxSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*TerminalSandboxSection).Content  0x896e920+320
+  0x5c26709	terminal_sandbox
+  0x5baf2d7?	run_commandmanage_taskCommandLinetoolSummaryINTERRUPTEDschema.jsonDescriptionUNSPECIFIEDLANGUAGE_GORemove %s%s.google.co
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*SlashCommandsSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*SlashCommandsSection).Content  0x896ed80+832
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.GetSystemSlashCommandsDefinitions
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.GetSystemSlashCommandsDefinitions  0x8963040+704
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.GetSkillSlashCommands
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.GetSkillSlashCommands  0x8963300+1440
+  0x5df0bcc	<S
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.workflowModelFacingText
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.workflowModelFacingText  0x8963d00+320
+  0x5de9f63	<WORKFLOW>The user requested you run the %q workflow. Call the %s tool with ScriptPath=%q.
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cli/store/store.(*Manager).parseLeadingSlashCommands'
+### google3/third_party/jetski/cli/store/store.(*Manager).parseLeadingSlashCommands  0x9969de0+1088
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cli/store/store.(*Manager).parseSystemSlashCommand'
+### google3/third_party/jetski/cli/store/store.(*Manager).parseSystemSlashCommand  0x996a220+1472
+  0xafc7be0?	func() *classification_go_proto.SemanticContext
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/customizations/customizations.(*Manager).discoverRulesForDir'
+### google3/third_party/jetski/cortex/customizations/customizations.(*Manager).discoverRulesForDir  0x8105680+3424
+  0xba36618?	dler; X316 *connect.Handler; X317 *connect.Handler; X318 *connect.Handler; X319 *connect.Handler; X320 *connect.Handler;

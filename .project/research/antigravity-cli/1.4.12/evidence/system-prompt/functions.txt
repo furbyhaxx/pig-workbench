@@ -1,0 +1,83 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" funcs '(systemprompt\.(Construct|Build)|PromptBuilder\)\.Build|CascadeConversationalMixin\)\.GetSystemPrompt|HermesToolFormatter\)\.FormatSystemPrompt|XMLToolFormatter\)\.FormatSystemPrompt|UpdateGetChatMessageRequestWithToolFormatter|deepcoder\.WorkerL0Agent)'
+0x8050160	256	google3/third_party/jetski/cortex/customizations/builtin/owl/deepcoder/deepcoder.WorkerL0Agent
+0x82a3560	1792	google3/third_party/jetski/chat_utils/tool_parsers/tool_parsers.(*HermesToolFormatter).FormatSystemPrompt
+0x82a7dc0	1472	google3/third_party/jetski/chat_utils/tool_parsers/tool_parsers.(*XMLToolFormatter).FormatSystemPrompt
+0x82a9640	384	google3/third_party/jetski/chat_utils/chat_utils.UpdateGetChatMessageRequestWithToolFormatter
+0x89661a0	4064	google3/third_party/jetski/cortex/mixins/mixins.(*CascadeConversationalMixin).GetSystemPrompt
+0x89758e0	1344	google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).Build
+0x8987100	640	google3/third_party/jetski/cortex/core/systemprompt/systemprompt.Construct
+0x8987380	32	google3/third_party/jetski/cortex/core/systemprompt/systemprompt.ConstructCustom
+0x89873a0	576	google3/third_party/jetski/cortex/core/systemprompt/systemprompt.Build
+
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" disas "google3/third_party/jetski/cortex/customizations/builtin/owl/deepcoder/deepcoder.WorkerL0Agent"
+0000000008050160 <crosscall2@@Base+0x167fba0>:
+ 8050160:	bc 24 88 00 00       	mov    esp,0x8824
+ 8050165:	00 48 89             	add    BYTE PTR [rax-0x77],cl
+ 8050168:	b4 24                	mov    ah,0x24
+ 805016a:	90                   	nop
+ 805016b:	00 00                	add    BYTE PTR [rax],al
+ 805016d:	00 4c 89 84          	add    BYTE PTR [rcx+rcx*4-0x7c],cl
+ 8050171:	24 98                	and    al,0x98
+ 8050173:	00 00                	add    BYTE PTR [rax],al
+ 8050175:	00 4c 89 8c          	add    BYTE PTR [rcx+rcx*4-0x74],cl
+ 8050179:	24 a0                	and    al,0xa0
+ 805017b:	00 00                	add    BYTE PTR [rax],al
+ 805017d:	00 4c 89 94          	add    BYTE PTR [rcx+rcx*4-0x6c],cl
+ 8050181:	24 a8                	and    al,0xa8
+ 8050183:	00 00                	add    BYTE PTR [rax],al
+ 8050185:	00 4c 89 9c          	add    BYTE PTR [rcx+rcx*4-0x64],cl
+ 8050189:	24 b0                	and    al,0xb0
+ 805018b:	00 00                	add    BYTE PTR [rax],al
+ 805018d:	00 e8                	add    al,ch
+ 805018f:	8d 19                	lea    ebx,[rcx]
+ 8050191:	86 fe                	xchg   dh,bh
+ 8050193:	48 8b 44 24 70       	mov    rax,QWORD PTR [rsp+0x70]
+ 8050198:	48 8b 5c 24 78       	mov    rbx,QWORD PTR [rsp+0x78]
+ 805019d:	48 8b 8c 24 80 00 00 	mov    rcx,QWORD PTR [rsp+0x80]
+ 80501a4:	00 
+ 80501a5:	48 8b bc 24 88 00 00 	mov    rdi,QWORD PTR [rsp+0x88]
+ 80501ac:	00 
+ 80501ad:	48 8b b4 24 90 00 00 	mov    rsi,QWORD PTR [rsp+0x90]
+ 80501b4:	00 
+ 80501b5:	4c 8b 84 24 98 00 00 	mov    r8,QWORD PTR [rsp+0x98]
+ 80501bc:	00 
+ 80501bd:	4c 8b 8c 24 a0 00 00 	mov    r9,QWORD PTR [rsp+0xa0]
+ 80501c4:	00 
+ 80501c5:	4c 8b 94 24 a8 00 00 	mov    r10,QWORD PTR [rsp+0xa8]
+ 80501cc:	00 
+ 80501cd:	4c 8b 9c 24 b0 00 00 	mov    r11,QWORD PTR [rsp+0xb0]
+ 80501d4:	00 
+ 80501d5:	e9 46 f2 ff ff       	jmp    804f420 <crosscall2@@Base+0x167ee60>
+ 80501da:	cc                   	int3
+ 80501db:	cc                   	int3
+ 80501dc:	cc                   	int3
+ 80501dd:	cc                   	int3
+ 80501de:	cc                   	int3
+ 80501df:	cc                   	int3
+ 80501e0:	4c 8d 64 24 c8       	lea    r12,[rsp-0x38]
+ 80501e5:	4d 3b 66 10          	cmp    r12,QWORD PTR [r14+0x10]
+ 80501e9:	0f 86 df 00 00 00    	jbe    80502ce <crosscall2@@Base+0x167fd0e>
+ 80501ef:	55                   	push   rbp
+ 80501f0:	48 89 e5             	mov    rbp,rsp
+ 80501f3:	48 81 ec b0 00 00 00 	sub    rsp,0xb0
+ 80501fa:	90                   	nop
+ 80501fb:	31 c0                	xor    eax,eax
+ 80501fd:	48 8d 1d 48 e3 e3 fd 	lea    rbx,[rip+0xfffffffffde3e348]        # 5e8e54c <_cgo_topofstack@@Base-0xa25014>
+ 8050204:	b9 eb 06 00 00       	mov    ecx,0x6eb
+ 8050209:	31 ff                	xor    edi,edi
+ 805020b:	31 f6                	xor    esi,esi
+ 805020d:	4c 8d 05 1b 68 e2 fd 	lea    r8,[rip+0xfffffffffde2681b]        # 5e76a2f <_cgo_topofstack@@Base-0xa3cb31>
+ 8050214:	41 b9 7e 05 00 00    	mov    r9d,0x57e
+ 805021a:	4c 8d 15 71 76 e0 fd 	lea    r10,[rip+0xfffffffffde07671]        # 5e57892 <_cgo_topofstack@@Base-0xa5bcce>
+ 8050221:	41 bb bd 03 00 00    	mov    r11d,0x3bd
+ 8050227:	e8 d4 b8 83 fe       	call   688bb00 <_cgo_topofstack@@Base-0x27a60>
+ 805022c:	48 8b 15 4d 42 1b 04 	mov    rdx,QWORD PTR [rip+0x41b424d]        # c204480 <_ZTISt10bad_typeid@@Base+0x520680>
+ 8050233:	4c 8b 0d 86 42 1b 04 	mov    r9,QWORD PTR [rip+0x41b4286]        # c2044c0 <_ZTISt10bad_typeid@@Base+0x5206c0>
+ 805023a:	4c 8b 25 ff 42 1b 04 	mov    r12,QWORD PTR [rip+0x41b42ff]        # c204540 <_ZTISt10bad_typeid@@Base+0x520740>
+ 8050241:	4c 8b 15 80 42 1b 04 	mov    r10,QWORD PTR [rip+0x41b4280]        # c2044c8 <_ZTISt10bad_typeid@@Base+0x5206c8>
+ 8050248:	4c 8b 2d 39 42 1b 04 	mov    r13,QWORD PTR [rip+0x41b4239]        # c204488 <_ZTISt10bad_typeid@@Base+0x520688>
+ 805024f:	4c 8b 3d f2 42 1b 04 	mov    r15,QWORD PTR [rip+0x41b42f2]        # c204548 <_ZTISt10bad_typeid@@Base+0x520748>
+ 8050256:	4c 8b 1d 73 42 1b 04 	mov    r11,QWORD PTR [rip+0x41b4273]        # c2044d0 <_ZTISt10bad_typeid@@Base+0x5206d0>
+ 805025d:	48                   	rex.W
+ 805025e:	8b                   	.byte 0x8b
+ 805025f:	0d                   	.byte 0xd

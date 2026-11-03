@@ -1,0 +1,62 @@
+{
+  "write_to_file_without_artifact_instruction": {
+    "offset": "0x5e2bbbf",
+    "bytes": 361,
+    "text": "Use this tool to create new files. The file and any parent directories will be created for you if they do not already exist.\n\t\tFollow these instructions:\n\t\t1. By default this tool will error if TargetFile already exists. To overwrite an existing file, set Overwrite to true. To append to an existing file (or create it if it does not exist), set Append to true."
+  },
+  "write_to_file_with_artifact_instruction": {
+    "offset": "0x5e35872",
+    "bytes": 479,
+    "text": "Use this tool to create new files. The file and any parent directories will be created for you if they do not already exist.\n\t\tFollow these instructions:\n\t\t1. By default this tool will error if TargetFile already exists. To overwrite an existing file, set Overwrite to true. To append to an existing file (or create it if it does not exist), set Append to true.\n\t\t2. When creating an artifact, always provide ArtifactMetadata. When creating non-artifact files, do not provide it."
+  },
+  "manage_subagents_list": {
+    "offset": "0x5e316b0",
+    "bytes": 434,
+    "text": "Manage existing subagents.\n\tActions:\n\t* 'list': List active direct subagents with their conversation IDs and live state. Each subagent is reported as a JSON object with this schema:\n\t%s\n\t* 'kill': Terminate specific subagents and all their descendants.\n\t* 'kill_all': Terminate all subagents and all their descendants.\n\n\tWhen a subagent is killed, its branched workspaces will be deleted, but its logs and artifacts will be preserved."
+  },
+  "manage_subagents_list_peers": {
+    "offset": "0x5e3bfe5",
+    "bytes": 562,
+    "text": "Manage existing subagents.\n\tActions:\n\t* 'list': List active direct subagents with their conversation IDs and live state. Each subagent is reported as a JSON object with this schema:\n\t%s\n\t* 'list_peers': List active sibling subagents sharing the same parent conversation with their conversation IDs and live state.\n\t* 'kill': Terminate specific subagents and all their descendants.\n\t* 'kill_all': Terminate all subagents and all their descendants.\n\n\tWhen a subagent is killed, its branched workspaces will be deleted, but its logs and artifacts will be preserved."
+  },
+  "run_command_background_format": {
+    "offset": "0x5e3b953",
+    "bytes": 560,
+    "text": "If the step doesn't return the command output, it means that the command was sent to the background as a task. You will receive messages with the command's output as it runs. To interact with a running command, use the %s tool. Use `send_input` to send stdin, `kill` to terminate the command, and `status` to check current status. IMPORTANT: Do NOT poll or loop on `status` to wait for completion. The system will automatically notify you with a message when the command finishes. Simply proceed with other work or stop calling tools after launching a command."
+  },
+  "run_command_workspace_rule": {
+    "offset": "0x5e20c94",
+    "bytes": 262,
+    "text": "\nIMPORTANT: The Cwd (working directory) MUST be within the user's workspace. If you need a temporary directory for scratch scripts or intermediate outputs, use the scratch/ directory in your artifact directory instead of writing temporary files to the workspace."
+  },
+  "grep_search_result_limit_format": {
+    "offset": "0x5e031eb",
+    "bytes": 127,
+    "text": "Total results are capped at %d matches. Use the Includes option to filter by file type or specific paths to refine your search."
+  },
+  "view_file_text_usage_format": {
+    "offset": "0x5e43041",
+    "bytes": 672,
+    "text": "\nText file usage:\n- The lines of the file are 1-indexed\n- You can view at most %[1]d lines at a time\n- Specify StartLine and EndLine to view the lines of the file using slice notation:\n  - Omit both to view the entire file, or the first %[1]d lines of the file, whichever is smaller.\n  - Specify StartLine only to view the remaining lines of the file, or the next %[1]d lines, whichever is smaller\n  - Specify EndLine only to view the remaining preceding lines of the file, or the previous %[1]d lines, whichever is smaller\n  - Specify both to view a precise line range. This range must be smaller than %[1]d lines or only the first %[1]d lines of the range will be shown."
+  },
+  "view_file_with_binary_format": {
+    "offset": "0x5dfd2cf",
+    "bytes": 116,
+    "text": "View the contents of a file from the local filesystem. This tool supports text files and following binary files: %s."
+  },
+  "view_file_text_only": {
+    "offset": "0x5de5979",
+    "bytes": 85,
+    "text": "View the contents of a file from the local filesystem. This tool supports text files."
+  },
+  "view_file_content_offset_format": {
+    "offset": "0x5e04cf3",
+    "bytes": 130,
+    "text": "\n- Content is limited to %d bytes per view. If content is truncated, use the ContentOffset parameter to view the remaining content"
+  },
+  "view_file_binary_usage": {
+    "offset": "0x5df867d",
+    "bytes": 109,
+    "text": "\nBinary file usage:\n- Do not provide StartLine or EndLine arguments, this tool always returns the entire file"
+  }
+}

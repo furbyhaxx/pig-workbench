@@ -1,0 +1,16 @@
+# Observed outbound UA and response headers, agy 1.4.8, 2026-10-27T10:09:03+01:00
+
+I1027 10:06:53.551133     208 http_helpers.go:349] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x55c49bd42fc04ca5
+I1027 10:06:53.551155     208 http_helpers.go:369] Request User-Agent to https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist:
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+I1027 10:06:53.551165     208 http_helpers.go:375] Response Headers from https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist:
+X-Cloudaicompanion-Trace-Id: 55c49bd42fc04ca5
+Date: Tue, 27 Oct 2026 09:06:53 GMT
+Server-Timing: gfet5t7;dur=597, gfet4t7; dur=779
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Vary: Origin, X-Origin, Referer
+Server: ESF
+X-Xss-Protection: 0
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff

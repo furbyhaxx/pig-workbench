@@ -1,0 +1,36 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" funcs "commandPromptCacheClient.*BuildPrompt"
+0x900b1e0	6880	google3/third_party/jetski/language_server/completion_provider/completion_provider.(*commandPromptCacheClient).BuildPrompt
+0x901abc0	128	google3/third_party/jetski/language_server/completion_provider/completion_provider.(*commandPromptCacheClient).BuildPrompt.func1
+0x901ac40	64	google3/third_party/jetski/language_server/completion_provider/completion_provider.(*commandPromptCacheClient).BuildPrompt.deferwrap1
+
+$ objdump -d -M intel --start-address=0x900b650 --stop-address=0x900b6a0 "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+000000000900b650 <crosscall2@@Base+0x263b090>:
+ 900b650:	00 48 8b             	add    BYTE PTR [rax-0x75],cl
+ 900b653:	51                   	push   rcx
+ 900b654:	08 e8                	or     al,ch
+ 900b656:	a6                   	cmps   BYTE PTR [rsi],BYTE PTR [rdi]
+ 900b657:	7f 8a                	jg     900b5e3 <crosscall2@@Base+0x263b023>
+ 900b659:	fd                   	std
+ 900b65a:	49 89 03             	mov    QWORD PTR [r11],rax
+ 900b65d:	49 89 53 08          	mov    QWORD PTR [r11+0x8],rdx
+ 900b661:	48 89 41 08          	mov    QWORD PTR [rcx+0x8],rax
+ 900b665:	48 89 c8             	mov    rax,rcx
+ 900b668:	48 8b 48 08          	mov    rcx,QWORD PTR [rax+0x8]
+ 900b66c:	48 8b 84 24 78 02 00 	mov    rax,QWORD PTR [rsp+0x278]
+ 900b673:	00 
+ 900b674:	8b 50 08             	mov    edx,DWORD PTR [rax+0x8]
+ 900b677:	89 51 40             	mov    DWORD PTR [rcx+0x40],edx
+ 900b67a:	e8 81 b3 71 ff       	call   8726a00 <crosscall2@@Base+0x1d56440>
+ 900b67f:	48 89 84 24 40 02 00 	mov    QWORD PTR [rsp+0x240],rax
+ 900b686:	00 
+ 900b687:	48 89 5c 24 78       	mov    QWORD PTR [rsp+0x78],rbx
+ 900b68c:	48 8b 8c 24 90 05 00 	mov    rcx,QWORD PTR [rsp+0x590]
+ 900b693:	00 
+ 900b694:	44 8b 41 20          	mov    r8d,DWORD PTR [rcx+0x20]
+ 900b698:	48 8b 84 24 78 05 00 	mov    rax,QWORD PTR [rsp+0x578]
+ 900b69f:	00 

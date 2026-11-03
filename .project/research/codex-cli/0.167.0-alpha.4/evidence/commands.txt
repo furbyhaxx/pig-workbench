@@ -1,0 +1,35 @@
+$ git rev-parse HEAD
+fb036d4ebd89f263d34a1f888c279ce85bb383c6
+
+$ git describe --tags --exact-match
+rust-v0.167.0-alpha.4
+
+$ git log -1 --format="%cI %s"
+2026-11-02T17:19:36-08:00 Release 0.167.0-alpha.4
+
+$ date -d 2026-11-02T17:19:36-08:00 -Iseconds
+2026-11-03T02:19:36+01:00
+
+$ command -v codex || echo not-installed-on-PATH
+not-installed-on-PATH
+
+$ rg -n "^\[workspace.package\]|^version =" codex-rs/Cargo.toml
+172:[workspace.package]
+173:version = "0.167.0-alpha.4"
+
+$ rg -n "BASE_INSTRUCTIONS_DEFAULT|impl Default for BaseInstructions" codex-rs/protocol/src/models.rs
+1694:pub const BASE_INSTRUCTIONS_DEFAULT: &str = include_str!("prompts/base_instructions/default.md");
+1718:impl Default for BaseInstructions {
+1721:            text: BASE_INSTRUCTIONS_DEFAULT.to_string(),
+
+$ rg -n "Formerly a personality template, now literal text" codex-rs/protocol/src/openai_models.rs
+584:/// `instructions_template`: Formerly a personality template, now literal text. The name is
+
+$ rg -n "Priority order|config.base_instructions override|conversation history =>|rendered instructions_template" codex-rs/core/src/session/mod.rs
+834:        // Resolve base instructions for the session. Priority order:
+835:        // 1. config.base_instructions override
+836:        // 2. conversation history => session_meta.base_instructions
+837:        // 3. rendered instructions_template for current model
+
+$ wc -l codex-rs/protocol/src/prompts/base_instructions/default.md
+275 codex-rs/protocol/src/prompts/base_instructions/default.md

@@ -1,0 +1,6 @@
+$ python3 .project/research/deepseek-harness/0.2.2-alpha.3/evidence/verify.py
+frontmatter: 4 chapters checked
+source citations: 212 explicit path:line references checked
+verbatim evidence: 73 source ranges compared
+injection inventory: 58 rows, six columns checked
+PASS

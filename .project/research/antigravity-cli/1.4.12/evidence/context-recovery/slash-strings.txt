@@ -1,0 +1,52 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func1
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func1  0x8964220+288
+  0x5b7b5b8?	goal_stopno clientintrinsic(missing)requestIdmultipartresumable/threads/messages/src|%s|%dinsteadOf|%s/%s#%d|%s/%s@%ssha
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func2
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func2  0x8964340+448
+  0xafb4b78	o.RecordPinnedContextRequest
+  0x5ce9415	enable-compact-slash-command
+  0x5c109e1?	context_summarydrive.files.get/battle-clones/abuse detectionquery(%s) {
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func3
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func3  0x8964500+96
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func4
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func4  0x8964560+96
+  0x5b62e0f?	schedulegrill-meteamworkgoogle3/nil Poollog_linkDomain%dScan: %vReserved--- %v:
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func5
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func5  0x89645c0+96
+  0x5b4bb6a?	browser#202124#4285f4#dadce0#1967d2#188038#e6f4ea#a8dab5#c5221f#fce8e6#f6aea9#80868b#e37400#9334e6#d93025#1a73e8#3c4043#
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func6
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func6  0x8964620+64
+  0x5bfa529?	browser-visionsolarized dark  
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func7
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func7  0x8964660+32
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func8
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func8  0x8964680+96
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func9
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func9  0x89646e0+32
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func10
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func10  0x8964700+96
+  0x5b62e1f?	teamworkgoogle3/nil Poollog_linkDomain%dScan: %vReserved--- %v:
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func11
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func11  0x8964760+224
+  0x5b7b180?	DeepCoderdevtools:ALLOW_ALLWHEN_IDLEINTERRUPTVALIDATED-Infinityassistant<tool_%s>%d:%s:%s:audio/wavvideo/oggaudio/oggML-
+  0x5c25569	De
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func12
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init.func12  0x8964840+224
+  0x5b7abe9	deepagent
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*WorkflowsSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*WorkflowsSection).Content  0x896aa40+1856
+  0x5b7bac8?	WorkflowsMCP tools%s 
+  0x5cce59d?	Legacy markdown workflowslegacy markdown workflows# Submission Instructionsunknown header format: %dunhandled state chan
+  0x5b7ad7e?	workflows: iconUri.mcp.jsonserver %q"command""headers"Auto modemalformedclipboardError: %vInterruptuserInputtest-term<th
+  0x5cce5b6?	legacy markdown workflows# Submission Instructionsunknown header format: %dunhandled state change opinvalid ICECredentia
+  0x5de2455	 are markdown-based guides providing step-by-step instructions for specific tasks.
+  0x5e0a163?	If a workflow looks relevant, or the user explicitly uses a slash command like /slash-command to invoke a workflow, then
+  0x5dfe2b4?	, along with a description on when to use them. They are provided in - [slash command] (path): [description] format.
+  0x5c222d6	- /
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/mixins/mixins.(*SubagentsSection).Content'
+### google3/third_party/jetski/cortex/mixins/mixins.(*SubagentsSection).Content  0x896bd00+2560
+  0x5b7b378	subagents
+  0x5e4ff9f	## 
+  0x5c8d6f1?	Available subagents:
+  0x5b7d112	- 
+  0x5b2da4f?	- %s

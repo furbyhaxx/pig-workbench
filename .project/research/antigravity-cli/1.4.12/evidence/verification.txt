@@ -1,0 +1,7 @@
+$ python3 evidence/verify.py "$HOME/.local/bin/agy"
+OK: 24 prompt and formatter extracts match binary ranges
+OK: 84 tool name/description literals match binary ranges and scans reproduce
+OK: RPC delta reproduces: 359 -> 363, 4 additions, 0 removals
+OK: template relocation, cumulative layout and prompt callgraph traces reproduce
+OK: 3 chapter frontmatters and 53 local links validate
+OK: quoted descriptions and list_dir Go shape match extracts; malformed example preserved

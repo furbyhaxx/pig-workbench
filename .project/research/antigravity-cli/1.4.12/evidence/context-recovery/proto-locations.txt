@@ -1,0 +1,76 @@
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find codeium_common.proto
+0x5e2cc69  (no length prefix found)
+0x5e4c5ca  (no length prefix found)
+0x5e52d35  (no length prefix found)
+0x5e60df3  dependency  len=57
+0x5e69ce5  (no length prefix found)
+0x5e6c4fe  (no length prefix found)
+0x5e81954  (no length prefix found)
+0x5e96da8  dependency  len=57
+0x5ea53d2  (no length prefix found)
+0x5ee8d71  (no length prefix found)
+0x5f0192d  dependency  len=57
+0x5f1e401  (no length prefix found)
+0x5f23bd9  dependency  len=57
+0x5f505cd  dependency  len=57
+0x5f5b19e  (no length prefix found)
+0x5f8b5ac  (no length prefix found)
+0x5f93d3d  dependency  len=57
+0x5faa39d  dependency  len=57
+0x5fce8fe  (no length prefix found)
+0x5fd0094  dependency  len=57
+0x5ff1daf  dependency  len=57
+0x6095020  dependency  len=57
+0x60a3fb4  dependency  len=57
+0x60ad52b  (no length prefix found)
+0x60d146e  (no length prefix found)
+0x60fada1  dependency  len=57
+0x615cc54  dependency  len=57
+0x617d380  dependency  len=57
+0x62842ae  (no length prefix found)
+0x62efc70  dependency  len=57
+0x6351484  dependency  len=57
+0x63f0a2c  dependency  len=57
+0x641a046  NAME-FIELD  len=57
+0x6475671  dependency  len=57
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find cortex.proto
+0x5e33f7a  (no length prefix found)
+0x5e39e5d  (no length prefix found)
+0x5e3c298  (no length prefix found)
+0x5e49e1a  (no length prefix found)
+0x5e4dc22  (no length prefix found)
+0x5e549a5  (no length prefix found)
+0x5e60e4d  (no length prefix found)
+0x5e6e301  (no length prefix found)
+0x5e96de3  dependency  len=41
+0x5ea96d3  dependency  len=41
+0x5ecfa3a  dependency  len=41
+0x5ed04f3  dependency  len=41
+0x5ed051e  dependency  len=55
+0x5f01968  dependency  len=41
+0x5f23c6e  (no length prefix found)
+0x5f50608  dependency  len=55
+0x5faa413  dependency  len=41
+0x60a3fef  dependency  len=41
+0x60c73cb  dependency  len=41
+0x615cb7e  NAME-FIELD  len=55
+0x615ccae  (no length prefix found)
+0x617d3bb  dependency  len=41
+0x617d3e6  dependency  len=55
+0x62efcab  dependency  len=41
+0x62efd0b  dependency  len=55
+0x63514fa  dependency  len=41
+0x635155b  dependency  len=55
+0x63f0a92  dependency  len=41
+0x63f0b94  dependency  len=55
+0x647546d  NAME-FIELD  len=41
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" --find config.proto
+0x5e705a1  (no length prefix found)
+0x5e98aff  NAME-FIELD  len=49
+0x5ea9699  NAME-FIELD  len=41
+0x614af62  NAME-FIELD  len=71
+0x63f0a67  dependency  len=41
+0x67c4aea  (no length prefix found)
+0x67c4b09  (no length prefix found)
+0xbde6a56  (no length prefix found)
+0xbe58a15  (no length prefix found)

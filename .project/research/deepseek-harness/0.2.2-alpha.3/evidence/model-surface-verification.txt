@@ -1,0 +1,39 @@
+Command run from host:/mnt/Projects/furbyhaxx/pig-workbench:
+
+$ python3 - <<'PY'
+import json,re
+from pathlib import Path
+r=Path('.project/research/deepseek-harness/0.2.2-alpha.3'); s=Path('/tmp/re-recon/dsh')
+pairs=[('desktop-context','sdk-desktop'),('bash-tool','sdk-bash-tool'),('desktop-ptc-context','sdk-desktop-ptc')]
+for scenario,name in pairs:
+ for src,dst in [('system-prompt.expected.md','system-prompt.txt'),('tool-schemas.expected.json','schemas.json')]:
+  assert (s/'snapshots/sdk'/scenario/src).read_bytes()==(r/'evidence'/f'{name}-{dst}').read_bytes()
+print('PASS: 6 snapshot copies are byte-identical')
+table=(r/'03-tool-declarations.md').read_text()
+for name,count in [('sdk-desktop',33),('sdk-bash-tool',26),('sdk-desktop-ptc',1)]:
+ data=json.loads((r/'evidence'/f'{name}-schemas.json').read_text()); a=data['initial']; names=[x['name'] for x in a]
+ assert len(a)==count and names==sorted(names) and not data['changes'] and all('description' in x and 'parameters' in x for x in a)
+ if name=='sdk-desktop': assert all(f'| `{n}` |' in table for n in names)
+ print(f'PASS: {name} has {count} ordered, described parameter schemas')
+plan='\n'.join(x.removeprefix(' '*14) for x in (s/'packages/bundle/base/cordis.patch.yml').read_text().splitlines()[339:350])
+assert plan in (r/'evidence/prompt-fragments.txt').read_text()
+print('PASS: complete base plan excerpt matches source')
+n=0
+for doc in ['00-context.md','01-architecture.md','02-system-prompt.md','03-tool-declarations.md']:
+ t=(r/doc).read_text(); f=t.split('---',2)[1]; assert all(x in f for x in ['document:', 'type: "research"','status: "published"','revision: 1','created_by: "worker"','updated_by: "worker"','reason: "document creation"'])
+ assert t.endswith('\n') and not t.endswith('\n\n') and not any(re.search(r'[ \t]+$',line) for line in t.splitlines())
+ for link in re.findall(r'\]\(([^)]+)\)',t): assert (r/link.split('#')[0]).is_file(),link
+ for p,a,b in re.findall(r'((?:packages|snapshots)/[A-Za-z0-9_./-]+):(\d+)(?:-(\d+))?',t):
+  path=s/p; assert path.is_file() and int(a)<=int(b or a)<=len(path.read_text().splitlines()),(p,a,b); n+=1
+print(f'PASS: four frontmatters, whitespace and links; {n} cited source ranges exist')
+PY
+PASS: 6 snapshot copies are byte-identical
+PASS: sdk-desktop has 33 ordered, described parameter schemas
+PASS: sdk-bash-tool has 26 ordered, described parameter schemas
+PASS: sdk-desktop-ptc has 1 ordered, described parameter schemas
+PASS: complete base plan excerpt matches source
+PASS: four frontmatters, whitespace and links; 167 cited source ranges exist
+
+A preceding range check failed on three out-of-bounds chapter references (end lines 936, 652, 112); these were corrected before the successful run above. A subsequent attempt to execute that previous check from evidence/verification.txt failed with IndexError because another worker had replaced the shared filename; this independent check uses a dedicated evidence filename.
+
+No DSH application, provider call, or source test suite was executed. These checks validate copied bytes, shape and path/range existence; they do not establish the correctness of every interpretation or an unpatched runtime configuration.

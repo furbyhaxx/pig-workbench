@@ -1,0 +1,15 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep "disable-slash-command|disable-model-invocation|model-invocable|user-invocable|argument-hint|allowed-tools"
+0x5c8fc0d	disable-slash-commandsAUTO_UPDATER_TEST_MODEShort alias for --typeRemoved MCP server %q
+0x5dcb868	disable-slash-commands to send /%s to the model as literal text[Auth State Transition] -> Step %v: Returning to method selection menuEsc disabled during file edits 
+0x5f24b28	disable-slash-command: true
+0x64664b1	disable-slash-command: true` flag for a skill's `SKILL.md` frontmatter, which hides that skill from the `/` menu and from `/name` resolution while leaving it discoverable and invocable by the model, so a large skill library no longer floods the command menu.
+0x6469738	disable-slash-commands` to opt out.
+0xafc1a51	disable-slash-command"
+0xb00154b	disable-model-invocation"
+
+$ python3 -c [print ui-plugin-navigation skill frontmatter]
+
+name: ui-plugin-navigation
+description: Discover UI plugin panels relevant to the current task and surface a one-click pill in chat to open (toggle) them in the side pane. Use when a running UI plugin's panel would help with what the user is doing, or right after the user enables a new UI plugin pane and a shortcut to open it is handy.
+disable-slash-command: true
+

@@ -1,0 +1,383 @@
+Source command log, working directory host:/tmp/re-recon/codex-tag/codex-rs
+Rust builders read through the read tool are reproduced in 04-context-builders.txt and 06-skills-builders.txt; templates are copied in the adjacent Markdown evidence files.
+
+$ git -C .. status --short
+[exit 0]
+
+$ git -C .. rev-parse HEAD
+fb036d4ebd89f263d34a1f888c279ce85bb383c6
+[exit 0]
+
+$ git -C .. describe --tags --exact-match HEAD
+rust-v0.167.0-alpha.4
+[exit 0]
+
+$ ls core/src/context
+agent_message_board_notification.rs
+approved_command_prefix_saved.rs
+apps_instructions.rs
+available_plugins_instructions.rs
+base_instructions.rs
+compaction_summary.rs
+content_filter_guidance.rs
+contextual_user_message.rs
+contextual_user_message_tests.rs
+current_time_reminder.rs
+developer_instructions.rs
+environment_context.rs
+environments_instructions.rs
+guardian_approved_action.rs
+guardian_assistant_context.rs
+guardian_budget_omission.rs
+guardian_conversation_history.rs
+guardian_followup_review_reminder.rs
+guardian_node_repl_policy.rs
+guardian_policy.rs
+guardian_retained_instructions.rs
+guardian_review_evidence.rs
+guardian_sender_messages.rs
+hook_additional_context.rs
+image_resize_notice.rs
+inter_agent_completion_message.rs
+inter_agent_message.rs
+internal_model_context.rs
+legacy_apply_patch_exec_command_warning.rs
+legacy_model_mismatch_warning.rs
+legacy_unified_exec_process_limit_warning.rs
+memory.rs
+model_instructions.rs
+model_switch_instructions.rs
+mod.rs
+multi_agent_mode_instructions.rs
+multi_agent_usage_hint.rs
+network_rule_saved.rs
+node_repl_review_evidence.rs
+plugin_instructions.rs
+realtime_delegation.rs
+realtime_end_instructions.rs
+realtime_start_instructions.rs
+realtime_start_with_instructions.rs
+recommended_plugins_instructions.rs
+recommended_plugins_instructions_tests.rs
+rollout_budget.rs
+subagent_notification.rs
+token_budget_context.rs
+turn_aborted.rs
+unsupported_media.rs
+user_goal.rs
+user_instructions.rs
+user_shell_command.rs
+user_verification_notice.rs
+world_state
+[exit 0]
+
+$ rg -n 'pub enum SandboxMode|pub enum AskForApproval|pub struct GranularApprovalConfig' protocol/src/config_types.rs protocol/src/protocol.rs
+protocol/src/config_types.rs:104:pub enum SandboxMode {
+protocol/src/protocol.rs:1163:pub enum AskForApproval {
+protocol/src/protocol.rs:1189:pub struct GranularApprovalConfig {
+[exit 0]
+
+$ rg -n 'impl ContextualUserFragment for' core/src/context --glob '!**/*test*'
+core/src/context/rollout_budget.rs:11:impl ContextualUserFragment for RolloutBudgetContext {
+core/src/context/subagent_notification.rs:23:impl ContextualUserFragment for SubagentNotification {
+core/src/context/agent_message_board_notification.rs:11:impl ContextualUserFragment for AgentMessageBoardNotification {
+core/src/context/token_budget_context.rs:58:impl ContextualUserFragment for TokenBudgetContext {
+core/src/context/token_budget_context.rs:125:impl ContextualUserFragment for ContextWindowGuidance {
+core/src/context/token_budget_context.rs:167:impl ContextualUserFragment for TokenBudgetRemainingContext {
+core/src/context/token_budget_context.rs:207:impl ContextualUserFragment for TokenBudgetReminder {
+core/src/context/token_budget_context.rs:242:impl ContextualUserFragment for AutoCompactFallbackPrompt {
+core/src/context/approved_command_prefix_saved.rs:30:impl ContextualUserFragment for ApprovedCommandPrefixSaved {
+core/src/context/turn_aborted.rs:22:impl ContextualUserFragment for TurnAborted {
+core/src/context/apps_instructions.rs:13:impl ContextualUserFragment for AppsInstructions {
+core/src/context/unsupported_media.rs:27:impl ContextualUserFragment for UnsupportedMedia {
+core/src/context/image_resize_notice.rs:37:impl ContextualUserFragment for ImageResizeNotice {
+core/src/context/available_plugins_instructions.rs:28:impl ContextualUserFragment for AvailablePluginsInstructions {
+core/src/context/user_goal.rs:63:impl ContextualUserFragment for UserGoalUpdate {
+core/src/context/base_instructions.rs:41:impl ContextualUserFragment for BaseInstructionsFragment {
+core/src/context/user_instructions.rs:13:impl ContextualUserFragment for UserInstructions {
+core/src/context/inter_agent_completion_message.rs:25:impl ContextualUserFragment for InterAgentCompletionMessage {
+core/src/context/compaction_summary.rs:21:impl ContextualUserFragment for CompactionSummary {
+core/src/context/user_shell_command.rs:32:impl ContextualUserFragment for UserShellCommand {
+core/src/context/inter_agent_message.rs:47:impl ContextualUserFragment for InterAgentMessage {
+core/src/context/content_filter_guidance.rs:12:impl ContextualUserFragment for ContentFilterGuidance {
+core/src/context/user_verification_notice.rs:10:impl ContextualUserFragment for UserVerificationNotice {
+core/src/context/internal_model_context.rs:81:impl ContextualUserFragment for InternalModelContextFragment {
+core/src/context/legacy_apply_patch_exec_command_warning.rs:10:impl ContextualUserFragment for LegacyApplyPatchExecCommandWarning {
+core/src/context/current_time_reminder.rs:27:impl ContextualUserFragment for CurrentTimeReminder {
+core/src/context/current_time_reminder.rs:59:impl ContextualUserFragment for CurrentTimeUnavailable {
+core/src/context/developer_instructions.rs:20:impl ContextualUserFragment for DeveloperInstructions {
+core/src/context/legacy_model_mismatch_warning.rs:10:impl ContextualUserFragment for LegacyModelMismatchWarning {
+core/src/context/legacy_unified_exec_process_limit_warning.rs:10:impl ContextualUserFragment for LegacyUnifiedExecProcessLimitWarning {
+core/src/context/environments_instructions.rs:11:impl ContextualUserFragment for EnvironmentsInstructions {
+core/src/context/memory.rs:21:impl ContextualUserFragment for MemoryContextFragment {
+core/src/context/guardian_approved_action.rs:22:impl ContextualUserFragment for GuardianApprovedAction {
+core/src/context/model_instructions.rs:20:impl ContextualUserFragment for ModelInstructions {
+core/src/context/guardian_assistant_context.rs:13:impl ContextualUserFragment for GuardianAssistantContext<'_> {
+core/src/context/model_switch_instructions.rs:19:impl ContextualUserFragment for ModelSwitchInstructions {
+core/src/context/guardian_budget_omission.rs:11:impl ContextualUserFragment for GuardianBudgetOmission {
+core/src/context/multi_agent_mode_instructions.rs:28:impl ContextualUserFragment for MultiAgentModeInstructions {
+core/src/context/guardian_conversation_history.rs:13:impl ContextualUserFragment for GuardianConversationHistory<'_> {
+core/src/context/multi_agent_usage_hint.rs:22:impl ContextualUserFragment for MultiAgentUsageHint {
+core/src/context/guardian_followup_review_reminder.rs:9:impl ContextualUserFragment for GuardianFollowupReviewReminder {
+core/src/context/guardian_node_repl_policy.rs:21:impl ContextualUserFragment for GuardianNodeReplPolicy {
+core/src/context/network_rule_saved.rs:23:impl ContextualUserFragment for NetworkRuleSaved {
+core/src/context/guardian_retained_instructions.rs:30:impl ContextualUserFragment for GuardianRetainedInstructions {
+core/src/context/guardian_policy.rs:20:impl ContextualUserFragment for GuardianPolicy {
+core/src/context/plugin_instructions.rs:17:impl ContextualUserFragment for PluginInstructions {
+core/src/context/guardian_review_evidence.rs:25:impl ContextualUserFragment for GuardianReviewEvidenceFragment {
+core/src/context/realtime_delegation.rs:40:impl ContextualUserFragment for RealtimeDelegation<'_> {
+core/src/context/guardian_sender_messages.rs:20:impl ContextualUserFragment for GuardianSenderMessages {
+core/src/context/realtime_end_instructions.rs:26:impl ContextualUserFragment for RealtimeEndInstructions {
+core/src/context/hook_additional_context.rs:19:impl ContextualUserFragment for HookAdditionalContext {
+core/src/context/realtime_start_instructions.rs:12:impl ContextualUserFragment for RealtimeStartInstructions {
+core/src/context/world_state/top_level_tools.rs:274:impl ContextualUserFragment for IncrementalToolsHint {
+core/src/context/world_state/top_level_tools.rs:303:impl ContextualUserFragment for RemovedTools {
+core/src/context/world_state/persistent_mode.rs:25:impl ContextualUserFragment for PersistentModeState {
+core/src/context/realtime_start_with_instructions.rs:21:impl ContextualUserFragment for RealtimeStartWithInstructions {
+core/src/context/recommended_plugins_instructions.rs:38:impl ContextualUserFragment for RecommendedPluginsInstructions {
+core/src/context/world_state/mod.rs:283:impl ContextualUserFragment for WorldStateContextFragment {
+core/src/context/world_state/model_catalog.rs:102:impl ContextualUserFragment for ModelCatalogState {
+core/src/context/world_state/collaboration_mode.rs:157:impl ContextualUserFragment for CollaborationModeInstructions {
+core/src/context/world_state/environment.rs:205:impl ContextualUserFragment for EnvironmentsState {
+core/src/context/world_state/environment.rs:246:impl ContextualUserFragment for RenderedEnvironments {
+core/src/context/world_state/managed_developer_instructions.rs:29:impl ContextualUserFragment for ManagedDeveloperInstructions {
+[exit 0]
+
+$ rg -n 'CurrentTimeReminder::|CurrentTimeUnavailable|AgentMessageBoardNotification\(|ApprovedCommandPrefixSaved::|InterAgentMessage::|InterAgentCompletionMessage::|HookAdditionalContext::|UserVerificationNotice|ImageResizeNotice::|CompactionSummary::|ContentFilterGuidance' core/src --glob '!**/*test*'
+core/src/agent/control/delivery.rs:32:                let content = InterAgentMessage::new(
+core/src/responses_retry.rs:8:use crate::context::ContentFilterGuidance;
+core/src/responses_retry.rs:72:        let guidance = ContentFilterGuidance {
+core/src/agent/history.rs:8:use crate::context::CurrentTimeUnavailable;
+core/src/agent/history.rs:122:            || CurrentTimeReminder::matches_text(text)
+core/src/agent/history.rs:123:            || CurrentTimeUnavailable::matches_text(text)
+core/src/agent_message_board.rs:230:            let notice = AgentMessageBoardNotification(post);
+core/src/compact.rs:815:        CompactionSummary::new(summary_text),
+core/src/compact_remote_history.rs:65:                        if ImageResizeNotice::matches_text(text)
+core/src/tools/handlers/current_time.rs:3:use crate::context::CurrentTimeUnavailable;
+core/src/tools/handlers/current_time.rs:119:                        FunctionCallError::RespondToModel(CurrentTimeUnavailable::MESSAGE.to_string())
+core/src/tools/handlers/current_time.rs:125:                CurrentTimeReminder::new(current_time),
+core/src/session/time_reminder.rs:14:use crate::context::CurrentTimeUnavailable;
+core/src/session/time_reminder.rs:145:        let response_item = ContextualUserFragment::into(CurrentTimeUnavailable);
+core/src/session/time_reminder.rs:193:        ContextualUserFragment::into(crate::context::CurrentTimeReminder::new(current_time));
+core/src/session/turn.rs:18:use crate::context::UserVerificationNotice;
+core/src/session/turn.rs:2272:                UserVerificationNotice
+core/src/session_prefix.rs:37:        InterAgentCompletionMessage::new(task_name, sender, payload)
+core/src/session_prefix.rs:51:    InterAgentCompletionMessage::new(task_name, sender, payload)
+core/src/context/agent_message_board_notification.rs:9:pub(crate) struct AgentMessageBoardNotification(pub(crate) PostPreview);
+core/src/tools/handlers/sleep.rs:1:use crate::context::CurrentTimeUnavailable;
+core/src/tools/handlers/sleep.rs:143:                    FunctionCallError::RespondToModel(CurrentTimeUnavailable::MESSAGE.to_string())
+core/src/context/content_filter_guidance.rs:8:pub(crate) struct ContentFilterGuidance {
+core/src/context/content_filter_guidance.rs:12:impl ContextualUserFragment for ContentFilterGuidance {
+core/src/context/current_time_reminder.rs:53:pub(crate) struct CurrentTimeUnavailable;
+core/src/context/current_time_reminder.rs:55:impl CurrentTimeUnavailable {
+core/src/context/current_time_reminder.rs:59:impl ContextualUserFragment for CurrentTimeUnavailable {
+core/src/guardian/input_budget.rs:238:        let reminder = ContextualUserFragment::into(crate::context::CurrentTimeReminder::new(
+core/src/context/user_verification_notice.rs:8:pub(crate) struct UserVerificationNotice;
+core/src/context/user_verification_notice.rs:10:impl ContextualUserFragment for UserVerificationNotice {
+core/src/image_preparation.rs:163:                    ImageResizeNotice::new(ImageResizeNoticeSource::UserMessage, resized_images)
+core/src/image_preparation.rs:250:        Some(ImageResizeNotice::new(
+core/src/context/mod.rs:75:pub(crate) use content_filter_guidance::ContentFilterGuidance;
+core/src/context/mod.rs:81:pub(crate) use current_time_reminder::CurrentTimeUnavailable;
+core/src/context/mod.rs:138:pub(crate) use user_verification_notice::UserVerificationNotice;
+core/src/context/world_state/permissions.rs:123:                            vec![WorldStateUpdate::fragment(ApprovedCommandPrefixSaved::new(
+core/src/hook_runtime.rs:911:        .map(HookAdditionalContext::new)
+core/src/context/world_state/compact_permissions.rs:58:                    Box::new(ApprovedCommandPrefixSaved::new(
+[exit 0]
+
+$ rg -n 'RealtimeDelegation::new|SubagentNotification::new|RolloutBudgetContext \{|TokenBudgetReminder::new|TokenBudgetRemainingContext::|AutoCompactFallbackPrompt::new|UserShellCommand::new|TurnAborted::new|NetworkRuleSaved::new|GuardianApprovedAction::new|RecommendedPluginsInstructions::from_plugins|MemoryContextFragment::' core ext --glob '!**/*test*'
+core/src/user_shell_command.rs:20:    UserShellCommand::new(command, exec_output.exit_code, exec_output.duration, output)
+core/src/agent/control.rs:562:                    SubagentNotification::new(child_reference.as_str(), status)
+core/src/tasks/mod.rs:112:            crate::context::TurnAborted::new(crate::context::TurnAborted::INTERRUPTED_GUIDANCE),
+core/src/tasks/mod.rs:115:            let marker = crate::context::TurnAborted::new(
+core/src/session/handlers.rs:820:    let items = vec![ContextualUserFragment::into(GuardianApprovedAction::new(
+core/src/session/token_budget.rs:186:                ContextualUserFragment::into(crate::context::TokenBudgetReminder::new(
+core/src/session/token_budget.rs:215:        ContextualUserFragment::into(crate::context::AutoCompactFallbackPrompt::new(prompt));
+core/src/session/rollout_budget.rs:27:    let response_item = ContextualUserFragment::into(crate::context::RolloutBudgetContext {
+ext/memories/src/extension.rs:84:                            MemoryContextFragment::ReadInstructions(remaining[..end].to_string())
+ext/memories/src/extension.rs:99:                        ContentItemKind(MemoryContextFragment::READ_INSTRUCTIONS_KIND.to_string()),
+core/src/session/mod.rs:3060:        let message: ResponseItem = ContextualUserFragment::into(NetworkRuleSaved::new(amendment));
+core/src/session/mod.rs:5015:                        RecommendedPluginsInstructions::from_plugins(
+core/src/guardian/input_budget.rs:254:        let reminder = ContextualUserFragment::into(crate::context::RolloutBudgetContext {
+core/src/tools/handlers/get_context_remaining.rs:32:                crate::context::TokenBudgetRemainingContext::new(tokens_left).render()
+core/src/tools/handlers/get_context_remaining.rs:34:            None => crate::context::TokenBudgetRemainingContext::unknown().render(),
+core/src/realtime_conversation.rs:1996:    RealtimeDelegation::new(input, transcript_delta, source, preserve_transcript)
+core/src/context/rollout_budget.rs:7:pub(crate) struct RolloutBudgetContext {
+core/src/context/rollout_budget.rs:11:impl ContextualUserFragment for RolloutBudgetContext {
+[exit 0]
+
+$ rg -n 'enum ApprovalRequirement|enum ExecApprovalRequirement|check_approval|ApprovalRequirement|AskForApproval::OnRequest|AskForApproval::Never|AskForApproval::UnlessTrusted' core/src/exec_policy.rs core/src/tools orchestrator/src execpolicy/src --glob '!**/*test*'
+core/src/exec_policy.rs:38:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/exec_policy.rs:225:        AskForApproval::Never => Some(PROMPT_CONFLICT_REASON),
+core/src/exec_policy.rs:226:        AskForApproval::OnRequest => None,
+core/src/exec_policy.rs:227:        AskForApproval::UnlessTrusted => None,
+core/src/exec_policy.rs:340:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:352:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:366:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:416:            Decision::Forbidden => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:433:                    Some(reason) if prompt_is_rule => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:436:                    Some(reason) => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:448:                        ExecApprovalRequirement::NeedsHumanApproval {
+core/src/exec_policy.rs:452:                    None => ExecApprovalRequirement::NeedsApproval {
+core/src/exec_policy.rs:466:            Decision::Allow => ExecApprovalRequirement::Skip {
+core/src/exec_policy.rs:839:            AskForApproval::Never => Decision::Forbidden,
+core/src/exec_policy.rs:840:            AskForApproval::OnRequest
+core/src/exec_policy.rs:841:            | AskForApproval::UnlessTrusted
+core/src/exec_policy.rs:847:        AskForApproval::Never => {
+core/src/exec_policy.rs:852:        AskForApproval::UnlessTrusted => {
+core/src/exec_policy.rs:857:        AskForApproval::OnRequest => {
+core/src/tools/approvals.rs:21:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/approvals.rs:59:    pub(crate) exec_requirement: Option<ExecApprovalRequirement>,
+core/src/tools/approvals.rs:74:            Some(ExecApprovalRequirement::NeedsHumanApproval { .. })
+core/src/tools/approvals.rs:520:    async fn check_approval_requirement(&self, ctx: &ApprovalContext) -> Result<(), ToolError> {
+core/src/tools/approvals.rs:563:        if let Err(err) = self.check_approval_requirement(ctx).await {
+core/src/tools/approvals.rs:575:                && (!additional_permissions_preapproved || matches!(policy, AskForApproval::Never)))
+core/src/tools/approvals.rs:576:            && !(ctx.strict_auto_review && matches!(policy, AskForApproval::Never))
+core/src/tools/approvals.rs:623:            if let Err(ToolError::Rejected(reason)) = self.check_approval_requirement(ctx).await {
+core/src/tools/network_approval.rs:200:    !matches!(policy, AskForApproval::Never)
+core/src/tools/runtimes/apply_patch.rs:10:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/runtimes/apply_patch.rs:51:    pub exec_approval_requirement: ExecApprovalRequirement,
+core/src/tools/runtimes/apply_patch.rs:140:            AskForApproval::Never => false,
+core/src/tools/runtimes/apply_patch.rs:142:            AskForApproval::OnRequest => true,
+core/src/tools/runtimes/apply_patch.rs:143:            AskForApproval::UnlessTrusted => true,
+core/src/tools/runtimes/apply_patch.rs:154:    ) -> Option<ExecApprovalRequirement> {
+core/src/tools/orchestrator.rs:17:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/orchestrator.rs:169:            ExecApprovalRequirement::NeedsHumanApproval { .. }
+core/src/tools/orchestrator.rs:172:            ExecApprovalRequirement::Skip { .. } => {
+core/src/tools/orchestrator.rs:205:            ExecApprovalRequirement::Forbidden { reason } => {
+core/src/tools/orchestrator.rs:208:            ExecApprovalRequirement::NeedsApproval { reason, .. }
+core/src/tools/orchestrator.rs:209:            | ExecApprovalRequirement::NeedsHumanApproval { reason } => {
+core/src/tools/orchestrator.rs:451:                        matches!(approval_policy, AskForApproval::OnRequest)
+core/src/tools/orchestrator.rs:458:                                ExecApprovalRequirement::NeedsApproval { .. }
+core/src/tools/orchestrator.rs:504:                        ExecApprovalRequirement::NeedsApproval { reason, .. }
+core/src/tools/orchestrator.rs:505:                        | ExecApprovalRequirement::NeedsHumanApproval { reason } => reason.clone(),
+core/src/tools/orchestrator.rs:506:                        ExecApprovalRequirement::Skip { .. }
+core/src/tools/orchestrator.rs:507:                        | ExecApprovalRequirement::Forbidden { .. } => None,
+core/src/tools/runtimes/unified_exec.rs:30:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/runtimes/unified_exec.rs:83:    pub exec_approval_requirement: ExecApprovalRequirement,
+core/src/tools/runtimes/unified_exec.rs:175:    ) -> Option<ExecApprovalRequirement> {
+core/src/tools/runtimes/unified_exec.rs:869:            exec_approval_requirement: ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:156:pub(crate) enum ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:179:impl ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:203:) -> ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:205:        AskForApproval::Never => false,
+core/src/tools/sandboxing.rs:206:        AskForApproval::OnRequest | AskForApproval::Granular(_) => {
+core/src/tools/sandboxing.rs:212:        AskForApproval::UnlessTrusted => true,
+core/src/tools/sandboxing.rs:222:        ExecApprovalRequirement::Forbidden {
+core/src/tools/sandboxing.rs:226:        ExecApprovalRequirement::NeedsApproval {
+core/src/tools/sandboxing.rs:231:        ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:255:    exec_approval_requirement: &ExecApprovalRequirement,
+core/src/tools/sandboxing.rs:273:        ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:339:        matches!(policy, AskForApproval::Never)
+core/src/tools/sandboxing.rs:344:    fn exec_approval_requirement(&self, _req: &Req) -> Option<ExecApprovalRequirement> {
+core/src/tools/sandboxing.rs:351:            AskForApproval::UnlessTrusted => true,
+core/src/tools/sandboxing.rs:352:            AskForApproval::Never => false,
+core/src/tools/sandboxing.rs:353:            AskForApproval::OnRequest => false,
+core/src/tools/handlers/apply_patch.rs:43:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/handlers/apply_patch.rs:593:            ExecApprovalRequirement::Skip { .. }
+core/src/tools/handlers/mod.rs:255:        if !permissions_preapproved && !matches!(approval_policy, AskForApproval::OnRequest) {
+core/src/tools/handlers/mod.rs:514:            AskForApproval::OnRequest,
+core/src/tools/handlers/unified_exec/preparation.rs:25:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/handlers/unified_exec/preparation.rs:67:    ) -> ExecApprovalRequirement {
+core/src/tools/handlers/unified_exec/preparation.rs:108:        requirement: &ExecApprovalRequirement,
+[stderr]
+rg: orchestrator/src: No such file or directory (os error 2)
+[exit 2]
+
+$ rg -n 'pub enum SlashCommand|pub fn built_in_slash_commands' tui/src/slash_command.rs
+12:pub enum SlashCommand {
+328:pub fn built_in_slash_commands() -> Vec<(&'static str, SlashCommand)> {
+[exit 0]
+
+$ rg -n 'impl ContextualUserFragment for|fn body|fn role' ext/skills/src/fragments.rs
+42:impl ContextualUserFragment for AvailableSkillsInstructions {
+47:    fn role(&self) -> &'static str {
+63:    fn body(&self) -> ContentItem {
+87:impl ContextualUserFragment for SkillInstructions {
+92:    fn role(&self) -> &'static str {
+108:    fn body(&self) -> ContentItem {
+[exit 0]
+
+$ wc -l core/src/context/mod.rs skills/src/parser.rs core/src/exec_policy.rs core/src/compact.rs tui/src/slash_command.rs
+   139 core/src/context/mod.rs
+   225 skills/src/parser.rs
+  1231 core/src/exec_policy.rs
+   929 core/src/compact.rs
+   378 tui/src/slash_command.rs
+  2902 total
+[exit 0]
+
+$ rg -n 'enum ApprovalRequirement|enum ExecApprovalRequirement|check_approval|ApprovalRequirement|AskForApproval::OnRequest|AskForApproval::Never|AskForApproval::UnlessTrusted' core/src/exec_policy.rs core/src/tools execpolicy/src --glob '!**/*test*'
+core/src/exec_policy.rs:38:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/exec_policy.rs:225:        AskForApproval::Never => Some(PROMPT_CONFLICT_REASON),
+core/src/exec_policy.rs:226:        AskForApproval::OnRequest => None,
+core/src/exec_policy.rs:227:        AskForApproval::UnlessTrusted => None,
+core/src/exec_policy.rs:340:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:352:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:366:    ) -> ExecApprovalRequirement {
+core/src/exec_policy.rs:416:            Decision::Forbidden => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:433:                    Some(reason) if prompt_is_rule => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:436:                    Some(reason) => ExecApprovalRequirement::Forbidden {
+core/src/exec_policy.rs:448:                        ExecApprovalRequirement::NeedsHumanApproval {
+core/src/exec_policy.rs:452:                    None => ExecApprovalRequirement::NeedsApproval {
+core/src/exec_policy.rs:466:            Decision::Allow => ExecApprovalRequirement::Skip {
+core/src/exec_policy.rs:839:            AskForApproval::Never => Decision::Forbidden,
+core/src/exec_policy.rs:840:            AskForApproval::OnRequest
+core/src/exec_policy.rs:841:            | AskForApproval::UnlessTrusted
+core/src/exec_policy.rs:847:        AskForApproval::Never => {
+core/src/exec_policy.rs:852:        AskForApproval::UnlessTrusted => {
+core/src/exec_policy.rs:857:        AskForApproval::OnRequest => {
+core/src/tools/approvals.rs:21:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/approvals.rs:59:    pub(crate) exec_requirement: Option<ExecApprovalRequirement>,
+core/src/tools/approvals.rs:74:            Some(ExecApprovalRequirement::NeedsHumanApproval { .. })
+core/src/tools/approvals.rs:520:    async fn check_approval_requirement(&self, ctx: &ApprovalContext) -> Result<(), ToolError> {
+core/src/tools/approvals.rs:563:        if let Err(err) = self.check_approval_requirement(ctx).await {
+core/src/tools/approvals.rs:575:                && (!additional_permissions_preapproved || matches!(policy, AskForApproval::Never)))
+core/src/tools/approvals.rs:576:            && !(ctx.strict_auto_review && matches!(policy, AskForApproval::Never))
+core/src/tools/approvals.rs:623:            if let Err(ToolError::Rejected(reason)) = self.check_approval_requirement(ctx).await {
+core/src/tools/runtimes/apply_patch.rs:10:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/runtimes/apply_patch.rs:51:    pub exec_approval_requirement: ExecApprovalRequirement,
+core/src/tools/runtimes/apply_patch.rs:140:            AskForApproval::Never => false,
+core/src/tools/runtimes/apply_patch.rs:142:            AskForApproval::OnRequest => true,
+core/src/tools/runtimes/apply_patch.rs:143:            AskForApproval::UnlessTrusted => true,
+core/src/tools/runtimes/apply_patch.rs:154:    ) -> Option<ExecApprovalRequirement> {
+core/src/tools/runtimes/unified_exec.rs:30:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/runtimes/unified_exec.rs:83:    pub exec_approval_requirement: ExecApprovalRequirement,
+core/src/tools/runtimes/unified_exec.rs:175:    ) -> Option<ExecApprovalRequirement> {
+core/src/tools/runtimes/unified_exec.rs:869:            exec_approval_requirement: ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:156:pub(crate) enum ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:179:impl ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:203:) -> ExecApprovalRequirement {
+core/src/tools/sandboxing.rs:205:        AskForApproval::Never => false,
+core/src/tools/sandboxing.rs:206:        AskForApproval::OnRequest | AskForApproval::Granular(_) => {
+core/src/tools/sandboxing.rs:212:        AskForApproval::UnlessTrusted => true,
+core/src/tools/sandboxing.rs:222:        ExecApprovalRequirement::Forbidden {
+core/src/tools/sandboxing.rs:226:        ExecApprovalRequirement::NeedsApproval {
+core/src/tools/sandboxing.rs:231:        ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:255:    exec_approval_requirement: &ExecApprovalRequirement,
+core/src/tools/sandboxing.rs:273:        ExecApprovalRequirement::Skip {
+core/src/tools/sandboxing.rs:339:        matches!(policy, AskForApproval::Never)
+core/src/tools/sandboxing.rs:344:    fn exec_approval_requirement(&self, _req: &Req) -> Option<ExecApprovalRequirement> {
+core/src/tools/sandboxing.rs:351:            AskForApproval::UnlessTrusted => true,
+core/src/tools/sandboxing.rs:352:            AskForApproval::Never => false,
+core/src/tools/sandboxing.rs:353:            AskForApproval::OnRequest => false,
+core/src/tools/network_approval.rs:200:    !matches!(policy, AskForApproval::Never)
+core/src/tools/orchestrator.rs:17:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/orchestrator.rs:169:            ExecApprovalRequirement::NeedsHumanApproval { .. }
+core/src/tools/orchestrator.rs:172:            ExecApprovalRequirement::Skip { .. } => {
+core/src/tools/orchestrator.rs:205:            ExecApprovalRequirement::Forbidden { reason } => {
+core/src/tools/orchestrator.rs:208:            ExecApprovalRequirement::NeedsApproval { reason, .. }
+core/src/tools/orchestrator.rs:209:            | ExecApprovalRequirement::NeedsHumanApproval { reason } => {
+core/src/tools/orchestrator.rs:451:                        matches!(approval_policy, AskForApproval::OnRequest)
+core/src/tools/orchestrator.rs:458:                                ExecApprovalRequirement::NeedsApproval { .. }
+core/src/tools/orchestrator.rs:504:                        ExecApprovalRequirement::NeedsApproval { reason, .. }
+core/src/tools/orchestrator.rs:505:                        | ExecApprovalRequirement::NeedsHumanApproval { reason } => reason.clone(),
+core/src/tools/orchestrator.rs:506:                        ExecApprovalRequirement::Skip { .. }
+core/src/tools/orchestrator.rs:507:                        | ExecApprovalRequirement::Forbidden { .. } => None,
+core/src/tools/handlers/apply_patch.rs:43:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/handlers/apply_patch.rs:593:            ExecApprovalRequirement::Skip { .. }
+core/src/tools/handlers/unified_exec/preparation.rs:25:use crate::tools::sandboxing::ExecApprovalRequirement;
+core/src/tools/handlers/unified_exec/preparation.rs:67:    ) -> ExecApprovalRequirement {
+core/src/tools/handlers/unified_exec/preparation.rs:108:        requirement: &ExecApprovalRequirement,
+core/src/tools/handlers/mod.rs:255:        if !permissions_preapproved && !matches!(approval_policy, AskForApproval::OnRequest) {
+core/src/tools/handlers/mod.rs:514:            AskForApproval::OnRequest,
+[exit 0]

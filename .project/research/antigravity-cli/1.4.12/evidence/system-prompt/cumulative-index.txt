@@ -1,0 +1,3 @@
+$ python3 evidence/extract-cumulative.py "$HOME/.local/bin/agy"
+cumulative-antigravity-agent.txt	779	5787119d0caf4f9cc9a7d252b3e78e7101d0cdbf4a2ca733d66554aacaf50ec2	0x5df61fb+106, 0x5e0db5c+161, 0x5e133ec+187, 0x5e1b977+230, 0x5deaf9a+91
+cumulative-cascade.txt	860	a69fbba568a5f5503ca9d481f8c7fb9737382dd9d2dc46c5fbb575c375ea43b1	0x5e0d3df+159, 0x5e13e32+189, 0x5e133ec+187, 0x5e1b977+230, 0x5deaf9a+91

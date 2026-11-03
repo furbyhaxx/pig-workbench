@@ -1,0 +1,10 @@
+$ python3 .project/research/codex-cli/0.167.0-alpha.4/evidence/verify-worker-dossier.py /tmp/re-recon/codex-tag/codex-rs
+frontmatter: checked 5 owned Markdown files
+fallback prompt: body byte-identical to protocol source
+templates: 28 byte-identical copies; unknown-model fallback identical
+catalog bases: 8 distinct copies checked against 12 slugs
+catalog nonbase messages: 12 models matched
+tool source dumps: 15309 quoted lines checked against 66 source files
+chapter source citations: 157 paths/ranges checked
+chapter relative links: 13 checked
+PASS: all checks

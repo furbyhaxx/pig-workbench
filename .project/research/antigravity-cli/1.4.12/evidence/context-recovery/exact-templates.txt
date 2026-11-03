@@ -1,0 +1,86 @@
+$ python3 [seek pinned agy binary to pointer/length pairs from template-disassembly.txt]
+
+### workspace heading: file offset 0x5c4c185, length 18 (0x12)
+Active Workspaces:
+
+### workspace item: file offset 0x5b2167a, length 4 (0x4)
+- %s
+
+### no active workspace: file offset 0x5e24320, length 288 (0x120)
+The user does not have any active workspace. If the user's request involves creating a new project, you should create a reasonable subdirectory inside the default project directory at %v. If you do this, you should also recommend the user to set that subdirectory as the active workspace.
+
+### command working directory: file offset 0x5cf467c, length 29 (0x1d)
+Command Working Directory: %s
+
+### user rules preamble: file offset 0x5e09cdd, length 144 (0x90)
+The following are user-defined rules that you MUST ALWAYS FOLLOW WITHOUT ANY EXCEPTION. These rules take precedence over any other instructions.
+
+### user rules closing: file offset 0x5ded1b4, length 93 (0x5d)
+Review them carefully and always take them into account when you generate responses and code:
+
+### demoted rules: file offset 0x5e0d6fa, length 159 (0x9f)
+The following user-defined rules exceeded the rules token budget and were excluded from inline injection. View the file for further instructions when relevant:
+
+### conditional rules heading: file offset 0x5de4c9a, length 84 (0x54)
+The following are conditional rules, formatted as: - [absolute path]: [description].
+
+### conditional rules instructions: file offset 0x5e08ef5, length 141 (0x8d)
+The description provides conditions under which the rule applies. If you believe a rule should apply, view the file for further instructions.
+
+### directory rules: file offset 0x5e0c65a, length 156 (0x9c)
+These rules provide important context when working with this part of the codebase, so take them into account as you work. Their contents are injected below:
+
+### workflow slash expansion: file offset 0x5de9f63, length 90 (0x5a)
+<WORKFLOW>The user requested you run the %q workflow. Call the %s tool with ScriptPath=%q.
+
+$ python3 [seek pinned binary to feedback-disassembly.txt pointer/length pairs]
+
+### local-time format: file offset 0x5cc3814, length 25 (0x19)
+2006-01-02T15:04:05Z07:00
+
+### local-time injection: file offset 0x5d00df7, length 30 (0x1e)
+The current local time is: %s.
+
+### applied code edit: file offset 0x5e0bd50, length 153 (0x99)
+The following changes were made by %v to: %v. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+
+### suggested code edit: file offset 0x5e1e211, length 243 (0xf3)
+The previous CodeEdit was suggested by %v to: %v. The diff was not immediately applied to the file due to the changes being flagged as potentially incomplete or incorrect. The user will manually review the changes and may decide to apply them.
+
+### edit diff missing: file offset 0x5de3b99, length 83 (0x53)
+(The edit was applied, but its diff exceeded the storage limit and was not stored.)
+
+### artifact review reminder: file offset 0x5e12158, length 180 (0xb4)
+Note: You have just created an artifact and requested user feedback. Stop calling tools to end your turn, and allow the user to review the artifact, approve it, or provide feedback
+
+### new lint feedback: file offset 0x5e33234, length 451 (0x1c3)
+As IDE feedback, the following lint errors may be related to your recent edits up to this point. Consider whether they deserve immediate attention. If worth addressing, clearly comment on them and/or fix them. Try to be explicit, whether that's explaining how you'll fix them, noting that you'll revisit them, or acknowledging if you don't know how to resolve them. Do try to fix them if you can, but exercise prudence; try not to create extra errors.
+
+### existing lint feedback: file offset 0x5e0fe10, length 168 (0xa8)
+You may have seen the following lint errors as feedback for a previous edit, but they still exist at this point. Please respond accordingly, erring toward explicitness.
+
+### lint truncation: file offset 0x5d6f1ef, length 45 (0x2d)
+... and %d more lints (truncated for brevity)
+
+$ python3 [seek pinned binary to slash-disassembly.txt pointer/length pairs]
+
+### skill slash expansion: file offset 0x5df0bcc, length 98 (0x62)
+<SKILL>The user requested you read and use the %q skill. The path to the skill file is:
+%s</SKILL>
+
+### subagent slash expansion: file offset 0x5e08748, length 140 (0x8c)
+<SUBAGENT>The user has explicitly added the `%s` subagent. You must use this subagent via the `%s` tool to process their request.</SUBAGENT>
+
+### schedule slash expansion: file offset 0x5dc676a, length 68 (0x44)
+Please use the %s tool to create a schedule as specified by the user
+
+### deepagent slash expansion: file offset 0x5e1afad, length 227 (0xe3)
+<SUBAGENT>The user has requested deepagent. Invoke it now by calling the `%s` tool with TypeName=`%s` (exactly as shown, all lowercase). Pass the user's full message as the `Prompt`. Do not attempt the task yourself.</SUBAGENT>
+
+$ python3 [read binary offset 0x5d2ef39, length 0x23]
+
+### Inline rule wrapper: file offset 0x5d2ef39, length 35
+<RULE[%[1]s]>
+%[2]s
+</RULE[%[1]s]>
+

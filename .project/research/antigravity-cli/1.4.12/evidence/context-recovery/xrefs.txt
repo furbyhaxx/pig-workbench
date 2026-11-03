@@ -1,0 +1,205 @@
+$ python3 tools/xwalk.py --bin "$HOME/.local/bin/agy" --funcmap /tmp/agy-1412-funcmap-context.json refs "AGENTS\\.md|GEMINI\\.md|toolPermission|SKILL\\.md|Working Directory: %s"
+### 0x5b62f47 SKILL.mdagent.md instead~$`*?[{%inherits; try %qmcp.jsonhomepage/dev/ttyRead URL%d
+    google3/third_party/jetski/cli/backend/backend.(*ServerBackend).GetGlobalSkillsCreatePath
+    google3/third_party/jetski/cli/model/model.NewSkillsModel
+    google3/third_party/jetski/cli/plugins/claude/claude.stageClaudeCommands
+    google3/third_party/jetski/cli/plugins/common/common.(*Stager).StageCommands.func1
+    google3/third_party/jetski/cli/plugins/common/common.(*Stager).StageSkills
+    google3/third_party/jetski/cli/plugins/plugins.(*pluginValidator).checkSkillFile
+    google3/third_party/jetski/cli/plugins/plugins.(*pluginValidator).checkSkills
+    google3/third_party/jetski/cli/plugins/plugins.(*pluginValidator).hasSkills
+    google3/third_party/jetski/cli/plugins/plugins.isSkillFile
+    google3/third_party/jetski/cortex/accumulator/accumulator.stripReadFileFormatting
+    google3/third_party/jetski/cortex/customizations/customizations.depotPathForDir
+    google3/third_party/jetski/cortex/customizations/customizations.skillContentDigest
+    google3/third_party/jetski/cortex/customizations/customizations.skillKey
+    google3/third_party/jetski/cortex/handlers/handlers.(*ViewFileHandler).Handle
+    google3/third_party/jetski/language_server/interceptor/mockdata/mockdata.mockToolStep
+### 0x5b7a757 GEMINI.mdAGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+    google3/third_party/jetski/cli/model/model.detectSystemFiles
+    google3/third_party/jetski/cortex/permissions/permissions.getHardcodedGrants
+    google3/third_party/jetski/gitignore/gitignore.NewDefaultIgnore
+    google3/third_party/jetski/language_server/language_server.setUpCustomizationOptions
+### 0x5b7a760 AGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+    google3/third_party/jetski/cortex/permissions/permissions.getHardcodedGrants
+    google3/third_party/jetski/gitignore/gitignore.NewDefaultIgnore
+    google3/third_party/jetski/language_server/language_server.setUpCustomizationOptions
+### 0x5b7beb0 SKILL.mddocumentsany issuegh.%s(%s)--method=--header=gh run %sworkflow.branch %sExamples:embedded=casttype=/* nil *//* %v */
+    google3/third_party/jetski/cortex/rehydration/rehydration.rehydrateToolCall
+### 0x5b950e7 GEMINI.md/workflowsTool callsWorkspacesworkspacesno project[CURRENT] loading
+    google3/third_party/jetski/cli/model/model.detectSystemFiles
+### 0x5bfa48f toolPermissionvimInsertFirstcustom_timeouttrigger_prefixtrigger_sourcetotal_failuresmodel_providercom.jetbrains.apple_terminalis_cloud_shellsupports_osc52browse
+    google3/third_party/jetski/cli/analytics/analytics.map.init.5
+    google3/third_party/jetski/cli/store/store.(*Manager).SetToolPermission
+### 0x5c38d7e SKILL.mdagents/*/agent.mdEligibility Checkescalate_admin(*)Keybindings ErrorinitAutoAgentModenegative feedbackmarshal error: %vBackgroundCommandreflect: call of
+### 0x5cf4684 Working Directory: %sarguments do not match schemaGetNumToolCallsBetweenIndicesComments on the file diff %s.no CITC information available%vBuilt with PGO profil
+    google3/third_party/jetski/cortex/utils/utils.BuildWorkspacePrompt
+### 0x5d1cda7 SKILL.mdFailed to prune media file %q: %vignoring invalid ask entry %q: %vunknown pre-tool hook decision %qchromoting.host_services_mojo_ipcfailed to compute fr
+### 0x5d33569 SKILL.mdfailed to send SIGINT to SDK processparentID and childID cannot be emptythe chosen response is still workingunknown marketplace customization %qMOCK PTY
+### 0x5d4e4a1 SKILL.mdsubagent conversation_id cannot be emptysubagent %s already exists for parent %sTurn %d: tracing callers of module%dFn%d
+### 0x5d53d55 SKILL.mdfailed to retrieve user quota summary: %wtranscription requires CLI authenticationfailed to unmarshal onboarding status: %vfailed to read settings for m
+### 0x5d5ae01 SKILL.mdfailed to record state initialization datafailed to read remote catalog response: %w
+### 0x5d610d6 SKILL.mdconfig-based agent does not use SDK processchecking existing subagent %s for parent %sfailed to create remote catalog request: %w/mock-workspace/fileExp
+### 0x5d77103 SKILL.mdSDK process exited unexpectedly, restarting: %sKilling idle SDK process: %s (conversation: %s)```go
+### 0x5d7a8b5 SKILL.mdscanConversations: canceled before disk scan: %vConversation update stream failed, reopening: %vRUN_EXTENSION_CODE_AUTO_RUN_DECISION_UNSPECIFIEDbufio: w
+### 0x5d80a3f SKILL.mdassets/shared/skills/permissioned-github/SKILL.mdmcp server %q: resource uri must start with ui://marketplace shelf %q references unknown plugin %qconve
+### 0x5d80a70 SKILL.mdmcp server %q: resource uri must start with ui://marketplace shelf %q references unknown plugin %qconversation %q references unknown environment %qFaile
+### 0x5d85259 SKILL.mdassets/shared/skills/ui-plugin-navigation/SKILL.mdCreated state initialization data in %v of size %vfailed to parse any valid PEM certificates from %qun
+### 0x5d8528b SKILL.mdCreated state initialization data in %v of size %vfailed to parse any valid PEM certificates from %qunable to parse remote catalog JSON format from %sga
+### 0x5daa802 SKILL.mdremoteDescription contained media section without mid valueAddTransceiverFromTrack only accepts one RTPTransceiverInitIncoming unhandled RTCP ssrc(%d), 
+### 0x5dac13c toolPermission=%sTriggerSubagentApprovalFast: subagent state not found for %sdrainPendingSubagentFileWrites: will auto-approve %s step %dsync/atomic: compare an
+### 0x5deda94 SKILL.md, a folder with one, or a folder of such foldersUse Gemini Enterprise Agent Platform (formerly Vertex AI) with Application Default Credentialstool defin
+### 0x5df21b6 SKILL.md[Admin Control] Lower-tier settings failed validation (%v); falling back to higher-tier MDM settingsstandalone environment needs a resource name: standa
+### 0x5e00dbc toolPermission=%v autoExecPolicy=%v enableTerminalSandbox=%t allowNonWorkspaceAccess=%tno Gemini Enterprise license found for this account; configure gcp.projec
+### 0x5e039c0 SKILL.md, which loads either wayHow the /resume picker organizes conversations. Press ctrl+f in the picker to switch view for one session without changing this.
+### 0x5e0b422 SKILL.md (`plugin install` converts Claude Code and Gemini CLI commands)- `config%[1]d.key%[2]d` in [%[3]s#L%[4]d-%[5]d](%[6]s#L%[4]d-%[5]d): renamed
+### 0x5e16831 SKILL.md or a file it references) explicitly instructs you to call this tool, and pass the grant string in the exact format that skill specifies.
+### 0x5e5466a SKILL.md" file (instructions with YAML frontmatter).
+### 0x5e5470a GEMINI.md"/"AGENTS.md" files.
+### 0x5e54716 AGENTS.md" files.
+### 0x5e5be6e SKILL.md or a file it references) explicitly instructs you to call this tool, and pass the grant string in the exact format that skill specifies.
+### 0x5e8c440 GEMINI.md` / `AGENTS.md`)**: Placed directly in
+### 0x5e8c44e AGENTS.md`)**: Placed directly in
+### 0x5e8c573 GEMINI.md` / `AGENTS.md` files do not
+### 0x5e8c581 AGENTS.md` files do not
+### 0x5e8cac6 SKILL.md** (required): The main instruction file with YAML frontmatter (name, description) and detailed markdown instructions
+### 0x5e8cd64 SKILL.md has been injected verbatim below, so you DO NOT need to view them:
+### 0x5e8cebd SKILL.md` instructions before proceeding. You may skip this step only if you are delegating the skill-related task to a subagent that will read and follow the i
+### 0x5ecb1be SKILL.md          # Required: Main instruction file with frontmatter
+### 0x5ecb33b SKILL.md`)
+### 0x5ecb34c SKILL.md` file must start with a YAML frontmatter block containing the
+### 0x5ecb787 SKILL.md` concise. Use the
+### 0x5ecb7f2 SKILL.md`. The agent will only read those reference files if it needs them,
+### 0x5f6d270 AGENTS.md recommended)
+### 0x5f6d297 AGENTS.md
+### 0x5f6d314 SKILL.md
+### 0x5f6dbbe AGENTS.md`** (or `GEMINI.md`) file under
+### 0x5f6dbd0 GEMINI.md`) file under
+### 0x5f6dc06 AGENTS.md`) is recommended over separate rule files.
+### 0x5fa51e4 GEMINI.md`, `AGENTS.md`     | Contextual / Hierarchical | Enforcing coding styles, API restrictions, and local guidelines.                        | [Rules Guide
+### 0x5fa51f1 AGENTS.md`     | Contextual / Hierarchical | Enforcing coding styles, API restrictions, and local guidelines.                        | [Rules Guide](./docs/rule
+### 0x5fa52b8 SKILL.md`     | On-Demand (Progressive)   | Teaching the agent multi-step procedures, runbooks, and tool workflows.                 | [Skills Guide](./docs/skil
+### 0x5fa58f1 GEMINI.md`, `AGENTS.md`, `.agents/rules/*.md`
+### 0x5fa58fe AGENTS.md`, `.agents/rules/*.md`
+### 0x5fbdfc9 SKILL.md files, and safely archives old workflow files.
+### 0x5fbe0e5 SKILL.md` or `_agents/skills/<name>/SKILL.md`)
+### 0x5fbe109 SKILL.md`)
+### 0x5fbe821 SKILL.md` already exists to determine
+### 0x5fbea2a SKILL.md`    | `Pending` / `Already Migrated`
+### 0x5fbeac4 SKILL.md`    | `Pending` / `Already Migrated`
+### 0x5fbeb61 SKILL.md` | `Pending` / `Already Migrated`
+### 0x5fbebfb SKILL.md` | `Pending` / `Already Migrated`
+### 0x5fbed0e SKILL.md` files already exist and proceed directly to archiving/cleaning up
+### 0x5fbeea5 SKILL.md` **already exists**, **do not overwrite
+### 0x5fbef7b SKILL.md` **does not exist**, proceed with
+### 0x5fbf331 SKILL.md`
+### 0x5fbf56b SKILL.md` files exist and legacy workflows have been
+### 0x5fbf604 SKILL.md`).
+### 0x5fbf650 SKILL.md`
+### 0x6073832 AGENTS.md` or `GEMINI.md` 
+### 0x6073841 GEMINI.md` 
+### 0x609c9d4 AGENTS.md` or `GEMINI.md` 
+### 0x609c9e3 GEMINI.md` 
+### 0x60a37c5 SKILL.md`) or check available `<mcp_servers>` needed to fulfill the
+### 0x60b8a86 AGENTS.md` or `GEMINI.md` 
+### 0x60b8a95 GEMINI.md` 
+### 0x60c5ed9 AGENTS.md` or `GEMINI.md` 
+### 0x60c5ee8 GEMINI.md` 
+### 0x60cbd6b AGENTS.md` or `GEMINI.md` 
+### 0x60cbd7a GEMINI.md` 
+### 0x60ea581 AGENTS.md` or `GEMINI.md` 
+### 0x60ea590 GEMINI.md` 
+### 0x6104478 AGENTS.md` or `GEMINI.md` 
+### 0x6104487 GEMINI.md` 
+### 0x61130e4 AGENTS.md` or `GEMINI.md` 
+### 0x61130f3 GEMINI.md` 
+### 0x611b1d7 AGENTS.md` or `GEMINI.md` 
+### 0x611b1e6 GEMINI.md` 
+### 0x612ab11 AGENTS.md` or `GEMINI.md` 
+### 0x612ab20 GEMINI.md` 
+### 0x612f157 AGENTS.md` or `GEMINI.md` 
+### 0x612f166 GEMINI.md` 
+### 0x6133c45 AGENTS.md` or `GEMINI.md` 
+### 0x6133c54 GEMINI.md` 
+### 0x613a3b3 SKILL.md` text); always pipe through `jq` and use `dir` for mutations (`'{}'` if no workspace is active). |
+### 0x613a7ff AGENTS.md`, `mcp_config.json`, `hooks.json`, `assets/logo.svg`) | Check Step 0 inventory for `name` collisions first; re-run Step 0 inventory, tell the user to 
+### 0x613af9c SKILL.md`. A single plugin can exceed 16KB and a
+### 0x613c43d AGENTS.md` inside the plugin.
+### 0x613c7f3 SKILL.md
+### 0x613c828 AGENTS.md
+### 0x613c868 SKILL.md`, the agent markdown,
+### 0x613c8ef AGENTS.md` are plain markdown with no frontmatter and
+### 0x616722e AGENTS.md` or `GEMINI.md` 
+### 0x616723d GEMINI.md` 
+### 0x6198369 AGENTS.md` or `GEMINI.md` 
+### 0x6198378 GEMINI.md` 
+### 0x61b1131 AGENTS.md` or `GEMINI.md` 
+### 0x61b1140 GEMINI.md` 
+### 0x61cdbb3 AGENTS.md` or `GEMINI.md` 
+### 0x61cdbc2 GEMINI.md` 
+### 0x61ec91a AGENTS.md` or `GEMINI.md` 
+### 0x61ec929 GEMINI.md` 
+### 0x61fa1cd AGENTS.md` or `GEMINI.md` 
+### 0x61fa1dc GEMINI.md` 
+### 0x6268950 AGENTS.md` or `GEMINI.md` 
+### 0x626895f GEMINI.md` 
+### 0x6271f3f AGENTS.md` or `GEMINI.md` 
+### 0x6271f4e GEMINI.md` 
+### 0x627c615 AGENTS.md` or `GEMINI.md` 
+### 0x627c624 GEMINI.md` 
+### 0x629a404 AGENTS.md` or `GEMINI.md` 
+### 0x629a413 GEMINI.md` 
+### 0x62a554a AGENTS.md` or `GEMINI.md` 
+### 0x62a5559 GEMINI.md` 
+### 0x62b9127 AGENTS.md` or `GEMINI.md` 
+### 0x62b9136 GEMINI.md` 
+### 0x62c4492 AGENTS.md` or `GEMINI.md` 
+### 0x62c44a1 GEMINI.md` 
+### 0x62cf263 AGENTS.md` or `GEMINI.md` 
+### 0x62cf272 GEMINI.md` 
+### 0x62dadf1 AGENTS.md` or `GEMINI.md` 
+### 0x62dae00 GEMINI.md` 
+### 0x62e6a42 AGENTS.md` or `GEMINI.md` 
+### 0x62e6a51 GEMINI.md` 
+### 0x62ff9e3 AGENTS.md` or `GEMINI.md` 
+### 0x62ff9f2 GEMINI.md` 
+### 0x630bc9b AGENTS.md` or `GEMINI.md` 
+### 0x630bcaa GEMINI.md` 
+### 0x6322a7f AGENTS.md` or `GEMINI.md` 
+### 0x6322a8e GEMINI.md` 
+### 0x633b565 AGENTS.md` or `GEMINI.md` 
+### 0x633b574 GEMINI.md` 
+### 0x634829e AGENTS.md` or `GEMINI.md` 
+### 0x63482ad GEMINI.md` 
+### 0x6362cb4 AGENTS.md` or `GEMINI.md` 
+### 0x6362cc3 GEMINI.md` 
+### 0x636d3a3 AGENTS.md` or `GEMINI.md` 
+### 0x636d3b2 GEMINI.md` 
+### 0x6389cc5 AGENTS.md` or `GEMINI.md` 
+### 0x6389cd4 GEMINI.md` 
+### 0x639a9be AGENTS.md` or `GEMINI.md` 
+### 0x639a9cd GEMINI.md` 
+### 0x63c1831 AGENTS.md` or `GEMINI.md` 
+### 0x63c1840 GEMINI.md` 
+### 0x63dc222 AGENTS.md` or `GEMINI.md` 
+### 0x63dc231 GEMINI.md` 
+### 0x644b52d SKILL.md`, and reports every `SKILL.md` the plugin loader skips, including skills listed through `plugin.json` or `skills.json`.
+### 0x644b54b SKILL.md` the plugin loader skips, including skills listed through `plugin.json` or `skills.json`.
+### 0x644c97c SKILL.md` skills loading twice when discovered from both a standalone customization folder and an enabled plugin.
+### 0x644cce8 GEMINI.md` and `AGENTS.md` rules explicitly override earlier built-in instructions instead of only instructions that follow them.
+### 0x644ccf8 AGENTS.md` rules explicitly override earlier built-in instructions instead of only instructions that follow them.
+### 0x644e4e9 SKILL.md` with missing or invalid frontmatter and warns when `name` or `description` is missing, when `name` doesn't match its folder, when the body is over the
+### 0x644e846 AGENTS.md` or `GEMINI.md` at the plugin root instead of in `rules/`.
+### 0x644e855 GEMINI.md` at the plugin root instead of in `rules/`.
+### 0x6456773 AGENTS.md`, `GEMINI.md`, `skills.json`, `rules.json`, `plugins.json`, and `agents.json`; it can now read them and asks before editing them, while other files in
+### 0x6456780 GEMINI.md`, `skills.json`, `rules.json`, `plugins.json`, and `agents.json`; it can now read them and asks before editing them, while other files in that folder 
+### 0x6456887 GEMINI.md`, `~/.gemini/AGENTS.md`, or their `~/.gemini/config/` counterparts are symlinks to the same file
+### 0x645689e AGENTS.md`, or their `~/.gemini/config/` counterparts are symlinks to the same file
+### 0x64619bb SKILL.md` frontmatter across the `/skills` catalog list view, detail inspection headers, and slash command autocompletion popups, with proper multi-byte Unicode
+### 0x64664e2 SKILL.md` frontmatter, which hides that skill from the `/` menu and from `/name` resolution while leaving it discoverable and invocable by the model, so a large
+### 0x7b4d18a SKILL.mdH9
+### 0x7d9734c SKILL.mdH9
+### 0x9bb4a94 SKILL.mdM9
+### 0xae2acc2 toolPermission
+### 0xaf341ca toolPermission"
+### 0xafa5598 toolPermission,omitempty"

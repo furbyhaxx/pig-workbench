@@ -1,0 +1,5 @@
+frontmatter: 4 chapters checked; parser=PyYAML
+source citations: 177 explicit path:line references checked
+verbatim evidence: 39 source ranges compared
+injection inventory: 37 rows, six columns checked
+PASS

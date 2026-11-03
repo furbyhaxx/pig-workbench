@@ -1,0 +1,20 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/command/sandboxproxy/sandboxproxy.CLIEnv
+### google3/third_party/jetski/cortex/command/sandboxproxy/sandboxproxy.CLIEnv  0x765f600+3712
+  0x5be273b	not signed in
+  0xb7a7678?	af816ad]; X1 connect.StreamType; X2 func(*http.Request); X3 *[26]uintptr }
+  0xafc7be0?	func() *classification_go_proto.SemanticContext
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/command/command.trustedCliBoxFilePolicy
+### google3/third_party/jetski/cortex/command/command.trustedCliBoxFilePolicy  0x7ffd480+10752
+  0x5d99c45	connectd socket %s is not owned by uid %d (owner is %d)
+  0x8008700?	I;f
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).GetSandboxConfig'
+### google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).GetSandboxConfig  0x8018d20+15872
+  0x8030860?	I;f
+  0x5da69bb	failed to read project file for %s in GetSandboxConfig: %v
+  0x5d3c058	failed to resolve custom grant %s: %v
+  0x5df01e8	trusted CLI gated path %q equals or contains a workspace root; not denying it in the main sandbox
+  0x5e034e5	trusted CLI gated path %q resolves to %q, which equals or contains a workspace root; not denying the target in the main sandbox
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cli/store/store.(*Manager).applySandboxModeOverride'
+### google3/third_party/jetski/cli/store/store.(*Manager).applySandboxModeOverride  0x98eb7a0+320
+  0x5be31be?	admin-controlagent-decidessetting_valueinterpolationwrite_file(/)write_file(*)read_file(%s)session_allow%s. Using %q.wor
+  0x5de411e	applyAdminControlsOverridesLocked: Enforcing SandboxMode = true (admin policy: true)

@@ -1,0 +1,10 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep "model_decision|always_on|trigger: glob|trigger: always_on|trigger: model_decision"
+0x5b7ad09	always_onread_fileTodoWriteMultiEditWebSearchinstalledvalidatedCommands:ls-remotesubmodule.disabledREADME.md%s%s[%d].workflows: iconUri.mcp.jsonserver %q"command""headers"Auto modemalformedclipboardError: %vInterruptuserInputtest-term<thought>turnIndex/plugins/%d skillsreviewingsubagent-
+0x5bfa7f3	model_decisionPostInvocationextensions[%q].claude-plugin
+0x5c2be70	always_onenable_inspectorenable_profilingenable_strippingfindbugs_verbosegenerated_scriptinvoker.aar_pathinvoker.apk_nameinvoker.apk_pathinvoker.dex_pathinvoker.jar_fileinvoker.jar_pathinvoker.test_jarinvoker.testonlyoutput_extensionproguard_configsproguard_verboserenaming_sourcesrequires_androidsecondary_sourceshared_resourcessupports_androidtest_runner_argsuse_system_xcodeArrayRemoveIndexCOSMODR
+0x5c8d7cf	always_onTraceIDRatioBased{%g}unsupported relationsALTER TABLE ? ADD ? ?DROP VIEW IF EXISTS ?^\s*\{[lcr|@{}.\s]*\}aligned cell (%q): %wRun gcert to continuedue to a non-default unexpected element %sarray-row-major-indexcompile-file-pathnamedecode-universal-timeencode-universal-timeget-internal-run-timemake-broadcast-streampackage-error-packagereinitialize-instancesynonym-stream-symbolunbound-slot-
+0x5d76959	trigger: always_on
+0x5decb89	model_decision rule needs a description: the model uses it to decide when to apply the ruleauto mode is unavailable because the terminal sandbox is unavailable, falling back to defaultcommitSubagentStates: item removed before cancel attached, cancelling immediately: %s step %dtls: unsupported certificate: private key is *ed25519.PrivateKey, expected ed25519.PrivateKeyno Antigravity agent is provis
+0x5fa5fad	trigger: model_decision` behave similarly. Only `always_on`
+0x5fa5fde	always_on`
+0x644e7ce	model_decision` rule without a `description`, a `glob` rule without `globs`, content cut to fit the 24 KB limit, or an `AGENTS.md` or `GEMINI.md` at the plugin root instead of in `rules/`.

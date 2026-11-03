@@ -1,0 +1,26 @@
+C25409:3408
+var oOr=p(()=>He({file_path:o().describe("The absolute path to the file to read"),offset:VN(E().int().nonnegative().optional()).describe("The line number to start reading from. Only provide if the file is too large to read at once"),limit:VN(E().int().positive().optional()).describe("The number of lines to read. Only provide if the file is too large to read at once."),pages:Za((e)=>typeof e==="string"&&e.trim()===""?void 0:e,o().optional()).describe(`Page range for PDF files (e.g., "1-5", "3", "10-20"). Only applicable to PDF files. Maximum ${i9} pages per request.`),[dre]:KE(O().optional()).describe("Set to true to read a text file, or a line range of one, that is over the usual size limits, up to what still fits in your context. Only use this when you genuinely need all of it or the user asked for the whole file; otherwise read it in parts with offset and limit, or search it."),...U3()}))
+
+C23146:27317
+var bbe=p(()=>He({file_path:o().describe("The absolute path to the file to modify"),old_string:o().describe("The text to replace"),new_string:o().describe("The text to replace it with (must be different from old_string)"),replace_all:KE(O()).default(!1).optional().describe("Replace all occurrences of old_string (default false)"),...U3()}))
+
+C23146:29845
+var LXt=p(()=>He({file_path:o().describe("The absolute path to the file to write (must be absolute, not relative)"),content:o().describe("The content to write to the file"),...U3()}))
+
+C23154:9811
+var rUo=p(()=>He({pattern:o().describe("The glob pattern to match files against"),path:o().optional().describe('The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.'),...U3()}))
+
+C23348:7916
+var t9o=p(()=>u({query:o().describe('Query to find deferred tools. Use "select:<tool_name>" for direct selection, or keywords to search.'),max_results:E().optional().default(5).describe("Maximum number of results to return (default: 5)")}))
+
+C30241:2
+var Ja=p(()=>He({subject:o().describe("A brief title for the task"),description:o().describe("What needs to be done"),activeForm:o().optional().describe('Present continuous form shown in spinner when in_progress (e.g., "Running tests")'),metadata:pe(o(),oe()).optional().describe("Arbitrary metadata to attach to the task")}))
+
+C30263:2
+var tl=p(()=>He({taskId:o().describe("The ID of the task to retrieve")}))
+
+C30338:2
+var rl=p(()=>{let e=Dwe().or(T("deleted"));return He({taskId:o().describe("The ID of the task to update"),subject:o().optional().describe("New subject for the task"),description:o().optional().describe("New description for the task"),activeForm:o().optional().describe('Present continuous form shown in spinner when in_progress (e.g., "Running tests")'),status:e.optional().describe("New status for the task"),addBlocks:A(o()).optional().describe("Task IDs that this task blocks"),addBlockedBy:A(o()).optional().describe("Task IDs that block this task"),owner:o().optional().describe("New owner for the task"),metadata:pe(o(),oe()).optional().describe("Metadata keys to merge into the task. Set a key to null to delete it.")})})
+
+C30371:6
+var sl=p(()=>He({}))

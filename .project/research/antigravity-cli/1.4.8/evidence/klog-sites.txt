@@ -1,0 +1,107 @@
+analytics.go:249] CLI startup completed (took 240.397653ms, phases [main_entered=0ms ls_start=1ms ls_ready=226ms launch_cli=229ms backend_created=229ms project_resolved
+auth.go:157] ChainedAuth: authenticated via keyring (effective: keyring)
+auth.go:174] ChainedAuth: interactive auth completed via consumer
+auth_manager.go:158] Starting OAuth authentication flow
+auth_manager.go:287] Logging out current user
+auth_provider.go:954] [AuthProvider] SetEnableBusinessLogin called with enable: true
+auth_store.go:199] Using file-based secret storage at /home/furbyhaxx/.config/antigravity/plugin-secrets.json
+auto_updater.go:281] Last check was less than 15 minutes ago, skipping update (fast path)
+auto_updater.go:334] Spawned background update process with PID 2749405
+browser.go:56] consumerOAuth: starting OAuth flow
+browser.go:145] consumerOAuth: token acquired, expiry=2026-10-27 09:00:58.413042423 +0100 CET m=+3642.620612791
+browser.go:152] consumerOAuth: authentication completed successfully
+browser.go:167] consumerOAuth: authenticated successfully as <redacted-email>
+browser.go:265] token refreshed, new expiry=2026-10-27 10:37:02.369671058 +0100 CET m=+3599.348167866
+cache.go:135] Cache(loadCodeAssistResponse): Singleflight refresh failed: error getting token source: You are not logged into Antigravity.
+cache.go:163] Failed to refresh cache in background: admin controls not applicable
+cli_setting_manager.go:79] config.json not found or unreadable, using CLI settings only: open /home/furbyhaxx/.gemini/config/config.json: no such file or directory
+cli_setting_manager.go:92] CLI settings initialized: permissions=<nil>, toolPermission=request-review
+cli_setting_manager.go:218] ApplyProjectPermissionGrants: no grants for project "CLI Project", cleared project permissions
+cli_setting_manager.go:364] cli settings not available, using defaults: failed to read cli settings: open /home/furbyhaxx/.gemini/antigravity-cli/settings.json: no such file or d
+common.go:167] Launching CLI mode
+common.go:188] CLI app data directory: /home/furbyhaxx/.gemini/antigravity-cli
+common.go:321] CLI store manager created successfully
+common.go:521] Starting CLI program
+common.go:528] CLI program exited, shutting down
+composite_token_storage.go:123] Using file-based token storage because SSH session detected
+conversation_manager.go:672] Starting new conversation (agent=false)
+conversation_manager.go:729] project: switching to conversation belonging to project ID: default-cli-project
+conversation_manager.go:775] project: synced active project to "CLI Project" (id=default-cli-project) from conversation switch
+conversation_manager.go:1038] Stopping conversation stream
+conversation_manager.go:1083] Streaming conversation 7fa987ed-2fe0-4b12-b6bd-c900e3af199d
+conversation_manager.go:1222] Stream completed for 7fa987ed-2fe0-4b12-b6bd-c900e3af199d, clearing ResponsePending
+defaults.go:732] failed to get cs path: cs path /usr/bin/cs invalid
+encoder_embed.go:85] Installing/updating embedded webm_encoder binary to /home/furbyhaxx/.gemini/antigravity-cli/bin/webm_encoder
+errorreport.go:224] error getting token source: You are not logged into Antigravity.
+experiment_manager.go:66] Starting experiment refresh after login
+experiment_manager.go:70] Experiments refreshed after login
+file_watcher.go:194] skipping empty or temp file: 
+gemini_extensions.go:28] Detecting Gemini extensions in /home/furbyhaxx/.gemini/extensions
+gemini_extensions.go:49] No extensions found
+hooks_manager.go:53] loaded 0 named hooks from 0 hooks.json file(s)
+http_helpers.go:349] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0xbeaf2d2bdef18896
+keyring.go:64] keyringAuth: loaded token, expiry=2026-10-27 09:00:58.413042423 +0100 CET expired=false
+launchsteps.go:95] Failed to resolve GeminiDir ".gemini": .gemini must be an absolute path: path is not absolute, falling back to default
+manager.go:95] Migration [MIGRATION_ID_LIN_BUILTIN_TO_MARKETPLACE] is disabled, skipping entirely
+manager.go:98] Migration [MIGRATION_ID_SANITY_CHECK_PROJECT_URIS] is enabled
+manager.go:107] Migration [MIGRATION_ID_SANITY_CHECK_PROJECT_URIS] already has status MIGRATION_STATUS_COMPLETED, skipping
+manager.go:113] Migration [MIGRATION_ID_SANITY_CHECK_PROJECT_URIS] starting
+manager.go:119] Creating trajectory store manager with proto store and SQLite store
+manager.go:133] Migration [MIGRATION_ID_SANITY_CHECK_PROJECT_URIS] completed successfully in 9.331µs
+manager.go:492] Initializing CLI store manager for workspace /mnt/Projects/furbyhaxx/pi-antigravity-auth
+manager.go:680] CLI store manager initialized successfully
+manager.go:857] CLI store manager shutting down
+manager.go:1005] Full redraw completed (RerenderAll) for conversation  (epoch 0, items 1) in 1ms
+manager.go:1455] Reloading system slash commands
+manager.go:1463] Slash commands unchanged, skipping update
+manager.go:1498] Reloading system slash commands and skills
+manager.go:1550] SetCycleMode called: accept-edits
+migrate.go:50] Migration marker /home/furbyhaxx/.gemini/config/.migrated does not exist. Attempting migration from AppDataDir /home/furbyhaxx/.gemini/antigravity-cli
+migrate.go:158] Migration complete, marked with /home/furbyhaxx/.gemini/config/.migrated
+model_config_manager.go:340] Propagating selected model override to backend: label="Gemini 3.8 Flash (High)"
+model_configs.go:350] Auth mode is unspecified, skipping fetchAvailableModels and returning empty response
+profiler.go:231] Continuous pprof profiling is disabled.
+project.go:78] project: created project "CLI Project" (id=default-cli-project) at /home/furbyhaxx/.gemini/config/projects/default-cli-project.json
+projects.go:204] projects store: project_store_get_standalone_read_failed: GetProject: failed to read standalone project file: open /home/furbyhaxx/.gemini/config/proj
+project_uris_migration.go:42] Starting ProjectUrisMigration
+quota_manager.go:36] doRefreshQuota: skipped (not logged in)
+quota_manager.go:41] doRefreshQuota: skipped (throttled)
+quota_manager.go:45] doRefreshQuota: starting reload (force=true)
+reconcile_summaries.go:94] [Summaries] reconcile checked 0 conversations, restored 0, cached 0, skipped 0, dropped 0, cancelled false in 0ms (resident: 0 -> 0)
+remote_agent.go:168] Remote agent fastpush pin gate changed: false -> true
+rerender.go:92] Window redraw committed (RerenderAll) for conversation  (epoch 0, items 1) after 0s
+rpcs_plugin_auth.go:106] Not reloading plugin MCP servers: cannot get the signed-in user: error getting token source: You are not logged into Antigravity.
+server.go:305] Creating CLI server backend: product=antigravity workspaceDirs=[/mnt/Projects/furbyhaxx/pi-antigravity-auth] appDataDir=/home/furbyhaxx/.gemini/antigr
+server.go:751] Language server will attempt to listen on host localhost
+server.go:766] Language server listening on random port at 37009 for HTTPS (gRPC)
+server.go:774] Language server listening on random port at 40897 for HTTP
+server.go:1182] Creating new cascade trajectory (agentScript=false)
+server.go:1208] Conversation using project ID: default-cli-project
+server.go:1225] Created conversation 7fa987ed-2fe0-4b12-b6bd-c900e3af199d (backend=BACKEND_TYPE_UNSPECIFIED)
+server.go:1243] Starting conversation update stream for 7fa987ed-2fe0-4b12-b6bd-c900e3af199d
+server.go:1300] Stream goroutine exited for 7fa987ed-2fe0-4b12-b6bd-c900e3af199d, sending completion signal
+server.go:1836] Starting language server process with pid 2749386
+server.go:1892] Language server version: 1.4.8
+server.go:2217] Backend project ID updated dynamically to: default-cli-project
+server.go:2262] Generated and saved persistent installation UUID: a398c588-fad2-43dd-8251-561057cf2d2a
+server.go:3005] initialized server successfully in 224.339966ms
+server.go:3015] ListConversations returning 0 summaries
+server.go:3113] Failed to read conversations directory /home/furbyhaxx/.gemini/antigravity/conversations: open /home/furbyhaxx/.gemini/antigravity/conversations: no s
+server.go:3268] GetConversationDetail: found conversation 7fa987ed-2fe0-4b12-b6bd-c900e3af199d (active=true)
+server.go:3318] Language server shutting down
+server.go:3323] Waiting for migrations to complete to prevent partial migration state...
+server.go:3469] Auth succeeded, refreshing features and managers
+server.go:3479] State refresh took 0ms
+server.go:3489] [RemoteControl] Subscription callback triggered.
+server.go:3492] [RemoteControl] RemoteControlEnabled value: false
+server.go:3971] [RemoteControl] Resolved proxyServerURL: ""
+server.go:4268] [RemoteControl] Session toggle is off, staying disconnected
+server_oauth.go:195] Logging out current user
+server_oauth.go:224] applyAuthResult: email=<redacted-email>, authMethod=consumer, quotaProject=
+server_oauth.go:229] OAuth: authenticated successfully as <redacted-email>
+server_oauth.go:235] b.codeAssistClient.AuthProvider (0x2c24ed4260f0) is same as b.cliAuth (0x2c24ed4260f0)
+store_client.go:714] summary store: starting background reconciliation (trigger=empty_on_open)
+store_client.go:743] summary store: reconcile func returned 0 records, skipping
+store_client.go:764] summary store: reconciliation complete, synced 1 records
+terminal_info_manager.go:354] Terminal detection: TERM="xterm-256color" altScreen=true ssh=true osc8=true osc52=true appleTerminalSSH=false
+terminal_info_manager.go:503] Terminal detection: SSH DA2 probe response="\x1b[>0;4501;1c" appleTerminal=false

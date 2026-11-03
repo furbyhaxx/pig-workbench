@@ -1,0 +1,10 @@
+$ python3 tools/pbdump.py --bin ~/.local/bin/agy 0x641a046 | grep -A8 "enum ToolFormatterType"
+enum ToolFormatterType {
+  TOOL_FORMATTER_TYPE_UNSPECIFIED = 0;
+  TOOL_FORMATTER_TYPE_LLAMA_3 = 1;
+  TOOL_FORMATTER_TYPE_HERMES = 2;
+  TOOL_FORMATTER_TYPE_XML = 3;
+  TOOL_FORMATTER_TYPE_CHAT_TRANSCRIPT = 4;
+  TOOL_FORMATTER_TYPE_NONE = 5;
+}
+enum BrowserInstallationStatus {

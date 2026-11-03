@@ -1,0 +1,665 @@
+$ for f in migrate-workflows/SKILL.md run-workflow/SKILL.md plugin/SKILL.md; do python3 -c "import pathlib,sys; print(pathlib.Path(sys.argv[1]).read_text())" "$HOME/.gemini/antigravity-cli/builtin/skills/$f"; done
+
+--- migrate-workflows/SKILL.md ---
+---
+name: migrate-workflows
+description: Automatically migrate legacy workflows to modern skills across global and workspace configurations. Scans for existing workflows, creates target SKILL.md files, and safely archives old workflow files.
+---
+
+# Migrate Workflows to Skills
+
+Use this skill to autonomously migrate legacy workflow files to modern skills.
+
+Workflows (`.agents/workflows/*.md` or `_agents/workflows/*.md`) are deprecated.
+Skills (`.agents/skills/<name>/SKILL.md` or `_agents/skills/<name>/SKILL.md`)
+provide all the capabilities of workflows, plus:
+
+-   First-class slash command support (typing `/<name>` in the chat input box).
+-   Semantic agent discovery (the agent can automatically invoke the skill when
+    relevant).
+-   Multi-file capabilities (supporting helper scripts, templates, and
+    references).
+
+--------------------------------------------------------------------------------
+
+## Instructions for the Agent
+
+When this skill is invoked, **you must execute the migration automatically** by
+performing the following steps:
+
+### Step 1: Discover Existing Workflows
+
+Scan **global** and **workspace** (if applicable) configuration directories
+using filesystem search tools for legacy `.md` workflow files and
+`workflows.json` manifests:
+
+1.  **Global Workflows**:
+
+    -   `~/.gemini/config/global_workflows/*.md`
+    -   `~/.gemini/config/workflows/*.md`
+    -   Manifests: `~/.gemini/config/workflows.json`
+
+2.  **Workspace Workflows** (for each open workspace root and parent
+    directories):
+
+    -   `<workspace_root>/.agents/workflows/*.md`
+    -   `<workspace_root>/_agents/workflows/*.md`
+    -   `<workspace_root>/.agent/workflows/*.md`
+    -   `<workspace_root>/_agent/workflows/*.md`
+    -   Manifests:
+        `<workspace_root>/{.agents,_agents,.agent,_agent}/workflows.json`
+
+> [!NOTE]
+> **OS-Specific Path and Output Formatting:**
+> - Adapt path resolution to the host OS (`%USERPROFILE%` on Windows vs. `$HOME` on macOS/Linux).
+> - When presenting tables, progress, or summaries to the user, **always format paths using the host OS path separators** (e.g. `\` on Windows such as `%USERPROFILE%\.gemini\config\global_workflows\<name>.md`, `/` on macOS/Linux).
+
+**Check each discovered workflow against existing skills:** For each workflow,
+check if `<target_skill_dir>/<name>/SKILL.md` already exists to determine
+whether it has already been migrated.
+
+**Present the discovered workflows, their migration targets, and status:**
+
+Scope     | Workflow Name | Source Path                                   | Target Skill Path                            | Status
+:-------- | :------------ | :-------------------------------------------- | :------------------------------------------- | :-----
+Global    | `<name>`      | `~/.gemini/config/global_workflows/<name>.md` | `~/.gemini/config/skills/<name>/SKILL.md`    | `Pending` / `Already Migrated`
+Global    | `<name>`      | `~/.gemini/config/workflows/<name>.md`        | `~/.gemini/config/skills/<name>/SKILL.md`    | `Pending` / `Already Migrated`
+Workspace | `<name>`      | `<workspace>/.agents/workflows/<name>.md`     | `<workspace>/.agents/skills/<name>/SKILL.md` | `Pending` / `Already Migrated`
+Workspace | `<name>`      | `<workspace>/_agents/workflows/<name>.md`     | `<workspace>/_agents/skills/<name>/SKILL.md` | `Pending` / `Already Migrated`
+
+-   If no workflow files are found (or all have already been cleaned up), inform
+    the user that their workspace and global configs are already clean.
+-   If all workflows are `Already Migrated`, inform the user that target
+    `SKILL.md` files already exist and proceed directly to archiving/cleaning up
+    the remaining legacy files without overwriting existing skills.
+
+--------------------------------------------------------------------------------
+
+### Step 2: Convert Each Workflow to a Skill (Idempotent Execution)
+
+For each workflow file:
+
+1.  **Check existing skill (Overwrite Protection)**:
+
+    -   If `<target_dir>/<name>/SKILL.md` **already exists**, **do not overwrite
+        it** (preserves any manual edits or improvements made after prior
+        migrations). Skip to Step 2.4 (cleanup/archiving).
+    -   If `<target_dir>/<name>/SKILL.md` **does not exist**, proceed with
+        conversion.
+
+2.  **Read and format the source workflow**:
+
+    -   Read the source `.md` file content.
+    -   Inspect existing frontmatter (if any) and markdown body.
+    -   Extract the workflow's title, description, or purpose from the content.
+    -   Ensure standard YAML frontmatter with `name` and `description`:
+
+        ```markdown
+        ---
+        name: <name>
+        description: <concise one-sentence description of what the skill does and when to use it>
+        ---
+
+        # <Title>
+
+        <Workflow instructions and guidelines>
+        ```
+    -   Retain all prompt instructions, arguments, and guidelines from the
+        original workflow.
+
+3.  **Write the target skill file**:
+
+    -   Create the directory: `<target_dir>/<name>/` (e.g.
+        `<workspace>/.agents/skills/<name>/` or
+        `~/.gemini/config/skills/<name>/`)
+    -   Write the file: `<target_dir>/<name>/SKILL.md`
+
+4.  **Archive the legacy workflow safely**:
+
+    -   Rename the old `.md` workflow file to `<name>.md.bak` (e.g. using `mv
+        my_workflow.md my_workflow.md.bak` on Linux/macOS, or using `Move-Item` /
+        file tools on Windows). Do not permanently delete the file so that the
+        original content is safely preserved as a backup.
+    -   Remove migrated workflow entries from any `workflows.json` manifests.
+
+--------------------------------------------------------------------------------
+
+### Step 3: Verify and Confirm
+
+1.  Confirm all target `SKILL.md` files exist and legacy workflows have been
+    renamed to `.md.bak`.
+2.  Inform the user of the final summary:
+    -   Newly migrated skills (`SKILL.md`).
+    -   Previously migrated skills skipped (preserved existing `SKILL.md`
+        files).
+    -   Legacy workflow files safely archived as `.md.bak`.
+
+
+--- run-workflow/SKILL.md ---
+---
+name: run-workflow
+description: >-
+  How to write and run a dynamic workflow script with the `run_workflow` tool:
+  a Python script that orchestrates many agents with `agent`, `parallel`,
+  `pipeline`, and `phase`. Use when a task splits into many
+  independent or staged pieces of agent work (fan out over files, modules,
+  bugs, or review angles, then aggregate), or when the user asks for a
+  workflow. Don't use for a single delegated task (use a subagent) or for
+  legacy workflow files (see migrate-workflows).
+---
+
+# Dynamic workflows with `run_workflow`
+
+A workflow is a short Python script that the `run_workflow` tool executes. The
+script decides which agents to start, in what order, and what to do with their
+results. Use it instead of many manual subagent calls when the orchestration
+itself is code: loops over a list, fan-out then aggregate, or staged pipelines.
+
+## Steps
+
+1.  Pass the script inline as `Script`, or write it to a file (for example in
+    the conversation scratch directory) and pass its absolute path as
+    `ScriptPath`. Set exactly one of them; a file is easier to fix and rerun.
+2.  Call `run_workflow(Script="...", Description="...")` or
+    `run_workflow(ScriptPath="/abs/path/workflow.py", Description="...")`.
+    `Description` is a one-line goal shown in the UI.
+    The workflow runs in the background, and you are notified when it ends.
+    For a quick script, such as a `call_tool` fan-out, set
+    `WaitMsBeforeAsync` (up to 10000) to get the result in the same turn if it
+    finishes in time.
+    To pass inputs, set `Args` to a JSON object; the script reads it as the
+    `args` dict. When `ScriptPath` is a saved workflow's entry script, `Args`
+    is validated against the args schema in its `workflow.json`.
+3.  Read the tool result: it contains the `log()` output (`Logs:`) and what the
+    script printed (`Output:`). Each agent is also linked from the workflow
+    step, so the user can open its conversation.
+4.  If the tool returns an error, fix the script at the reported line and run
+    it again.
+
+## Script rules
+
+The script runs in its own `python3` process, which needs Python 3.8 or later
+on `PATH`:
+
+-   `await` works at the top level, and you can define `async def` helpers.
+-   Installed library workflows are importable by name (`import <library>` or
+    `from <library> import <name>`); library modules see the same primitives as
+    the script.
+-   What the script prints (`print()`, `stderr`, child-process output, and the
+    `repr` of a trailing expression) is returned in the tool result's `Output:`
+    section (and appended to the error when the workflow fails).
+-   An uncaught exception stops the workflow and reports the script line.
+-   `CONVERSATION_ID` and `STEP_INDEX` identify the `run_workflow` step.
+    `WORKSPACES` is a tuple of the workspace directories, primary first (empty
+    if there are none).
+-   The working directory is `Cwd` if given, else `WORKSPACES[0]`, so relative
+    paths resolve against it. Local modules are not importable.
+
+## Primitives
+
+| Primitive | Behavior |
+| --- | --- |
+| `log(*args)` | Adds a line to the workflow output and the UI. |
+| `phase(name)` | Starts a named phase; later logs and agents group under it. |
+| `agent(prompt=None, schema=None, role=None, type_name="self", workspace="inherit", model=None)` | Defines an agent; nothing runs yet. `await agent(prompt, schema)` runs it once and returns its result. `a = agent(...)` then `await a(prompt, schema)` runs one turn in a conversation kept across calls. |
+| `parallel(items, fn)` | Promise that calls `fn(item)` for each item and awaits all results concurrently; results are in item order. If one fails, the rest are cancelled. |
+| `pipeline(items, fn)` | Promise that calls and awaits `fn(item)` one item at a time; results are in item order. |
+| `trajectory(last=None, types=None, tools=None, min_index=None, max_index=None)` | `await trajectory()` returns steps before this `run_workflow` call started, oldest first. `min_index` and `max_index` bound `step.index` (inclusive); `types` and `tools` filter by step type or tool name; `last` keeps the last N matching steps. |
+
+Arguments:
+
+-   `type_name`: the agent type to run. `"self"` uses the current agent's
+    configuration; any available custom agent name also works.
+-   `workspace`: `"inherit"` (the current workspace), `"branch"` (a new isolated
+    clone, for agents that edit code in parallel), or `"share"` (a new workspace
+    that shares the underlying repository). Other values are errors.
+-   `schema` (required): a JSON schema (dict or string) for the agent's result.
+    The agent returns the result by calling its `finish` tool, which checks it
+    against the schema, and `await agent(...)` returns the parsed value. An
+    agent that ends without calling `finish` fails the workflow. Use
+    `{"type": "string"}` for a free-form answer.
+-   `role`: an optional short title for the agent's card, such as
+    `"Security reviewer"`.
+-   `model`: the agent's model tier: `"inherit"` (default, your model),
+    `"flash_lite"`, `"flash"`, or `"pro"`. Use a lighter tier for simple,
+    high-fan-out work.
+-   `fn`: usually a `lambda` that returns `agent(...)`, or an `async def`
+    helper that awaits several agents. It must return something awaitable:
+    an `agent()` or a call on one, a nested `parallel()` / `pipeline()`, or
+    an `async def` call. Build per-item prompts and roles with f-strings.
+
+Awaiting the same agent twice runs it once and returns the same result. An
+`agent()` that is never awaited or called never runs, so always `await` it, or
+pass it to `parallel` / `pipeline` and await that.
+
+The workflow step shows one card per agent, in the order agents start, titled
+with its `role`, or else the first line of its prompt, so set a role or start
+each prompt with a short line that names the job.
+
+## Agents that keep their context
+
+When one agent should do several related turns, such as a reviewer that checks
+the fixes for the bugs it found, call it instead of awaiting it. Each
+`a(prompt, schema)` is lazy like an awaited `agent()` and returns that turn's
+`finish` result; the agent's own `prompt`, if any, is its standing instructions
+and leads the first turn. `schema` on a call defaults to the agent's. Turns on
+one agent run one at a time, in the order they were started. A failed turn
+raises, but the agent stays usable. An agent is either awaited or called, not
+both. `del a` ends the agent, unless something else, such as a lambda, still
+references it; every agent ends when the workflow ends.
+
+```python
+reviewer = agent("You review Go code for correctness.", role="Reviewer")
+bugs = await reviewer("List the bugs in foo.go.", {"type": "array", "items": {"type": "string"}})
+fixes = await parallel(bugs, lambda b: agent(f"Fix: {b}", {"type": "string"}))
+ok = await reviewer(f"Fixes made: {fixes}. Are all your bugs fixed?", {"type": "boolean"})
+del reviewer
+```
+
+## Calling tools from the script
+
+Where the `run_workflow` tool description lists tools for `call_tool`, the
+script can call them directly:
+
+-   `call_tool(name, **args)` returns a promise like `agent()` does. Awaiting it
+    runs the tool with the arguments you would pass to it directly and returns
+    the tool's output as a `str`.
+-   It raises `ToolError` (with `.tool` and `.message`) if the tool fails or
+    the call is denied. `.denied` is `True` when a pre-tool hook or the
+    permission check rejected the call before the tool ran, so a script can
+    skip denied calls and still fail on real errors.
+-   The user cannot be asked anything from a workflow: a call that needs user
+    approval that has not already been granted is denied.
+-   Tool outputs are not shown to you unless the script logs or prints them.
+
+## Reading earlier conversation steps
+
+Pass inputs you already have in `Args` (or inline in the script). Use
+`await trajectory(...)` when the script needs to inspect steps from earlier in
+this conversation—such as mining a failed `run_command` output without
+rerunning it—and pass only the relevant slice into child `agent()` prompts.
+
+Each returned `Step` is a `dict` that also supports attribute access (missing
+fields return `None` as attributes):
+
+-   `index` (`int`): 0-based step index.
+-   `type` (`str`): step type, e.g. `"USER_INPUT"`, `"PLANNER_RESPONSE"`,
+    `"SYSTEM_MESSAGE"`, or `"GENERIC"` (tool calls).
+-   `status` (`str`): e.g. `"DONE"`, `"ERROR"`, or `"CLEARED"`.
+-   Message steps set `text` (`str`); tool steps set `tool` (`str`), `args`
+    (parsed `dict`), and `output` (`str`, truncated at 200k characters).
+
+```python
+steps = await trajectory(tools=["run_command"], last=20)
+errors = [s.output for s in steps if s.status == "ERROR" and s.output]
+log(f"Found {len(errors)} failed command(s)")
+```
+
+`trajectory()` only returns steps before the `run_workflow` call started (steps
+added while the workflow runs in the background are not included). Older tool
+steps evicted from memory have `status == "CLEARED"` and `output == None`; read
+the conversation's `transcript.jsonl` / `transcript_full.jsonl` when you need
+cleared tool outputs or steps added after the workflow started.
+
+## Behavior to know
+
+-   Workflow agents are main agents, not subagents. They are hidden from the
+    conversation list and reachable from the workflow step. An awaited agent
+    is single-use; a called agent lasts until deleted or the workflow ends.
+-   `await agent(...)` returns when the agent's run ends, with the result it
+    passed to `finish`.
+-   If one agent in `parallel` fails, the whole call fails and the other agents
+    in it are cancelled. Stopping the parent conversation stops all running
+    workflow agents.
+-   Agents do not see the script or each other. Put all the context an agent
+    needs in its prompt, and ask for a short, well-defined output.
+
+## Example
+
+Fan out over a list that an agent produces:
+
+```python
+phase("Discover")
+files = await agent(
+    "List the Go files under pkg/foo that call Bar(). Paths only.",
+    schema={"type": "array", "items": {"type": "string"}},
+)
+
+phase("Review")
+reviews = await parallel(files, lambda f: agent(
+    f"Review {f} for misuse of Bar(). Reply in 3 bullets or 'OK'.",
+    schema={"type": "string"},
+    role=f"Review {f}",
+))
+for r in reviews:
+    log(r)
+```
+
+
+--- plugin/SKILL.md ---
+---
+name: plugin
+description: How to manage and create plugins — namespaced bundles of skills, agents, rules, MCP servers and hooks that install, enable and disable as a single unit. Use this skill when the user wants to enable, disable, install or uninstall a plugin, when they want to create a new plugin, or when a new customization should be packaged into a plugin rather than left loose. Also triggered by the /plugin slash command. Don't use for the underlying customization system itself — discovery roots, loading priority, or authoring a standalone skill, agent, rule, hook or MCP server outside a plugin; see the customizations guide skill for those.
+---
+
+# Plugins
+
+A **plugin** is a namespaced bundle of customizations that ships, installs, and
+turns on as one unit. It can contain skills, agents, rules, MCP servers and
+hooks. When a plugin is on, everything inside it is active; disabling it takes
+the whole bundle down at once.
+
+Your job is either to change a plugin's lifecycle state or to get new
+functionality into the right plugin. Step 0 and Step 1 are common to both; Step
+1 routes you to Step 2A or Step 2B.
+
+For the underlying customization system — discovery roots, loading priority,
+what each customization type is for — see the customizations guide skill. This
+skill does not restate that material.
+
+## Quick Start
+
+After writing `/tmp/lsrpc.sh` in **Step 0**, prefix every `lsrpc` call with
+`source /tmp/lsrpc.sh &&` and key every mutation on `<dir>` (the install
+directory name `(.path | split("/") | last)` from Step 0, never `plugin.json`'s
+`name`):
+
+<!-- mdformat off -->
+| Operation | Command / Action | Key Guardrail |
+| :--- | :--- | :--- |
+| **Inventory installed plugins** (Step 0) | `source /tmp/lsrpc.sh && lsrpc GetAllPlugins '{"workspaceUris":["file:///path/to/workspace"]}' \| jq '[.plugins[] \| {name, dir: (.path \| split("/") \| last), disabled: (.disabled // false), isGlobal, skills: [.skills[]?.name], agents: [.agents[]?.name], rules: [.rules[]?.absolutePath], hooks: ((.hooksJson // "") \| length > 0), mcp: [.mcpServers[]?.name]}]'` | Never read `GetAllPlugins` unfiltered (inlines full `SKILL.md` text); always pipe through `jq` and use `dir` for mutations (`'{}'` if no workspace is active). |
+| **Enable / Disable plugin** (Step 2A) | `source /tmp/lsrpc.sh && lsrpc JetboxWriteState '{"userConfig":{"plugins":{"<dir>":{"enabled":true}}}}'` (`false` to disable) | Takes effect live (no restart). Never hand-edit `~/.gemini/config/config.json`. |
+| **Uninstall user plugin** (Step 2A) | `source /tmp/lsrpc.sh && lsrpc DeletePlugin '{"pluginId":"<dir>"}'` | Refuse if `.path` contains `/builtin/plugins/` (offer to disable instead). If currently disabled, set `"enabled":true` via `JetboxWriteState` before deleting. |
+| **Install Marketplace plugin** (Step 2A) | `source /tmp/lsrpc.sh && lsrpc InstallCustomization '{"id":"<marketplace-id>"}'` | Use `<marketplace-id>` from the Customizations page or user (never guess from `name`; only Marketplace plugins can be installed). Requires a restart. |
+| **Author / consolidate plugin** (Steps 2B–4) | Create `~/.gemini/config/plugins/<name>/plugin.json` (or in source repo if published) + used subdirectories (`skills/`, `agents/`, `rules/AGENTS.md`, `mcp_config.json`, `hooks.json`, `assets/logo.svg`) | Check Step 0 inventory for `name` collisions first; re-run Step 0 inventory, tell the user to restart, and link as `[<name>](customization://<dir>)` (never `plugin://`). |
+<!-- mdformat on -->
+
+## Step 0: Preflight and inventory
+
+Every path needs to know what is already installed. Talk to the language server
+over its local Connect endpoint. The address and CSRF token are normally already
+in your shell environment; you do not need to hunt for a port file.
+
+```bash
+: "${ANTIGRAVITY_LS_ADDRESS:=localhost:5387}"
+curl -sS "http://${ANTIGRAVITY_LS_ADDRESS}/healthz"
+```
+
+Write the helper to a file once, then source it in every call below. Each
+command you run is a fresh shell, so a function defined in one call is gone by
+the next; sourcing a file is what makes it reusable.
+
+```bash
+cat > /tmp/lsrpc.sh <<'EOF'
+: "${ANTIGRAVITY_LS_ADDRESS:=localhost:5387}"
+lsrpc() {  # usage: lsrpc <MethodName> <json-body>
+  curl -sS -X POST \
+    "http://${ANTIGRAVITY_LS_ADDRESS}/exa.language_server_pb.LanguageServerService/$1" \
+    -H "Content-Type: application/json" \
+    -H "x-codeium-csrf-token: ${ANTIGRAVITY_CSRF_TOKEN}" \
+    -d "$2"
+}
+EOF
+```
+
+Now list the installed plugins, passing active workspace URIs in
+`workspaceUris` so workspace-scoped plugins are discovered (or `'{}'` when no
+workspace is active). Prefix every `lsrpc` snippet in this skill with
+`source /tmp/lsrpc.sh &&`:
+
+```bash
+source /tmp/lsrpc.sh && lsrpc GetAllPlugins '{"workspaceUris":["file:///path/to/workspace"]}' | jq '[.plugins[] | {
+  name,
+  dir: (.path | split("/") | last),
+  disabled: (.disabled // false),
+  isGlobal,
+  skills: [.skills[]?.name],
+  agents: [.agents[]?.name],
+  rules: [.rules[]?.absolutePath],
+  hooks: ((.hooksJson // "") | length > 0),
+  mcp: [.mcpServers[]?.name]
+}]'
+```
+
+> **Never read `GetAllPlugins` unfiltered.** The response inlines the *full
+> text* of every bundled `SKILL.md`. A single plugin can exceed 16KB and a
+> populated config will flood your context. Always pipe it through `jq`.
+
+**`dir` is the identifier that matters.** It is the install directory name — the
+last path segment — and it is what every mutation below is keyed on. It is
+frequently **not** the same as `name` from `plugin.json`: a plugin installed
+from the Marketplace lands in a directory named after a signed 64-bit hash, so a
+plugin displayed as `data-tools` may live in a directory called
+`-1870732469773246571`. Using `name` where `dir` is expected fails silently or
+builds a garbage path.
+
+## Step 1: Decide the kind
+
+-   The user names an existing plugin and a lifecycle verb — "turn off X",
+    "install Y", "get rid of Z" -> **Step 2A**.
+-   The user wants new capability, or wants existing loose customizations tidied
+    up — "I want a Strava thing", "package these skills together" -> **Step
+    2B**.
+
+## Step 2A: Lifecycle operations
+
+Resolve the target to its `dir` from the Step 0 inventory first. If the user's
+words match several plugins, ask which one rather than guessing.
+
+**Enable or disable.** This is the same write the Customizations page performs,
+and it takes effect live — no restart.
+
+```bash
+# Enable:
+source /tmp/lsrpc.sh && lsrpc JetboxWriteState '{"userConfig":{"plugins":{"<dir>":{"enabled":true}}}}'
+
+# Disable:
+source /tmp/lsrpc.sh && lsrpc JetboxWriteState '{"userConfig":{"plugins":{"<dir>":{"enabled":false}}}}'
+```
+
+The write deep-merges, so send only the one plugin. Never hand-edit
+`~/.gemini/config/config.json` to do this: writes that bypass the language
+server miss the live reload and are only picked up by a slow backstop poll.
+
+**Uninstall.**
+
+```bash
+source /tmp/lsrpc.sh && lsrpc DeletePlugin '{"pluginId":"<dir>"}'
+```
+
+**Check both of these before you run it:**
+
+-   **Built-in plugins cannot be uninstalled.** A plugin whose path contains
+    `/builtin/plugins/` ships with the product. Refuse, and offer to disable it
+    instead.
+-   **Uninstall leaves the enablement entry behind.** Nothing clears
+    `plugins.<dir>` from `config.json`. If the plugin was disabled and is later
+    reinstalled into the same directory name, it comes back **disabled** for no
+    visible reason. Before deleting a disabled plugin, set it back to enabled so
+    the stale entry is harmless, and tell the user you did.
+
+**Install.** For a plugin published to the Agent Marketplace:
+
+```bash
+source /tmp/lsrpc.sh && lsrpc InstallCustomization '{"id":"<marketplace-id>"}'
+```
+
+You cannot derive this ID from the plugin's name. Take it from the Marketplace
+tab of the Customizations page, or ask the user for it. If all you have is a
+name, say so rather than guessing an ID.
+
+A `source not found` error means one of two things: the ID is wrong, or the
+Marketplace catalog isn't launched for this user. The catalog case has a tell —
+the ID comes back empty, so the message reads `source for customization not
+found` with nothing between the words. Re-check the ID first.
+
+Only install plugins that have a Marketplace entry. If the plugin has none, or
+the catalog isn't launched for this user, do not try to install it another way;
+tell the user it isn't available to install.
+
+A newly installed plugin **directory** is only discovered on startup. Tell the
+user to restart before expecting its skills to appear.
+
+Lifecycle operations end here. Skip Step 3, which covers authoring only, and go
+to Step 4.
+
+## Step 2B: Decide where the functionality belongs
+
+A plugin is a bundle, so the first question is never "what do I build" but
+"where does it go". Take the inventory from Step 0 and see whether the request
+fits an existing plugin. Plugins tend to cohere around one of three shapes:
+
+-   **A data provider or external service.** Everything that talks to one system
+    — Strava, GitHub, a particular API. Its MCP server, the skill that drives
+    it, and the rules about its quirks belong together.
+-   **An artifact or file type.** Spreadsheet handling, proto editing, log
+    analysis. Grouped by what the user is operating *on*.
+-   **A role or recurring job.** Data analysis, running a small business,
+    reviewing documents, writing code. Broader, and the right home when a
+    capability spans several providers in service of one repeated task.
+
+**Recommend and proceed.** State in one line which plugin you picked and why,
+then keep going. Use **`ask_question`** only when two existing plugins are
+genuinely close, or when nothing fits and the boundary for a new one is unclear.
+Do not stall on a decision the user can trivially reverse.
+
+If nothing fits, create a new plugin at `~/.gemini/config/plugins/<name>/`.
+Before settling on a name, check it against the Step 0 inventory: names share
+one global namespace, and when two plugins claim the same name the first
+discovered wins and the other is dropped **silently**.
+
+If the plugin is meant to be shared or published, create it in the source
+repository it will be published from instead of the user's config directory.
+
+### Consolidating loose customizations
+
+When the user asks to tidy up standalone customizations, move the directories: a
+skill at `~/.gemini/config/skills/foo/` becomes
+`~/.gemini/config/plugins/<name>/skills/foo/`, and a rule becomes
+`rules/AGENTS.md` inside the plugin.
+
+MCP servers need a warning first. Moving an entry out of the user's
+`mcp_config.json` and into the plugin's own `mcp_config.json` ties its lifecycle
+to the plugin: it is assembled only while the plugin is enabled, so disabling
+the plugin stops its tools being offered along with everything else in the
+bundle. Control moves with it too, since the server is no longer an entry in the
+user's own config and is managed through the plugin rather than on its own. Tell
+the user this before you move the entry.
+
+## Step 3: Author the bundle
+
+Create only the subdirectories the plugin actually uses:
+
+```text
+~/.gemini/config/plugins/<name>/
+├── plugin.json       # required
+├── README.md         # user-facing docs; never read by the agent
+├── mcp_config.json   # optional, same format as the user's own
+├── hooks.json        # optional
+├── assets/logo.svg   # optional
+├── skills/<skill>/SKILL.md
+├── agents/<agent>.md
+└── rules/AGENTS.md
+```
+
+Write the inner customizations yourself — the `SKILL.md`, the agent markdown,
+the rules, the MCP config. Do not hand that back to the user as a follow-up.
+Rules in a plugin's `rules/AGENTS.md` are plain markdown with no frontmatter and
+are always on while the plugin is enabled.
+
+`plugin.json` is parsed as JSONC, so comments and trailing commas are allowed:
+
+```json
+{
+  "name": "strava",
+  "description": "Strava integration: pull activity data, summarize training load, and draft workout notes.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Summarize this week's workout mileage and heart rate zones",
+    "Compare pacing and cadence across my last 4 long runs",
+    "Draft an annotated Strava description for my latest activity"
+  ]
+}
+```
+
+| Field              | Type     | Notes                                        |
+| ------------------ | -------- | -------------------------------------------- |
+| `name`             | string   | The label users see, and the global unique   |
+:                    :          : key — two plugins sharing a `name` collide   :
+:                    :          : and one is dropped. **Not** the install      :
+:                    :          : identifier; that is the directory. Lowercase :
+:                    :          : kebab-case. Defaults to the directory name   :
+:                    :          : if omitted.                                  :
+| `description`      | string   | One or two sentences saying what the plugin  |
+:                    :          : does and who it is for. This is what         :
+:                    :          : Marketplace search matches.                  :
+| `logo`             | string   | Optional. A path relative to the plugin      |
+:                    :          : directory, such as `assets/logo.svg`, ending :
+:                    :          : in `.png`, `.svg`, `.jpg`, `.jpeg` or        :
+:                    :          : `.webp`. URLs and absolute paths are         :
+:                    :          : rejected silently — a bad value renders no   :
+:                    :          : logo rather than erroring.                   :
+| `suggestedPrompts` | string[] | Optional. Up to 3 starter prompts for card   |
+:                    :          : and detail views. Exactly 3 prompts are      :
+:                    :          : recommended for UI card layouts. Empty       :
+:                    :          : strings are skipped and additional prompts   :
+:                    :          : beyond 3 are ignored.                        :
+| `displayName`      | string   | Optional. Human-readable presentation title  |
+:                    :          : shown in UI headers, cards, and slash        :
+:                    :          : command menus.                               :
+| `version`          | string   | Optional. Semantic version string.           |
+| `author`           | string / | Optional. Developer or team name string, or  |
+:                    : object   : an object with `name` and optional `url`     :
+:                    :          : (`https://`).                                :
+| `homepage`         | string   | Optional. External `https://` website or     |
+:                    :          : documentation URL.                           :
+| `repository`       | string / | Optional. Source repository `https://` URL   |
+:                    : object   : (or `{"type": "git", "url": "https://..."}`). :
+| `disabled`         | boolean  | Optional. Ships the plugin turned off. A     |
+:                    :          : choice the user has already made wins over   :
+:                    :          : this field.                                  :
+
+> **Do not add any other top-level field.** Unknown top-level fields are
+> silently discarded by the loader — they neither take effect nor error out.
+
+Offer to generate a logo with the `generate_image` tool. Ask for a square asset
+of at least 128x128 with a transparent background, high contrast so it reads on
+both themes, and roughly 10% empty margin baked in — the frame adds no padding
+of its own and center-crops anything non-square.
+
+## Step 4: Verify and hand back
+
+Re-run the Step 0 inventory and confirm the plugin appears with the components
+you expect. Then tell the user:
+
+-   What changed, and which plugin now owns it.
+-   Whether a **restart** is required. Creating or installing a new plugin
+    directory needs one; enabling, disabling and uninstalling do not.
+-   Where to manage it, as a link: `[<name>](customization://<dir>)` opens the
+    plugin's own page, which lists what it provides and can turn it on and off.
+
+`<dir>` is the install directory from Step 0, never the manifest `name`. A
+plugin directory created in this session is not discovered until a restart, and
+until then its page reports nothing installed under that id, so give the link
+and the restart together.
+
+Do not emit `plugin://` or `plugins://` links; they are not handled and render
+as dead text.
+
+## Constraints & Tips
+
+-   **Key every mutation on the install directory name, never `plugin.json`'s
+    `name`.** This is the single most common way to break a plugin operation.
+-   **Prefer the language server RPCs over editing files.** `config.json` is
+    written atomically at mode 0600 and holds sibling state — `userSettings`,
+    permission grants. A careless rewrite clobbers them.
+-   **One coherent purpose per plugin.** Bundling unrelated capabilities forces
+    the user into an all-or-nothing toggle. If a request does not fit the
+    plugin's description, that is the signal to create a new one.
+-   **MCP server names are global too.** They collide across the user's config
+    and every installed plugin, so prefix a plugin's servers with the plugin
+    name rather than shipping a generic `search` or `db`.
+-   **Keep `description` honest and current.** It is what the user reads before
+    installing and what search matches. Update it when the bundle's contents
+    change.
+

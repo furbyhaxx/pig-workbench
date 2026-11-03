@@ -1,0 +1,6 @@
+$ python3 evidence/extract-formatter.py "$HOME/.local/bin/agy"
+formatter-hermes.txt	0x5f1f200+3727	0a58a78a9bb6c9caad96dad3b60c0f3b1e38e7205804c2ea7c03580410e7d7b7
+formatter-xml.txt	0x5ec49be+2599	a10f44818f12e42374bf836e4c1ce660ac02a74295ae23bf1908185155e074be
+formatter-xml-examples.txt	0x5eb102f+2257	3acf99b7ed784694167068ed45e2fb3b486c19355c69211d04a9219637075fa1
+formatter-xml-required.txt	0x5d88f67+51	c009372d40fda2188234f1138d0526c2b527dc0e8e9dae19b48f08324e17c2be
+formatter-xml-required-named.txt	0x5d9d73e+56	029ef9d2edd5aa91c3ff9df9def931fcfa502611da83bc6d17db1946ee65321f

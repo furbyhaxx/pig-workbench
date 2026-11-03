@@ -1,0 +1,152 @@
+$ python3 .project/research/claude-code-cli/2.1.317/evidence/lookup.py --window 1300 --max 3 'agentType:"general-purpose"' 'agentType:"Explore"' 'agentType:"Plan"' 'Definition for a custom subagent' subagent_type: 'source:"plugin"'
+
+=== 'agentType:"general-purpose"' C24760:162 ===
+ task fully\u2014don't gold-plate, but don't leave it half-done."} When you complete the task, respond with a concise report covering what was done and any key findings \u2014 the caller will relay this to the user, so it only needs the essentials.
+
+${`Your strengths:
+- Searching for code, configurations, and patterns across large codebases
+- Analyzing multiple files to understand system architecture
+- Investigating complex questions that require exploring many files
+- Performing multi-step research tasks
+
+Guidelines:
+- For file searches: search broadly when you don't know where something lives. Use Read when you know the specific file path.
+- For analysis: Start broad and narrow down. Use multiple search strategies if the first doesn't yield results.
+- Be thorough: Check multiple locations, consider different naming conventions, look for related files.
+- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one.
+- NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested.
+- You are already the dedicated agent for this task. Do the work directly \u2014 do not re-delegate your entire assignment to another single subagent.`}`}var Kq={agentType:"general-purpose",whenToUse:"General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you.",tools:["*"],source:"built-in",baseDir:"built-in",getSystemPrompt:jgr};function Wgr(){if(P()!=="windows"||aoe()===null)return"";return`
+   On Windows, write any file path inside the "command" string with forward slashes
+   (for example C:/Users/me/.claude/statusline.ps1) or the ~ shorthand. Do not use
+   backslashes: the command is executed through Git Bash, which consumes unquoted
+   backslashes as escape characters and the path will not resolve.
+`}var Ggr=()=>`You are a status line setup agent for Claude Code. Your job is to create or update the statusLine command in the user's Claude Code settings.
+
+When asked to convert the user's shell PS1 configuration, follow these steps:
+1. Read the user's shell configuration files in this order of preference:
+   - ~/.zshrc
+   - ~/.bashrc  
+   - ~/.bash_profile
+   - ~/.profile
+
+2. Extract the PS1 value using this regex pattern: /(?:^|\\n)\\s*(?:export\\s+)?PS1\\s*=\\s*["']([^"']+)["']/m
+
+3. Convert PS1 escape sequences to shell commands:
+   - \\u \u219
+
+=== 'agentType:"general-purpose"' C29879:21613 ===
+ion;return{taskId:w,taskType:S.type,command:x}}async function WAe(e,r){try{await DHe(e,r),g("task_stop_user")}catch(n){if(n instanceof ue){if(n.code==="not_found"){if(r.source!==void 0&&Xm(e)!==null)Qkt(Mr(e),"stoppedByUser",()=>lG(Mr(e),{stoppedByUser:!0},r.storageV5,Qo),r.storageV5);g("task_stop_user");return}if(n.code==="not_running"&&n.taskStatus!==void 0&&rs(n.taskStatus)){g("task_stop_user");return}throw m("task_stop_user",n.code),n}throw m("task_stop_user","unexpected"),n}}function Bue(e){let{taskRegistry:r,setAppState:n,shouldStop:s,storageV5:c}=e;Ban(e);for(let y of Object.values(r.all())){let h=uD(y)&&d4(y);if(gp(y)||!h&&(y.status!=="running"||!Sy(y)||!d4(y))||s!==void 0&&!s(y))continue;if(T_e(y.id,r,c),y.type==="local_agent")fD(y.id,r),YZn(y.id);if(S_t(y.type)?.kill(y.id,r,n,"system",c),y.type==="local_agent")_a(y.id,"stopped",{toolUseId:y.toolUseId,summary:y.description})}}function Ban(e){for(let r of Object.values(e.taskRegistry.all()))if(gp(r)&&r.status==="running")S_t(r.type)?.kill(r.id,e.taskRegistry,e.setAppState,"system")}function T_e(e,r,n){r.update(e,(c)=>vn(c)?{...c,stoppedByUser:!0,userStopCount:(c.userStopCount??0)+1}:c.stoppedByUser?c:{...c,stoppedByUser:!0});let s=r.get(e);if(s?.type==="local_agent"){let c="agentType"in s&&typeof s.agentType==="string"?s.agentType:"general-purpose";di(e,c,n)}}function Lt(e,r){return rs(e.status)&&(e.type==="local_agent"||e.type==="local_workflow")&&!Fk(r)}async function di(e,r,n){await Qkt(Mr(e),"stoppedByUser",async()=>{let s=await TE(Mr(e),n,Qo);if(s?.stoppedByUser)return;await kpe(Mr(e),{...s??{agentType:r},stoppedByUser:!0},n)},n)}var Vo=p(()=>He({task_id:o().optional().describe("The ID of the background task to stop. Agent-team teammates and named background agents are also accepted by agent ID or name."),shell_id:o().optional().describe("Deprecated: use task_id instead")})),mi=p(()=>Vo().extend(U3())),pi=p(()=>u({message:o().describe("Status message about the operation"),task_id:o().describe("The ID of the task that was stopped"),task_type:o().describe("The type of the task that was stopped"),command:o().optional().describe("The command or description of the stopped task")})),Je=rn({name:Ga,searchHint:"kill a running background task",aliases:[...hlr],backgrounding:"never",maxResultSizeChars:1e5,userFacingName:()=>"Stop Task",get remoteExecution(){return{supported:t3()}},get inputSchema(){return t3()?mi():Vo()},get outputSchema(){return pi()},shouldDefer:!0,isConcurrencySafe(){return!0},toAutoClassifierInput(e){return e.task_id??e.shell_id??""},async description(){return"Stop a running background task by ID"},async pr
+
+=== 'agentType:"Explore"' C22501:1123 ===
+r disposal: be smart about how you search for files and implementations
+- Wherever possible you should try to spawn multiple parallel tool calls for grepping and reading files
+
+Complete the user's search request efficiently and report your findings clearly.`}var qRt=3,_do='Fast read-only search agent for locating code. Use it to find files by pattern (eg. "src/components/**/*.tsx"), grep for symbols or keywords (eg. "API endpoints"), or answer "where is X defined / which files reference Y." Do NOT use it for code review, design-doc auditing, cross-file consistency checks, or open-ended analysis \u2014 it reads excerpts rather than whole files and will miss content past its read window. When calling, specify search breadth: "quick" for a single targeted lookup, "medium" for moderate exploration, or "very thorough" to search across multiple locations and naming conventions.',kdo=`Read-only search agent for broad fan-out searches \u2014 when answering means sweeping many files, directories, or naming conventions and you only need the conclusion, not the file dumps. It reads excerpts rather than whole files, so it locates code; it doesn't review or audit it. Specify search breadth: "medium" for moderate exploration, "very thorough" for multiple locations and naming conventions.`,wx={agentType:"Explore",whenToUse:_do,whenToUseLean:kdo,disallowedTools:[mt,...OY,Ty,at,Vt,Si],source:"built-in",baseDir:"built-in",model:"inherit",omitClaudeMd:!0,getSystemPrompt:()=>ydo()};function LRe(e,n){if(e.agentType!==wx.agentType||e.source!=="built-in")return e.model;if(Evr())return"inherit";if(i.CLAUDE_CODE_DISABLE_EXPLORE_INHERIT_CAP)return"inherit";return Sdo(n)?{inheritCap:VRt}:"inherit"}var VRt="opus";function Sdo(e){let n=Avr(VRt)??1/0,r=L(Wje().models.map((s)=>s.family)).filter((s)=>(Avr(s)??-1/0)>n);return n8e(e,r)}function bdo(){let e=Yd(),n=e?Ne:Rt,r=JC()&&e;return`You are a software architect and planning specialist for Claude Code. Your role is to explore the codebase and design implementation plans.
+
+=== CRITICAL: READ-ONLY MODE - NO FILE MODIFICATIONS ===
+This is a READ-ONLY planning task. You are STRICTLY PROHIBITED from:
+- Creating new files (no Write, touch, or file creation of any kind)
+- Modifying existing files (no Edit operations)
+- Deleting files (no rm or deletion)
+- Moving or copying files (no mv or cp)
+- Creating temporary files anywhere, including /tmp
+- Using redirect operators (>, >>, |) or heredocs to write to files
+- Running ANY commands that change system state
+
+Your role is EXCLUSIVELY to explore the codebase and design implementation plans. You do NOT have acce
+
+=== 'agentType:"Plan"' C22550:155 ===
+{Zr}, ${gr}, and ${Ve}`}
+   - Understand the current architecture
+   - Identify similar features as reference
+   - Trace through relevant code paths
+   - Use ${n} ONLY for read-only operations (${e?`ls, git status, git log, git diff, find${r?", grep":""}, cat, head, tail`:"Get-ChildItem, git status, git log, git diff, Get-Content, Select-Object -First/-Last"})
+   - NEVER use ${n} for: ${e?"mkdir, touch, rm, cp, mv, git add, git commit, npm install, pip install":"New-Item, Remove-Item, Copy-Item, Move-Item, git add, git commit, npm install, pip install"}, or any file creation/modification
+
+3. **Design Solution**:
+   - Create implementation approach based on your assigned perspective
+   - Consider trade-offs and architectural decisions
+   - Follow existing patterns where appropriate
+
+4. **Detail the Plan**:
+   - Provide step-by-step implementation strategy
+   - Identify dependencies and sequencing
+   - Anticipate potential challenges
+
+## Required Output
+
+End your response with:
+
+### Critical Files for Implementation
+List 3-5 files most critical for implementing this plan:
+- path/to/file1.ts
+- path/to/file2.ts
+- path/to/file3.ts
+
+REMEMBER: You can ONLY explore and plan. You CANNOT and MUST NOT write, edit, or modify any files. You do NOT have access to file editing tools.`}var Dce={agentType:"Plan",whenToUse:"Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.",disallowedTools:[mt,...OY,Ty,at,Vt,Si],source:"built-in",tools:wx.tools,baseDir:"built-in",model:"inherit",omitClaudeMd:!0,getSystemPrompt:()=>bdo()};import{relative as $Ds}from"path";var CJn=(e,n)=>{if(n!=="turn")return!1;let r=$i(e);return r==="turn-abort"||r==="permission-stop"};function k9s(e,n){return e.addEventListener("abort",n,{once:!0}),{[Symbol.dispose](){e.removeEventListener("abort",n)}}}function Ogn(e){let n=e.innerCall===!0,r=e.agentId===void 0;return n?"inner":r?"turn":"agent"}var xdo={tls_to_relay:"a client spoke TLS to the proxy port (HTTPS_PROXY must be an http:// URL)",header_too_long:"request headers exceeded 8 KiB before the CONNECT ended",not_connect:"a client sent a plain-HTTP request to the proxy (only HTTPS CONNECT is supported)",startup_probe:"the hosted egress proxy was unreachable at startup",selective_invalid_host:"control byte in the CONNECT host",bad_connect_port:"invalid port in the CONNECT request",pending_overflow:"upload buffer exceeded while the tunnel was not accepting bytes",upload_stalled:"the tunnel stopp
+
+=== 'Definition for a custom subagent' C14522:15202 ===
+s agent as a background task (non-blocking, fire-and-forget) when invoked"),omitClaudeMd:O().optional().describe("Run this agent without the user, project and local CLAUDE.md instruction files when it runs as a subagent; managed policy files are kept. For agents that take everything they need from the delegation prompt. No effect on the main session agent."),memory:F(["user","project","local"]).optional().describe("Scope for auto-loading agent memory files. 'user' - ~/.claude/agent-memory/<agentType>/, 'project' - .claude/agent-memory/<agentType>/, 'local' - .claude/agent-memory-local/<agentType>/"),effort:Ue([F(["low","medium","high","xhigh","max"]),E().int()]).optional().describe("Reasoning effort level for this agent. Either a named level or an integer"),permissionMode:ue().optional().describe("Permission mode controlling how tool executions are handled"),observer:o().optional().describe("Agent type auto-spawned as a background observer whenever this agent runs. The observer receives read-only activity digests and reports via the ObserverReport tool; it never participates in the task."),observerMessage:o().optional().describe("Supplemental postamble appended (after the harness-owned default) to each activity digest sent to the observer. Blank values are ignored.")}).describe("Definition for a custom subagent that can be invoked via the Agent tool.")),F4=p(()=>F(["user","project","local"]).describe("Source for loading filesystem-based settings. 'user' - Global user settings (~/.claude/settings.json). 'project' - Project settings (.claude/settings.json). 'local' - Local settings (.claude/settings.local.json).")),Eut=p(()=>u({type:T("local").describe("Plugin type. Currently only 'local' is supported"),path:o().describe("Absolute or relative path to the plugin directory"),skipMcpDiscovery:O().optional().describe("When true, the engine loads skills/hooks/agents/commands from this plugin but does NOT read its .mcp.json or manifest mcpServers. Use when the SDK host owns this plugin's MCP connections.")}).describe("Configuration for loading a plugin.")),bo="Count of tracked files NOT restored or deleted because a symlink, hard link, or other non-regular file was detected at the tracked path, its parent directory no longer resolves to where it pointed when the checkpoint was taken, or its backup could not be safely read. Only populated by a real (non-dryRun) rewind \u2014 on a dryRun response the field is never set and the preview counts do not reflect link-safety refusals. Absent or 0 on a real rewind means no link-safety refusals occurred; other per-file failures (for example a missing bac
+
+=== 'subagent_type:' C9013:51 ===
+Do not use one worker to check on another. Workers will notify you when they are done.
+- Do not use workers to trivially report file contents or run commands. Give them higher-level tasks.
+
+@125403652@ Results
+
+Worker results arrive as **user-role messages** containing `<task-notification>` XML, delivered as harness input, normally inside a `<system-reminder>` that opens with `
+@125415740@) with synthesized spec | Worker already has the files in context AND now gets a clear plan |
+| Research was broad but implementation is narrow | **Spawn fresh** (
+@125415912@) with synthesized spec | Avoid dragging along exploration noise; focused context is cleaner |
+| Correcting a failure or extending recent work | **Continue** | Worker has the error context and knows what it just tried |
+| Verifying code a different worker just wrote | **Spawn fresh** | Verifier should see the code with fresh eyes, not carry implementation assumptions |
+| First implementation attempt used the wrong approach entirely | **Spawn fresh** | Wrong-approach context pollutes the retry; clean slate avoids anchoring on the failed path |
+| Completely unrelated task | **Spawn fresh** | No useful context to reuse |
+
+### Continue mechanics
+
+When continuing a worker with 
+@125426068@({ description: "Investigate auth bug", subagent_type: "worker", prompt: "Investigate the auth module in src/auth/. Find where null pointer exceptions could occur around session handling and token validation... Report specific file paths, line numbers, and types involved. Do not modify files." })
+  =
+@125431016@, attached by the server to the coordinator session's relay as the message the coordinator was answering (the coordinator did not pick it; the words are the user's own, copied by the server)]
+@125432204@ whether the project owner or a member of the project wrote it (with the server's account id when it has one; a message sent in this thread says only that one of them wrote it, with no account id), and how it arrived.
+@125432572@ A marked message whose lead says "on the timeline" was written on the project timeline, not in reply to anything in this transcript: a bare "yes", "ok" or "go ahead" in it answers no proposal and clears no block here, however close it sits to one; only a marked timeline message that itself names the action and its target clears a SOFT BLOCK (after this agent was blocked on deleting a bucket, a marked timeline "yes, do it" clears nothing; a marked timeline "delete the staging-assets bucket" does).
+@125433084@ It was written on the project timeline, not in reply to anything in this transcript: a bare "y
+
+=== 'subagent_type:' C10361:147 ===
+ answered (the reason is in the turn_handoff_carried_writes diagnostic line); running nothing
+@127287432@
+Good: "Reading runAgent.ts"
+Good: "Fixing null check in validate.ts"
+Good: "Running auth module tests"
+Good: "Adding retry logic to fetchUser"
+
+Bad (past tense): "Analyzed the branch diff"
+Bad (too vague): "Investigating the issue"
+Bad (too long): "Reviewing full branch diff and AgentTool.tsx integration"
+Bad (branch name): "Analyzed adam/background-summary branch diff"
+@127291068@@internal Fingerprint binding the harness section counts to the exact content they were computed against; a hook rewrite invalidates the counts rather than misplacing rewritten bytes
+@127291260@@internal How the report reached this result when the subagent reports through the SubagentHandback tool: 'send' = delivered, passed by auto mode's review or with a note that the review could not run; 'flagged' = delivered under a SECURITY WARNING; 'withheld' = nothing was delivered
+@127308192@'s earlier transcript is too large to load, or has a row with a malformed timestamp. Sending the message again will not help. Start a new agent if the work is still needed.!
+@127312464@) ONLY when the user, or instructions such as CLAUDE.md or a skill, explicitly ask for that level. "lower" and "higher" are ignored for subagent_type: "fork", isolation: "remote", and teammates.
+@127312704@ calls that landed, in order: each call's tool, input and result text. The subagent writes the session's task list, and no other row of the main transcript shows these calls (not a stable consumer field)
+@127313340@@internal True when this unisolated write-capable agent was launched into a working directory where another one is already running and a worktree could have been made here (drives a model-facing note; not a stable consumer field)
+@127316216@ by this machine's clock. A time that a body tells you to treat as current is when that notification fired, which is earlier than now by however long it waited. In each header, "queued at" is when the server queued the notification, by the server's clock, and "reached this session" is how long before this read it arrived here. Where its queued-at time is more than 
+@127316592@ minutes before its arrival here, the header also gives the whole wait, which compares the two clocks and can be off by their difference. Where the header gives no whole wait, count the notification as having waited only the time since it reached this session: a gap of up to T
+@127320316@ is a network path, which cannot be added as a working directory. On Windows, map the share to a drive letter and pass i
+
+=== 'subagent_type:' C14522:45381 ===
+e paste. The prompt is not changed by the host; the CLI may wrap each entry in `<pasted_content>` tags where it still stands in the last text block. It looks for the first 100 entries that are not blank. For a paste the host took out of `message`, use `pasted_content` instead."),ultrathink_typed:O().optional().describe("@internal The sender's statement that the person typed `ultrathink` in this prompt and was shown the word colored before sending, and that nothing in the prompt arrived whole as far as the sender saw: no paste, no share, no prompt it suggested. Send it only as `true`, and only while the session's newest system/init carried `ultrathink_typed_raises: true`; leave it out otherwise. The turn then runs at xhigh effort if the CLI also finds the word in the text, the text holds no paste block, the frame lists no paste in `inline_pastes` or `pasted_content`, its `client_platform`, when present, is a person's keyboard or a thin client's, it bears no other mark of untyped text, and the session takes the sender for a person. It is the sender's claim, not proof."),session_id:o().optional(),agent_id:o().optional().describe("ID of the subagent that produced this message: the `task_id` of its task events, unchanged when the subagent is resumed. Absent on main-thread messages."),subagent_type:o().optional().describe("Subagent type that produced this message."),task_description:o().optional().describe("Description of the subagent task that produced this message."),file_attachments:A(oe()).optional().describe("@internal Files a remote client attached to this prompt (each {file_uuid, file_name, is_image?, sha256?, file_size?, project_folder_name?}; src/bridge/inboundAttachmentSchema.ts reads them). Typed like SDKUserMessageReplay.file_attachments so the two message types stay assignable."),tool_states:A(oe()).optional().describe("@internal The MCP App views' states a remote client sent with this prompt, replacing the set the worker holds ([] clears it); src/services/widgetContext/widgetContextWire.ts reads them.")}).describe("A user-role message. A client writes one to the CLI to submit a prompt (this starts a turn); the CLI emits them for user-role content it adds to the conversation itself, chiefly the tool_result blocks answering the assistant's tool_use blocks.")),xF=p(()=>UA().extend({uuid:_(),session_id:o(),isReplay:T(!0),file_attachments:A(oe()).optional()})),qA=p(()=>u({type:T("bash_command"),command:o().describe("Shell command run verbatim, without the model and without permission checks. Trust model matches the local TUI `!cmd` path (no sandbox, no per-command 
+
+=== 'source:"plugin"' C20375:16015 ===
+),...h])}var kwn=vu();var Air=Object.freeze({plugin:"engine",origin:Object.freeze([])});var aXo=(e)=>V$i(e);function lXo(e,n){let s=n!==void 0&&aXo(e)?Ew(e)?.safeParse(n):void 0;if(s===void 0)return{isFit:!0,value:n};return s.success?{isFit:s.data!==void 0,value:s.data}:{isFit:!1,value:void 0}}var Z9r=(e,n)=>Object.hasOwn(e,n)?e[n]:void 0;var J4e=Object.freeze({user:"userSettings",project:"projectSettings",local:"localSettings",flag:"flagSettings",policy:"policySettings"});function Cir(){let e=ft(),{answers:n,computed:r}=Vo().hookedMerge;return n===null||r===null?e:r}function U4t(e){let n=Hwn(e);return D(n)?n:{}}var eXr=new WeakMap;function dXo(){let e=Vo().policy,n=eXr.get(e),r=kwn.get();if(n!==void 0||r===null)return n??[];let h=r();return eXr.set(e,h),h}function cXo(e){let n=GE()==="remote"&&!lm();return e!==null&&(!Cre()||n)?{...e,personWritablePolicy:!0}:e}function uXo(e){let n=cXo(e);try{let r=dXo();return r.length===0?n:{...n,managedMcpServers:{...Object.fromEntries(r.map((h)=>[h,{}])),...e?.managedMcpServers}}}catch{return{...n,managedMcpServersUnreadable:!0}}}function B4t(e){return e==="policy"?uXo(be("policySettings")):be(J4e[e])}var fXo=Object.freeze(["user","project","local","flag","policy"]);function pXo(){let e=new Set(Mo()),n=mg(),r=eHn();return[...r===void 0?[]:[{source:"plugin",settings:r}],...fXo.filter((h)=>e.has(J4e[h])&&!(h==="project"&&n)).flatMap((h)=>{let y=B4t(h);return y===null?[]:[{source:h,settings:y}]})]}function Rir(e){if(Bge())return{...e,layers:[]};let{source:n}=e;return{...e,layers:(n===void 0?pXo():[{source:n,settings:B4t(n)}]).map((s)=>({source:s.source,settings:U4t(s.settings)}))}}async function sVi(){if(!Zi("settings.read"))return;let{layers:e=[]}=Rir({}),n=Cir(),r=await TPe({event:"settings.read",args:{layers:e},caller:Air,bottom:{run:()=>Promise.resolve(U4t(n))}}).catch((s)=>(t(`settings.read: refused to the engine (${d(s)}); the settings' own values stand`),n));return L([...Object.keys(r),...Object.keys(n)]).flatMap((s)=>{let h=Z9r(r,s),y=lXo(s,h),S=e.findLast((I)=>Object.hasOwn(I.settings,s))?.source,w=S!==void 0&&S!=="plugin",R=Os(h)===Os(Z9r(n,s)),x=R||!y.isFit;if(!R&&!y.isFit)t(`settings.read: the answer for ${s} is no value the key can hold; the settings' own value stands`,{level:"warn"});return x?[]:[{key:s,value:y.value,source:w?J4e[S]:void 0}]})}function mXo(e){let{source:n,layers:r}=e,s=n===void 0;return new Promise((h)=>{h(U4t(s?Cir():r?.[0]?.settings??B4t(n)))})}function iVi(){return p4("settings.read",{},Air.origin)}function gXo(e){return e===void 0||typeof e==="string"&&Object.hasOwn(J4e,e)?void 0:`takes { source } n
+
+=== 'source:"plugin"' C22662:10469 ===
+rn}try{let Z=await s.readdir(Y);if(r.stopAtSkillDir&&Z.some((Se)=>Se.isFile()&&ORo.test(Se.name))){await Promise.all(Z.map((Se)=>Se.isFile()&&Se.name.toLowerCase().endsWith(".md")?H(vGe(Y,Se.name),ke):void 0));return}await Promise.all(Z.map((Se)=>{let we=vGe(Y,Se.name);if(Se.isDirectory())return G(we,[...ke,Se.name]);if(Se.isFile()&&Se.name.toLowerCase().endsWith(".md"))return H(we,ke);return}))}catch(Z){if(r.isRootOptional&&Y===e&&V(Z))return;t(`Failed to scan ${h} directory ${Y}: ${Z}`,{level:"error"})}}await G(e,[])}function IRo(e,n,r,s){if(n.resolution??=Do(e,n.dir),!n.resolution.isCanonical)return Bye(e,r,s);let h=Rn(vGe(n.resolution.resolvedPath,MRo(n.dir,r)));if(s.has(h))return!0;return s.add(h),!1}var tUt=1048576;async function nUt(e,n,r){let s=[];return await fq(e,async(h)=>{let y=await oUt(h,n);if(y)s.push(y)},{logLabel:"output-styles",loadedPaths:r}),s}async function oUt(e,n){let r=le();try{let s=await gk(r,e,tUt);if(s===null)return t(`Skipping plugin output-style ${e}: not a regular file or exceeds ${tUt} byte limit`,{level:"warn"}),null;let{frontmatter:h,content:y}=cd(s,e,{normalizeKeys:!0}),S=DRo(e,".md"),w=(h.name!=null?String(h.name):void 0)||S,H=`${n}:${w}`,G=Vae(h.description,H)??uVe(y,`Output style from ${n} plugin`);return{name:H,description:G,prompt:y.trim(),source:"plugin",forceForPlugin:Xme(h["force-for-plugin"]),keepCodingInstructions:Xme(h["keep-coding-instructions"])}}catch(s){return t(`Failed to load output style from ${e}: ${s}`,{level:"error"}),null}}function rUt(e){let n=Re();return n.outputStyles??=(async()=>{let{enabled:r,errors:s}=await vi(e),h=[];if(s.length>0)t(`Plugin loading errors: ${s.map((S)=>fw(S)).join(", ")}`);let y=null;for(let S of r){let w=new Set;if(S.outputStylesPath)try{let H=await nUt(S.outputStylesPath,S.name,w);if(h.push(...H),H.length>0)t(`Loaded ${H.length} output styles from plugin ${S.name} default directory`)}catch(H){y="plugin_load_output_styles_dir_failed",t(`Failed to load output styles from plugin ${S.name} default directory: ${H}`,{level:"error"})}if(S.outputStylesPaths)for(let H of S.outputStylesPaths)try{let G=le(),Y=await G.stat(H);if(Y.isDirectory()){let ke=await nUt(H,S.name,w);if(h.push(...ke),ke.length>0)t(`Loaded ${ke.length} output styles from plugin ${S.name} custom path: ${H}`)}else if(Y.isFile()&&H.endsWith(".md")){if(Bye(G,H,w))continue;let ke=await oUt(H,S.name);if(ke)h.push(ke),t(`Loaded output style from plugin ${S.name} custom file: ${H}`)}}catch(G){y="plugin_load_output_styles_path_failed",t(`Failed to load output styles from plugin ${S.name} custom path ${H}: ${G}`,{level:"error"})}}if(t(`
+
+=== 'source:"plugin"' C23348:39246 ===
+clared at the frontmatter top level, outside "hooks" \u2014 ${Sk} (the skill loads with no hooks and no allowed-tools)`,{level:"error"});else if((S||w.isSkillMode)&&G.hooks){let Zn=vke(G.hooks);for(let Ho of Zn.notes)t(`Plugin skill '${e}': ${Ho}`,{level:"warn"});let Ro=WY().safeParse(G.hooks);if(Zn.unloadableGuards.length>0||!Ro.success)Eo=!0,t(`Plugin skill '${e}': ${Zn.unloadableGuards.join("; ")||Ro.error?.message||"hooks unreadable"} \u2014 ${Sk} (the skill loads with no hooks and no allowed-tools)`,{level:"error"});else mo=Ro.data}let wo=mo!==void 0&&Q8(mo)&&g7(),jn=!Eo&&!wo,hn=jn?Ae:[],go=!1,vo=()=>{let Zn=Alt(mo,r)?[]:lo.allowedTools??[],Ro=Zn.length===0?void 0:nRn("plugin",{id:r,...y});if(Ro===void 0)return go=!1,Zn;if(!go)go=!0,epr(e,{pluginId:r},Zn,Ro);return[]},lo={type:"prompt",name:e,description:tt,hasUserSpecifiedDescription:ke!==null,allowedTools:hn,...jn&&De.length>0&&{getAllowedTools:async()=>vo()},disallowedTools:Ge.length>0?Ge:void 0,argumentHint:dt,argNames:Xe.length>0?Xe:void 0,whenToUse:gt,version:wt,model:on,effort:mn,context:G.context==="fork"?"fork":void 0,agent:G.agent!=null?String(G.agent):void 0,background:Xme(G.background),disableModelInvocation:ho,userInvocable:Tn,declaredFields:Oeo(G),metadata:D(G.metadata)?G.metadata:void 0,contentLength:Y.length,source:"plugin",loadedFrom:S||w.isSkillMode?"plugin":void 0,hooks:mo,skillRoot:(S||w.isSkillMode)&&mo?h:void 0,skillDir:S||w.isSkillMode?qC(n.filePath):void 0,skillFile:n.skillFile,pluginInfo:{pluginManifest:s,repository:r,...y.officiallyAttested&&{officiallyAttested:!0},...y.marketplaceSource&&{marketplaceSource:y.marketplaceSource},...y.npmResolution&&{npmResolution:y.npmResolution},...y.home!==void 0&&{home:y.home}},pluginSource:{commandName:e,filePath:n.filePath,baseDir:n.baseDir,sourceName:r,pluginManifest:s,pluginPath:h,provenance:y,isSkill:S,config:w},serverAttribution:w.serverAttribution,isHidden:!Tn,progressMessage:S||w.isSkillMode?"loading":"running",userFacingName(){return bt},aliases:Xt?void 0:xt,shedAliases:Xt?xt:void 0,...So!==void 0&&{directoryListingName:So},async getPromptForCommand(Zn,Ro){let Ho=w.isSkillMode?`Base directory for this skill: ${qC(n.filePath)}
+
+${Y}`:Y,dr=yXs.get();if(dr!==void 0)Ho=await dr(Ho,{isPreload:Ro.options.isSkillPreload===!0});let Tr=s.userConfig?await vD(r,Ro.credentials):void 0,Wr=QH(nMe(on)??Ro.options.mainLoopModel,Gh(Ro),mn??Dg(Ro.permissionLayers)),Ls={pluginPath:h,sourceName:r,pluginDataDir:H,userConfig:s.userConfig,options:Tr,skillDir:w.isSkillMode?Se:void 0,effortLevel:Wr};if(Ho=cVe(Ho,Zn,!0,Ke,(ms)=>iD(fnn(ms,Ls)),(ms,qs)=>fnn(ms,Ls,qs)),r_e
+
+Counts shown: {'agentType:"general-purpose"': 2, 'agentType:"Explore"': 1, 'agentType:"Plan"': 1, 'Definition for a custom subagent': 1, 'subagent_type:': 3, 'source:"plugin"': 3}

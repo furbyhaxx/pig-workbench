@@ -1,0 +1,182 @@
+# Every request head observed during one agy -p turn (agy 1.4.8, 2026-10-27),
+# captured with a local TLS-terminating CONNECT proxy.
+# Authorization values are masked to scheme + length; token values are not recorded.
+# Blocks whose head could not be parsed cleanly are omitted (the proxy desynced on a
+# few keep-alive connections); the inference and telemetry heads are complete.
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:loadCodeAssist HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 38
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:fetchAvailableModels HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:fetchUserInfo HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:retrieveUserQuotaSummary HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== aicode.googleapis.com =====
+GET /v1alpha:fetchConfig HTTP/1.1
+Host: aicode.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 36240
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:loadCodeAssist HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 38
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== www.googleapis.com =====
+GET /oauth2/v2/userinfo HTTP/1.1
+Host: www.googleapis.com
+User-Agent: Go-http-client/1.1
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:retrieveUserQuotaSummary HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:fetchUserInfo HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:fetchAvailableModels HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== aicode.googleapis.com =====
+GET /v1alpha:fetchConfig HTTP/1.1
+Host: aicode.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== www.googleapis.com =====
+GET /oauth2/v2/userinfo HTTP/1.1
+Host: www.googleapis.com
+User-Agent: Go-http-client/1.1
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:retrieveUserQuotaSummary HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 30
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:writeTrajectoryAcls HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 55
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:streamGenerateContent?alt=sse HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Transfer-Encoding: chunked
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:streamGenerateContent?alt=sse HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Transfer-Encoding: chunked
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+
+===== aicode.googleapis.com =====
+GET /v1alpha:fetchConfig HTTP/1.1
+Host: aicode.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== aicode.googleapis.com =====
+GET /v1alpha:fetchConfig HTTP/1.1
+Host: aicode.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Authorization: Bearer <redacted 265 chars>
+Accept-Encoding: gzip
+
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 29415
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip
+
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 51014
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip

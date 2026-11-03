@@ -1,0 +1,9 @@
+$ python3 evidence/context-recovery/verify.py
+PASS binary size, SHA-256, and version
+PASS frontmatter and evidence grades for 3 chapters
+PASS 74 local evidence/chapter links
+PASS 5 exact template pointer/length samples and full skill template
+PASS selected preset, grant and interaction schema values
+PASS CLI help mode/approval switches
+PASS credential-pattern and home-path scan of 29 evidence extracts
+NOTE checks validate artifacts and byte anchors; no agent turn or approval was executed

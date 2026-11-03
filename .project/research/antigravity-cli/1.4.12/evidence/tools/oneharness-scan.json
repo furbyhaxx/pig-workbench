@@ -1,0 +1,179 @@
+{
+  "AskQuestionTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*AskQuestionTool).Name",
+      "cached_address": "0x8a7c480",
+      "offset": "0x5bcae63",
+      "bytes": 12,
+      "text": "ask_question"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*AskQuestionTool).Description",
+      "cached_address": "0x8a7c4a0",
+      "offset": "0x5e1142b",
+      "bytes": 175,
+      "text": "Ask the user one or more multiple-choice questions, e.g. to clarify requirements, and wait for the answers. Don't use it for trivial yes/no questions; ask those in plain text."
+    }
+  },
+  "DefineSubagentTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*DefineSubagentTool).Name",
+      "cached_address": "0x8a7dd20",
+      "offset": "0x5c0fd93",
+      "bytes": 15,
+      "text": "define_subagent"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*DefineSubagentTool).Description",
+      "cached_address": "0x8a7dd40",
+      "offset": "0x5e0c2b8",
+      "bytes": 154,
+      "text": "Define a new subagent type that can then be invoked repeatedly. Subagents always have tools to research the codebase and to communicate with other agents."
+    }
+  },
+  "EditFileTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*EditFileTool).Name",
+      "cached_address": "0x8a7fb20",
+      "offset": "0x5b7ac4c",
+      "bytes": 9,
+      "text": "edit_file"
+    }
+  },
+  "FinishTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*FinishTool).Name",
+      "cached_address": "0x8a83460",
+      "offset": "0x5b39f08",
+      "bytes": 6,
+      "text": "finish"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*FinishTool).Description",
+      "cached_address": "0x8a83480",
+      "offset": "0x5df80f5",
+      "bytes": 108,
+      "text": "End your task and return its result. Only call this once you are confident the task is complete and correct."
+    }
+  },
+  "GenerateImageTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*GenerateImageTool).Name",
+      "cached_address": "0x8a83dc0",
+      "offset": "0x5bfa65d",
+      "bytes": 14,
+      "text": "generate_image"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*GenerateImageTool).Description",
+      "cached_address": "0x8a83de0",
+      "offset": "0x5db8aa0",
+      "bytes": 63,
+      "text": "Generate an image, or edit existing images, from a text prompt."
+    }
+  },
+  "InvokeSubagentTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*InvokeSubagentTool).Name",
+      "cached_address": "0x8a86980",
+      "offset": "0x5c0fd84",
+      "bytes": 15,
+      "text": "invoke_subagent"
+    }
+  },
+  "ManageSubagentsTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*ManageSubagentsTool).Name",
+      "cached_address": "0x8a8b720",
+      "offset": "0x5c24c29",
+      "bytes": 16,
+      "text": "manage_subagents"
+    }
+  },
+  "ManageTaskTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*ManageTaskTool).Name",
+      "cached_address": "0x8a8f580",
+      "offset": "0x5baf2e2",
+      "bytes": 11,
+      "text": "manage_task"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*ManageTaskTool).Description",
+      "cached_address": "0x8a8f5a0",
+      "offset": "0x5e235cd",
+      "bytes": 281,
+      "text": "Manage the background tasks of this conversation: 'list' the running tasks, check a task's 'status' and recent log output, 'send_input' to a running task, or 'kill' one. Refer to tasks by the TaskId that 'list' reports; keep task references human-readable when talking to the user."
+    }
+  },
+  "ReadFileTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*ReadFileTool).Name",
+      "cached_address": "0x8a96340",
+      "offset": "0x5b7ad12",
+      "bytes": 9,
+      "text": "read_file"
+    }
+  },
+  "RunCommandTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*RunCommandTool).Name",
+      "cached_address": "0x8a9b140",
+      "offset": "0x5baf2d7",
+      "bytes": 11,
+      "text": "run_command"
+    }
+  },
+  "RunWorkflowTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*RunWorkflowTool).Name",
+      "cached_address": "0x8aa2720",
+      "offset": "0x5bcada3",
+      "bytes": 12,
+      "text": "run_workflow"
+    }
+  },
+  "ScheduleTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*ScheduleTool).Name",
+      "cached_address": "0x8ab6860",
+      "offset": "0x5b62e0f",
+      "bytes": 8,
+      "text": "schedule"
+    }
+  },
+  "SearchWebTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*SearchWebTool).Name",
+      "cached_address": "0x8abca20",
+      "offset": "0x5b94358",
+      "bytes": 10,
+      "text": "search_web"
+    },
+    "Description": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*SearchWebTool).Description",
+      "cached_address": "0x8abca40",
+      "offset": "0x5df76d5",
+      "bytes": 108,
+      "text": "Performs a web search for a given query. Returns a summary of relevant information along with URL citations."
+    }
+  },
+  "SendMessageTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*SendMessageTool).Name",
+      "cached_address": "0x8abdea0",
+      "offset": "0x5bca2e7",
+      "bytes": 12,
+      "text": "send_message"
+    }
+  },
+  "WriteFileTool": {
+    "Name": {
+      "function": "google3/third_party/oneharness/internal/tools/tools.(*WriteFileTool).Name",
+      "cached_address": "0x8abee00",
+      "offset": "0x5b94362",
+      "bytes": 10,
+      "text": "write_file"
+    }
+  }
+}

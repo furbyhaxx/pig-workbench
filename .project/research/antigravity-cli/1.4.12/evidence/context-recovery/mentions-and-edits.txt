@@ -1,0 +1,74 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/language_server/chat/chat.ConvertMentionsToPrompt
+### google3/third_party/jetski/language_server/chat/chat.ConvertMentionsToPrompt  0x7cfb7e0+768
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/language_server/chat/chat.ProcessMarkdownMention
+### google3/third_party/jetski/language_server/chat/chat.ProcessMarkdownMention  0x7cfbd80+1728
+  0x5bafbbc	terminal://
+  0xafc7be0?	func() *classification_go_proto.SemanticContext
+  0x5b7b474?	@terminalnum_stepsrev-parseHOMEDRIVEforce_askmulticallreadWriteGatedRPCsReadWriteAlwaysSet/completepublisher--source=--n
+  0x5dee7af?	Help me explain or answer this comment or question about my terminal output, called @terminal:
+  0x5c4c6dd?	@terminal Output:
+  0x5ca9df7	slash_command://explain
+  0x5d2b23f	[/explain](slash_command://explain)
+  0x5c81cd0	[Explanation Request]exploration_budget_v2generic_system_promptsubagents are runningarm %d has no requestnum_git_artifact_dirsinvalid backup URI %qinvalid so
+  0x5e0c967?	Help explain this concept or piece of code succinctly. Do not dive too deeply into one topic. Use context about the code
+  0x5c5ecf2	Error decoding diff
+  0x5dc6616	He
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/utils/utils.ScopeItemToMentionMetadataString
+### google3/third_party/jetski/cortex/utils/utils.ScopeItemToMentionMetadataString  0x7d608c0+416
+  0x5b7b11d	Directory
+  0x5c4c173	Browser Code Block
+  0x5c25469	%s 
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/customizations/customizations.(*Manager).parseAtMentions'
+### google3/third_party/jetski/cortex/customizations/customizations.(*Manager).parseAtMentions  0x8104ba0+512
+  0x5b3a436	@(\S+)
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).ToOutputString'
+### google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).ToOutputString  0x7f01580+4608
+  0x5c49c21	CodeAction is nil
+  0x5d2847d	The following file was deleted: %s
+  0x5cf1a81	DeleteFile spec has nil Path
+  0x5d6f249	ActionSpec_DeleteFile has nil DeleteFile spec
+  0x5ca31f1?	with requested contentmaxMatchesPerFile=(%d) (max %d matches/file)Type: directories onlyerror in generator: %verror in s
+  0x5c37149?	with content:
+  0x5e048e9	Cre
+  0x5cfb8c9	Created an empty file at %s%s
+  0x5cf1a65	CreateFile spec has nil Path
+  0x5d6f21c	ActionSpec_CreateFile has nil CreateFile spec
+  0x5c8ea38	missing action result
+  0x5b79967?	the USER
+  0x5d4b3dd?	an unspecified tool call (nil ToolCall)missing diff data for file creation: %sfailed to log initial task progress: %wEnc
+  0x5bc8b9a	the %s tool
+  0x5de3b99?	(The edit was applied, but its diff exceeded the storage limit and was not stored.)DeepInvestigator Layer 0 investigatio
+  0x5e0bd50	The following changes were made by %v to: %v. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+  0x5c5bea5?	[diff_block_start]num_elided_resultsmaxNumResults=(%d)Commit created: %s/proc/self/cmdlinetoken is malformedgcp.client.s
+  0x5c37159?	[diff_block_end]No results foundType: files onlyFound %d resultsUsing prompt: %s with result:
+  0x5e1e211	The previous CodeEdit was suggested by %v to: %v. The diff was not immediately applied to the file due to the changes being flagged as potentially incomplete or incorrect. The user will manually review the changes and may decide to apply them.
+  0x5c7e88e	action result is nil
+  0x5b21142	%s%s
+  0x5e12158?	Note: You have just created an artifact and requested user feedback. Stop calling tools to end your turn, and allow the 
+  0x5be179b	chunk %d: %s
+  0x5de5f1e?	Markdown validation warnings were found in the artifact file you just created/edited:tool converter %s produced step typ
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).appendLintErrorMessages'
+### google3/third_party/jetski/cortex/chatconverters/code/code.(*CodeActionStringConverter).appendLintErrorMessages  0x7f00700+3264
+  0xb559dc0	_proxy_go_proto.HandleCasc
+  0x5cd445a	unexpected step status: %s
+  0x5d6245a	Step was interrupted due to server shutdown
+  0x5d1cc86	Step is WAITING for user approval
+  0x5d8b80b	%s (severity: %s), in %s at line %d col %d, from %s
+  0x5b93117	 (ID: %s)
+  0x5ca31db	- %s, in %s at line %d
+  0x5e33234?	As IDE feedback, the following lint errors may be related to your recent edits up to this point. Consider whether they d
+  0x5e0fe10?	You may have seen the following lint errors as feedback for a previous edit, but they still exist at this point. Please 
+  0x5d6f1ef	... and %d more lints (truncated for brevity)
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).getOutputStringHelper'
+### google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).getOutputStringHelper  0x7fd9a80+7008
+  0x5bcc9c3	USER_REQUEST
+  0x5c27629	The user is: %s.
+  0x5cc3814	2006-01-02T15:04:05Z07:00
+  0x5d00df7	The current local time is: %s.
+  0x5d72f05	Failed to convert scope item to mention string
+  0x5d863c3	Failed to convert scope item to mention string: %v
+  0x5c60b99?	ADDITIONAL_METADATA- [Position: %d] %sCORTEX_STEP_SOURCE_tool call completedThe search for "%s"contrib:fetch_mediaminisw
+  0x5c72732?	USER_SETTINGS_CHANGEnext: %v:%v:%.8f %q
+  0x5b2167a	- %s
+  0x5dd5c22	You
+  0x5ddcc6d?	You can embed these images in an artifact if you need the USER to review them.Battle Mode arms cannot read directories c

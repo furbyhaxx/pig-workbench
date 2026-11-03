@@ -1,0 +1,52 @@
+# Inference and telemetry request heads, agy 1.4.8, observed 2026-10-27
+# Captured with a local TLS-terminating CONNECT proxy (HTTPS_PROXY + SSL_CERT_FILE).
+# Authorization values are masked to scheme + length; the token itself is not recorded.
+
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 36240
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:writeTrajectoryAcls HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Content-Length: 55
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:streamGenerateContent?alt=sse HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Transfer-Encoding: chunked
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+===== daily-cloudcode-pa.googleapis.com =====
+POST /v1internal:streamGenerateContent?alt=sse HTTP/1.1
+Host: daily-cloudcode-pa.googleapis.com
+User-Agent: antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)
+Transfer-Encoding: chunked
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/json
+Accept-Encoding: gzip
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 29415
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip
+===== play.googleapis.com =====
+POST /log HTTP/1.1
+Host: play.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 51014
+Authorization: Bearer <redacted 265 chars>
+Content-Type: application/octet-stream
+Accept-Encoding: gzip

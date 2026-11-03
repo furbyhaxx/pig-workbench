@@ -1,0 +1,29 @@
+$ python3 evidence/prompt-callgraph.py "$HOME/.local/bin/agy"
+
+google3/third_party/jetski/prompt/prompt.DefaultSystemPromptForCumulativePrompt start=0x8726a00
+  0x695cac0 strings.Join
+
+google3/third_party/jetski/cortex/mixins/mixins.(*CascadeConversationalMixin).GetSystemPrompt start=0x8966220
+  0x8978420 google3/third_party/jetski/cortex/mixins/mixins.GetJetskiHarnessFuncMap
+  0x8975500 google3/third_party/jetski/cortex/mixins/mixins.getNamedPromptCombination
+  0x6ad8420 google3/base/go/log.ctxfatalf
+  0x8975680 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).AddSections
+  0x8975960 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).Build
+
+google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).Build start=0x8975960
+  0x8975ea0 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).includesSection
+  0x68e48c0 context.WithValue
+  0x8977280 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).processContent
+  0x6ed78a0 google3/third_party/jetski/go_utils/errorreport/errorreport.ReportError
+  0x8976320 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).applyPromptSectionCustomizations
+  0x8976060 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).resolveInlineTemplates
+
+google3/third_party/jetski/cortex/core/systemprompt/systemprompt.Construct start=0x8987180
+  0x7b2d780 google3/third_party/jetski/cortex/shared/shared.ParseRegistryKey
+  0x6940500 fmt.errorf
+
+google3/third_party/jetski/cortex/core/systemprompt/systemprompt.Build start=0x8987420
+  0x8978420 google3/third_party/jetski/cortex/mixins/mixins.GetJetskiHarnessFuncMap
+  0x8975680 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).AddSections
+  0x8975960 google3/third_party/jetski/cortex/mixins/mixins.(*PromptBuilder).Build
+  0x6940500 fmt.errorf

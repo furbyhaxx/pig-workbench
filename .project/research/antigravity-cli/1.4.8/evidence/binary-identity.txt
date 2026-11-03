@@ -1,0 +1,8 @@
+# binary identity
+70b1d27f1812f5ebccc8f13daf2209112447413437dd1ab6d87c58b8a04fe35b  /home/furbyhaxx/.local/bin/agy
+size=228897168 mode=755
+
+# agy --version
+1.4.8
+
+# go buildinfo

@@ -1,0 +1,261 @@
+Source root: host:/tmp/re-recon/codex-tag/codex-rs
+Verbatim source excerpts; line ranges are inclusive.
+
+===== BEGIN core/src/context/contextual_user_message.rs:24-39 =====
+const CONTEXTUAL_USER_FRAGMENT_MATCHERS: &[fn(&str) -> bool] = &[
+    UserInstructions::matches_text,
+    EnvironmentsState::matches_text,
+    AdditionalContextUserFragment::matches_text,
+    AgentMessageBoardNotification::matches_text,
+    codex_skills_extension::is_skill_prompt_fragment,
+    UserShellCommand::matches_text,
+    TurnAborted::matches_text,
+    SubagentNotification::matches_text,
+    InternalModelContextFragment::matches_text,
+    // compatibility for user-role recommendation messages in existing rollouts
+    RecommendedPluginsInstructions::matches_text,
+    LegacyUnifiedExecProcessLimitWarning::matches_text,
+    LegacyApplyPatchExecCommandWarning::matches_text,
+    LegacyModelMismatchWarning::matches_text,
+];
+===== END core/src/context/contextual_user_message.rs:24-39 =====
+
+===== BEGIN core/src/context/contextual_user_message.rs:42-84 =====
+pub(crate) fn is_guardian_context_message(item: &ResponseItem) -> bool {
+    matches!(item, ResponseItem::Message { role, content, internal_chat_message_metadata_passthrough, .. }
+        if role == "user"
+            && (content.iter().any(is_contextual_user_fragment)
+                || internal_chat_message_metadata_passthrough.as_ref()
+                    .and_then(|metadata| metadata.content_item_kinds.as_ref())
+                    .is_some_and(|kinds| !kinds.is_empty() && kinds.len() == content.len()
+                        && kinds.iter().all(|kind| kind.0 == GuardianRetainedInstructions::KIND)))
+            && UserGoalUpdate::message_text(item).is_none())
+}
+
+/// Uses host annotations rather than text markers to identify user authorization changes.
+pub(crate) fn is_user_authorization_message(item: &ResponseItem) -> bool {
+    let ResponseItem::Message {
+        role,
+        content,
+        internal_chat_message_metadata_passthrough,
+        ..
+    } = item
+    else {
+        return false;
+    };
+    role == "user"
+        && internal_chat_message_metadata_passthrough
+            .as_ref()
+            .and_then(|metadata| metadata.content_item_kinds.as_ref())
+            .is_none_or(|kinds| {
+                // Unknown, incomplete, and legacy messages remain conservative.
+                kinds.is_empty()
+                    || kinds.len() != content.len()
+                    || kinds.iter().any(|kind| {
+                        kind.0.starts_with("user.")
+                            || matches!(
+                                kind.0.as_str(),
+                                "" | "unknown"
+                                    // Media preparation can replace real user input.
+                                    | ImagePreparationError::KIND
+                                    | UnsupportedMedia::IMAGE_KIND
+                                    | UnsupportedMedia::AUDIO_KIND
+                            )
+                    })
+            })
+}
+===== END core/src/context/contextual_user_message.rs:42-84 =====
+
+===== BEGIN core/src/context/contextual_user_message.rs:86-124 =====
+fn is_standard_contextual_user_text(text: &str) -> bool {
+    CONTEXTUAL_USER_FRAGMENT_MATCHERS
+        .iter()
+        .any(|matches_text| matches_text(text))
+}
+
+pub(crate) fn is_contextual_user_fragment(content_item: &ContentItem) -> bool {
+    let ContentItem::InputText { text } = content_item else {
+        return false;
+    };
+    parse_hook_prompt_fragment(text).is_some() || is_standard_contextual_user_text(text)
+}
+
+pub(crate) fn parse_visible_hook_prompt_message(
+    id: Option<&str>,
+    content: &[ContentItem],
+) -> Option<HookPromptItem> {
+    let mut fragments = Vec::new();
+
+    for content_item in content {
+        let ContentItem::InputText { text } = content_item else {
+            return None;
+        };
+        if let Some(fragment) = parse_hook_prompt_fragment(text) {
+            fragments.push(fragment);
+            continue;
+        }
+        if is_standard_contextual_user_text(text) {
+            continue;
+        }
+        return None;
+    }
+
+    if fragments.is_empty() {
+        return None;
+    }
+
+    Some(HookPromptItem::from_fragments(id, fragments))
+}
+===== END core/src/context/contextual_user_message.rs:86-124 =====
+
+===== BEGIN protocol/src/items.rs:782-790 =====
+pub fn parse_hook_prompt_fragment(text: &str) -> Option<HookPromptFragment> {
+    let trimmed = text.trim();
+    let HookPromptXml { text, hook_run_id } = from_xml_str::<HookPromptXml>(trimmed).ok()?;
+    if hook_run_id.trim().is_empty() {
+        return None;
+    }
+
+    Some(HookPromptFragment::from_single_hook(text, hook_run_id))
+}
+===== END protocol/src/items.rs:782-790 =====
+
+===== BEGIN core/src/event_mapping.rs:65-67 =====
+pub(crate) fn is_contextual_user_message_content(message: &[ContentItem]) -> bool {
+    message.iter().any(is_contextual_user_fragment)
+}
+===== END core/src/event_mapping.rs:65-67 =====
+
+===== BEGIN core/src/event_mapping.rs:126-130 =====
+fn parse_user_message(message: &[ContentItem]) -> Option<UserMessageItem> {
+    if is_contextual_user_message_content(message) {
+        return None;
+    }
+
+===== END core/src/event_mapping.rs:126-130 =====
+
+===== BEGIN core/src/event_mapping.rs:194-205 =====
+pub fn parse_turn_item(item: &ResponseItem) -> Option<TurnItem> {
+    match item {
+        ResponseItem::Message {
+            role,
+            content,
+            id,
+            phase,
+            ..
+        } => match role.as_str() {
+            "user" => parse_visible_hook_prompt_message(id.as_deref(), content)
+                .map(TurnItem::HookPrompt)
+                .or_else(|| parse_user_message(content).map(TurnItem::UserMessage)),
+===== END core/src/event_mapping.rs:194-205 =====
+
+===== BEGIN core/src/session/rollout_reconstruction.rs:431-436 =====
+                RolloutItem::ResponseItem(response_item) => {
+                    let active_segment =
+                        active_segment.get_or_insert_with(ActiveReplaySegment::default);
+                    active_segment.counts_as_user_turn |=
+                        is_user_turn_boundary(&response_item.item);
+                }
+===== END core/src/session/rollout_reconstruction.rs:431-436 =====
+
+===== BEGIN core/src/context_manager/history.rs:1471-1486 =====
+pub(crate) fn is_user_turn_boundary(item: &ResponseItem) -> bool {
+    if matches!(item, ResponseItem::AgentMessage { .. }) {
+        return true;
+    }
+    let ResponseItem::Message { role, content, .. } = item else {
+        return false;
+    };
+
+    (role == "user"
+        && !is_contextual_user_message_content(content)
+        // Local compaction persists its synthetic summary as a user-role message.
+        // It must not consume a rollback turn or become the transcript boundary.
+        && !content.iter().any(|part| matches!(part,
+            ContentItem::InputText { text } if crate::compact::is_summary_message(text))))
+        || (role == "assistant" && is_inter_agent_instruction_content(content))
+}
+===== END core/src/context_manager/history.rs:1471-1486 =====
+
+===== BEGIN core/src/thread_rollout_truncation.rs:43-54 =====
+pub(crate) fn user_message_positions_in_rollout(items: &[RolloutItem]) -> Vec<usize> {
+    let mut user_positions = Vec::new();
+    for (idx, item) in items.iter().enumerate() {
+        match item {
+            RolloutItem::ResponseItem(item)
+                if matches!(&item.item, ResponseItem::Message { .. })
+                    && matches!(
+                        event_mapping::parse_turn_item(&item.item),
+                        Some(TurnItem::UserMessage(_))
+                    ) =>
+            {
+                user_positions.push(idx);
+===== END core/src/thread_rollout_truncation.rs:43-54 =====
+
+===== BEGIN core/src/session/mod.rs:5611-5622 =====
+    pub(crate) async fn record_user_prompt_and_emit_turn_item(
+        &self,
+        turn_context: &TurnContext,
+        model_info: &ModelInfo,
+        input: &[UserInput],
+        client_id: Option<String>,
+        metadata: UserInputMetadata,
+        persist_context: PersistContext,
+    ) {
+        // Persist the user message to history, but emit the turn item from `UserInput` so
+        // UI-only `text_elements` are preserved. `ResponseItem::Message` does not carry
+        // those spans, and `record_response_item_and_emit_turn_item` would drop them.
+===== END core/src/session/mod.rs:5611-5622 =====
+
+===== BEGIN core/src/session/mod.rs:5656-5673 =====
+        let mut user_message_item = UserMessageItem::new(input);
+        apply_prepared_image_file_ids(
+            &mut user_message_item,
+            &prepared_items,
+            &user_image_content_indices,
+        );
+        self.record_prepared_conversation_items(
+            turn_context,
+            model_info,
+            prepared_items,
+            image_preparations,
+        )
+        .await;
+        user_message_item.client_id = client_id;
+        let turn_item = TurnItem::UserMessage(user_message_item);
+        self.emit_turn_item_started(turn_context, &turn_item).await;
+        self.emit_turn_item_completed(turn_context, turn_item).await;
+        self.ensure_rollout_materialized(persist_context).await;
+===== END core/src/session/mod.rs:5656-5673 =====
+
+===== BEGIN core/src/session/turn.rs:1872-1874 =====
+        if first_attempt && turn_context.config.notify.is_some() {
+            notify_messages = legacy_notify_input_messages(&prompt.input);
+        }
+===== END core/src/session/turn.rs:1872-1874 =====
+
+===== BEGIN core/src/hook_runtime.rs:621-643 =====
+pub(crate) fn legacy_notify_input_messages(input: &[ResponseItem]) -> Vec<String> {
+    input
+        .iter()
+        .filter_map(|item| {
+            let ResponseItem::Message { role, content, .. } = item else {
+                return None;
+            };
+            if role != "user" || is_contextual_user_message_content(content) {
+                return None;
+            }
+            Some(
+                user_input_parts(content)
+                    .filter_map(|(_, part)| match part {
+                        ContentItem::InputText { text } => Some(text.as_str()),
+                        ContentItem::InputImage { .. }
+                        | ContentItem::InputAudio { .. }
+                        | ContentItem::OutputText { .. } => None,
+                    })
+                    .collect(),
+            )
+        })
+        .collect()
+}
+===== END core/src/hook_runtime.rs:621-643 =====

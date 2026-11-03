@@ -1,0 +1,4 @@
+$ python3 tools/goresym.py --bin ~/.local/bin/agy init
+174452 funcs, 6875 files, text base 0x6819000
+$ python3 -c 'import json; c=json.load(open("tools/funcs.json")); print("pclntab_nfiles=%s recovered_files=%s" % (c["nfiles"], len(c["files"])))'
+pclntab_nfiles=6931 recovered_files=6875

@@ -1,0 +1,109 @@
+
+$ objdump -d -M intel --start-address=0x86ee54a --stop-address=0x86ee58b "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+00000000086ee54a <crosscall2@@Base+0x1d1df8a>:
+ 86ee54a:	b9 69 01 00 00       	mov    ecx,0x169
+ 86ee54f:	48 8d 15 69 d6 73 fd 	lea    rdx,[rip+0xfffffffffd73d669]        # 5e2bbbf <_cgo_topofstack@@Base-0xa879a1>
+ 86ee556:	eb 33                	jmp    86ee58b <crosscall2@@Base+0x1d1dfcb>
+ 86ee558:	48 8d 9c 24 98 00 00 	lea    rbx,[rsp+0x98]
+ 86ee55f:	00 
+ 86ee560:	44 0f 11 3b          	movups XMMWORD PTR [rbx],xmm15
+ 86ee564:	44 0f 11 7b 10       	movups XMMWORD PTR [rbx+0x10],xmm15
+ 86ee569:	44 0f 11 7b 20       	movups XMMWORD PTR [rbx+0x20],xmm15
+ 86ee56e:	44 0f 11 7b 30       	movups XMMWORD PTR [rbx+0x30],xmm15
+ 86ee573:	48 8d 05 26 93 e9 01 	lea    rax,[rip+0x1e99326]        # a5878a0 <__lxstat@plt+0x2106e0>
+ 86ee57a:	e8 41 1f 00 00       	call   86f04c0 <crosscall2@@Base+0x1d1ff00>
+ 86ee57f:	b9 df 01 00 00       	mov    ecx,0x1df
+ 86ee584:	48 8d 15 e7 72 74 fd 	lea    rdx,[rip+0xfffffffffd7472e7]        # 5e35872 <_cgo_topofstack@@Base-0xa7dcee>
+
+$ objdump -d -M intel --start-address=0x86f3a14 --stop-address=0x86f3a27 "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+00000000086f3a14 <crosscall2@@Base+0x1d23454>:
+ 86f3a14:	48 8d 05 95 dc 73 fd 	lea    rax,[rip+0xfffffffffd73dc95]        # 5e316b0 <_cgo_topofstack@@Base-0xa81eb0>
+ 86f3a1b:	bb b2 01 00 00       	mov    ebx,0x1b2
+ 86f3a20:	48                   	rex.W
+ 86f3a21:	8d                   	.byte 0x8d
+ 86f3a22:	8c 24 18             	mov    WORD PTR [rax+rbx*1],fs
+ 86f3a25:	01 00                	add    DWORD PTR [rax],eax
+
+$ objdump -d -M intel --start-address=0x86f3aa9 --stop-address=0x86f3abc "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+00000000086f3aa9 <crosscall2@@Base+0x1d234e9>:
+ 86f3aa9:	48 8d 05 35 85 74 fd 	lea    rax,[rip+0xfffffffffd748535]        # 5e3bfe5 <_cgo_topofstack@@Base-0xa7757b>
+ 86f3ab0:	bb 32 02 00 00       	mov    ebx,0x232
+ 86f3ab5:	48                   	rex.W
+ 86f3ab6:	8d                   	.byte 0x8d
+ 86f3ab7:	8c 24 18             	mov    WORD PTR [rax+rbx*1],fs
+ 86f3aba:	01 00                	add    DWORD PTR [rax],eax
+
+$ objdump -d -M intel --start-address=0x871afcf --stop-address=0x871b02c "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+000000000871afcf <crosscall2@@Base+0x1d4aa0f>:
+ 871afcf:	48 8d 05 7d 09 72 fd 	lea    rax,[rip+0xfffffffffd72097d]        # 5e3b953 <_cgo_topofstack@@Base-0xa77c0d>
+ 871afd6:	bb 30 02 00 00       	mov    ebx,0x230
+ 871afdb:	48 8d 8c 24 a0 01 00 	lea    rcx,[rsp+0x1a0]
+ 871afe2:	00 
+ 871afe3:	bf 01 00 00 00       	mov    edi,0x1
+ 871afe8:	89 fe                	mov    esi,edi
+ 871afea:	e8 d1 86 22 fe       	call   69436c0 <_cgo_topofstack@@Base+0x90160>
+ 871afef:	48 89 c1             	mov    rcx,rax
+ 871aff2:	48 8b 84 24 c0 01 00 	mov    rax,QWORD PTR [rsp+0x1c0]
+ 871aff9:	00 
+ 871affa:	48 89 8c 24 88 00 00 	mov    QWORD PTR [rsp+0x88],rcx
+ 871b001:	00 
+ 871b002:	48 89 5c 24 58       	mov    QWORD PTR [rsp+0x58],rbx
+ 871b007:	48 8b 50 20          	mov    rdx,QWORD PTR [rax+0x20]
+ 871b00b:	48 85 d2             	test   rdx,rdx
+ 871b00e:	74 22                	je     871b032 <crosscall2@@Base+0x1d4aa72>
+ 871b010:	48 8b 52 08          	mov    rdx,QWORD PTR [rdx+0x8]
+ 871b014:	48 85 d2             	test   rdx,rdx
+ 871b017:	74 19                	je     871b032 <crosscall2@@Base+0x1d4aa72>
+ 871b019:	80 3a 00             	cmp    BYTE PTR [rdx],0x0
+ 871b01c:	74 0e                	je     871b02c <crosscall2@@Base+0x1d4aa6c>
+ 871b01e:	ba 06 01 00 00       	mov    edx,0x106
+ 871b023:	48 8d 35 6a 5c 70 fd 	lea    rsi,[rip+0xfffffffffd705c6a]        # 5e20c94 <_cgo_topofstack@@Base-0xa928cc>
+ 871b02a:	eb 0a                	jmp    871b036 <crosscall2@@Base+0x1d4aa76>
+
+$ objdump -d -M intel --start-address=0x8717ea2 --stop-address=0x8717eb5 "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+0000000008717ea2 <crosscall2@@Base+0x1d478e2>:
+ 8717ea2:	48 8d 05 42 b3 6e fd 	lea    rax,[rip+0xfffffffffd6eb342]        # 5e031eb <_cgo_topofstack@@Base-0xab0375>
+ 8717ea9:	bb 7f 00 00 00       	mov    ebx,0x7f
+ 8717eae:	48                   	rex.W
+ 8717eaf:	8d                   	.byte 0x8d
+ 8717eb0:	8c 24 f8             	mov    WORD PTR [rax+rdi*8],fs
+	...
+
+$ objdump -d -M intel --start-address=0x8719cbc --stop-address=0x8719ccf "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+0000000008719cbc <crosscall2@@Base+0x1d496fc>:
+ 8719cbc:	48 8d 05 7e 93 72 fd 	lea    rax,[rip+0xfffffffffd72937e]        # 5e43041 <_cgo_topofstack@@Base-0xa7051f>
+ 8719cc3:	bb a0 02 00 00       	mov    ebx,0x2a0
+ 8719cc8:	48                   	rex.W
+ 8719cc9:	8d                   	.byte 0x8d
+ 8719cca:	8c 24 08             	mov    WORD PTR [rax+rcx*1],fs
+ 8719ccd:	01 00                	add    DWORD PTR [rax],eax

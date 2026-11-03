@@ -1,0 +1,61 @@
+Working directory: /mnt/Projects/furbyhaxx/pig-workbench
+
+Substantive commands retained verbatim:
+
+  date -Iseconds; git status --short; wc -lc /tmp/cc_code.txt /tmp/cc_strings.txt; ls -la .project/research/claude-code-cli/2.1.317
+
+  python3 .project/research/claude-code-cli/2.1.317/tools/ctx.py 'DeferredToolPlaceholder' --files code --window 850 --max 4; python3 .project/research/claude-code-cli/2.1.317/tools/ctx.py 'input_schema' --files code --window 400 --max 28
+
+  python3 .project/research/claude-code-cli/2.1.317/tools/ctx.py 'claude-code-20250219' --files code --window 1600 --max 4
+
+  python3 .project/research/claude-code-cli/2.1.317/evidence/extract-tools.py; wc -c .project/research/claude-code-cli/2.1.317/evidence/tools/*
+
+  python3 .project/research/claude-code-cli/2.1.317/evidence/extract-styles.py; wc -c .project/research/claude-code-cli/2.1.317/evidence/system-prompt/*
+
+  python3 .project/research/claude-code-cli/2.1.317/evidence/extract-styles.py
+
+  python3 .project/research/claude-code-cli/2.1.317/evidence/measure-delta.py
+
+  stat -c '%s %n' "$HOME/.local/share/claude/versions/2.1.317" /tmp/cc_code.txt /tmp/cc_strings.txt; "$HOME/.local/share/claude/versions/2.1.317" --version; sha256sum /tmp/cc_code.txt /tmp/cc_strings.txt
+
+  command -v unshare; command -v script; command -v timeout; unshare --user --map-root-user --net true
+  command -v ip; unshare --user --map-root-user --net sh -c 'ip link set lo up && ip -brief link show lo'
+  unshare --user --map-root-user --net sh -c 'ip link set lo up && python3 .project/research/claude-code-cli/2.1.317/evidence/capture-local.py print'
+  unshare --user --map-root-user --net sh -c 'ip link set lo up && python3 .project/research/claude-code-cli/2.1.317/evidence/capture-local.py interactive'
+  unshare --user --map-root-user --net sh -c 'ip link set lo up && python3 .project/research/claude-code-cli/2.1.317/evidence/capture-local.py print-beta'
+  unshare --user --map-root-user --net sh -c 'ip link set lo up && python3 .project/research/claude-code-cli/2.1.317/evidence/capture-local.py interactive-beta'
+  python3 .project/research/claude-code-cli/2.1.317/evidence/split-capture.py
+  python3 .project/research/claude-code-cli/2.1.317/evidence/verify.py
+  python3 .project/research/claude-code-cli/2.1.317/evidence/split-capture.py && python3 .project/research/claude-code-cli/2.1.317/evidence/verify.py && python3 .project/research/claude-code-cli/2.1.317/evidence/measure-delta.py
+  python3 - <<'PY'
+from pathlib import Path
+root=Path('.project/research/claude-code-cli/2.1.317/evidence'); home=str(Path.home()).encode(); paths=[p for sub in ('wire','tools','system-prompt') for p in (root/sub).rglob('*') if p.is_file()]; bad=[str(p) for p in paths if home in p.read_bytes()]; print(f'checked {len(paths)} evidence files: real home-path occurrences={len(bad)}');
+if bad: print('\n'.join(bad)); raise SystemExit(1)
+PY
+
+Extraction scripts contain the exact search anchors, template handling, schema
+factory boundaries, prefix stripping, and checks. Corpus SHA-256:
+  /tmp/cc_code.txt 3d7569b3ed6c92377c41c9aecc7b32b103447a35d1b692c00c73d0ab6e6f2c12
+  /tmp/cc_strings.txt 15569d071870768f7dfba363a92b35ea27fb146c99cfacbcf8e8f6a4a4f8d161
+
+The commands above cover the evidence-generation and verification recipes, but
+do not reproduce every ad hoc inline Python search used for exploration. One
+exploratory search containing a broad regex was terminated after it ran for
+15 seconds; it wrote no evidence and is not a successful check. The interactive
+command failed on five attempts while the capture script was adjusted: first an
+onboarding connectivity check, then workspace trust selection, then an unapproved
+dummy API-key dialog. The final command succeeded after the script selected its
+own empty workspace and dummy key explicitly. The capture and split scripts
+refuse to overwrite different existing captured evidence; new captures need
+different output names. Extraction scripts may regenerate their derived files.
+
+An intermediate verify.py assertion failed because it assumed the non-lean Ppr
+intro would appear in the captured bodies. Inspecting C24552:3 and C24579:25
+showed a separate lean-body branch. The assertion was replaced with a check
+against the observed lean prefix and passed in the final verification.
+
+The four local capture runs used an isolated network namespace and a loopback
+HTTP server with a dummy API key. The server captured requests but did not
+forward or simulate a successful model response. No request went to a remote
+endpoint, and no real credential or binary carve was used. All stored request
+bodies were parsed and reserialized, so JSON lexical formatting is not preserved.

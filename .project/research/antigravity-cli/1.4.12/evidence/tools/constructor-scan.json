@@ -1,0 +1,643 @@
+[
+  {
+    "function": "google3/third_party/jetski/cortex/tools/code/code.(*SingleReplaceFileContentToolConverter).GetToolDefinition",
+    "cached_address": "0x86ed800",
+    "disassembly_start": "0x86ed880",
+    "name": [],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/code/code.CodeEditSharedArgs; *google3/third_party/jetski/cortex/tools/code/code.ReplacementChunk \"jsonschema:\\\"required\\\" jsonschema_description:\\\"A single contiguous chunk to replace.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/code/code.CodeEditSharedArgs; *google3/third_party/jetski/cortex/tools/code/code.replacementChunkNoAllowMultiple \"jsonschema:\\\"required\\\" jsonschema_description:\\\"A single contiguous chunk to replace.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/code/code.CodeEditSharedArgs; *google3/third_party/jetski/cortex/tools/code/code.ReplacementChunkNoRange \"jsonschema:\\\"required\\\" jsonschema_description:\\\"A single contiguous chunk to replace.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/code/code.CodeEditSharedArgs; *google3/third_party/jetski/cortex/tools/code/code.ReplacementChunkBase \"jsonschema:\\\"required\\\" jsonschema_description:\\\"A single contiguous chunk to replace.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/code/code.(*MultiReplaceFileContentToolConverter).GetToolDefinition",
+    "cached_address": "0x86edfe0",
+    "disassembly_start": "0x86ee060",
+    "name": [],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.47b68428c4f73032c90afa2b9ef050a1ff376521cd7b4d1afcd4d6ad15b252e2]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.35bfb49a9ba719479ca870c6f7024860c9438fcbfc884629bbd6703acfd99938]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.afb4ca1023b8856ee6b2dc14ef101e3c4d3b30e5b84355c22ee798c771da559e]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.26963f606cfa00dc5f534120a1b031af5cb66f7deda60da75832ddf45bf9cfd2]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/code/code.(*WriteToFileToolConverter).GetToolDefinition",
+    "cached_address": "0x86ee480",
+    "disassembly_start": "0x86ee500",
+    "name": [
+      {
+        "offset": "0x5be2f8f",
+        "bytes": 13,
+        "text": "write_to_file"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.9985355cddfa93b9d02891f7b7329212482809d86fd7189c30748f32819fbdc7]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/code/code.writeToFileArgsBase; ArtifactMetadata *google3/third_party/jetski/cortex/tools/code/code.artifactMetadata \"jsonschema_description:\\\"Metadata that defines artifact properties. ONLY provide when creating an artifact file in the artifact directory. Omit this field when creating non-artifact files.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/subagent/subagent.(*DefineSubagentToolConverter).GetToolDefinition",
+    "cached_address": "0x86f18e0",
+    "disassembly_start": "0x86f1960",
+    "name": [
+      {
+        "offset": "0x5c0fd93",
+        "bytes": 15,
+        "text": "define_subagent"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e3996e",
+        "bytes": 533,
+        "text": "Defines a new type of subagent that can be invoked via invoke_subagent.\n\n\tGuidelines:\n\t* Use this tool if you need a specialized subagent for a task and none of the existing subagents are suitable.\n\t* Once the subagent is defined, it can be invoked repeatedly using invoke_subagent without calling this tool again.\n\t* The subagent will be defined with the specified name, description, system prompt, and tool groups.\n\t* By default, all subagents have read tools to research the codebase, and tools to communicate with other agents.\n\t"
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.90816542416b29f15b36e3c9af2a5502d62fdfe7370795d96fc32e392a30f155]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/subagent/subagent.(*InvokeSubagentToolConverter).GetToolDefinition",
+    "cached_address": "0x86f20e0",
+    "disassembly_start": "0x86f2160",
+    "name": [
+      {
+        "offset": "0x5c0fd84",
+        "bytes": 15,
+        "text": "invoke_subagent"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e4e4ef",
+        "bytes": 843,
+        "text": "Invokes one or more subagents by name with a single tool call. Each subagent runs in the background with its own prompt and reports back when done.\n\nSpecify the Subagents array with one or more entries. Each entry defines a subagent to launch.\n\nCommunicate with subagents using the send_message tool. Examples of when to do this:\n* To check on the status of a subagent.\n* To send a running subagent further instructions.\n* To send an idle subagent new instructions.\n\nGuidelines:\n* Each invoked subagent will be uniquely identified by its conversationID.\n* Multiple subagents with the same type name can be invoked, with each subagent receiving a unique conversationID.\n* If a task is a natural continuation of an existing subagent's work, send a message to that subagent with the task rather than invoking a new subagent to conserve resources."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Subagents []google3/third_party/jetski/cortex/shared/shared.SubagentEntry \"json:\\\"Subagents\\\" jsonschema:\\\"required\\\" jsonschema_description:\\\"Array of subagents to invoke. Each entry specifies a separate subagent to launch concurrently.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/subagent/subagent.(*ManageSubagentsToolConverter).GetToolDefinition",
+    "cached_address": "0x86f38e0",
+    "disassembly_start": "0x86f3960",
+    "name": [
+      {
+        "offset": "0x5c24c29",
+        "bytes": 16,
+        "text": "manage_subagents"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Action string \"jsonschema:\\\"required,enum=list,enum=kill,enum=kill_all\\\" jsonschema_description:\\\"The action to perform. Must be 'list' (list active direct subagents with their live state), 'kill' (terminate specific subagents and all their descendants), or 'kill_all' (terminate all subagents and all their descendants).\\\"\"; ConversationIDs []string \"json:\\\"ConversationIds,omitempty\\\" jsonschema_description:\\\"The IDs of the subagents to kill. Required for 'kill'.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.96c4a8beab5c0fe35a5932cb0ca5b7fbdf305767c98a61709531143369b3532c]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.e57bdbebd9681a06d68ef44207fedfc5af48f828ae1bb6c8a29be6a3b77e9165]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/notebook/notebook.(*NotebookEditToolConverter).GetToolDefinition",
+    "cached_address": "0x86fbe20",
+    "disassembly_start": "0x86fbea0",
+    "name": [
+      {
+        "offset": "0x5be2f9c",
+        "bytes": 13,
+        "text": "notebook_edit"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e3bdb4",
+        "bytes": 561,
+        "text": "Edit Jupyter Notebook (.ipynb) files at the cell level. This tool provides safe, structured operations on notebooks without risking JSON corruption.\n\nActions:\n- 'list': List all cells with their index, type, and preview\n- 'get': Get the full content of a specific cell\n- 'get_with_outputs': Get cell content and outputs\n- 'add': Add a new cell (code or markdown)\n- 'update': Update the content of an existing cell\n- 'delete': Delete a cell\n- 'create': Create a new empty notebook\n\nThis tool should be used instead of regular file editing tools for .ipynb files."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.11152b50b95c8917d481119000c5f11616a3d8b138f3d0469abfebc6b4dadc41]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/notebook/notebook.(*NotebookExecutionToolConverter).GetToolDefinition",
+    "cached_address": "0x86fda60",
+    "disassembly_start": "0x86fdae0",
+    "name": [
+      {
+        "offset": "0x5c4af3d",
+        "bytes": 18,
+        "text": "notebook_execution"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e347c4",
+        "bytes": 468,
+        "text": "Execute cells in a Colab/Jupyter Notebook (.ipynb) file.\n\nThis tool executes the specified cells. Cell IDs are required for each cell to execute. Before using this tool, read the notebook and identify the cell IDs to execute. These are alpha numeric IDs that are part of the notebook's JSON structure. Do not use cell indexes. Only for use when editor or active document is detected.\nReturns the execution status, count of executed cells, and cell outputs/error trace."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { NotebookPath string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Absolute path to the .ipynb notebook file.\\\"\"; CellIDs []string \"json:\\\"CellIDs\\\" jsonschema:\\\"required\\\" jsonschema_description:\\\"The IDs of the cells to execute.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*AskCustomPermissionToolConverter).GetToolDefinition",
+    "cached_address": "0x870daa0",
+    "disassembly_start": "0x870db20",
+    "name": [
+      {
+        "offset": "0x5c8228e",
+        "bytes": 21,
+        "text": "ask_custom_permission"
+      }
+    ],
+    "description": [],
+    "schema_functions": []
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*AskPermissionToolConverter).GetToolDefinition",
+    "cached_address": "0x870e960",
+    "disassembly_start": "0x870e9e0",
+    "name": [
+      {
+        "offset": "0x5bfb4b1",
+        "bytes": 14,
+        "text": "ask_permission"
+      }
+    ],
+    "description": [],
+    "schema_functions": []
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*AskQuestionToolConverter).GetToolDefinition",
+    "cached_address": "0x8711100",
+    "disassembly_start": "0x8711180",
+    "name": [
+      {
+        "offset": "0x5bcae63",
+        "bytes": 12,
+        "text": "ask_question"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e6ab1f",
+        "bytes": 1265,
+        "text": "Use this tool to ask the user one or more multiple-choice questions, with the goal of:\n- Clarifying underspecified requirements\n- Soliciting design feedback or user preferences\n- Addressing ambiguous user intent\n- Picking a solution from a list of options\n\nWhen called, this tool renders an interactive modal containing the question, selectable options, a default write-in option, and Submit/Skip buttons. Execution is blocked until the user responds.\n\nGuidance:\n- When specifying files in the question, use github markdown links (e.g. [filename](file:///path/to/file)).\n- Don't use this tool to ask trivial questions that can be answered with a single word (e.g. yes/no); output regular text to ask these questions.\n- Don't include an 'other' option for write-in responses; one is always provided in the UI by default.\n- Don't enumerate the options; they are enumerated by default.\n- Don't include \"Select all options that apply\", or similar, in the question; the UI already includes this.\n- If you recommend any options, list it first and prefix the option text with \"(Recommended)\".\n- Format options as the user's direct response instead of describing your own actions.\n- Set 'IsMultiSelect' to true to allow the user to select multiple options with checkboxes.\n"
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Questions []google3/third_party/jetski/cortex/tools/tools.askQuestionEntryArg \"json:\\\"questions\\\" jsonschema_description:\\\"The list of questions to ask.\\\" jsonschema_required:\\\"true\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ListPermissionsToolConverter).GetToolDefinition",
+    "cached_address": "0x8712420",
+    "disassembly_start": "0x87124a0",
+    "name": [
+      {
+        "offset": "0x5c25d49",
+        "bytes": 16,
+        "text": "list_permissions"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e0316c",
+        "bytes": 127,
+        "text": "Use this tool to list all current permission grants. This helps you understand what resources you can access without prompting."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct {}]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ManageInboxToolConverter).GetToolDefinition",
+    "cached_address": "0x8712780",
+    "disassembly_start": "0x8712800",
+    "name": [
+      {
+        "offset": "0x5bca2f3",
+        "bytes": 12,
+        "text": "manage_inbox"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e0b7f5",
+        "bytes": 152,
+        "text": "Manage your message inbox. Use this tool to list all messages or read the full content of a specific message. Do not use this tool to poll for messages."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Action string \"jsonschema:\\\"required,enum=list,enum=read\\\" jsonschema_description:\\\"The action to perform: 'list' (list all messages with metadata) or 'read' (read full content of a specific message).\\\"\"; MessageID string \"json:\\\"MessageID,omitempty\\\" jsonschema_description:\\\"The ID of the message to read. Required when Action is 'read'.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ManageTaskToolConverter).GetToolDefinition",
+    "cached_address": "0x8712d60",
+    "disassembly_start": "0x8712de0",
+    "name": [
+      {
+        "offset": "0x5baf2e2",
+        "bytes": 11,
+        "text": "manage_task"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e3260a",
+        "bytes": 440,
+        "text": "Manage background tasks. Use this tool to list running tasks or interact with tasks that were sent to the background.\n\nActions:\n- 'list': List all currently running background tasks\n- 'kill': Cancel the task's execution\n- 'status': Check the task's current status and log file location\n- 'send_input': Send input to a running task\n\nWhen mentioning tasks to the user, avoid using full task IDs and start timestamps; keep them human-readable."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.0e4b5af2ea6caba60e6cd3a3e6bd4d5575bcfb6b86096dfc345a26e6f47f179f]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ScheduleToolConverter).GetToolDefinition",
+    "cached_address": "0x8713580",
+    "disassembly_start": "0x8713600",
+    "name": [
+      {
+        "offset": "0x5b62e0f",
+        "bytes": 8,
+        "text": "schedule"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.88ec5a38247ee37da00c18b497d27bd798cfc1159901f723b2e10c6d21910fbb]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*SedFileToolConverter).GetToolDefinition",
+    "cached_address": "0x8713b40",
+    "disassembly_start": "0x8713bc0",
+    "name": [
+      {
+        "offset": "0x5b63757",
+        "bytes": 8,
+        "text": "sed_file"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e86527",
+        "bytes": 1691,
+        "text": "Edit files using sed expressions. Executes GNU sed with the given Basic Regular Expressions sequentially on the target file in-place. SUBSTITUTIONS: 's/old/new/' replaces text. Add 'g' flag to replace all occurrences on each line.\nDELETIONS: 'Nd' deletes line N. 'N,Md' deletes lines N through M.\nAPPENDS: Use the file_content argument with the r command to append lines — this avoids all escaping issues.Pass file_content: {\"block1\": \"your code here...\"} and use 'Nr block1' in expressions to append the content at the end of line N. The content is written verbatim with no escaping needed.\nREPLACING: You should generally lean on deleting + appending with the r command to replace lines to avoid escape issues. For example to replace lines 20-35, use expressions: [\"20,35d\", \"19r new\"] with file_content: {\"new\": \"\\nint add(int a, int b) {\\n  return a + b;\\n}\"}. You still have a/i/c commands but be careful with escaping characters, in general err on the side of caution and use d + r to do line replacements/insertions/appending. Note the \\n at the beginning of new, since r APPENDS to the END of line 19 in the example.\nRULES:\n- Order line-addressed expressions from BOTTOM of file to TOP to prevent line number shifts.\n- You should try plan all changes upfront in a single call, but sometimes it may be better to make sequential sed edits if they're overlapping.\n- Do NOT make parallel sed_file calls to the same file.\n- Only reference line numbers you have actually viewed.\n- Newline in a/i/c/s requires escaping the backslashes with \\\\n.\n- Use alternate delimiters when patterns contain '/': 's|old/path|new/path|g'.\n- Case conversion modifiers (\\U, \\L, \\u, \\l) are NOT supported.\n"
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.054d71089ca1326d679425089ee72bc1e61d0b04cd3df5ac67eb62d752f5136e]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*SendMessageToolConverter).GetToolDefinition",
+    "cached_address": "0x8714580",
+    "disassembly_start": "0x8714600",
+    "name": [
+      {
+        "offset": "0x5bca2e7",
+        "bytes": 12,
+        "text": "send_message"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Recipient string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"The recipient ID to send the message to, e.g. a subagent conversation ID.\\\"\"; Message string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"The message content.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Recipient string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"The recipient ID to send the message to, e.g. a subagent conversation ID, or '@children' to broadcast to all active direct subagents.\\\"\"; Message string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"The message content.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ReplaceFileContentToolConverterForTab).GetToolDefinition",
+    "cached_address": "0x8715620",
+    "disassembly_start": "0x87156a0",
+    "name": [],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/tools.TabCodeEditArgs; ReplacementChunks []*google3/third_party/jetski/cortex/tools/tools.ReplacementChunkForTab \"jsonschema:\\\"required\\\" jsonschema_description:\\\"A list of chunks to replace. It is best to provide multiple chunks for non-contiguous edits if possible. This must be a JSON array, not a string.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*FinishToolConverter).GetToolDefinition",
+    "cached_address": "0x87177c0",
+    "disassembly_start": "0x8717840",
+    "name": [
+      {
+        "offset": "0x5b39f08",
+        "bytes": 6,
+        "text": "finish"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e17725",
+        "bytes": 208,
+        "text": "Finish your task and end the interaction. Don't call this tool unless you are confident that your solution is correct, for example after you've written tests, executed them, and verified the task is complete."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct {}]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*GrepSearchToolConverter).GetToolDefinition",
+    "cached_address": "0x8717d20",
+    "disassembly_start": "0x8717da0",
+    "name": [
+      {
+        "offset": "0x5baf2c1",
+        "bytes": 11,
+        "text": "grep_search"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.c62721526fbadca229308c7bff27e5112ea1a6eb94122a3faba778f674e26411]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ListDirToolConverter).GetToolDefinition",
+    "cached_address": "0x8719320",
+    "disassembly_start": "0x87193a0",
+    "name": [
+      {
+        "offset": "0x5b62e97",
+        "bytes": 8,
+        "text": "list_dir"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e354b4",
+        "bytes": 479,
+        "text": "List the contents of a directory, i.e. all files and subdirectories that are children of the directory. Directory path must be an absolute path to a directory that exists. For each child in the directory, output will have: relative path to the directory, whether it is a directory or file, size in bytes if file, and number of children (recursive) if directory. Number of children may be missing if the workspace is too large, since we are not able to track the entire workspace."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { DirectoryPath string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Path to list contents of, should be absolute path to a directory\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ViewFileToolConverter).GetToolDefinition",
+    "cached_address": "0x8719760",
+    "disassembly_start": "0x87197e0",
+    "name": [
+      {
+        "offset": "0x5b7ac43",
+        "bytes": 9,
+        "text": "view_file"
+      }
+    ],
+    "description": [],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { google3/third_party/jetski/cortex/tools/tools.viewFileArgsBase; ContentOffset uint32 \"jsonschema_description:\\\"Optional. Byte offset into the content. Use this to view content beyond the initial byte limit when the tool output indicates content was truncated.\\\"\" }]",
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { AbsolutePath string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Path to file to view. Must be an absolute path.\\\"\"; StartLine *uint32 \"jsonschema_description:\\\"Optional. Startline to view, 1-indexed, inclusive. When specified, this value must be less than or equal to EndLine.\\\"\"; EndLine *uint32 \"jsonschema_description:\\\"Optional. Endline to view, 1-indexed, inclusive. When specified, this value must be greater than or equal to StartLine.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*RunCommandToolConverter).GetToolDefinition",
+    "cached_address": "0x871af00",
+    "disassembly_start": "0x871af80",
+    "name": [
+      {
+        "offset": "0x5baf2d7",
+        "bytes": 11,
+        "text": "run_command"
+      }
+    ],
+    "description": [],
+    "schema_functions": []
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*SendCommandInputToolConverter).GetToolDefinition",
+    "cached_address": "0x871b720",
+    "disassembly_start": "0x871b7a0",
+    "name": [
+      {
+        "offset": "0x5c4af4f",
+        "bytes": 18,
+        "text": "send_command_input"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e272ee",
+        "bytes": 312,
+        "text": "Send standard input to a running command or to terminate a command. Use this to interact with REPLs, interactive commands, and long-running processes. The command must have been created by a previous run_command call. Use the command_status tool to check the status and output of the command after sending input."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.889cbdfb9967588206abd21d7ba2e0cba2e02a98f6e18d5f160cc42f15b398ca]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*FindToolConverter).GetToolDefinition",
+    "cached_address": "0x871bca0",
+    "disassembly_start": "0x871bd20",
+    "name": [
+      {
+        "offset": "0x5bca2cf",
+        "bytes": 12,
+        "text": "find_by_name"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e363c8",
+        "bytes": 490,
+        "text": "Search for files and subdirectories within a specified directory using fd.\nSearch uses smart case and will ignore gitignored files by default.\nPattern and Excludes both use the glob format. If you are searching for Extensions, there is no need to specify both Pattern AND Extensions.\nTo avoid overwhelming output, the results are capped at 50 matches. Use the various arguments to filter the search scope as needed.\nResults will include the type, size, modification time, and relative path."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.cb1ea883edafa7ba55ed96e28db2fdf9f0d9aac1f83ab486c94d83b596df219a]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*CommandStatusToolConverter).GetToolDefinition",
+    "cached_address": "0x871d4a0",
+    "disassembly_start": "0x871d520",
+    "name": [
+      {
+        "offset": "0x5bfa641",
+        "bytes": 14,
+        "text": "command_status"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e2067a",
+        "bytes": 260,
+        "text": "Get the status of a previously executed terminal command by its ID. Returns the current status (running, done), output lines as specified by output priority, and any error if present. Do not try to check the status of any IDs other than Background command IDs."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.eda150f533af6b93765bf6956925c77a9f45457c7f2fe77ac89cf2bc003c85d1]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*SearchWebToolConverter).GetToolDefinition",
+    "cached_address": "0x871d7a0",
+    "disassembly_start": "0x871d820",
+    "name": [
+      {
+        "offset": "0x5b94358",
+        "bytes": 10,
+        "text": "search_web"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5df76d5",
+        "bytes": 108,
+        "text": "Performs a web search for a given query. Returns a summary of relevant information along with URL citations."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { Query string \"jsonschema:\\\"required\\\" json:\\\"query\\\"\"; Domain string \"json:\\\"domain\\\" jsonschema_description:\\\"Optional domain to recommend the search prioritize\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*CallMcpToolConverter).GetToolDefinition",
+    "cached_address": "0x871e0e0",
+    "disassembly_start": "0x871e160",
+    "name": [
+      {
+        "offset": "0x5be2f82",
+        "bytes": 13,
+        "text": "call_mcp_tool"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5df3b50",
+        "bytes": 102,
+        "text": "Call a lazy-loaded MCP tool. Read the tool's schema file to understand the tool's arguments and usage."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { ServerName string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Name of the MCP server.\\\"\"; ToolName string \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Name of the tool to call.\\\"\"; Arguments encoding/json/jsontext.Value \"jsonschema:\\\"required\\\" jsonschema_description:\\\"Arguments to pass to the tool.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ListResourcesToolConverter).GetToolDefinition",
+    "cached_address": "0x871e640",
+    "disassembly_start": "0x871e6c0",
+    "name": [
+      {
+        "offset": "0x5bfa64f",
+        "bytes": 14,
+        "text": "list_resources"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5d813d9",
+        "bytes": 49,
+        "text": "Lists the available resources from an MCP server."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { ServerName string \"jsonschema:\\\"required,minLength=1\\\" jsonschema_description:\\\"Name of the server to list available resources from.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*ReadResourceToolConverter).GetToolDefinition",
+    "cached_address": "0x871eb60",
+    "disassembly_start": "0x871ebe0",
+    "name": [
+      {
+        "offset": "0x5be2fa9",
+        "bytes": 13,
+        "text": "read_resource"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5d5baab",
+        "bytes": 42,
+        "text": "Retrieves a specified resource's contents."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct { ServerName string \"jsonschema_description:\\\"Name of the server to read the resource from.\\\"\"; Uri string \"jsonschema_description:\\\"Unique identifier for the resource.\\\"\" }]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*GenerateImageToolConverter).GetToolDefinition",
+    "cached_address": "0x871f060",
+    "disassembly_start": "0x871f0e0",
+    "name": [
+      {
+        "offset": "0x5bfa65d",
+        "bytes": 14,
+        "text": "generate_image"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5e38703",
+        "bytes": 518,
+        "text": "Generate an image or edit existing images based on a text prompt. The resulting image will be saved as an artifact for use. You can use this tool to generate user interfaces and iterate on a design with the USER for an application or website that you are building. When creating UI designs, generate only the interface itself without surrounding device frames (laptops, phones, tablets, etc.) unless the user explicitly requests them. You can also use this tool to generate assets for use in an application or website."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.38f0e900fc0ede6ceebcf4793ad5e3fbf567a8f32bb92ded95e9463ba822a95b]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*WaitFiveSecondsToolConverter).GetToolDefinition",
+    "cached_address": "0x871f600",
+    "disassembly_start": "0x871f680",
+    "name": [
+      {
+        "offset": "0x5bfa66b",
+        "bytes": 14,
+        "text": "wait_5_seconds"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5d7794e",
+        "bytes": 47,
+        "text": "Wait for 5 seconds before continuing execution."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct {}]"
+    ]
+  },
+  {
+    "function": "google3/third_party/jetski/cortex/tools/tools.(*WaitToolConverter).GetToolDefinition",
+    "cached_address": "0x871f880",
+    "disassembly_start": "0x871f900",
+    "name": [
+      {
+        "offset": "0x5b2115a",
+        "bytes": 4,
+        "text": "wait"
+      }
+    ],
+    "description": [
+      {
+        "offset": "0x5d1c50c",
+        "bytes": 33,
+        "text": "Wait before continuing execution."
+      }
+    ],
+    "schema_functions": [
+      "google3/third_party/jetski/cortex/utils/utils.ToJSONSchemaString[go.shape.struct {}]"
+    ]
+  }
+]

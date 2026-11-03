@@ -1,0 +1,325 @@
+$ python3 .project/research/claude-code-cli/2.1.317/evidence/lookup.py --window 1000 --max 3 decisionReason permissionDecision permissionResult PreToolUse classifyPermission autoMode permissionMode
+
+=== 'decisionReason' C13657:6254 ===
+has none",FZt=new Map([["python",new Set(["-c"])],["node",new Set(["-e","--eval","-p","--print"])],["nodejs",new Set(["-e","--eval","-p","--print"])],["bun",new Set(["-e","--eval","-p","--print"])],["perl",new Set(["-e","-E"])],["ruby",new Set(["-e"])],["php",new Set(["-r"])],["bash",new Set(["-c"])],["sh",new Set(["-c"])],["zsh",new Set(["-c"])],["dash",new Set(["-c"])],["ksh",new Set(["-c"])],["lua",new Set(["-e"])],["luajit",new Set(["-e"])],["tsx",new Set(["-e","--eval","-p","--print"])],["deno",new Set(["eval"])],["Rscript",new Set(["-e"])],["julia",new Set(["-e","-E"])],["osascript",new Set(["-e"])]]);function $0(e){return e?.type==="safetyCheck"&&e.circuitBreaker==="outsideReadsBlocked"}function ppt(e,s){return e?.type==="sandboxOverride"&&s.blockReadsOutsideWorkingDirectories===!0}function DS(e){let s=`${e} names a path that is computed at run time, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}function KY(e){let s=`${e}; under the read block (permissions.blockReadsOutsideWorkingDirectories) a command the shell parser cannot analyze asks the person`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"},suggestions:[]}}function c0n(){return{behavior:"ask",message:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",decisionReason:{type:"safetyCheck",reason:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}var UZt="bashCommandClamp: no clamp rule matches this command",u0n="bashCommandClamp fail-closed: permi
+
+=== 'decisionReason' C13657:6551 ===
+"])],["sh",new Set(["-c"])],["zsh",new Set(["-c"])],["dash",new Set(["-c"])],["ksh",new Set(["-c"])],["lua",new Set(["-e"])],["luajit",new Set(["-e"])],["tsx",new Set(["-e","--eval","-p","--print"])],["deno",new Set(["eval"])],["Rscript",new Set(["-e"])],["julia",new Set(["-e","-E"])],["osascript",new Set(["-e"])]]);function $0(e){return e?.type==="safetyCheck"&&e.circuitBreaker==="outsideReadsBlocked"}function ppt(e,s){return e?.type==="sandboxOverride"&&s.blockReadsOutsideWorkingDirectories===!0}function DS(e){let s=`${e} names a path that is computed at run time, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}function KY(e){let s=`${e}; under the read block (permissions.blockReadsOutsideWorkingDirectories) a command the shell parser cannot analyze asks the person`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"},suggestions:[]}}function c0n(){return{behavior:"ask",message:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",decisionReason:{type:"safetyCheck",reason:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}var UZt="bashCommandClamp: no clamp rule matches this command",u0n="bashCommandClamp fail-closed: permission check crashed",Hke="Classifier unavailable",Ykr="Auto mode unavailable \u2014 stopped after repeated responses with no safety verdict",t9="classifier_switched_off",GEs="Auto mode could not evaluate this action and is blocking it for safety",yDe="Auto mode classifier transcript exceeded cont
+
+=== 'decisionReason' C13657:6889 ===
+n e?.type==="safetyCheck"&&e.circuitBreaker==="outsideReadsBlocked"}function ppt(e,s){return e?.type==="sandboxOverride"&&s.blockReadsOutsideWorkingDirectories===!0}function DS(e){let s=`${e} names a path that is computed at run time, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}function KY(e){let s=`${e}; under the read block (permissions.blockReadsOutsideWorkingDirectories) a command the shell parser cannot analyze asks the person`;return{behavior:"ask",message:s,decisionReason:{type:"safetyCheck",reason:s,classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"},suggestions:[]}}function c0n(){return{behavior:"ask",message:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",decisionReason:{type:"safetyCheck",reason:"This sed script is not on the allowlist and can read or write any file, which cannot be checked against the read block (permissions.blockReadsOutsideWorkingDirectories)",classifierApprovable:!1,circuitBreaker:"outsideReadsBlocked"}}}var UZt="bashCommandClamp: no clamp rule matches this command",u0n="bashCommandClamp fail-closed: permission check crashed",Hke="Classifier unavailable",Ykr="Auto mode unavailable \u2014 stopped after repeated responses with no safety verdict",t9="classifier_switched_off",GEs="Auto mode could not evaluate this action and is blocking it for safety",yDe="Auto mode classifier transcript exceeded context window \u2014 falling back to manual approval (try /compact to reduce conversation size)",zEs="The conversation is too long for auto mode's check, so this needs your approval. Run /compact to shorten the conversation.",KEs="A hook or plugin changed (or may have changed) a call in this response after auto mode reviewed it, so auto mo
+
+=== 'permissionDecision' C5371:118 ===
+stdin JSON)
+```json
+{
+  "session_id": "abc123",
+  "tool_name": "Write",
+  "tool_input": { "file_path": "/path/to/file.txt", "content": "..." },
+  "tool_response": { "success": true }  // PostToolUse only
+}
+```
+
+### Hook JSON Output
+
+Hooks can return JSON to control behavior:
+
+```json
+{
+  "systemMessage": "Warning shown to user in UI",
+  "continue": false,
+  "stopReason": "Message shown when blocking",
+  "suppressOutput": false,
+  "decision": "block",
+  "reason": "Explanation for decision",
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "Context injected back to model"
+  }
+}
+```
+
+**Fields:**
+- `systemMessage` - Display a message to the user (all hooks)
+- `continue` - Set to `false` to block/stop (default: true)
+- `stopReason` - Message shown when `continue` is false
+- `suppressOutput` - Hide stdout from transcript (default: false)
+- `decision` - "block" for PostToolUse/Stop/UserPromptSubmit hooks (deprecated for PreToolUse, use hookSpecificOutput.permissionDecision instead)
+- `reason` - Explanation for decision
+- `hookSpecificOutput` - Event-specific output (must include `hookEventName`):
+  - `additionalContext` - Text injected into model context
+  - `permissionDecision` - "allow", "deny", or "ask" (PreToolUse only)
+  - `permissionDecisionReason` - Reason for the permission decision (PreToolUse only)
+  - `updatedInput` - Modified tool input (PreToolUse only)
+
+### Common Patterns
+
+**Auto-format after writes:**
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Write|Edit",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; prettier --write \"$f\"; } 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+**Log all bash commands:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_input.command' >> ~/.claude/bash-log.txt"
+      }]
+    }]
+  }
+}
+```
+
+**Stop hook tha
+
+=== 'permissionDecision' C5375:5 ===
+
+
+### Hook JSON Output
+
+Hooks can return JSON to control behavior:
+
+```json
+{
+  "systemMessage": "Warning shown to user in UI",
+  "continue": false,
+  "stopReason": "Message shown when blocking",
+  "suppressOutput": false,
+  "decision": "block",
+  "reason": "Explanation for decision",
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "Context injected back to model"
+  }
+}
+```
+
+**Fields:**
+- `systemMessage` - Display a message to the user (all hooks)
+- `continue` - Set to `false` to block/stop (default: true)
+- `stopReason` - Message shown when `continue` is false
+- `suppressOutput` - Hide stdout from transcript (default: false)
+- `decision` - "block" for PostToolUse/Stop/UserPromptSubmit hooks (deprecated for PreToolUse, use hookSpecificOutput.permissionDecision instead)
+- `reason` - Explanation for decision
+- `hookSpecificOutput` - Event-specific output (must include `hookEventName`):
+  - `additionalContext` - Text injected into model context
+  - `permissionDecision` - "allow", "deny", or "ask" (PreToolUse only)
+  - `permissionDecisionReason` - Reason for the permission decision (PreToolUse only)
+  - `updatedInput` - Modified tool input (PreToolUse only)
+
+### Common Patterns
+
+**Auto-format after writes:**
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Write|Edit",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; prettier --write \"$f\"; } 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+**Log all bash commands:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_input.command' >> ~/.claude/bash-log.txt"
+      }]
+    }]
+  }
+}
+```
+
+**Stop hook that displays message to user:**
+
+Command must output JSON with `systemMessage` field:
+```bash
+# Example command that outputs: {"systemMessage": "Session complete!"}
+echo '{"systemMessage": "Session complete!"}'
+
+
+=== 'permissionDecision' C5376:5 ===
+json
+{
+  "systemMessage": "Warning shown to user in UI",
+  "continue": false,
+  "stopReason": "Message shown when blocking",
+  "suppressOutput": false,
+  "decision": "block",
+  "reason": "Explanation for decision",
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "Context injected back to model"
+  }
+}
+```
+
+**Fields:**
+- `systemMessage` - Display a message to the user (all hooks)
+- `continue` - Set to `false` to block/stop (default: true)
+- `stopReason` - Message shown when `continue` is false
+- `suppressOutput` - Hide stdout from transcript (default: false)
+- `decision` - "block" for PostToolUse/Stop/UserPromptSubmit hooks (deprecated for PreToolUse, use hookSpecificOutput.permissionDecision instead)
+- `reason` - Explanation for decision
+- `hookSpecificOutput` - Event-specific output (must include `hookEventName`):
+  - `additionalContext` - Text injected into model context
+  - `permissionDecision` - "allow", "deny", or "ask" (PreToolUse only)
+  - `permissionDecisionReason` - Reason for the permission decision (PreToolUse only)
+  - `updatedInput` - Modified tool input (PreToolUse only)
+
+### Common Patterns
+
+**Auto-format after writes:**
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Write|Edit",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; prettier --write \"$f\"; } 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+**Log all bash commands:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '.tool_input.command' >> ~/.claude/bash-log.txt"
+      }]
+    }]
+  }
+}
+```
+
+**Stop hook that displays message to user:**
+
+Command must output JSON with `systemMessage` field:
+```bash
+# Example command that outputs: {"systemMessage": "Session complete!"}
+echo '{"systemMessage": "Session complete!"}'
+```
+
+**Run tests after code changes:**
+```json
+{
+  "hooks": {
+    "Post
+
+=== 'permissionResult' C14809:1200 ===
+){let h=Zg.of(e);if(h.has(n))return;let y=r.then(c2).catch(()=>{return}),S={settled:!1,answer:Ce(y,s)};h.set(n,S),y.then((w)=>{if(h.get(n)===S)h.set(n,{settled:!0,answer:w})})}function XDi(e){Zg.peek(e)?.clear()}function oP(e,n){return Zg.peek(e)?.get(n)?.answer}import{AsyncLocalStorage as p2}from"async_hooks";function fms(e){return e.hookCaller}function B1e(e){return e.agentId===void 0&&e.forRemoteExecution!==!0?e.hookCaller:void 0}function cb(e){return e.hookCaller!==void 0||e.pluginSteered===!0}function RSr(e){return fms(e)??(cb(e)?"":void 0)}function _Me(e){return e?.type==="remote-agent"||e?.type==="plugin"}function cMn(e,n){return[...e.filter((r)=>r.value===n),...e.filter((r)=>r.value!==n)]}function xdo(e){if(!Array.isArray(e))return null;try{return e.filter((n)=>typeof n==="object"&&n!==null&&("type"in n)&&n.type==="addDirectories")}catch{return null}}var bMe=Xo({kind:"permission_prompt",payload:p(()=>ey((e)=>typeof e==="object"&&e!==null&&("requestId"in e)&&("toolName"in e)&&("permissionResult"in e))),result:p(()=>ey((e)=>typeof e==="object"&&e!==null&&("behavior"in e))),default:{behavior:"cancelled"}});import{AsyncLocalStorage as f2}from"async_hooks";var _d=new f2;function Pdo(e,n){return _d.run({key:e},n)}function hMt(){return _d.getStore()?.key}function RDi(){let e=_d.getStore();if(e)e.key=void 0}function xDi(e){let n=_d.getStore(),r=pms(e.filter((s)=>!s.isMeta));if(n&&r!==void 0)n.key=r}function uMn(e,{isCrossSession:n}){return!n&&typeof e==="string"?e:void 0}function GJt(e){if(e.turnAttributionKey!==void 0)return e.turnAttributionKey;return e.mode==="task-notification"||e.resumeReason!==void 0?Xct(e.inheritedTurnAttributionKey):void 0}function pms(e){return e.findLast((n)=>Xct(n.turnAttributionKey)!==void 0)?.turnAttributionKey}function Xct(e){return Jt(e)??void 0}function xSr(e){let n=e.filter((r)=>r.turnAttributionKey!==void 0&&!r.isMeta);return n.length===1?Xct(n[0]?.turnAttributionKey):void 0}var HEe=ge({accepted:!1},(e)=>{e.accepted=!1});var PSr=new p2;function JO
+
+=== 'permissionResult' C29386:26300 ===
+n S}var Ld=p(()=>TVe("refused","orphaned permission"));async function Ud(e,n,s,y,r,S){let{signal:h}=r.abortController,k,M=!1;try{let w=await e.askInputPreparer?.(n,r,S);if(w?.prepareAgain===void 0)return;if(y===null)return{ended:"no_record"};if(Object.keys(s).length===0)return{ended:"answer_empty"};if(!FX(s,y))return{ended:"answer_differs"};let U=await w.prepareAgain(y);if(!("error"in U)){if(k=U.release,!h.aborted&&FX(y,U.input))return{ended:"served",input:U.input};M=!0}}catch(w){if(!We(w))l(w)}return await k?.(),{ended:h.aborted?"aborted":M?"step_differs":"step_failed"}}function oi(e,n,s,y){let r=l7(e,void 0,y),S=!n||n.suppressesAllPermissionUpdates?.(s)===!0||n.mcpInfo?.serverName===Go&&SS()?Vq(r):VX(r,n,y);return n?.name===Vr?nKo(Dfr(n,y),S,y):S}function Bd(e,n,s){return typeof e==="string"&&kr(e)?.serverName===Go&&n.resumesInterruptedTurn===!0&&!(s.toolState.get(D2e).canAsk()&&SS())&&v("tengu_velvet_gannet",!1)}async function*vVs(e,n,s,y,r,S,h){using k={[Symbol.dispose](){let ye=e.permissionResult?.toolUseID;if(ye!==void 0)Rpn(r.session,ye)}};switch(r.setToolPermissionContext(dRn),h.kind){case"strict":case"launcher":break;default:return t(`handleOrphanedPermission: dropping orphaned permission \u2014 the answer policy's kind (a ${typeof h.kind}) is not one this sink knows`,{level:"warn"}),{reExecuted:!1,reason:"unknown_answer_policy",toolWait:void 0,callStarted:!1}}let M=!OM(),{permissionResult:w,assistantMessage:U}=e,{toolUseID:x}=w;if(!x)return t("handleOrphanedPermission: dropping orphaned permission \u2014 permissionResult is missing toolUseID",{level:"warn"}),{reExecuted:!1,reason:"no_tool_use_id",toolWait:void 0,callStarted:!1};let G=U.message.content,se;if(Array.isArray(G)){for(let ye of G)if(ye.type==="tool_use"&&ye.id===x){se=ye;break}}if(!se)return t(`handleOrphanedPermission: dropping orphaned permission for toolUseID=${x} \u2014 assistant message ${U.message.id} has no matching tool_use block`,{level:"warn"}),{reExecuted:!1,reason:"no_tool_use_block",toolWait:void 0
+
+=== 'permissionResult' C29386:26705 ===
+e,!h.aborted&&FX(y,U.input))return{ended:"served",input:U.input};M=!0}}catch(w){if(!We(w))l(w)}return await k?.(),{ended:h.aborted?"aborted":M?"step_differs":"step_failed"}}function oi(e,n,s,y){let r=l7(e,void 0,y),S=!n||n.suppressesAllPermissionUpdates?.(s)===!0||n.mcpInfo?.serverName===Go&&SS()?Vq(r):VX(r,n,y);return n?.name===Vr?nKo(Dfr(n,y),S,y):S}function Bd(e,n,s){return typeof e==="string"&&kr(e)?.serverName===Go&&n.resumesInterruptedTurn===!0&&!(s.toolState.get(D2e).canAsk()&&SS())&&v("tengu_velvet_gannet",!1)}async function*vVs(e,n,s,y,r,S,h){using k={[Symbol.dispose](){let ye=e.permissionResult?.toolUseID;if(ye!==void 0)Rpn(r.session,ye)}};switch(r.setToolPermissionContext(dRn),h.kind){case"strict":case"launcher":break;default:return t(`handleOrphanedPermission: dropping orphaned permission \u2014 the answer policy's kind (a ${typeof h.kind}) is not one this sink knows`,{level:"warn"}),{reExecuted:!1,reason:"unknown_answer_policy",toolWait:void 0,callStarted:!1}}let M=!OM(),{permissionResult:w,assistantMessage:U}=e,{toolUseID:x}=w;if(!x)return t("handleOrphanedPermission: dropping orphaned permission \u2014 permissionResult is missing toolUseID",{level:"warn"}),{reExecuted:!1,reason:"no_tool_use_id",toolWait:void 0,callStarted:!1};let G=U.message.content,se;if(Array.isArray(G)){for(let ye of G)if(ye.type==="tool_use"&&ye.id===x){se=ye;break}}if(!se)return t(`handleOrphanedPermission: dropping orphaned permission for toolUseID=${x} \u2014 assistant message ${U.message.id} has no matching tool_use block`,{level:"warn"}),{reExecuted:!1,reason:"no_tool_use_block",toolWait:void 0,callStarted:!1};let Z=se.name;if(w.behavior==="deny"&&e.denyIsRefusal===!0){let ye=r.options.toolAliases;if(Qt(se.input))r.onPermissionDenial?.(rw(n,Z,ye)??{name:Z},x,se.input);yield*ri({block:se,assistantMessage:U,messageRows:e.messageRows,message:w.message,tools:n,context:r,mutableMessages:y,persistSession:M,toolDenialKind:"decisionClassification"in w&&w.decisionClassification==="user_reject"?"user-
+
+=== 'PreToolUse' C32:13 ===
+-\u1fdf\u1ffd\u1ffe\u05f3\u05f4\u0559-\u055b\u07f4\u07f5\ua67f\ua78b\ua78c\uff02\uff07\uff62\uff63]
+@117931688@Writes to Claude Code settings files are blocked while permissions.blockWritesOutsideWorkingDirectories is on, because a settings file can lift that block. While a managed settings folder cannot be resolved, any .json file counts as one.
+@117934048@This action needs a person's approval. Nobody was asked, because Claude can't tell that a person in this session started this step. Claude may still finish it another way.
+@117934316@This MCP server's name starts like a claude.ai connector's, so --permission-prompt-tool cannot approve its tools. To use them here, the server needs another name.
+@117934488@Another MCP server already holds this server's name, its name reads as another server's, or the name could not be saved, so --permission-prompt-tool cannot approve its tools. To use them here, reconnect the server. If this message returns, give the server another name.
+@117944896@a PreToolUse/PermissionRequest hook that cannot be loaded may be what guards the permissions declared beside it, so nothing it sits in is applied until the entry is fixed or removed
+@117945088@server names may only contain letters, numbers, hyphens and underscores, and may not be constructor, prototype, __proto__, __defineGetter__, __defineSetter__, __lookupGetter__ or __lookupSetter__
+@117945476@"managedMcpServers" must be an object keyed by server name (the .mcp.json mcpServers shape; Claude Desktop's array form of its same-named key is not accepted here: use the server name as the key and "type" instead of "transport"). No managed MCP servers are installed from it until it is fixed.
+@117948512@Bare source names resolve under metadata.pluginRoot, which this marketplace does not set (or sets to a path outside the marketplace root). Use a "./relative/path" source, or set metadata.pluginRoot to allow bare names.
+@117951768@ that would re-open a path managed, --settings or user settings deny reading
+
+=== 'PreToolUse' C56:13 ===
+odels\/)$
+@117966724@cleanupPeriodDays must be at least 1. To keep transcripts for a long time, set a large number (e.g. 3650 for ~10 years). To disable transcript writes entirely, remove this setting and use the --no-session-persistence CLI flag or the SDK persistSession:false option instead. (0 is rejected because it previously silently disabled all transcript writes, which users setting it to mean "never clean up" did not expect.)t
+@117967660@Command hooks require `command`. For exec form (no shell), set `command` to the executable and `args` to its arguments: {"type": "command", "command": "echo", "args": ["hi"]}. For shell form, set `command` to the full shell string: {"type": "command", "command": "echo hi"}.
+@117967984@Hooks use a matcher + hooks array. The matcher is a string: a tool name ("Bash"), pipe-separated list ("Edit|Write"), or empty to match all. Example: {"PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "echo Done"}]}]}
+@117968756@a PreToolUse/PermissionRequest hook that cannot be loaded does not run, nor does any other hook of the document where "hooks" is listed here as ignored; fix or remove the entry. The managed settings document is not skipped for it, unlike a user or project settings file
+@118002520@^(?:(?:https?|ftp|all|no)_proxy|npm_config_(?:https?_)?proxy|npm_config_noproxy|yarn_proxy|(?:yarn|global_agent|docker|claude_code)_(?:https?|no)_proxy|cloudsdk_proxy_[a-z]+|electron_get_use_proxy)$
+@118002912@^(?:-D|--define|-f|--file|-pl|--projects|-rf|--resume-from|-l|--log-file|-t|--toolchains|-gt|--global-toolchains|-itr|--install-toolchains|-P|--activate-profiles|-b|--builder|-T|--threads|-emp|--encrypt-master-password|-ep|--encrypt-password)$
+@118003300@^-(?:X(?:mx|ms|ss|mn|rs|int|comp|mixed|batch|diag|debug|future|prof|noclassgc|internalversion|check:jni|share:(?:on|off|auto|dump)|verify(?::[a-z]+)?|log(?::.*)?|loggc:.+|bootclasspath(?:\/[ap])?:.+|runjdwp:.+|dock:.+|startOnFirstThread|showSettings(?::[a-z]+)?)[0-9
+
+=== 'PreToolUse' C4340:13 ===
+nce this session's use of that computer ends.
+@119251244@This project's command check is not the one that computer recorded the last time it served this project, so the person is asked whether to use the updated one. It is not run unless they say yes. If they say no, each command asks the person instead._
+@119251816@This project's settings set a hook that the person at this computer has not accepted for cloud sessions, so it is not run for this session. A command that hook would stop can run here. Tell the user: to review it, run claude apply-project-settings in a terminal in the project folder on this computer.
+@119252220@This project's command check changed on disk during this session (for example after a git checkout). This computer keeps using the version recorded when the session connected. The changed one is not run. The recorded version may be looser or stricter than the new one. The person is asked about the new one the next time this computer serves this project.
+@119252612@A PreToolUse hook on this machine exited with an error (whatever its cause) for a command your cloud session sent here and, as for a local command, did not block it. Note that hooks for such calls start in your home directory with a reduced environment: a guard that inspects the project must use $CLAUDE_PROJECT_DIR or the cwd field on stdin.
+@119255336@Error details are hidden because they may contain this hook's URL, and any secrets in it can't be reliably removed. They will be shown if the URL starts with http:// or https:// and has no 
+@119259896@^\s*(?:\/(?:[\w.-]+\/)*)?(?:python[\d.]*|perl|sh|bash|dash)[ \t]+(\$(?:\{(?:CLAUDE_PLUGIN_ROOT|CLAUDE_PROJECT_DIR|HOME)\}|(?:CLAUDE_PLUGIN_ROOT|CLAUDE_PROJECT_DIR|HOME)\b)[\w./-]*)(?:[ \t]+[\w./=:@%+,-]+)*\s*$
+@119261300@command contains the invisible character U+FEFF (byte order mark) or U+180E (Mongolian vowel separator), and was not run. Remove the character, keep the text that needs it in a file that the command reads, or write it as $([char]0xFEFF
+
+=== 'autoMode' C11629:38 ===
+ot block connections to Unix sockets because the sandbox runtime found no seccomp filter helper it could run, so a command could reach services running outside the sandbox, and this device serves no device tools. Ask the user to open /sandbox on the device (its Dependencies tab shows the seccomp filter's status) and restart Claude Code there once it is fixed; do not retry until they have.
+@128864540@ refused: this device's sandbox is configured to inject real credentials into sandboxed network requests (sandbox.credentials entries with mode "mask"), so this device serves no device tools. Tell the user; do not retry in a loop.
+@128872820@This folder's git settings can make git run other programs. Trusting the folder also applies to Claude Code: sessions started here can read, edit, and execute files, and this folder's project settings (hooks, MCP servers, permission rules, helper commands) apply to them.
+@128882908@No custom auto mode rules found.
+
+Add rules to your settings file under autoMode.{allow, soft_deny, hard_deny, environment}.
+Run `claude auto-mode defaults` to see the default rules for reference.
+@128885844@The path no longer leads to the file it did when this change was staged (a directory on the way now points elsewhere, or a link has appeared at it), so it was not applied. Discard it, or ask Claude to make the change again.
+@128886076@This settings file has other names on disk (a hard link), so it could not be rewritten safely and the change was not applied. It stays staged. Remove the extra link, then accept it again.
+@128889192@Run it with CLAUDE_CONFIG_DIR set outside this folder: it points into the folder, so the settings this process itself reads are this folder's own files, and it has to start with those switched off.
+@128889604@Accepted. Cloud sessions use this version from the next time this computer starts serving one. A session that is using this computer now keeps the version it started with.
+@128890428@Cloud sessions that use this computer keep the
+
+=== 'autoMode' C13027:129 ===
+hen a command fails due to sandbox restrictions, Claude can retry with dangerouslyDisableSandbox to run outside the sandbox (falling back to default permissions).
+@131474768@Commands will try to run in the sandbox automatically, and attempts to run outside of the sandbox fallback to regular permissions. Explicit ask/deny rules are always respected.
+@131475672@": this session's sandbox policy limits exclusions to trusted settings (managed policy, a --settings file, user settings), and user settings are turned off here (--setting-sources), so there is no settings file where the exclusion would take effect. Re-enable user settings, or add it to the managed or --settings configuration.
+@131483220@the settings file has a validation error or cannot be read, so its auto mode rules are not in effect; fix it (Claude Code names the problem at startup), then try again.
+@131492188@The environment could not be opened for editing: this session has no session directory to hold the working file. Edit autoMode.environment in your settings file directly.
+@131505648@, possibly to a different project. Treat them as stale until re-checked with the tools: do not attribute those memories to, or save them into, the project connected now on the strength of the earlier results alone. Your personal memory directory, if your system prompt names one, is unaffected.
+@131506504@ with no arguments: once it lists connected stores, read your teammates' shared memories and save new shared learnings through those tools as their prompts describe. Your personal memory directory, if your system prompt names one, is unaffected either way.!
+@131507228@ with no arguments reports what, if anything, is connected whenever you need to re-check). If the user asks you to remember something, use your personal memory directory if your system prompt names one; otherwise explain that project memory is disconnected for this session.
+@131507700@ tool prompt describes. Private memories belong in your personal memory directory, 
+
+=== 'autoMode' C13332:5874 ===
+ew Map(this.baseline);for(let r of n){let s=e.get(r);if(s===void 0)o.delete(r);else o.set(r,s)}this.baseline=o}linger(e,n){if(this.holders===0)this.tiers=e,this.lingering=n,this.baseline=void 0}isHeld(){return this.holders>0}}function Rtn(e){return e!==null&&Object.keys(e).length===0?null:e}function Be(e){return{...e,settings:Rtn(e.settings),unfiltered:Rtn(e.unfiltered),...e.legacy!==void 0&&{legacy:Rtn(e.legacy)}}}function bt(e,n){return[...e.keys(),...[...n.keys()].filter((o)=>!e.has(o))].filter((o)=>{let r=e.get(o),s=n.get(o);return!b(r&&Be(r),s&&Be(s))})}var mCs=["forceLoginOrgUUID","forceLoginMethod","forceLoginGatewayUrl"];class rLe{mergedSettings=null;perSource=new Map;parsedFiles=new Map;firstReads=new Map;ownWritesBeforeFirstCheck=new Map;firstReadsChecked=!1;managedDocumentLinks=new L;managedFileProtections=new O;folderListings=new Map;managedFileReads=new Map;primedFiles=new Set;policyWalks=0;walkedFolders=new Map;policy={};lastPolicyEnvComposition=null;isLoadingFromDisk=!1;autoModeUntrustedSourceWarned=!1;parentLeftOutReason=null;changed=Oe();internalWrites=new Map;enabledSources;inlineFlagParse;repoTierFreeze=new F;hookedMerge=Ue();pluginBase;epoch=0;systemSpaceServingLogged=!1;systemAttestationContradicted=!1;backendReadResetTail=Promise.resolve();backgroundWorkTail=Promise.resolve();invalidated=Oe();pluginBaseLoaded=!1;primer;lastSeededUserLayer;localStoreProbes=new Ne;retained=new Map;retainedListings=new Map;noteFirstRead(e,n){if(!this.firstReadsChecked&&!this.firstReads.has(e))this.firstReads.set(e,n)}noteOwnWrite(e){if(!this.firstReadsChecked)this.ownWritesBeforeFirstCheck.set(e,(this.ownWritesBeforeFirstCheck.get(e)??0)+1)}withdrawOwnWrite(e){let n=(this.ownWritesBeforeFirstCheck.get(e)??0)-1;if(n>0)this.ownWritesBeforeFirstCheck.set(e,n);else this.ownWritesBeforeFirstCheck.delete(e)}forgetFirstReads({checkAgain:e=!1}={}){if(this.firstReads.clear(),this.ownWritesBeforeFirstCheck.clear(),e)this.firstReadsChecked=!1}setPluginBase(e){this.pluginBase=e,this.
+
+=== 'permissionMode' C11604:43 ===
+932@supportedDialogKinds requires an onUserDialog callback -- declaring dialog kinds without a handler would park dialogs nothing can answer. Provide onUserDialog, or omit supportedDialogKinds.
+@128818216@Claude Code did not answer initialize, so a hook set to onFailure: "block" could not be confirmed and the prompt was not sent. Check the connection and start a new session.*
+@128820052@The process answering initialize does not honor onFailure on hook matchers, so a hook that fails would not block. Update Claude Code if it is old, or remove onFailure: "block" from your hooks.
+@128820252@This session was already running and did not register your hooks, so a hook set to onFailure: "block" would never run. Start a new session, or remove onFailure: "block" from your hooks.
+@128821908@' is already registered, so the different timeout, disableAutoBackground or connectorId passed to setMcpServers is ignored; remove and re-add the server to change it
+@128823284@canUseTool will not be invoked: permissionMode 'bypassPermissions' auto-approves every tool call (except explicit deny rules) before the callback is consulted. To gate every tool call, use a PreToolUse hook instead.
+@128823552@. Bare allowedTools entries auto-approve the whole tool before the callback is consulted. To gate every tool call, use a PreToolUse hook; or remove the bare names from allowedTools so they fall through to canUseTool. Allow rules from settings files can also shadow the callback but are not visible here.
+@128824348@sessionStore cannot be used with persistSession: false -- the storage adapter requires local writes to mirror from. To avoid keeping a local copy, pass env: { ...process.env, CLAUDE_CONFIG_DIR: dir }, where dir is a new private directory such as fs.mkdtempSync(path.join(os.tmpdir(), 'claude-')), and delete dir when the query ends.P
+@128824932@sessionStore with custom spawnClaudeCodeProcess: ensure the subprocess CLAUDE_CONFIG_DIR matches the parent (same path, same separators) or transcript_mirror f
+
+=== 'permissionMode' C13191:1876 ===
+S||"";process.env.NODE_OPTIONS=a?`${a} --max-old-space-size=8192`:"--max-old-space-size=8192"}function fe(a){for(let m=0;m<a.length;m++){let D=a[m];if(D==="--debug"||D==="-d"||D==="--debug-to-stderr"||D==="-d2e"||D.startsWith("--debug=")||D.startsWith("--debug-file="))continue;if(D==="--debug-file"&&m+1<a.length){m++;continue}return!1}return!0}function he(a){let m=a.indexOf("--");return(m===-1?a:a.slice(0,m)).includes("--desktop")}function Je(a){let m,D,W,Y,K,t,V=[];for(let k=0;k<a.length;k++){let o=a[k],J=o.indexOf("="),[L,d]=J>0?[o.slice(0,J),o.slice(J+1)]:[o,void 0],G=d!==void 0||k+1<a.length;if(L==="--dangerously-skip-permissions")m="bypassPermissions";else if(L==="--allow-dangerously-skip-permissions")t=!0;else if(L==="--permission-mode"&&G)m=d??a[++k];else if(L==="--inherit-permission-mode"&&G)D=d??a[++k];else if(L==="--model"&&G)W=d??a[++k];else if(L==="--effort"&&G)Y=d??a[++k];else if(L==="--agent"&&G)K=d??a[++k];else V.push(o)}let R=m??D;return{dispatchDefaults:R||W||Y||K||t?{permissionMode:R,...!m&&D&&{permissionModeInherited:!0},model:W,effort:Y,agent:K,allowBypass:t}:void 0,rest:V}}async function qe(){if(process.env.CCR_AGENT_PROXY_TOKEN_FILE_DESCRIPTOR!==void 0||process.argv.includes("--session-tunnel")){let{guardRelayTokenDescriptor:e}=import.meta.require("/$bunfs/root/chunk-z2j34d1w.js");e()}let a=pxi();if(a==="refused")return;let m=process.argv[2]?.startsWith("--runner-declares=")?process.argv.splice(2,1)[0]:void 0,D=cyr(process.argv);if(D)console.error(D),process.exit(1);if(process.env.CLAUDE_CODE_REMOTE_SESSION_ORIGIN==="review"){let{guardRunnerReviewTokens:e}=import.meta.require("/$bunfs/root/chunk-gzz9wy9x.js");e()}let{noteProcessStartTuning:W}=import.meta.require("/$bunfs/root/chunk-w8gegapn.js");W();let{startGarbageCollectionCount:Y}=import.meta.require("/$bunfs/root/chunk-kbpa8wn3.js");Y();let{installCliArgvReader:K}=import.meta.require("/$bunfs/root/chunk-y4yh445b.js");K((e)=>import.meta.require("/$bunfs/root/chunk-khxry9nb.js").cliFlagWords(e));let t=proc
+
+=== 'permissionMode' C13191:1904 ===
+NS=a?`${a} --max-old-space-size=8192`:"--max-old-space-size=8192"}function fe(a){for(let m=0;m<a.length;m++){let D=a[m];if(D==="--debug"||D==="-d"||D==="--debug-to-stderr"||D==="-d2e"||D.startsWith("--debug=")||D.startsWith("--debug-file="))continue;if(D==="--debug-file"&&m+1<a.length){m++;continue}return!1}return!0}function he(a){let m=a.indexOf("--");return(m===-1?a:a.slice(0,m)).includes("--desktop")}function Je(a){let m,D,W,Y,K,t,V=[];for(let k=0;k<a.length;k++){let o=a[k],J=o.indexOf("="),[L,d]=J>0?[o.slice(0,J),o.slice(J+1)]:[o,void 0],G=d!==void 0||k+1<a.length;if(L==="--dangerously-skip-permissions")m="bypassPermissions";else if(L==="--allow-dangerously-skip-permissions")t=!0;else if(L==="--permission-mode"&&G)m=d??a[++k];else if(L==="--inherit-permission-mode"&&G)D=d??a[++k];else if(L==="--model"&&G)W=d??a[++k];else if(L==="--effort"&&G)Y=d??a[++k];else if(L==="--agent"&&G)K=d??a[++k];else V.push(o)}let R=m??D;return{dispatchDefaults:R||W||Y||K||t?{permissionMode:R,...!m&&D&&{permissionModeInherited:!0},model:W,effort:Y,agent:K,allowBypass:t}:void 0,rest:V}}async function qe(){if(process.env.CCR_AGENT_PROXY_TOKEN_FILE_DESCRIPTOR!==void 0||process.argv.includes("--session-tunnel")){let{guardRelayTokenDescriptor:e}=import.meta.require("/$bunfs/root/chunk-z2j34d1w.js");e()}let a=pxi();if(a==="refused")return;let m=process.argv[2]?.startsWith("--runner-declares=")?process.argv.splice(2,1)[0]:void 0,D=cyr(process.argv);if(D)console.error(D),process.exit(1);if(process.env.CLAUDE_CODE_REMOTE_SESSION_ORIGIN==="review"){let{guardRunnerReviewTokens:e}=import.meta.require("/$bunfs/root/chunk-gzz9wy9x.js");e()}let{noteProcessStartTuning:W}=import.meta.require("/$bunfs/root/chunk-w8gegapn.js");W();let{startGarbageCollectionCount:Y}=import.meta.require("/$bunfs/root/chunk-kbpa8wn3.js");Y();let{installCliArgvReader:K}=import.meta.require("/$bunfs/root/chunk-y4yh445b.js");K((e)=>import.meta.require("/$bunfs/root/chunk-khxry9nb.js").cliFlagWords(e));let t=process.argv.slice(2);if((t.leng
+
+Counts shown: {'decisionReason': 3, 'permissionDecision': 3, 'permissionResult': 3, 'PreToolUse': 3, 'classifyPermission': 0, 'autoMode': 3, 'permissionMode': 3}

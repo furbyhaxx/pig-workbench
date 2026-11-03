@@ -1,0 +1,64 @@
+$ objdump -d -M intel --start-address=0x82a3c40 --stop-address=0x82a3c8b "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+00000000082a3c40 <crosscall2@@Base+0x18d3680>:
+ 82a3c40:	48 8d 05 b9 b5 c7 fd 	lea    rax,[rip+0xfffffffffdc7b5b9]        # 5f1f200 <_cgo_topofstack@@Base-0x994360>
+ 82a3c47:	bb 8f 0e 00 00       	mov    ebx,0xe8f
+ 82a3c4c:	48 8d 8c 24 c8 00 00 	lea    rcx,[rsp+0xc8]
+ 82a3c53:	00 
+ 82a3c54:	bf 01 00 00 00       	mov    edi,0x1
+ 82a3c59:	89 fe                	mov    esi,edi
+ 82a3c5b:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
+ 82a3c60:	e8 5b fa 69 fe       	call   69436c0 <_cgo_topofstack@@Base+0x90160>
+ 82a3c65:	48 8b 8c 24 38 01 00 	mov    rcx,QWORD PTR [rsp+0x138]
+ 82a3c6c:	00 
+ 82a3c6d:	48 89 c7             	mov    rdi,rax
+ 82a3c70:	48 89 de             	mov    rsi,rbx
+ 82a3c73:	31 c0                	xor    eax,eax
+ 82a3c75:	48 8b 9c 24 30 01 00 	mov    rbx,QWORD PTR [rsp+0x130]
+ 82a3c7c:	00 
+ 82a3c7d:	0f 1f 00             	nop    DWORD PTR [rax]
+ 82a3c80:	e8 3b 7d 5e fe       	call   688b9c0 <_cgo_topofstack@@Base-0x27ba0>
+ 82a3c85:	31 c9                	xor    ecx,ecx
+ 82a3c87:	31 ff                	xor    edi,edi
+ 82a3c89:	c9                   	leave
+ 82a3c8a:	c3                   	ret
+
+$ objdump -d -M intel --start-address=0x82a823c --stop-address=0x82a82a8 "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+00000000082a823c <crosscall2@@Base+0x18d7c7c>:
+ 82a823c:	48 8d 05 7b c7 c1 fd 	lea    rax,[rip+0xfffffffffdc1c77b]        # 5ec49be <_cgo_topofstack@@Base-0x9eeba2>
+ 82a8243:	bb 27 0a 00 00       	mov    ebx,0xa27
+ 82a8248:	48 8d 8c 24 d0 00 00 	lea    rcx,[rsp+0xd0]
+ 82a824f:	00 
+ 82a8250:	bf 01 00 00 00       	mov    edi,0x1
+ 82a8255:	89 fe                	mov    esi,edi
+ 82a8257:	e8 64 b4 69 fe       	call   69436c0 <_cgo_topofstack@@Base+0x90160>
+ 82a825c:	48 8b 8c 24 50 01 00 	mov    rcx,QWORD PTR [rsp+0x150]
+ 82a8263:	00 
+ 82a8264:	48 8b 51 40          	mov    rdx,QWORD PTR [rcx+0x40]
+ 82a8268:	48 85 d2             	test   rdx,rdx
+ 82a826b:	74 1e                	je     82a828b <crosscall2@@Base+0x18d7ccb>
+ 82a826d:	80 3a 00             	cmp    BYTE PTR [rdx],0x0
+ 82a8270:	75 19                	jne    82a828b <crosscall2@@Base+0x18d7ccb>
+ 82a8272:	48 89 d9             	mov    rcx,rbx
+ 82a8275:	48 8d 3d b3 8d c0 fd 	lea    rdi,[rip+0xfffffffffdc08db3]        # 5eb102f <_cgo_topofstack@@Base-0xa02531>
+ 82a827c:	be d1 08 00 00       	mov    esi,0x8d1
+ 82a8281:	48 89 c3             	mov    rbx,rax
+ 82a8284:	31 c0                	xor    eax,eax
+ 82a8286:	e8 35 37 5e fe       	call   688b9c0 <_cgo_topofstack@@Base-0x27ba0>
+ 82a828b:	48 8b 8c 24 60 01 00 	mov    rcx,QWORD PTR [rsp+0x160]
+ 82a8292:	00 
+ 82a8293:	48 89 c7             	mov    rdi,rax
+ 82a8296:	48 89 de             	mov    rsi,rbx
+ 82a8299:	31 c0                	xor    eax,eax
+ 82a829b:	48 8b 9c 24 58 01 00 	mov    rbx,QWORD PTR [rsp+0x158]
+ 82a82a2:	00 
+ 82a82a3:	e8 18 37 5e fe       	call   688b9c0 <_cgo_topofstack@@Base-0x27ba0>

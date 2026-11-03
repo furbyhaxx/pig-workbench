@@ -1,0 +1,29 @@
+$ rg -n "add_shell_tools\(|add_mcp_resource_tools\(|add_core_utility_tools\(|add_collaboration_tools\(" core/src/tools/spec_plan.rs
+1203:    add_shell_tools(context, registry);
+1204:    add_mcp_resource_tools(context, registry);
+1205:    add_core_utility_tools(context, registry);
+1206:    add_collaboration_tools(context, registry);
+1244:fn add_shell_tools(context: &CoreToolPlanContext<'_>, registry: &mut ToolRegistry) {
+1278:fn add_mcp_resource_tools(context: &CoreToolPlanContext<'_>, registry: &mut ToolRegistry) {
+1296:fn add_core_utility_tools(context: &CoreToolPlanContext<'_>, registry: &mut ToolRegistry) {
+1457:fn add_collaboration_tools(context: &CoreToolPlanContext<'_>, registry: &mut ToolRegistry) {
+
+$ rg -n "struct ToolRegistry|IndexMap<ToolName|fn entries\(|fn prepend_trusted" core/src/tools/registry.rs
+428:pub struct ToolRegistry {
+429:    tools: IndexMap<ToolName, RegisteredTool>,
+552:    pub(crate) fn prepend_trusted(&mut self, runtime: Arc<dyn CoreToolRuntime>) {
+623:    pub(crate) fn entries(&self) -> impl Iterator<Item = &RegisteredTool> {
+
+$ rg -n "namespace.tools.sort_by|specs.extend\(hosted_specs\)|merge_into_namespaces" core/src/tools/spec_plan.rs
+655:    specs.extend(hosted_specs);
+661:    merge_into_namespaces(specs, &mcp_namespaces)
+1110:fn merge_into_namespaces(specs: Vec<ToolSpec>, mcp_namespaces: &HashSet<&str>) -> Vec<ToolSpec> {
+1141:        namespace.tools.sort_by(|left, right| {
+
+$ rg -n "pub struct ResponsesApiTool|serde\(tag = \"type\"\)|create_tools_json_for_responses" tools/src/responses_api.rs tools/src/tool_spec.rs
+tools/src/tool_spec.rs:21:#[serde(tag = "type")]
+tools/src/tool_spec.rs:82:pub fn create_tools_json_for_responses_api(
+tools/src/tool_spec.rs:95:pub fn create_tools_json_for_responses_lite(
+tools/src/responses_api.rs:33:pub struct ResponsesApiTool {
+tools/src/responses_api.rs:48:#[serde(tag = "type")]
+tools/src/responses_api.rs:74:#[serde(tag = "type")]

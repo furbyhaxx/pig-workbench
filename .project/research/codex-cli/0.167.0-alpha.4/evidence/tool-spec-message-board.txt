@@ -1,0 +1,312 @@
+Static source declarations and selector, with source-relative line numbers.
+
+===== message-board/src/tools/selection.rs =====
+message-board/src/tools/selection.rs:1: //! Tool choices supplied by consumers. Each tool has one fixed contract.
+message-board/src/tools/selection.rs:2: 
+message-board/src/tools/selection.rs:3: /// Shared tools a consumer can expose through `message_board_tools`.
+message-board/src/tools/selection.rs:4: /// Tool selection does not grant storage permissions to the underlying connection.
+message-board/src/tools/selection.rs:5: #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+message-board/src/tools/selection.rs:6: pub enum MessageBoardTool {
+message-board/src/tools/selection.rs:7:     CreateChannel,
+message-board/src/tools/selection.rs:8:     /// Creates a channel or updates its description, without subscriptions or notifications.
+message-board/src/tools/selection.rs:9:     UpsertChannel,
+message-board/src/tools/selection.rs:10:     GetChannels,
+message-board/src/tools/selection.rs:11:     ListThreads,
+message-board/src/tools/selection.rs:12:     SearchPosts,
+message-board/src/tools/selection.rs:13:     ReadThread,
+message-board/src/tools/selection.rs:14:     ReadPost,
+message-board/src/tools/selection.rs:15:     Subscribe,
+message-board/src/tools/selection.rs:16:     Unsubscribe,
+message-board/src/tools/selection.rs:17:     /// Posts, subscribes the author unless opted out, and notifies recipients.
+message-board/src/tools/selection.rs:18:     Post,
+message-board/src/tools/selection.rs:19:     /// Writes evidence without automatic subscriptions or notifications.
+message-board/src/tools/selection.rs:20:     Append,
+message-board/src/tools/selection.rs:21: }
+message-board/src/tools/selection.rs:22: 
+message-board/src/tools/selection.rs:23: impl MessageBoardTool {
+message-board/src/tools/selection.rs:24:     /// Existing agent discussion tools, in their original registration order.
+message-board/src/tools/selection.rs:25:     pub const DISCUSSION: [Self; 9] = [
+message-board/src/tools/selection.rs:26:         Self::CreateChannel,
+message-board/src/tools/selection.rs:27:         Self::GetChannels,
+message-board/src/tools/selection.rs:28:         Self::ListThreads,
+message-board/src/tools/selection.rs:29:         Self::SearchPosts,
+message-board/src/tools/selection.rs:30:         Self::ReadThread,
+message-board/src/tools/selection.rs:31:         Self::ReadPost,
+message-board/src/tools/selection.rs:32:         Self::Subscribe,
+message-board/src/tools/selection.rs:33:         Self::Unsubscribe,
+message-board/src/tools/selection.rs:34:         Self::Post,
+message-board/src/tools/selection.rs:35:     ];
+message-board/src/tools/selection.rs:36: 
+message-board/src/tools/selection.rs:37:     /// Bundled schema for discovery before a caller has been bound to a board.
+message-board/src/tools/selection.rs:38:     pub fn spec(self) -> codex_tools::ToolSpec {
+message-board/src/tools/selection.rs:39:         super::spec::tool(
+message-board/src/tools/selection.rs:40:             self, /*namespace*/ None, /*namespace_description*/ "",
+message-board/src/tools/selection.rs:41:             /*description_override*/ None,
+message-board/src/tools/selection.rs:42:         )
+message-board/src/tools/selection.rs:43:     }
+message-board/src/tools/selection.rs:44: 
+message-board/src/tools/selection.rs:45:     pub(super) fn name(self) -> &'static str {
+message-board/src/tools/selection.rs:46:         match self {
+message-board/src/tools/selection.rs:47:             Self::CreateChannel => "create_channel",
+message-board/src/tools/selection.rs:48:             Self::UpsertChannel => "upsert_channel",
+message-board/src/tools/selection.rs:49:             Self::GetChannels => "get_channels",
+message-board/src/tools/selection.rs:50:             Self::ListThreads => "list_threads",
+message-board/src/tools/selection.rs:51:             Self::SearchPosts => "search_posts",
+message-board/src/tools/selection.rs:52:             Self::ReadThread => "read_thread",
+message-board/src/tools/selection.rs:53:             Self::ReadPost => "read_post",
+message-board/src/tools/selection.rs:54:             Self::Subscribe => "subscribe",
+message-board/src/tools/selection.rs:55:             Self::Unsubscribe => "unsubscribe",
+message-board/src/tools/selection.rs:56:             Self::Post => "post",
+message-board/src/tools/selection.rs:57:             Self::Append => "append",
+message-board/src/tools/selection.rs:58:         }
+message-board/src/tools/selection.rs:59:     }
+message-board/src/tools/selection.rs:60: }
+
+===== message-board/src/tools/spec.rs =====
+message-board/src/tools/spec.rs:1: //! Schemas for shared board tools. The host supplies their selection and namespace.
+message-board/src/tools/spec.rs:2: 
+message-board/src/tools/spec.rs:3: use super::selection::MessageBoardTool;
+message-board/src/tools/spec.rs:4: use codex_tools::ResponsesApiNamespace;
+message-board/src/tools/spec.rs:5: use codex_tools::ResponsesApiNamespaceTool;
+message-board/src/tools/spec.rs:6: use codex_tools::ResponsesApiTool;
+message-board/src/tools/spec.rs:7: use codex_tools::ToolSpec;
+message-board/src/tools/spec.rs:8: use codex_tools::parse_tool_input_schema;
+message-board/src/tools/spec.rs:9: use serde_json::json;
+message-board/src/tools/spec.rs:10: 
+message-board/src/tools/spec.rs:11: pub(super) fn tool(
+message-board/src/tools/spec.rs:12:     tool: MessageBoardTool,
+message-board/src/tools/spec.rs:13:     namespace: Option<&str>,
+message-board/src/tools/spec.rs:14:     namespace_description: &str,
+message-board/src/tools/spec.rs:15:     description_override: Option<&str>,
+message-board/src/tools/spec.rs:16: ) -> ToolSpec {
+message-board/src/tools/spec.rs:17:     let (description, fields, required): (&str, &[&str], &[&str]) = match tool {
+message-board/src/tools/spec.rs:18:         MessageBoardTool::CreateChannel => (
+message-board/src/tools/spec.rs:19:             "Create a channel where all agents in this collaboration can read and post messages. You are subscribed to new top-level posts by default.",
+message-board/src/tools/spec.rs:20:             &["channel_name", "description", "subscribe"],
+message-board/src/tools/spec.rs:21:             &["channel_name"],
+message-board/src/tools/spec.rs:22:         ),
+message-board/src/tools/spec.rs:23:         MessageBoardTool::UpsertChannel => (
+message-board/src/tools/spec.rs:24:             "Create a channel or update only its description. Existing posts, author, creation time and subscriptions are preserved. Does not subscribe anyone or send notifications. Returns null on success.",
+message-board/src/tools/spec.rs:25:             &["channel_name", "description"],
+message-board/src/tools/spec.rs:26:             &["channel_name", "description"],
+message-board/src/tools/spec.rs:27:         ),
+message-board/src/tools/spec.rs:28:         MessageBoardTool::GetChannels => (
+message-board/src/tools/spec.rs:29:             "List channels, most recently active first, or search by a case-insensitive part of the name. Creating a channel or posting in it counts as activity.",
+message-board/src/tools/spec.rs:30:             &["query", "recent_first", "limit", "cursor"],
+message-board/src/tools/spec.rs:31:             &[],
+message-board/src/tools/spec.rs:32:         ),
+message-board/src/tools/spec.rs:33:         MessageBoardTool::ListThreads => (
+message-board/src/tools/spec.rs:34:             "List a channel's threads with previews of the first post and latest reply. New threads come first by default; sorting by activity brings threads with recent replies to the top.",
+message-board/src/tools/spec.rs:35:             &[
+message-board/src/tools/spec.rs:36:                 "channel_name",
+message-board/src/tools/spec.rs:37:                 "sort",
+message-board/src/tools/spec.rs:38:                 "recent_first",
+message-board/src/tools/spec.rs:39:                 "limit",
+message-board/src/tools/spec.rs:40:                 "cursor",
+message-board/src/tools/spec.rs:41:                 "max_chars_per_post",
+message-board/src/tools/spec.rs:42:             ],
+message-board/src/tools/spec.rs:43:             &["channel_name"],
+message-board/src/tools/spec.rs:44:         ),
+message-board/src/tools/spec.rs:45:         MessageBoardTool::SearchPosts => (
+message-board/src/tools/spec.rs:46:             "Search top-level posts and replies, newest first. Text matches are case-insensitive substrings; omit the query to see recent activity. You can narrow by channel, author, or posts after a message ID. Results are previews; read_post can retrieve the full text.",
+message-board/src/tools/spec.rs:47:             &[
+message-board/src/tools/spec.rs:48:                 "channel_name",
+message-board/src/tools/spec.rs:49:                 "query",
+message-board/src/tools/spec.rs:50:                 "after_message_id",
+message-board/src/tools/spec.rs:51:                 "author",
+message-board/src/tools/spec.rs:52:                 "limit",
+message-board/src/tools/spec.rs:53:                 "cursor",
+message-board/src/tools/spec.rs:54:                 "max_chars_per_post",
+message-board/src/tools/spec.rs:55:             ],
+message-board/src/tools/spec.rs:56:             &[],
+message-board/src/tools/spec.rs:57:         ),
+message-board/src/tools/spec.rs:58:         MessageBoardTool::ReadThread => (
+message-board/src/tools/spec.rs:59:             "Read a thread using its first post's message ID. Every page includes previews of the first post and the newest replies; the cursor advances through replies.",
+message-board/src/tools/spec.rs:60:             &["thread_id", "limit", "cursor", "max_chars_per_post"],
+message-board/src/tools/spec.rs:61:             &["thread_id"],
+message-board/src/tools/spec.rs:62:         ),
+message-board/src/tools/spec.rs:63:         MessageBoardTool::ReadPost => (
+message-board/src/tools/spec.rs:64:             "Read a post or reply by message ID, without needing its channel. Offsets count Unicode characters; continue at next_offset_chars while it is less than n_chars.",
+message-board/src/tools/spec.rs:65:             &["message_id", "offset_chars", "limit_chars"],
+message-board/src/tools/spec.rs:66:             &["message_id"],
+message-board/src/tools/spec.rs:67:         ),
+message-board/src/tools/spec.rs:68:         MessageBoardTool::Subscribe => (
+message-board/src/tools/spec.rs:69:             "Subscribe yourself or another agent to a channel for new top-level posts, or to a thread for replies. Provide exactly one of channel_name or thread_id. Notifications only reach agents with a running turn; missed notifications are not saved.",
+message-board/src/tools/spec.rs:70:             &["channel_name", "thread_id", "target_agent"],
+message-board/src/tools/spec.rs:71:             &[],
+message-board/src/tools/spec.rs:72:         ),
+message-board/src/tools/spec.rs:73:         MessageBoardTool::Unsubscribe => (
+message-board/src/tools/spec.rs:74:             "Unsubscribe yourself or another agent from a channel or thread. Provide exactly one of channel_name or thread_id. Posting again does not undo a thread unsubscribe. Agents explicitly named on a post can still receive that notification.",
+message-board/src/tools/spec.rs:75:             &["channel_name", "thread_id", "target_agent"],
+message-board/src/tools/spec.rs:76:             &[],
+message-board/src/tools/spec.rs:77:         ),
+message-board/src/tools/spec.rs:78:         MessageBoardTool::Post => (
+message-board/src/tools/spec.rs:79:             "Start a thread in an existing or new channel, or reply using the first post's message ID as thread_id. Exactly one destination is required. Posting subscribes you to the thread unless you previously unsubscribed. agents_to_notify sends a one-time notification without subscribing recipients or starting idle agents. Returns metadata, not the post text.",
+message-board/src/tools/spec.rs:80:             &[
+message-board/src/tools/spec.rs:81:                 "text",
+message-board/src/tools/spec.rs:82:                 "channel_name",
+message-board/src/tools/spec.rs:83:                 "new_channel_name",
+message-board/src/tools/spec.rs:84:                 "thread_id",
+message-board/src/tools/spec.rs:85:                 "agents_to_notify",
+message-board/src/tools/spec.rs:86:             ],
+message-board/src/tools/spec.rs:87:             &["text"],
+message-board/src/tools/spec.rs:88:         ),
+message-board/src/tools/spec.rs:89:         MessageBoardTool::Append => (
+message-board/src/tools/spec.rs:90:             "Store a post in an existing or new channel, or reply using the first post's message ID as thread_id. Exactly one destination is required. Does not subscribe anyone or send notifications, including to existing subscribers. Returns metadata, not the post text.",
+message-board/src/tools/spec.rs:91:             &["text", "channel_name", "new_channel_name", "thread_id"],
+message-board/src/tools/spec.rs:92:             &["text"],
+message-board/src/tools/spec.rs:93:         ),
+message-board/src/tools/spec.rs:94:     };
+message-board/src/tools/spec.rs:95:     let mut properties = serde_json::Map::new();
+message-board/src/tools/spec.rs:96:     for field in fields {
+message-board/src/tools/spec.rs:97:         let schema = match *field {
+message-board/src/tools/spec.rs:98:             "description" if tool == MessageBoardTool::UpsertChannel => {
+message-board/src/tools/spec.rs:99:                 json!({"type":"string","description":"Channel purpose, at most 512 UTF-8 bytes."})
+message-board/src/tools/spec.rs:100:             }
+message-board/src/tools/spec.rs:101:             "description" => {
+message-board/src/tools/spec.rs:102:                 json!({"type":"string","description":"Optional channel purpose, at most 512 UTF-8 bytes."})
+message-board/src/tools/spec.rs:103:             }
+message-board/src/tools/spec.rs:104:             "new_channel_name" if tool == MessageBoardTool::Append => {
+message-board/src/tools/spec.rs:105:                 json!({"type":"string","description":"Create this channel without subscribing anyone."})
+message-board/src/tools/spec.rs:106:             }
+message-board/src/tools/spec.rs:107:             "new_channel_name" => {
+message-board/src/tools/spec.rs:108:                 json!({"type":"string","description":"Create and subscribe to this channel."})
+message-board/src/tools/spec.rs:109:             }
+message-board/src/tools/spec.rs:110:             "subscribe" => {
+message-board/src/tools/spec.rs:111:                 json!({"type":"boolean","description":"Subscribe to new top-level posts. Default true."})
+message-board/src/tools/spec.rs:112:             }
+message-board/src/tools/spec.rs:113:             "author" | "target_agent" => {
+message-board/src/tools/spec.rs:114:                 json!({"type":"string","description":"An absolute agent path or a reference relative to you."})
+message-board/src/tools/spec.rs:115:             }
+message-board/src/tools/spec.rs:116:             "recent_first" => json!({"type":"boolean","description":"Newest first by default."}),
+message-board/src/tools/spec.rs:117:             "limit" => {
+message-board/src/tools/spec.rs:118:                 json!({"type":"integer","minimum":1,"description":"Maximum results, default 20; output budgets may return fewer. Continue with next_cursor."})
+message-board/src/tools/spec.rs:119:             }
+message-board/src/tools/spec.rs:120:             "offset_chars" => json!({"type":"integer","minimum":0,"description":"Default 0."}),
+message-board/src/tools/spec.rs:121:             "limit_chars" | "max_chars_per_post" => {
+message-board/src/tools/spec.rs:122:                 json!({"type":"integer","minimum":1,"description":"Maximum characters; further capped by output budget. Defaults: limit_chars 20000, max_chars_per_post 1000."})
+message-board/src/tools/spec.rs:123:             }
+message-board/src/tools/spec.rs:124:             "sort" => json!({"type":"string","enum":["created","activity"]}),
+message-board/src/tools/spec.rs:125:             "agents_to_notify" => {
+message-board/src/tools/spec.rs:126:                 json!({"type":"array","items":{"type":"string"},"description":"Absolute agent paths or references relative to you; maximum 256."})
+message-board/src/tools/spec.rs:127:             }
+message-board/src/tools/spec.rs:128:             "cursor" => {
+message-board/src/tools/spec.rs:129:                 json!({"type":"string","description":"Opaque next_cursor from the same query. Keep filters and sorting unchanged. Concurrent posts may shift pages; omit the cursor to refresh."})
+message-board/src/tools/spec.rs:130:             }
+message-board/src/tools/spec.rs:131:             _ => json!({"type":"string"}),
+message-board/src/tools/spec.rs:132:         };
+message-board/src/tools/spec.rs:133:         properties.insert((*field).into(), schema);
+message-board/src/tools/spec.rs:134:     }
+message-board/src/tools/spec.rs:135:     let parameters = json!({"type":"object","properties":properties,"required":required,"additionalProperties":false});
+message-board/src/tools/spec.rs:136:     let tool = ResponsesApiTool {
+message-board/src/tools/spec.rs:137:         name: tool.name().into(),
+message-board/src/tools/spec.rs:138:         description: description_override.unwrap_or(description).into(),
+message-board/src/tools/spec.rs:139:         strict: false,
+message-board/src/tools/spec.rs:140:         defer_loading: None,
+message-board/src/tools/spec.rs:141:         parameters: parse_tool_input_schema(&parameters)
+message-board/src/tools/spec.rs:142:             .unwrap_or_else(|error| panic!("message-board schema must parse: {error}")),
+message-board/src/tools/spec.rs:143:         output_schema: None,
+message-board/src/tools/spec.rs:144:     };
+message-board/src/tools/spec.rs:145:     match namespace {
+message-board/src/tools/spec.rs:146:         Some(namespace) => ToolSpec::Namespace(ResponsesApiNamespace {
+message-board/src/tools/spec.rs:147:             name: namespace.into(),
+message-board/src/tools/spec.rs:148:             description: namespace_description.into(),
+message-board/src/tools/spec.rs:149:             tools: vec![ResponsesApiNamespaceTool::Function(tool)],
+message-board/src/tools/spec.rs:150:         }),
+message-board/src/tools/spec.rs:151:         None => ToolSpec::Function(tool),
+message-board/src/tools/spec.rs:152:     }
+message-board/src/tools/spec.rs:153: }
+
+===== message-board/src/tools/arguments.rs =====
+message-board/src/tools/arguments.rs:1: //! Flat model arguments; runtime identities are supplied by the host.
+message-board/src/tools/arguments.rs:2: 
+message-board/src/tools/arguments.rs:3: use crate::ChannelDescription;
+message-board/src/tools/arguments.rs:4: use crate::ThreadSort;
+message-board/src/tools/arguments.rs:5: use serde::Deserialize;
+message-board/src/tools/arguments.rs:6: use std::num::NonZeroU32;
+message-board/src/tools/arguments.rs:7: use uuid::Uuid;
+message-board/src/tools/arguments.rs:8: 
+message-board/src/tools/arguments.rs:9: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:10: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:11: pub(super) struct CreateChannel {
+message-board/src/tools/arguments.rs:12:     pub(super) channel_name: String,
+message-board/src/tools/arguments.rs:13:     pub(super) description: Option<ChannelDescription>,
+message-board/src/tools/arguments.rs:14:     pub(super) subscribe: Option<bool>,
+message-board/src/tools/arguments.rs:15: }
+message-board/src/tools/arguments.rs:16: 
+message-board/src/tools/arguments.rs:17: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:18: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:19: pub(super) struct GetChannels {
+message-board/src/tools/arguments.rs:20:     pub(super) query: Option<String>,
+message-board/src/tools/arguments.rs:21:     pub(super) recent_first: Option<bool>,
+message-board/src/tools/arguments.rs:22:     pub(super) limit: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:23:     pub(super) cursor: Option<String>,
+message-board/src/tools/arguments.rs:24: }
+message-board/src/tools/arguments.rs:25: 
+message-board/src/tools/arguments.rs:26: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:27: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:28: pub(super) struct ListThreads {
+message-board/src/tools/arguments.rs:29:     pub(super) channel_name: String,
+message-board/src/tools/arguments.rs:30:     pub(super) sort: Option<ThreadSort>,
+message-board/src/tools/arguments.rs:31:     pub(super) recent_first: Option<bool>,
+message-board/src/tools/arguments.rs:32:     pub(super) limit: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:33:     pub(super) cursor: Option<String>,
+message-board/src/tools/arguments.rs:34:     pub(super) max_chars_per_post: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:35: }
+message-board/src/tools/arguments.rs:36: 
+message-board/src/tools/arguments.rs:37: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:38: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:39: pub(super) struct SearchPosts {
+message-board/src/tools/arguments.rs:40:     pub(super) channel_name: Option<String>,
+message-board/src/tools/arguments.rs:41:     pub(super) query: Option<String>,
+message-board/src/tools/arguments.rs:42:     pub(super) after_message_id: Option<Uuid>,
+message-board/src/tools/arguments.rs:43:     pub(super) author: Option<String>,
+message-board/src/tools/arguments.rs:44:     pub(super) limit: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:45:     pub(super) cursor: Option<String>,
+message-board/src/tools/arguments.rs:46:     pub(super) max_chars_per_post: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:47: }
+message-board/src/tools/arguments.rs:48: 
+message-board/src/tools/arguments.rs:49: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:50: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:51: pub(super) struct ReadThread {
+message-board/src/tools/arguments.rs:52:     pub(super) thread_id: Uuid,
+message-board/src/tools/arguments.rs:53:     pub(super) limit: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:54:     pub(super) cursor: Option<String>,
+message-board/src/tools/arguments.rs:55:     pub(super) max_chars_per_post: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:56: }
+message-board/src/tools/arguments.rs:57: 
+message-board/src/tools/arguments.rs:58: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:59: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:60: pub(super) struct ReadPost {
+message-board/src/tools/arguments.rs:61:     pub(super) message_id: Uuid,
+message-board/src/tools/arguments.rs:62:     pub(super) offset_chars: Option<u32>,
+message-board/src/tools/arguments.rs:63:     pub(super) limit_chars: Option<NonZeroU32>,
+message-board/src/tools/arguments.rs:64: }
+message-board/src/tools/arguments.rs:65: 
+message-board/src/tools/arguments.rs:66: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:67: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:68: pub(super) struct Subscription {
+message-board/src/tools/arguments.rs:69:     pub(super) channel_name: Option<String>,
+message-board/src/tools/arguments.rs:70:     pub(super) thread_id: Option<Uuid>,
+message-board/src/tools/arguments.rs:71:     pub(super) target_agent: Option<String>,
+message-board/src/tools/arguments.rs:72: }
+message-board/src/tools/arguments.rs:73: 
+message-board/src/tools/arguments.rs:74: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:75: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:76: pub(super) struct Post {
+message-board/src/tools/arguments.rs:77:     pub(super) text: String,
+message-board/src/tools/arguments.rs:78:     pub(super) channel_name: Option<String>,
+message-board/src/tools/arguments.rs:79:     pub(super) new_channel_name: Option<String>,
+message-board/src/tools/arguments.rs:80:     pub(super) thread_id: Option<Uuid>,
+message-board/src/tools/arguments.rs:81:     pub(super) agents_to_notify: Option<Vec<String>>,
+message-board/src/tools/arguments.rs:82: }
+message-board/src/tools/arguments.rs:83: 
+message-board/src/tools/arguments.rs:84: #[derive(Deserialize)]
+message-board/src/tools/arguments.rs:85: #[serde(deny_unknown_fields)]
+message-board/src/tools/arguments.rs:86: pub(super) struct Append {
+message-board/src/tools/arguments.rs:87:     pub(super) text: String,
+message-board/src/tools/arguments.rs:88:     pub(super) channel_name: Option<String>,
+message-board/src/tools/arguments.rs:89:     pub(super) new_channel_name: Option<String>,
+message-board/src/tools/arguments.rs:90:     pub(super) thread_id: Option<Uuid>,
+message-board/src/tools/arguments.rs:91: }
+

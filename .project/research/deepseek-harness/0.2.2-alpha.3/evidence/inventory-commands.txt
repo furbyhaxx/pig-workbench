@@ -1,0 +1,169 @@
+$ date -Iseconds
+2026-11-03T11:58:49+01:00
+
+$ git -C /tmp/re-recon/dsh rev-parse HEAD
+8bd073392eef6f54e921a093b95076248eb08cbb
+
+$ git -C /tmp/re-recon/dsh status --short
+
+$ rg -n --glob "**/src/*.ts" --glob "!**/api-catalog.ts" "interface MessageSourceMap" packages
+packages/api/session-controller/src/types.ts:392:  interface MessageSourceMap {
+packages/session/working-directory/src/index.ts:24:  interface MessageSourceMap {
+packages/context/agent-instructions/src/state.ts:52:  interface MessageSourceMap {
+packages/experimental/action-cards/src/types.ts:58:  interface MessageSourceMap {
+packages/context/session-reference/src/types.ts:35:  interface MessageSourceMap {
+packages/context/time-context/src/index.ts:15:  interface MessageSourceMap {
+packages/llm/llm/src/message.ts:110:export interface MessageSourceMap {
+packages/context/tmux-context/src/index.ts:31:  interface MessageSourceMap {
+packages/core/agent-loop/src/runtime-context.ts:14:  interface MessageSourceMap {
+packages/core/agent/src/model-selection.ts:124:  interface MessageSourceMap {
+packages/session/session-title-llm/src/index.ts:20:  interface MessageSourceMap {
+packages/skill/skill/src/index.ts:155:  interface MessageSourceMap {
+packages/skill/tool-skill/src/index.ts:47:  interface MessageSourceMap {
+packages/plan/plan-mode/src/index.ts:40:  interface MessageSourceMap {
+packages/core/tool-executor-ptc/src/types.ts:66:  interface MessageSourceMap {
+packages/subagent/subagent/src/continuation-messages.ts:42:  interface MessageSourceMap {
+packages/core/tools/src/index.ts:26:  interface MessageSourceMap {
+packages/schedule/schedule/src/runtime.ts:6:  interface MessageSourceMap {
+packages/experimental/webhook/src/types.ts:72:  interface MessageSourceMap {
+packages/goal/goal/src/domain.ts:56:  interface MessageSourceMap {
+packages/team/agent-team/src/types.ts:126:  interface MessageSourceMap {
+packages/goal/tool-goal/src/index.ts:14:  interface MessageSourceMap {
+packages/guard/repeat-tool-reminder/src/index.ts:15:  interface MessageSourceMap {
+packages/interaction/user-approval/src/index.ts:15:  interface MessageSourceMap {
+packages/interaction/user-questions/src/types.ts:125:  interface MessageSourceMap {
+packages/extensions/cordis-host-runner/src/index.ts:13:  interface MessageSourceMap {
+packages/jobs/tool-jobs/src/index.ts:27:  interface MessageSourceMap {
+packages/experimental/hooks-claude-code/src/index.ts:19:  interface MessageSourceMap {
+packages/compaction/compaction/src/index.ts:26:  interface MessageSourceMap {
+packages/experimental/hooks-codex/src/index.ts:22:  interface MessageSourceMap {
+
+$ rg -n --glob "**/src/*.ts" --glob "!**/api-catalog.ts" "createUserMessage\(|agent/pre-step" packages
+packages/acp/acp/src/session.ts:268:        const message = createUserMessage({
+packages/api/session-controller/src/archived-session-gate.ts:29:    ctx.on('agent/pre-step', (payload, next) =>
+packages/api/session-controller/src/commands.ts:329:        const message: UserMessage = createUserMessage({ content, source })
+packages/interaction/user-approval/src/index.ts:215:    agent.inject(createUserMessage({
+packages/interaction/user-questions/src/index.ts:191:    const message = createUserMessage({
+packages/jobs/tool-jobs/src/index.ts:384:    const message = createUserMessage({
+packages/plan/plan-mode/src/index.ts:12: * assembly, then appends `plan/mode` from `agent/pre-step` only when the step
+packages/plan/plan-mode/src/index.ts:211:    ctx.on('agent/pre-step', async (
+packages/plan/plan-mode/src/index.ts:262:            agent.steer(createUserMessage({
+packages/plan/plan-mode/src/index.ts:475:    return createUserMessage({
+packages/skill/tool-skill/src/index.ts:181:  ctx.on('agent/pre-step', async (
+packages/skill/tool-skill/src/index.ts:201:      injections.push(createUserMessage({
+packages/skill/tool-skill/src/index.ts:217:  ctx.on('agent/pre-step', async (
+packages/skill/tool-skill/src/index.ts:259:  return createUserMessage({
+packages/skill/tool-skill/src/index.ts:301:  return createUserMessage({
+packages/test-support/loader-smoke/src/agent-turn.ts:73:  const message = createUserMessage({
+packages/schedule/schedule/src/index.ts:723:        agent.inject(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'schedule' } }))
+packages/schedule/schedule/src/runtime.ts:353:    const message = createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'schedule' } })
+packages/bundle/headless/src/index.ts:420:      agent.followup(createUserMessage({
+packages/context/agent-instructions/src/index.ts:194:        authorityMessages.push(createUserMessage({
+packages/context/agent-instructions/src/index.ts:233:    return createUserMessage({
+packages/context/agent-instructions/src/index.ts:330:  ctx.on('agent/pre-step', async (
+packages/context/agent-instructions/src/state.ts:86:  return createUserMessage({
+packages/context/agent-instructions/src/state.ts:98:  return createUserMessage({
+packages/experimental/action-cards/src/index.ts:238:    this.ctx.on('agent/pre-step', async ({ agent, signal }, next) => {
+packages/experimental/action-cards/src/index.ts:253:      return { ...decision, messages: [...decision.messages, createUserMessage({
+packages/compaction/compaction-basic/src/index.ts:157:    ctx.on('agent/pre-step', async (
+packages/context/session-reference/src/index.ts:128:    ctx.on('agent/pre-step', async ({ agent, signal, modelSelection }, next): Promise<PreStepDecision> => {
+packages/context/session-reference/src/index.ts:365:    const additionalContext: UserMessage = createUserMessage({
+packages/compaction/compaction-basic/src/region.ts:410:  const checkpointMessage = createUserMessage({
+packages/spill/spill-policy/src/index.ts:145:      additionalContexts.push(createUserMessage({ content: retained, source: { kind: 'ptc-mode' } }))
+packages/context/time-context/src/index.ts:199:  ctx.on('agent/pre-step', async (
+packages/context/time-context/src/index.ts:236:        createUserMessage({
+packages/context/tmux-context/src/index.ts:240:  ctx.on('agent/pre-step', async (
+packages/context/tmux-context/src/index.ts:263:        createUserMessage({
+packages/core/agent-loop/src/agent.ts:297:        'agent/pre-step', { messages: claimed, ...position, signal, modelSelection: selection },
+packages/sdk/server/src/server.ts:275:    const message = createUserMessage({
+packages/core/agent-loop/src/runtime-context.ts:161:    return createUserMessage({
+packages/experimental/claude-code-mods/src/host-ops.ts:389:      const message = createUserMessage({ content: [{ type: 'text', text: framed }], source: { kind: 'user' } })
+packages/experimental/claude-code-mods/src/index.ts:6: * `turn.start` on `agent/pre-step`, `tool.call` around `tools/execute`,
+packages/experimental/claude-code-mods/src/index.ts:344:    ctx.on('agent/pre-step', async ({ agent, messages, turn, signal }, next): Promise<PreStepDecision> => {
+packages/core/agent/src/model-selection.ts:136:  return createUserMessage({
+packages/core/agent/src/model-selection.ts:159:    'agent/pre-step',
+packages/core/agent/src/runtime-types.ts:350:    'agent/pre-step'(this: Scoped<Agent>, payload: { agent: Agent; messages: UserMessage[]; turn: number; step: number; signal: AbortSignal; modelSelection: Readonly<ModelSelection> }, next: () => Promise<PreStepDecision>): Promise<PreStepDecision>
+packages/session/session-checkpoint-policy/src/index.ts:79:  ctx.on('agent/pre-step', async ({ agent }, next): Promise<PreStepDecision> => {
+packages/subagent/subagent/src/archive-admission.ts:50:  ctx.on('agent/pre-step', ({ agent }, next) => {
+packages/subagent/subagent/src/continuation-messages.ts:67:  return createUserMessage({
+packages/subagent/subagent/src/continuation-messages.ts:151:  return createUserMessage({
+packages/subagent/subagent/src/manager.ts:1080:          const message = createUserMessage({ content, source: options.source })
+packages/subagent/subagent/src/manager.ts:1203:    const message = createUserMessage({ content, source: options.source })
+packages/core/tool-executor-ptc/src/ptc.ts:603:                  exec.deferContext(createUserMessage({
+packages/experimental/client-ui-forge/src/worktree.ts:217:    ctx.on('agent/pre-step', async ({ agent, step, signal }, next): Promise<PreStepDecision> => await this.preStep(agent, step, signal, next))
+packages/session/session-title-llm/src/index.ts:252:  const messages: Message[] = [createUserMessage({
+packages/workspace/workspace/src/index.ts:357:   * `agent/pre-step` gate reads, so every wake the stops induce is already
+packages/experimental/hooks-claude-code/src/index.ts:200:    return createUserMessage({ content, source: CONTEXT_SOURCE })
+packages/experimental/hooks-claude-code/src/index.ts:224:  ctx.on('agent/pre-step', async ({ agent, messages, turn, signal }, next): Promise<PreStepDecision> => {
+packages/experimental/hooks-claude-code/src/index.ts:280:      agent.steer(createUserMessage({ content: [{ type: 'text', text }], source: CONTEXT_SOURCE }))
+packages/experimental/hooks-codex/src/index.ts:179:    return createUserMessage({ content, source: CONTEXT_SOURCE })
+packages/experimental/hooks-codex/src/index.ts:201:  ctx.on('agent/pre-step', async ({ agent, messages, turn, signal }, next): Promise<PreStepDecision> => {
+packages/experimental/hooks-codex/src/index.ts:270:      agent.steer(createUserMessage({ content: [{ type: 'text', text }], source: CONTEXT_SOURCE }))
+packages/session/working-directory/src/index.ts:192:    const notice = createUserMessage({
+packages/experimental/webhook/src/session.ts:128:    handle.agent.followup(createUserMessage({
+packages/goal/command-goal/src/index.ts:119:  invocation.agent.followup(createUserMessage({
+packages/goal/goal-round-driver/src/index.ts:192:    const message = createUserMessage({
+packages/goal/goal-round-driver/src/index.ts:387:    ctx.on('agent/pre-step', async ({ agent, messages, signal }, next): Promise<PreStepDecision> => {
+packages/goal/tool-goal/src/index.ts:301:        exec.deferContext(createUserMessage({
+packages/guard/repeat-tool-reminder/src/index.ts:210:    return createUserMessage({
+packages/guard/repeat-tool-reminder/src/index.ts:236:  ctx.on('agent/pre-step', ({ agent, messages }, next): Promise<PreStepDecision> => {
+packages/extensions/cordis-host-runner/src/index.ts:1062:    agent.steer(createUserMessage({
+packages/extensions/cordis-host-runner/src/index.ts:1075:    agent.steer(createUserMessage({
+packages/extensions/cordis-host-runner/src/index.ts:1099:    agent.steer(createUserMessage({
+packages/extensions/cordis-host-runner/src/index.ts:1124:    agent.steer(createUserMessage({
+packages/extensions/cordis-host-runner/src/index.ts:1169:    agent.inject(createUserMessage({
+
+$ rg -n --glob "**/src/*.ts" --glob "!**/api-catalog.ts" "systemPrompt\.(section|context)\(" packages
+packages/lsp/tool-lsp/src/index.ts:102:  ctx.systemPrompt.section({
+packages/context/file-reference-local/src/index.ts:71:        scope.systemPrompt.section({
+packages/context/harness-dev-context/src/index.ts:134:  ctx.systemPrompt.section({
+packages/context/harness-dev-context/src/index.ts:140:  ctx.systemPrompt.context({
+packages/context/harness-dev-context/src/index.ts:146:  ctx.systemPrompt.section({
+packages/context/harness-dev-context/src/index.ts:152:  ctx.systemPrompt.context({
+packages/mcp/mcp-client/src/server-context.ts:33:    inner.systemPrompt.section({
+packages/mcp/mcp-resources/src/index.ts:60:      inner.systemPrompt.section({
+packages/plan/plan-mode/src/index.ts:197:    ctx.systemPrompt.section({
+packages/sandbox/sandbox-policy/src/index.ts:175:      scope.systemPrompt.context({
+packages/shell/tool-bash/src/index.ts:251:  ctx.systemPrompt.section({
+packages/preset/persona/src/index.ts:63:  ctx.effect(() => ctx.systemPrompt.section({
+packages/preset/persona/src/index.ts:69:  ctx.effect(() => ctx.systemPrompt.section({
+packages/shell/tool-pwsh/src/index.ts:264:  ctx.systemPrompt.section({
+packages/fs/tool-fs-search/src/glob.ts:312:  ctx.systemPrompt.section({
+packages/fs/tool-fs-search/src/grep.ts:277:  ctx.systemPrompt.section({
+packages/core/system-prompt/src/index.ts:491:      { label: 'systemPrompt.section()' },
+packages/core/system-prompt/src/index.ts:526:      { label: 'systemPrompt.context()' },
+packages/fs/tool-fs/src/apply-patch.ts:18:  ctx.systemPrompt.section({
+packages/fs/tool-fs/src/write.ts:63:  ctx.systemPrompt.section({
+packages/fs/tool-fs/src/edit.ts:77:  ctx.systemPrompt.section({
+packages/session/working-directory/src/index.ts:90:    ctx.systemPrompt.context({
+packages/fs/tool-fs/src/read.ts:69:  ctx.systemPrompt.section({
+packages/core/tools/src/index.ts:333:        yield this.ctx.systemPrompt.section({
+packages/deliverables/deliverable-file-references/src/index.ts:25:  ctx.systemPrompt.section({
+packages/schedule/tool-schedule/src/index.ts:359:  ctx.systemPrompt.section({
+packages/subagent/subagent/src/child-agent.ts:206:  childCtx.systemPrompt.context({
+packages/subagent/subagent/src/child-agent.ts:212:    childCtx.systemPrompt.section({
+packages/goal/tool-goal/src/index.ts:189:  ctx.systemPrompt.section({
+packages/subagent/subagent/src/structured.ts:109:  childCtx.systemPrompt.section({
+packages/subagent/tool-subagent-control/src/index.ts:91:  ctx.systemPrompt.context({
+packages/subagent/tool-subagent/src/index.ts:359:  ctx.systemPrompt.section({
+packages/subagent/tool-subagent/src/index.ts:373:  ctx.systemPrompt.context({
+packages/workflow/tool-workflow/src/index.ts:326:  ctx.systemPrompt.section({
+packages/web/tool-web/src/fetch.ts:450:  ctx.systemPrompt.section({
+packages/web/tool-web/src/search.ts:352:  ctx.systemPrompt.section({
+packages/jobs/tool-jobs/src/index.ts:316:  ctx.systemPrompt.section({
+packages/interaction/user-approval/src/index.ts:190:      scope.systemPrompt.context({
+packages/experimental/browser-use-stagehand-native/src/index.ts:191:  ctx.systemPrompt.section({ name: 'browser-use:stagehand-native', text: GUIDANCE, order: ctx.systemPrompt.getSectionOrder('TOOL_COMPUTER_USE') })
+packages/team/tool-agent-team/src/index.ts:107:  ctx.systemPrompt.section({
+packages/experimental/tool-ralph/src/index.ts:405:  ctx.systemPrompt.section({
+packages/experimental/tool-terminal/src/index.ts:159:  ctx.systemPrompt.section({
+packages/experimental/tool-session-query/src/index.ts:59:  ctx.systemPrompt.section({
+packages/experimental/computer-use-cua-driver-native/src/index.ts:132:    inner.systemPrompt.section({
+packages/experimental/cua/src/index.ts:350:      scope.systemPrompt.section(prompt)
+
+$ rg -n --glob "**/src/*.ts" "\.commands\.register\(" packages
+packages/session-query/session-log-export/src/index.ts:81:  ctx.effect(() => ctx.commands.register({
+packages/plan/plan-mode/src/index.ts:233:      commandCtx.commands.register({
+packages/feedback/command-feedback/src/index.ts:119:  ctx.commands.register({
+packages/goal/command-goal/src/index.ts:191:  ctx.commands.register({
+packages/interaction/permission-presets/src/index.ts:255:      commandCtx.commands.register({
+packages/compaction/command-compact/src/index.ts:101:    yield ctx.commands.register({

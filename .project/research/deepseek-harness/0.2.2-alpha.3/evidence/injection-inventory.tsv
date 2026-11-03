@@ -1,0 +1,59 @@
+grade	producer or source	trigger	role and placement	template or builder	budget / limitation
+[OBS]	system-prompt	assembled prompt changes or first request	system message, surface head or append	packages/core/agent-loop/src/runtime-context.ts:91; packages/core/system-prompt/src/index.ts:136	per-section limits depend on producer
+[OBS]	runtime-context	changed nonempty assembled context, or clearing a previous snapshot	user snapshot after history	packages/core/agent-loop/src/runtime-context.ts:119,155	sections depend on contributors
+[OBS]	working-directory	committed cwd change or missing cwd recovery	user next-step notice	packages/session/working-directory/src/index.ts:170,191	no explicit cap observed
+[OBS]	agent-instructions	first baseline, identity replacement, or successful read/write/edit touches	user instructions after claimed input	packages/context/agent-instructions/src/index.ts:330; packages/context/agent-instructions/src/render.ts:16,221,250	maxBytes per chain; maxSourceBytes per file
+[OBS]	time-context	accepted pre-step when refresh interval permits	user snapshot appended to decision	packages/context/time-context/src/index.ts:98,199; packages/context/time-context/src/request-zone.ts:81	refreshIntervalMs defaults 600000
+[OBS]	tmux-context	accepted first step, matching pane, changed location and refresh permits	user snapshot prepended to decision	packages/context/tmux-context/src/index.ts:120,175,240	optional refreshIntervalMs; no explicit text cap observed
+[OBS]	session-reference	canonical reference in direct user input	user recall immediately after referring message	packages/context/session-reference/src/index.ts:57,128,343; packages/context/session-reference/src/spill.ts:8	at most 3; configurable per-reference byte budget
+[OBS]	file-reference-local	read tool visible in scoped agent	system section context:file-reference	packages/context/file-reference/src/index.ts:17; packages/context/file-reference-local/src/index.ts:71	no content injection; prompt section only
+[OBS]	harness-dev-context	plugin mounted	system sections and runtime-context values	packages/context/harness-dev-context/src/index.ts:36,134	legacy prompt may replace current prose
+[OBS]	skill-catalog	visible skill tool and changed catalog	user catalog context, after admitted messages	packages/skill/tool-skill/src/index.ts:217,258,300	description default 500 chars; incomplete catalog signalled
+[OBS]	skill-invocation	direct user first-line /skill-name matched	user instructions appended after other injections	packages/skill/tool-skill/src/index.ts:154,181; packages/skill/skill/src/index.ts:165	no body limit established
+[OBS]	plan-mode	user switch differs from last logged header mode	user notice on accepted step or injection	packages/plan/plan-mode/src/index.ts:211,469	fixed sentences
+[OBS]	user-approval	approval policy changes	user notice queued; policy also in runtime snapshot	packages/interaction/user-approval/src/index.ts:74,190,207	fixed sentences
+[OBS]	model-selection	accepted nonempty step whose route differs from last request header	user notice appended to step	packages/core/agent/src/model-selection.ts:129,150	summary bounded to 120 characters
+[OBS]	repeat-tool-reminder	tracked consecutive identical call reaches configured threshold	user notice on post-tool additionalContexts	packages/guard/repeat-tool-reminder/src/index.ts:70,77,196,220	thresholds [3,5,8], argument preview 500 chars by default
+[OBS]	goal	automatic continuation of active armed goal	user followup; goal id, revision, round source	packages/goal/goal-round-driver/src/index.ts:172,192; packages/goal/goal-round-driver/src/prompt.ts:11	maxGoalRounds; no separate prompt byte cap established
+[OBS]	tool-goal	autonomous goal round marks complete or blocked	deferred user notice after tool	packages/goal/tool-goal/src/index.ts:300; packages/goal/tool-goal/src/wrapup.ts:5	summary bound 120 chars; body cap not established
+[OBS]	goal command attachments	goal create or edit command carries attachments	user followup	packages/goal/command-goal/src/index.ts:113	attachment admission owned by commands service
+[OBS]	agent-message	one agent sends another content	user relay in recipient inbox	packages/subagent/subagent/src/continuation-messages.ts:62	content limit not established
+[OBS]	subagent-settled	parent-delivered child finishes	user notice to parent	packages/subagent/subagent/src/continuation-messages.ts:99,137	summary bound 120 chars; body cap not established
+[OBS]	team-message	historical mailbox delivery	user message attribution only	packages/team/agent-team/src/types.ts:108	[UNK] current producer not established
+[OBS]	tool-jobs	uncollected job settles for live owner	user notice via inject or followup	packages/jobs/tool-jobs/src/index.ts:127,365	inlineOutputBytes default 2048; producer outputLimitBytes may further cap
+[OBS]	schedule	reminder becomes due	user followup	packages/schedule/schedule/src/domain.ts:1151; packages/schedule/schedule/src/runtime.ts:349	[UNK] prompt input length limit
+[OBS]	schedule change	committed schedule change relevant to another loaded session	user next-step injection, does not wake	packages/schedule/schedule/src/index.ts:703	[UNK] title size limit
+[OBS]	compact-checkpoint	successful compaction of surface span	user replacement node	packages/compaction/compaction-basic/src/region.ts:410,491; packages/compaction/compaction-basic/src/summarizer.ts:21,70,188	maxTokens and compaction convergence policy
+[OBS]	ptc-mode	successful nested PTC result contains image	deferred user content after tool	packages/core/tool-executor-ptc/src/ptc.ts:603; packages/spill/spill-policy/src/index.ts:133	spill maxInlineTokens when configured
+[OBS]	user-question-reply	late answered continued question	user steering message, JSON answer	packages/interaction/user-questions/src/index.ts:170,191	[UNK] answer sizing
+[OBS]	hooks-codex	SessionStart, UserPromptSubmit, PostToolUse, blocking Stop	user context or steering	packages/experimental/hooks-codex/src/index.ts:174,187,201,235,254	hook-supplied text; [UNK] output cap
+[OBS]	hooks-claude-code	SessionStart, UserPromptSubmit, PostToolUse, blocking Stop	user context or steering	packages/experimental/hooks-claude-code/src/index.ts:196,207,224,251,270	hook-supplied text; [UNK] output cap
+[OBS]	cordis-host-runner	dynamic extension activation or runtime failure and related notifications	user steering or injection	packages/extensions/cordis-host-runner/src/index.ts:1062,1075,1099,1124,1169	[UNK] failure text bounds and full trigger list
+[OBS]	action-cards	pending action status on accepted step	user notice appended	packages/experimental/action-cards/src/index.ts:39,238	[UNK] contribution and status JSON bounds
+[OBS]	webhook	verified external webhook delivery	user followup	packages/experimental/webhook/src/types.ts:72; packages/experimental/webhook/src/session.ts:128	[UNK] payload renderer and caps
+[OBS]	tool-registry	tool schema additions or removals	developer role structured tool-change blocks	packages/core/agent-loop/src/agent.ts:685,702	[UNK] exact selection and ordering rules
+[OBS]	MCP server instructions	connected server supplies instructions	system section mcp:<server>	packages/mcp/mcp-client/src/connection.ts:317; packages/mcp/mcp-client/src/server-context.ts:30	maxInstructionBytes default 32768, rejects over limit
+[OBS]	user-rpc	browser-authored user input	normal user message source metadata	packages/api/session-controller/src/types.ts:392	not an independently generated context
+[OBS]	dsh-session-title-llm	title generation	auxiliary model call user message, not normal turn	packages/session/session-title-llm/src/index.ts:252	[UNK] summarizer input budget
+[OBS]	tool:lsp	plugin mounted	system section	packages/lsp/tool-lsp/src/index.ts:52,102	literal guidance
+[OBS]	mcp-resource-servers	one or more resource servers visible	system section	packages/mcp/mcp-resources/src/index.ts:60	server list is dynamic
+[OBS]	tool:bash / tool:pwsh	respective plugin mounted	system sections	packages/shell/tool-bash/src/index.ts:251; packages/shell/tool-pwsh/src/index.ts:264	literal guidance
+[OBS]	tool:glob / tool:grep	scoped tool visible	system sections	packages/fs/tool-fs-search/src/glob.ts:312; packages/fs/tool-fs-search/src/grep.ts:277	grep text depends on read visibility
+[OBS]	tool:read / tool:write / tool:edit / tool:apply_patch	respective scoped tool visible	system sections	packages/fs/tool-fs/src/read.ts:69; packages/fs/tool-fs/src/write.ts:63; packages/fs/tool-fs/src/edit.ts:77; packages/fs/tool-fs/src/apply-patch.ts:18	write text depends on edit visibility
+[OBS]	ui:deliverable-file-references	plugin mounted	system section	packages/deliverables/deliverable-file-references/src/index.ts:12,25	literal guidance
+[OBS]	tool:schedule	schedule create or edit tool visible	system section	packages/schedule/tool-schedule/src/index.ts:192,359	literal guidance
+[OBS]	subagent:delegation	in-process child override installed	user runtime-context contribution	packages/subagent/subagent/src/child-agent.ts:171,205	literal guidance
+[OBS]	subagent:identity	agent scoped collaboration control mounted	user runtime-context contribution	packages/subagent/tool-subagent-control/src/index.ts:91	identity and available tools vary
+[OBS]	subagent structured output	child structured output installed	system section	packages/subagent/subagent/src/structured.ts:26,109	tool name dynamic
+[OBS]	tool:subagent and depth	delegation plugin mounted and tools visible	system section and user runtime-context contribution	packages/subagent/tool-subagent/src/index.ts:359,373	depth guidance only at maximum depth
+[OBS]	tool:workflow	workflow plugin mounted	system section	packages/workflow/tool-workflow/src/index.ts:326	tool name interpolated by builder
+[OBS]	tool:web_fetch / tool:web_search	respective scoped tool visible	system sections	packages/web/tool-web/src/fetch.ts:450; packages/web/tool-web/src/search.ts:352	search text changes when fetch exists
+[OBS]	team:policy	team enabled for agent	system section	packages/team/tool-agent-team/src/index.ts:27,107	literal guidance
+[OBS]	tool:goal	goal tools plugin mounted	system section	packages/goal/tool-goal/src/index.ts:110,189	blockedAfterConsecutiveRounds configurable
+[OBS]	tool:jobs	jobs plugin mounted	system section	packages/jobs/tool-jobs/src/index.ts:316	literal guidance
+[OBS]	tool:ralph / tool:pty / tool:session-query	respective experimental plugin mounted	system sections	packages/experimental/tool-ralph/src/index.ts:405; packages/experimental/tool-terminal/src/index.ts:159; packages/experimental/tool-session-query/src/index.ts:51,59	literal guidance
+[OBS]	browser-use:stagehand-native	plugin mounted	system section	packages/experimental/browser-use-stagehand-native/src/index.ts:74,191	literal guidance
+[OBS]	computer-use:cua-driver-native	plugin mounted	system section	packages/experimental/computer-use-cua-driver-native/src/index.ts:37,132	literal guidance
+[OBS]	computer-use:dsh-cua	plugin mounted in selected agent scope	system section	packages/experimental/cua/src/index.ts:169,334	backend guidance and PTC state are dynamic
+[OBS]	executor sections	executor registers scoped sections	system sections	packages/core/tools/src/index.ts:331	depends on selected executor and visible tools
+[UNK]	other system prompt contributions	plugin-dependent system assembly	system sections and runtime contexts	see evidence/inventory-commands.txt section/context search	all third-party plugins and remaining templates not analyzed

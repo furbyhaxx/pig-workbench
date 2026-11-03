@@ -1,0 +1,2 @@
+# goresym.py cache; rebuild with `goresym.py --bin <agy> init`.
+funcs.json

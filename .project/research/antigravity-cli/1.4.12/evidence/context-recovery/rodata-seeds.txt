@@ -1,0 +1,93 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep "AGENTS\\.md|GEMINI\\.md|toolPermission|SKILL\\.md"
+0x5b62f47	SKILL.mdagent.md instead~$`*?[{%inherits; try %qmcp.jsonhomepage/dev/ttyRead URL%d
+0x5b7a757	GEMINI.mdAGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+0x5b7a760	AGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+0x5b7beb0	SKILL.mddocumentsany issuegh.%s(%s)--method=--header=gh run %sworkflow.branch %sExamples:embedded=casttype=/* nil *//* %v */
+0x5b950e7	GEMINI.md/workflowsTool callsWorkspacesworkspacesno project[CURRENT] loading
+0x5bfa48f	toolPermissionvimInsertFirstcustom_timeouttrigger_prefixtrigger_sourcetotal_failuresmodel_providercom.jetbrains.apple_terminalis_cloud_shellsupports_osc52browser-visionsolarized dark  
+0x5c38d7e	SKILL.mdagents/*/agent.mdEligibility Checkescalate_admin(*)Keybindings ErrorinitAutoAgentModenegative feedbackmarshal error: %vBackgroundCommandreflect: call of unknown type kind has invalid namereflect.Value.Capreflect.Value.Lenreflect: New(nil) from a write of 1192092895507812559604644775390625unclosed tag <%s> term_program: %q%q is unavailable{BUILD_TIMESTAMP}No Model SelectedPLAN_STATUS_ERRORA
+0x5d1cda7	SKILL.mdFailed to prune media file %q: %vignoring invalid ask entry %q: %vunknown pre-tool hook decision %qchromoting.host_services_mojo_ipcfailed to compute frontier leavesrefs/snapshots/*:refs/snapshots/*failed to read source git excludeStop hook blocked termination: %sSetResult: nil result for step %dstop not found in completion textsql: connection is already closedsqlite3: unsupported bind typ
+0x5d33569	SKILL.mdfailed to send SIGINT to SDK processparentID and childID cannot be emptythe chosen response is still workingunknown marketplace customization %qMOCK PTY: handleStreamTerminalOutputmcp server %q: duplicate resource %qcontext provider %q with empty labelworkspace %q: duplicate commit id %qprojects_migration_execution_startedfailed to create Google3 project: %wDuplicate project %q already del
+0x5d4e4a1	SKILL.mdsubagent conversation_id cannot be emptysubagent %s already exists for parent %sTurn %d: tracing callers of module%dFn%d
+0x5d53d55	SKILL.mdfailed to retrieve user quota summary: %wtranscription requires CLI authenticationfailed to unmarshal onboarding status: %vfailed to read settings for migration: %vEXECUTION_ASYNC_LEVEL_INVOCATION_BLOCKINGBROWSER_ACTION_WAITING_REASON_UNSPECIFIEDBROWSER_ACTION_WAITING_REASON_PAGE_ACCESSSEMANTIC_CODEBASE_SEARCH_TYPE_UNSPECIFIEDSET_UP_FIREBASE_RESULT_IMPLEMENT_FIREBASESET_UP_FIREBASE_RESULT_
+0x5d5ae01	SKILL.mdfailed to record state initialization datafailed to read remote catalog response: %w
+0x5d610d6	SKILL.mdconfig-based agent does not use SDK processchecking existing subagent %s for parent %sfailed to create remote catalog request: %w/mock-workspace/fileExplorerPerfMediumRepo/    """Returns a label for function %d."""
+0x5d77103	SKILL.mdSDK process exited unexpectedly, restarting: %sKilling idle SDK process: %s (conversation: %s)```go
+0x5d7a8b5	SKILL.mdscanConversations: canceled before disk scan: %vConversation update stream failed, reopening: %vRUN_EXTENSION_CODE_AUTO_RUN_DECISION_UNSPECIFIEDbufio: writer returned negative count from Writemessage size %d is larger than configured max %dcompressed url size %d exceeds getURLMaxBytes %dfailed to unmarshal trajectory override response<meta name="color-scheme" content="light dark">
+0x5d80a3f	SKILL.mdassets/shared/skills/permissioned-github/SKILL.mdmcp server %q: resource uri must start with ui://marketplace shelf %q references unknown plugin %qconversation %q references unknown environment %qFailed to determine project and env ID for %s: %vfailed to determine project and env ID for %s: %wCreated new environment %s (%s) for workspaces %s[MeshDaemon] Error closing revoked session %q: %v
+0x5d80a70	SKILL.mdmcp server %q: resource uri must start with ui://marketplace shelf %q references unknown plugin %qconversation %q references unknown environment %qFailed to determine project and env ID for %s: %vfailed to determine project and env ID for %s: %wCreated new environment %s (%s) for workspaces %s[MeshDaemon] Error closing revoked session %q: %v[MeshDaemon] DataChannel error for session %s: %v
+0x5d85259	SKILL.mdassets/shared/skills/ui-plugin-navigation/SKILL.mdCreated state initialization data in %v of size %vfailed to parse any valid PEM certificates from %qunable to parse remote catalog JSON format from %sgateway discovery response exceeded %d bytes limitSkills and MCP servers for building with Firebase.models.defaultLabel %q references an unknown modelconversation %q declares itself as its for
+0x5d8528b	SKILL.mdCreated state initialization data in %v of size %vfailed to parse any valid PEM certificates from %qunable to parse remote catalog JSON format from %sgateway discovery response exceeded %d bytes limitSkills and MCP servers for building with Firebase.models.defaultLabel %q references an unknown modelconversation %q declares itself as its fork parentbattle %q references unknown child convers
+0x5daa802	SKILL.mdremoteDescription contained media section without mid valueAddTransceiverFromTrack only accepts one RTPTransceiverInitIncoming unhandled RTCP ssrc(%d), OnTrack will not be fired/devtools_jetski_boq_api_proto.ApiService/RecordClientEventno editor configured, set $EDITOR or configure in /settings *(microscopic|tiny|small|normal|big|large|huge|gigantic) *(?<opening_delimiters>(?<delimiter>[^\
+0x5dac13c	toolPermission=%sTriggerSubagentApprovalFast: subagent state not found for %sdrainPendingSubagentFileWrites: will auto-approve %s step %dsync/atomic: compare and swap of inconsistently typed valuesreflect: call of reflect.Value.Cap on ptr to non-array Valuereflect: call of reflect.Value.Len on ptr to non-array Valuebytes.Reader.UnreadRune: previous operation was not ReadRuneYour account is blocked
+0x5deda94	SKILL.md, a folder with one, or a folder of such foldersUse Gemini Enterprise Agent Platform (formerly Vertex AI) with Application Default Credentialstool definitions and tool choice not supported. Use a tool parser to convert these to strings.no base mixin constructor found for planner type %v and no fallback constructor was registered%s entry %q must be a bare host without whitespace, scheme, po
+0x5df21b6	SKILL.md[Admin Control] Lower-tier settings failed validation (%v); falling back to higher-tier MDM settingsstandalone environment needs a resource name: standalone:projects/{p}/locations/{l}/environments/{e}[ForkConversation] the snapshot at fork step %d is of workspace %q, not %q; cloning that one insteadsecplugins: plugin %q command %q must specify a destination path (native handlers are not su
+0x5e00dbc	toolPermission=%v autoExecPolicy=%v enableTerminalSandbox=%t allowNonWorkspaceAccess=%tno Gemini Enterprise license found for this account; configure gcp.project and gcp.location in settings.json and try again Only "install" accepts a directory; this takes an installed plugin's name. Run "/plugin list" to see the installed names.https://antigravity.google/g1-credits?utm_source=antigravity&utm_medi
+0x5e039c0	SKILL.md, which loads either wayHow the /resume picker organizes conversations. Press ctrl+f in the picker to switch view for one session without changing this.warning: --mode %s is not available because the terminal sandbox is not available on this host; continuing in the default mode.
+0x5e0b422	SKILL.md (`plugin install` converts Claude Code and Gemini CLI commands)- `config%[1]d.key%[2]d` in [%[3]s#L%[4]d-%[5]d](%[6]s#L%[4]d-%[5]d): renamed
+0x5e16831	SKILL.md or a file it references) explicitly instructs you to call this tool, and pass the grant string in the exact format that skill specifies.
+0x5e5466a	SKILL.md" file (instructions with YAML frontmatter).
+0x5e5470a	GEMINI.md"/"AGENTS.md" files.
+0x5e54716	AGENTS.md" files.
+0x5e8c440	GEMINI.md` / `AGENTS.md`)**: Placed directly in
+0x5e8c44e	AGENTS.md`)**: Placed directly in
+0x5e8c573	GEMINI.md` / `AGENTS.md` files do not
+0x5e8c581	AGENTS.md` files do not
+0x5e8cac6	SKILL.md** (required): The main instruction file with YAML frontmatter (name, description) and detailed markdown instructions
+0x5e8cd64	SKILL.md has been injected verbatim below, so you DO NOT need to view them:
+0x5e8cebd	SKILL.md` instructions before proceeding. You may skip this step only if you are delegating the skill-related task to a subagent that will read and follow the instructions itself.
+0x5ecb1be	SKILL.md          # Required: Main instruction file with frontmatter
+0x5ecb33b	SKILL.md`)
+0x5ecb34c	SKILL.md` file must start with a YAML frontmatter block containing the
+0x5ecb787	SKILL.md` concise. Use the
+0x5ecb7f2	SKILL.md`. The agent will only read those reference files if it needs them,
+0x5f6d270	AGENTS.md recommended)
+0x5f6d297	AGENTS.md
+0x5f6d314	SKILL.md
+0x5f6dbbe	AGENTS.md`** (or `GEMINI.md`) file under
+0x5f6dbd0	GEMINI.md`) file under
+0x5f6dc06	AGENTS.md`) is recommended over separate rule files.
+0x5fa51e4	GEMINI.md`, `AGENTS.md`     | Contextual / Hierarchical | Enforcing coding styles, API restrictions, and local guidelines.                        | [Rules Guide](./docs/rules.md)
+0x5fa51f1	AGENTS.md`     | Contextual / Hierarchical | Enforcing coding styles, API restrictions, and local guidelines.                        | [Rules Guide](./docs/rules.md)
+0x5fa52b8	SKILL.md`     | On-Demand (Progressive)   | Teaching the agent multi-step procedures, runbooks, and tool workflows.                 | [Skills Guide](./docs/skills.md)
+0x5fa58f1	GEMINI.md`, `AGENTS.md`, `.agents/rules/*.md`
+0x5fa58fe	AGENTS.md`, `.agents/rules/*.md`
+0x5fbdfc9	SKILL.md files, and safely archives old workflow files.
+0x5fbe0e5	SKILL.md` or `_agents/skills/<name>/SKILL.md`)
+0x5fbe821	SKILL.md` already exists to determine
+0x5fbea2a	SKILL.md`    | `Pending` / `Already Migrated`
+0x5fbeb61	SKILL.md` | `Pending` / `Already Migrated`
+0x5fbed0e	SKILL.md` files already exist and proceed directly to archiving/cleaning up
+0x5fbeea5	SKILL.md` **already exists**, **do not overwrite
+0x5fbef7b	SKILL.md` **does not exist**, proceed with
+0x5fbf331	SKILL.md`
+0x5fbf56b	SKILL.md` files exist and legacy workflows have been
+0x5fbf604	SKILL.md`).
+0x6073832	AGENTS.md` or `GEMINI.md` 
+0x6073841	GEMINI.md` 
+0x60a37c5	SKILL.md`) or check available `<mcp_servers>` needed to fulfill the
+0x613a3b3	SKILL.md` text); always pipe through `jq` and use `dir` for mutations (`'{}'` if no workspace is active). |
+0x613a7ff	AGENTS.md`, `mcp_config.json`, `hooks.json`, `assets/logo.svg`) | Check Step 0 inventory for `name` collisions first; re-run Step 0 inventory, tell the user to restart, and link as `[<name>](customization://<dir>)` (never `plugin://`). |
+0x613af9c	SKILL.md`. A single plugin can exceed 16KB and a
+0x613c43d	AGENTS.md` inside the plugin.
+0x613c868	SKILL.md`, the agent markdown,
+0x613c8ef	AGENTS.md` are plain markdown with no frontmatter and
+0x644b52d	SKILL.md`, and reports every `SKILL.md` the plugin loader skips, including skills listed through `plugin.json` or `skills.json`.
+0x644b54b	SKILL.md` the plugin loader skips, including skills listed through `plugin.json` or `skills.json`.
+0x644c97c	SKILL.md` skills loading twice when discovered from both a standalone customization folder and an enabled plugin.
+0x644cce8	GEMINI.md` and `AGENTS.md` rules explicitly override earlier built-in instructions instead of only instructions that follow them.
+0x644ccf8	AGENTS.md` rules explicitly override earlier built-in instructions instead of only instructions that follow them.
+0x644e4e9	SKILL.md` with missing or invalid frontmatter and warns when `name` or `description` is missing, when `name` doesn't match its folder, when the body is over the 24 KB limit, or when a skill in `skills/` is skipped because an earlier skill has the same name; for subagents, it errors on an `agents/` Markdown file with invalid frontmatter or a missing `name` or `description`, an unparseable `agent.js
+0x644e846	AGENTS.md` or `GEMINI.md` at the plugin root instead of in `rules/`.
+0x644e855	GEMINI.md` at the plugin root instead of in `rules/`.
+0x6456773	AGENTS.md`, `GEMINI.md`, `skills.json`, `rules.json`, `plugins.json`, and `agents.json`; it can now read them and asks before editing them, while other files in that folder stay off-limits
+0x6456780	GEMINI.md`, `skills.json`, `rules.json`, `plugins.json`, and `agents.json`; it can now read them and asks before editing them, while other files in that folder stay off-limits
+0x6456887	GEMINI.md`, `~/.gemini/AGENTS.md`, or their `~/.gemini/config/` counterparts are symlinks to the same file
+0x645689e	AGENTS.md`, or their `~/.gemini/config/` counterparts are symlinks to the same file
+0x64619bb	SKILL.md` frontmatter across the `/skills` catalog list view, detail inspection headers, and slash command autocompletion popups, with proper multi-byte Unicode display width calculation to maintain terminal layout alignment.
+0x64664e2	SKILL.md` frontmatter, which hides that skill from the `/` menu and from `/name` resolution while leaving it discoverable and invocable by the model, so a large skill library no longer floods the command menu.
+0x7b4d18a	SKILL.mdH9
+0x9bb4a94	SKILL.mdM9
+0xae2acc2	toolPermission
+0xaf341ca	toolPermission"
+0xafa5598	toolPermission,omitempty"

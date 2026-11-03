@@ -1,0 +1,855 @@
+$ for f in SKILL.md docs/rules.md docs/skills.md docs/hooks.md docs/plugins.md docs/json_configs.md; do printf "\\n--- %s ---\\n" "$f"; python3 -c "import pathlib,sys; print(pathlib.Path(sys.argv[1]).read_text())" "$HOME/.gemini/antigravity-cli/builtin/skills/agy-customizations/$f"; done
+
+--- SKILL.md ---
+---
+name: agy-customizations
+description: >-
+  Comprehensive guide and reference for the Antigravity Customization System.
+  Use to explain how customizations work, their loading priority, discovery mechanisms,
+  and to guide the creation of skills, rules, plugins, hooks, and MCP servers.
+---
+
+# Antigravity Customization System Guide
+
+The Antigravity Customization System allows you to tailor the agent's behavior,
+teach it new workflows, enforce guidelines, and integrate it with external
+tools. By customizing the agent, you can transition it from a general-purpose
+assistant to an expert pair programmer specialized in your project's codebase
+and processes.
+
+--------------------------------------------------------------------------------
+
+## Customization Types: Quick Reference
+
+Choose the right customization type based on your goal:
+
+Type            | Config File/Folder           | Scope                     | Best For                                                                                | Learn More
+:-------------- | :--------------------------- | :------------------------ | :-------------------------------------------------------------------------------------- | :---------
+**Rules**       | `GEMINI.md`, `AGENTS.md`     | Contextual / Hierarchical | Enforcing coding styles, API restrictions, and local guidelines.                        | [Rules Guide](./docs/rules.md)
+**Skills**      | `skills/<name>/SKILL.md`     | On-Demand (Progressive)   | Teaching the agent multi-step procedures, runbooks, and tool workflows.                 | [Skills Guide](./docs/skills.md)
+**Plugins**     | `plugins/<name>/plugin.json` | Bundle                    | Packaging related skills, rules, and MCP configs into a single unit.                    | [Plugins Guide](./docs/plugins.md)
+**Hooks**       | `hooks.json`                 | Lifecycle Event           | Running scripts/commands at specific agent lifecycle points (e.g., pre-tool execution). | [Hooks Guide](./docs/hooks.md)
+**MCP Servers** | `mcp_config.json`            | Tool Integration          | Connecting the agent to external services and custom tool providers.                    | [MCP Guide](./docs/mcp_servers.md)
+
+--------------------------------------------------------------------------------
+
+## Customization Discovery and Locations
+
+Antigravity automatically discovers your own customizations by traversing
+specific directories. Built-in customizations are not found this way: the agent
+config names the ones it mounts.
+
+### Discovery Locations
+
+1.  **Workspace Customizations** (Project-Specific):
+    *   Path: `.agents/` (or `.agent/`, `_agents/`, `_agent/`) at the root of
+        your project.
+    *   Use this to share customizations with your team by checking them into
+        version control (VCS).
+    *   The agent walks from your current working directory up to the repository
+        root (e.g., the folder containing `.git`) to find these directories.
+2.  **Directory & Project Rules** (Hierarchical):
+    *   Paths: `GEMINI.md`, `AGENTS.md`, `.agents/rules/*.md`
+    *   As you open or edit files, the agent walks up from the file's directory
+        to the repository root, loading all rules it finds.
+3.  **Global Configuration** (Machine-Local):
+    *   Path: `~/.gemini/config/`
+    *   Applies to all projects and workspaces run on your machine.
+
+--------------------------------------------------------------------------------
+
+## Loading Priority and Precedence
+
+When multiple customizations are discovered, they are loaded and applied in a
+specific order. If there are naming conflicts (e.g., two skills with the same
+name), the higher-priority customization overrides the lower-priority one.
+
+The priority order (from highest to lowest) is:
+
+1.  **Workspace Project**: Hierarchical discovery walking up from the CWD to the
+    repository root.
+2.  **Declared Configurations**: Customizations explicitly listed in
+    `skills.json` or `plugins.json` in your workspace.
+3.  **Global Discovery**: `~/.gemini/config/`
+4.  **Built-in Customizations**: Default skills bundled with the application,
+    mounted by name rather than discovered.
+5.  **Global Declared Configurations**: Explicitly listed in global JSON
+    configs.
+
+--------------------------------------------------------------------------------
+
+## How Customizations are Applied
+
+### Progressive Disclosure (Skills and Rules)
+
+To prevent overwhelming the model's context window, Antigravity uses
+**progressive disclosure**:
+
+*   **Skills** are not loaded into the context window by default. Only their
+    names and descriptions are injected. The full content of a skill is only
+    loaded if the model (or the user) explicitly decides to activate it.
+*   **Rules** with `trigger: model_decision` behave similarly. Only `always_on`
+    rules are loaded unconditionally.
+
+### Deduplication
+
+All customizations (especially rules) are deduplicated by their resolved file
+paths. A rule file will never be injected more than once in a single
+conversation turn, even if it matches multiple trigger conditions.
+
+--------------------------------------------------------------------------------
+
+## Advanced Management: JSON Configs
+
+For customizations stored in non-standard locations, you can use `skills.json`
+and `plugins.json` to explicitly register them and inherit from shared
+configurations.
+
+*   Learn how to configure these in the
+    [JSON Configurations Guide](./docs/json_configs.md).
+
+
+--- docs/rules.md ---
+# Workspace Rules
+
+Rules are guidelines and constraints that the agent must follow when operating
+within specific directories. They are useful for enforcing coding styles, API
+usage restrictions, or safety protocols.
+
+## Rule Locations
+
+The system automatically discovers and applies rules from the following
+locations:
+
+*   **Directory-Based Rules (`GEMINI.md` / `AGENTS.md`)**: Placed directly in
+    any directory. The system walks up from the current working directory to the
+    repository root and loads these files. They apply to the directory they
+    reside in and all its subdirectories.
+
+## Rule Format
+
+Rules are written in Markdown. Standalone `GEMINI.md` / `AGENTS.md` files do not
+support frontmatter and are always active for their directory scope.
+
+## Rule Merging and Deduplication
+
+*   Rules are automatically deduplicated. Even if a rule is discovered via
+    multiple paths (e.g., inherited from parent directories), it is only applied
+    once per conversation.
+*   If a rule is defined in a plugin, it is loaded when the plugin is enabled.
+
+## Size Limits and Context Budget
+
+*   **Per-File Limit (`24 KB` / `24,000` bytes)**: Each rule file is capped at
+    24,000 bytes (after expanding `@[label](path)` includes) and truncated on
+    line boundaries when over the cap.
+*   **Aggregate Rules Budget (`20,000` tokens)**: Always-on and global rules
+    share a dedicated 20,000-token rules budget (`defaultRulesBudget`),
+    separate from the customization budget for skills, workflows, subagents,
+    and MCP tools. Over-budget rules are demoted from full inline text to file
+    path pointers so the agent can read them on demand. Rules shipped by
+    builtin plugins are exempt from this budget and are always inlined in
+    full.
+
+
+--- docs/skills.md ---
+# Workspace Skills
+
+Skills are modular packages of knowledge and procedures that extend the agent's
+capabilities. They serve as "cheatsheets" or runbooks for specific workflows,
+enabling the agent to perform complex tasks reliably.
+
+## Directory Structure
+
+A skill must be structured as a directory within a `skills/` folder inside a
+customization root (e.g., `.agents/skills/`).
+
+```text
+skills/<skill_name>/
+├── SKILL.md          # Required: Main instruction file with frontmatter
+├── scripts/          # Optional: Helper scripts and utilities
+├── examples/         # Optional: Reference implementations
+├── resources/        # Optional: Additional assets or templates
+└── references/       # Optional: Detailed documentation or manuals
+```
+
+## Main Instruction File (`SKILL.md`)
+
+The `SKILL.md` file must start with a YAML frontmatter block containing the
+`name` and `description` fields.
+
+```markdown
+---
+name: my-specialized-skill
+description: >-
+  Describe when the agent should use this skill. Use third-person.
+  Example: "Use this skill when the user asks to run integration tests for the XYZ service."
+---
+
+# My Specialized Skill
+
+Provide clear, step-by-step instructions for the agent here.
+
+## Steps
+
+1.  Run the preparation script:
+    [prepare.sh](./scripts/prepare.sh)
+2.  Execute the test command:
+    `npm test`
+3.  Analyze the results in the log file.
+```
+
+### Frontmatter Fields
+
+*   **`name`** (string, required): A unique identifier for the skill. It should
+    be lowercase and hyphenated.
+*   **`description`** (string, required): This is the most critical field. The
+    primary agent reads this description to decide whether to activate the skill
+    for a given user prompt. It should clearly state **what** the skill does and
+    **when** it should be used.
+
+## Best Practices for Writing Skills
+
+1.  **Progressive Disclosure**: Keep the main `SKILL.md` concise. Use the
+    `references/` subdirectory for bulky documentation and link to it from
+    `SKILL.md`. The agent will only read those reference files if it needs them,
+    saving token context.
+2.  **Executable Helpers**: Encapsulate complex command sequences in scripts
+    within the `scripts/` directory. Link to them using relative links so the
+    agent can easily find and run them.
+3.  **Validation Steps**: Always include instructions on how the agent can
+    verify that a step was successful (e.g., checking a log file, running a
+    dry-run command).
+4.  **No Duplication**: Do not instruct the agent on general coding practices or
+    things it already knows. Focus strictly on the unique procedures of your
+    workflow.
+
+
+--- docs/hooks.md ---
+# Lifecycle Hooks (`hooks.json`)
+
+Lifecycle hooks allow you to execute external shell commands or scripts at
+specific points during the Agent's execution loop. This is powerful for
+enforcing safety guards, running linters, auto-formatting code, or capturing
+custom diagnostics.
+
+Hooks are configured in a single `hooks.json` file placed in your customization
+root directory (e.g., `.agents/hooks.json`).
+
+--------------------------------------------------------------------------------
+
+## File Format
+
+The `hooks.json` file is a JSON object where each top-level key is a **hook
+name**, mapping to its event configuration.
+
+```json
+{
+  "lint-checker": {
+    "PostToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/lint.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "safety-gate": {
+    "enabled": false,
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "command": "./scripts/safety-check.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "reminder": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./scripts/reminder.sh"
+      }
+    ]
+  }
+}
+```
+
+*   **Merging**: Multiple named hooks (e.g., from different plugins or configs)
+    for the same event type are merged and executed sequentially.
+*   **Disabling**: Set `"enabled": false` at the hook level to temporarily
+    disable all its handlers.
+
+--------------------------------------------------------------------------------
+
+## Hook Spec Fields
+
+Each named hook supports:
+
+*   **`enabled`** (bool, optional): Defaults to `true`. Set to `false` to
+    disable.
+*   **`SessionStart`** (array, optional): Handlers running once when a new
+    conversation session starts.
+*   **`PreToolUse`** (array, optional): Handlers running before a tool executes.
+*   **`PostToolUse`** (array, optional): Handlers running after a tool
+    completes.
+*   **`PreInvocation`** (array, optional): Handlers running before the model is
+    called.
+*   **`PostInvocation`** (array, optional): Handlers running after tool calls
+    finish.
+*   **`Stop`** (array, optional): Handlers running when the execution loop
+    terminates.
+
+--------------------------------------------------------------------------------
+
+## Supported Event Types
+
+| Event            | When it fires     | Matcher target   | Structure         |
+| :--------------- | :---------------- | :--------------- | :---------------- |
+| `SessionStart`   | Once when a new   | N/A (ignored).   | Flat (list of     |
+:                  : session starts.   :                  : handler objects   :
+:                  :                   :                  : directly).        :
+| `PreToolUse`     | Before a tool     | Tool name (e.g., | Grouped (uses     |
+:                  : step executes.    : `run_command`).  : `matcher` &       :
+:                  :                   :                  : `hooks` wrapper). :
+| `PostToolUse`    | After a tool step | Tool name (e.g., | Grouped (uses     |
+:                  : completes.        : `run_command`).  : `matcher` &       :
+:                  :                   :                  : `hooks` wrapper). :
+| `PreInvocation`  | Before the model  | N/A (ignored).   | Flat (list of     |
+:                  : is called.        :                  : handler objects   :
+:                  :                   :                  : directly).        :
+| `PostInvocation` | After tool calls  | N/A (ignored).   | Flat (list of     |
+:                  : finish.           :                  : handler objects   :
+:                  :                   :                  : directly).        :
+| `Stop`           | When the          | N/A (ignored).   | Flat (list of     |
+:                  : execution loop    :                  : handler objects   :
+:                  : terminates.       :                  : directly).        :
+
+### The Matcher
+
+For tool-specific events (`PreToolUse`, `PostToolUse`), you must wrap the
+handlers in a group with a `matcher` regex:
+
+*   `"matcher": "*"` or `""`: Matches all tools.
+*   `"matcher": "run_command"`: Matches exactly `run_command`.
+*   `"matcher": "run_command\|view_file"`: Matches either tool.
+*   `"matcher": "browser_.*"`: Matches any tool starting with `browser_`.
+
+Tool names are derived by lowercasing the step type and removing the
+`CORTEX_STEP_TYPE_` prefix.
+
+--------------------------------------------------------------------------------
+
+## Hook Handler Fields
+
+Each individual hook handler object supports:
+
+*   **`type`** (string, optional): Defaults to `"command"`. Only `"command"`
+    (shell execution) is currently supported.
+*   **`command`** (string, required): The shell command to execute (run via `sh
+    -c` on Unix, `cmd /c` on Windows). `~` is expanded to the home directory.
+    The working directory is set to the directory containing `hooks.json`.
+*   **`timeout`** (int, optional): Execution timeout in seconds. Defaults to
+    `30`.
+
+--------------------------------------------------------------------------------
+
+## Input/Output Contract
+
+Hook commands receive context as a JSON object on **stdin** and must output
+their result as a JSON object on **stdout**.
+
+> [!IMPORTANT] All JSON keys in the hook payloads use **camelCase** (protojson
+> encoding), e.g., `conversationId` and `stepIdx`.
+
+### Common Input Fields
+
+Every hook payload sent to `stdin` includes these common system metadata fields:
+
+```json
+{
+  "conversationId": "ec33ebf9-0cba-4100-8142-c61503f6c587",
+  "workspacePaths": ["/path/to/workspace"],
+  "transcriptPath": "/path/to/workspace/.gemini/antigravity/transcript.jsonl",
+  "artifactDirectoryPath": "/path/to/workspace/.gemini/antigravity/artifacts",
+  "modelName": "auto",
+  "lastUserInput": "Fix the failing unit test"
+}
+```
+
+> [!NOTE]
+> The `transcriptPath` and `artifactDirectoryPath` are product-specific. The
+> example above uses `antigravity` (for Antigravity 2.0). Depending on the
+> interface you are using, the directory name will differ:
+> *   **CLI**: `antigravity-cli/`
+> *   **Antigravity 2.0**: `antigravity/`
+> *   **IDE**: `antigravity-ide/`
+
+--------------------------------------------------------------------------------
+
+### 1. `PreToolUse` Contract
+
+Use to gate, block, or audit tool executions.
+
+*   **Input (stdin)**:
+
+    ```json
+    {
+      "toolCall": {
+        "name": "run_command",
+        "args": {
+          "CommandLine": "npm test"
+        }
+      },
+      "stepIdx": 19,
+      ... (common fields)
+    }
+    ```
+
+*   **Output (stdout)**:
+
+    ```json
+    {
+      "decision": "ask",
+      "reason": "Requires confirmation for test execution.",
+      "permissionOverrides": ["command(npm test)"]
+    }
+    ```
+
+    *   **`decision`** (string, required):
+        *   `"allow"`: Automatically allow the tool execution.
+        *   `"deny"`: Hard block the execution immediately.
+        *   `"ask"`: Prompt the user for permission (respects "Always Allow"
+            cache).
+        *   `"force_ask"`: Always prompt the user, ignoring cached permissions.
+    *   **`reason`** (string, optional): Explanation shown to the user/agent.
+    *   **`permissionOverrides`** (array of strings, optional): Temporary
+        permission grants.
+    *   **`overwrite`** (object, optional): Key-value pairs merged into the tool
+        call's arguments before it runs. This is a **shallow, top-level** merge:
+        each key replaces the value at that key in the tool call's arguments
+        (nested objects are replaced wholesale, not deep-merged). The modified
+        tool call is what actually executes and is recorded. Example:
+
+        ```json
+        {
+          "decision": "allow",
+          "overwrite": {
+            "CommandLine": "ls -la"
+          }
+        }
+        ```
+
+        The agent replays the tool call it originally emitted, so when
+        `overwrite` changes the arguments the tool result is prefixed with a
+        notice telling the agent that a hook rewrote them, naming the keys that
+        changed.
+
+--------------------------------------------------------------------------------
+
+### 2. `PostToolUse` Contract
+
+Use for post-execution cleanup, auto-fixes, or analysis.
+
+*   **Input (stdin)**:
+
+    ```json
+    {
+      "toolCall": {
+        "name": "run_command",
+        "args": {
+          "CommandLine": "npm test"
+        }
+      },
+      "stepIdx": 5,
+      "error": "exit status 1", // Present if the tool failed
+      ... (common fields)
+    }
+    ```
+
+*   **Output (stdout)**: Expects an empty JSON object `{}`.
+
+--------------------------------------------------------------------------------
+
+### 3. `SessionStart` Contract
+
+Use to inject welcome messages, initial instructions, or startup context once at
+the beginning of a new conversation session.
+
+*   **Input (stdin)**: Common system metadata fields (`conversationId`,
+    `workspacePaths`, `transcriptPath`, `artifactDirectoryPath`, `modelName`).
+
+*   **Output (stdout)**:
+
+    ```json
+    {
+      "injectSteps": [
+        {
+          "systemMessage": {
+            "systemMessage": "Welcome! Custom workspace environment is active."
+          }
+        }
+      ]
+    }
+    ```
+
+    *   **`injectSteps`** (array of objects, optional): Steps to inject at
+        session startup. Accepts the same step types as `PreInvocation` (see
+        below).
+
+--------------------------------------------------------------------------------
+
+### 4. `PreInvocation` Contract
+
+Use to inject context or instructions before the model runs.
+
+*   **Input (stdin)**:
+
+    ```json
+    {
+      "invocationNum": 3,
+      "initialNumSteps": 10,
+      ... (common fields)
+    }
+    ```
+
+*   **Output (stdout)**:
+
+    ```json
+    {
+      "injectSteps": [
+        {
+          "ephemeralMessage": "Remember to check for lint errors before proposing changes."
+        }
+      ]
+    }
+    ```
+
+    *   **`injectSteps`** (array of objects, optional): Steps to inject.
+        Supported step types:
+        *   `{"systemMessage": {"systemMessage": "...", "metadata": {...}}}`
+            (persists in the conversation trajectory across turns; note that
+            `systemMessage` requires a nested object rather than a plain string)
+        *   `{"userMessage": "..."}` (plain string)
+        *   `{"ephemeralMessage": "..."}` (plain string; transient message
+            dropped after the current turn)
+
+--------------------------------------------------------------------------------
+
+### 5. `PostInvocation` Contract
+
+Use to inspect model outputs and potentially force continuation.
+
+*   **Input (stdin)**: Same as `PreInvocation` input.
+*   **Output (stdout)**:
+
+    ```json
+    {
+      "injectSteps": [],
+      "terminationBehavior": "force_continue"
+    }
+    ```
+
+    *   **`injectSteps`** (array, optional): Steps to inject (same supported
+        step types as `PreInvocation`).
+    *   **`terminationBehavior`** (string, optional):
+        *   `"force_continue"`: Forces the execution loop to continue.
+        *   `"terminate"`: Forces the loop to stop.
+        *   `""` (or omitted): Default behavior.
+
+--------------------------------------------------------------------------------
+
+### 6. `Stop` Contract
+
+Use to prevent the agent from stopping if goals are not met.
+
+*   **Input (stdin)**:
+
+    ```json
+    {
+      "executionNum": 1,
+      "terminationReason": "NO_TOOL_CALL", // e.g., "NO_TOOL_CALL", "MAX_INVOCATIONS", "ERROR", "USER_CANCELED", "TERMINAL_STEP_TYPE"
+      "error": "", // Present if stopped due to error
+      "fullyIdle": true, // true if all background tasks are done
+      ... (common fields)
+    }
+    ```
+    *   **`terminationReason`** (string): The `ExecutorTerminationReason` enum
+        name with the `EXECUTOR_TERMINATION_REASON_` prefix stripped:
+        *   `"NO_TOOL_CALL"`: Normal turn completion (model finished without
+            calling a tool).
+        *   `"MAX_INVOCATIONS"`: Hit the maximum invocation limit.
+        *   `"MAX_FORCED_INVOCATIONS"`: Hit the forced-continuation limit.
+        *   `"MAX_TOKEN_BUDGET_EXCEEDED"`: Exceeded the token budget.
+        *   `"ERROR"`: Execution terminated due to an error.
+        *   `"USER_CANCELED"`: Canceled by the user.
+        *   `"TERMINAL_STEP_TYPE"`: Stopped on a terminal step type.
+        *   `"TERMINAL_CUSTOM_HOOK"`: Terminated by a custom `PostInvocation`
+            hook.
+        *   `"INJECTED_RESPONSE"`: Terminated after an injected response.
+
+*   **Output (stdout)**:
+
+    ```json
+    {
+      "decision": "continue",
+      "reason": "The tests are still running in the background. Please wait."
+    }
+    ```
+
+    *   **`decision`** (string, required): Set to `"continue"` to block the stop
+        and re-enter the loop. Any other value allows the agent to stop.
+    *   **`reason`** (string, optional): Injected as a system message if
+        continuing.
+
+--------------------------------------------------------------------------------
+
+## Current Limitations
+
+*   Only `type: "command"` is supported (no HTTP or prompt hooks yet).
+*   Hooks run synchronously and block the agent loop (no async execution).
+
+
+--- docs/plugins.md ---
+# Plugins
+
+Plugins are namespaced, shareable bundles that package **Skills**, **Rules**,
+**Hooks**, and **MCP Server Configurations** into a single deployable unit. They
+are the recommended way to distribute complex, feature-rich customizations to
+your team.
+
+--------------------------------------------------------------------------------
+
+## Directory Structure
+
+A plugin must be contained within a subdirectory of a `plugins/` folder in a
+customization root (e.g., `.agents/plugins/`).
+
+```text
+plugins/<plugin_name>/
+├── plugin.json       # Required: Manifest file
+├── mcp_config.json   # Optional: MCP servers exposed by the plugin
+├── hooks.json        # Optional: Lifecycle hooks run by the plugin
+├── rules/            # Optional: Rules applied when plugin is active (AGENTS.md recommended)
+│   └── AGENTS.md
+└── skills/           # Optional: Skills exposed by the plugin
+    └── <skill_name>/
+        └── SKILL.md
+```
+
+--------------------------------------------------------------------------------
+
+## Manifest (`plugin.json`)
+
+The `plugin.json` file serves as the marker declaring the directory as a plugin.
+
+```json
+{
+  "name": "team-developer-kit"
+}
+```
+
+*   **`name`** (string, optional): The display name of the plugin. If omitted,
+    it defaults to the directory name.
+*   **`author`** (string or object, optional): Developer or team name string, or
+    an object with `name` and optional `url` (`https://`).
+*   **`homepage`** (string, optional): External `https://` website or
+    documentation URL.
+*   **`repository`** (string or object, optional): Source repository `https://`
+    URL (or `{"type": "git", "url": "https://..."}`).
+
+--------------------------------------------------------------------------------
+
+## How Plugins Work
+
+When a plugin is discovered and enabled:
+
+1.  **Automatic Ingestion**: All skills, rules, hooks, and MCP servers defined
+    within the plugin's directory structure are automatically loaded.
+2.  **Namespacing**: Tools and skills exposed by the plugin are namespaced if
+    necessary to prevent collisions with other customizations.
+3.  **Lifecycle Scoping**:
+    *   **Hooks** defined in `plugins/<name>/hooks.json` are registered and run
+        during the agent's lifecycle.
+        > [!NOTE]
+        > Runtime plugin discovery strictly loads `hooks.json` from the plugin
+        > root (`<plugin_dir>/hooks.json`). While `agy plugin install` stages
+        > `hooks/hooks.json` into `<plugin_dir>/hooks.json` when importing a
+        > pure Gemini CLI (`gemini-extension.json`) or Claude Code
+        > (`.claude-plugin/plugin.json`) extension, native plugins (any
+        > directory containing `plugin.json`, `.antigravity-plugin/plugin.json`,
+        > or `.gemini-plugin/plugin.json`, or loaded via `plugins.json`) do not
+        > run extension staging and **must** place `hooks.json` directly at the
+        > plugin root.
+    *   **MCP Servers** defined in `plugins/<name>/mcp_config.json` are
+        launched, and their tools are made available.
+    *   **Rules** in `plugins/<name>/rules/` are merged into the active rule
+        set. Placing a consolidated **`AGENTS.md`** (or `GEMINI.md`) file under
+        `rules/` (e.g., `rules/AGENTS.md`) is recommended over separate rule files.
+
+## Registering Plugins
+
+Plugins can be discovered automatically if placed in standard customization
+roots, or they can be explicitly registered using `plugins.json`.
+
+*   See the [JSON Configurations Guide](./json_configs.md) for details on how to
+    use `plugins.json` to enable specific plugins or inherit them from shared
+    paths.
+
+## Turning Plugins On and Off
+
+Most discovered plugins are **enabled by default**; a plugin can ship switched
+off by declaring `"disabled": true` in its `plugin.json`, and some built-in ones
+do. Whether a plugin is active is recorded in your `config.json`, under a
+`plugins` map keyed by the plugin's **directory** name:
+
+```json
+{
+  "plugins": {
+    "my-plugin": { "enabled": false }
+  }
+}
+```
+
+You can change the setting from the plugin section of the settings UI, or from
+the CLI's `plugin enable` / `plugin disable` subcommands, both of which write
+this entry.
+
+`config.json` wins wherever it has an entry, so your choice always beats what
+the plugin declares. A plugin with no entry falls back to its `plugin.json`
+declaration, which is how a plugin that ships disabled stays off until you turn
+it on. Antigravity never records your preference inside the plugin itself, so
+your choice survives reinstalling or updating the plugin.
+
+A disabled plugin still appears in the plugin list so you can turn it back on,
+but none of its bundled customizations are loaded.
+
+
+--- docs/json_configs.md ---
+# JSON Configuration Files
+
+JSON configuration files allow you to explicitly register and manage
+customizations that are stored outside the default discovery locations (such as
+project-specific folders or shared team directories).
+
+Each customization type has its own configuration file, placed in your
+customization root directory (e.g., `.agents/` in your project, or
+`~/.gemini/config/` globally):
+
+*   **Skills**: `skills.json`
+*   **Plugins**: `plugins.json`
+
+Inside a project, these files are honored in every `.agents/` directory between
+the current working directory and the project root, so a config file at the
+repository root applies no matter which subdirectory a session is started in.
+Relative `path` entries resolve against the directory containing the dot-dir
+that declares them, falling back to the project root when nothing exists there.
+
+## Configuration Schema
+
+Both configuration files share the same schema, allowing you to declare path
+entries and inherit from other configurations.
+
+```json
+{
+  "inherits": [
+    {
+      "path": "/path/to/shared/skills.json",
+      "include_only": ["linter-skill"],
+      "exclude": ["deprecated-skill"]
+    }
+  ],
+  "entries": [
+    {
+      "path": "path/to/my/project/skills",
+      "exclude": ["experimental-.*"]
+    },
+    {
+      "path": "~/personal-skills"
+    }
+  ]
+}
+```
+
+### Top-Level Fields
+
+*   **`entries`** (array of objects, optional): A list of path entries to scan
+    for customizations of this type. Each entry directory is scanned **one level
+    deep**.
+*   **`inherits`** (array of objects, optional): A list of other configuration
+    files to inherit from. The entries from inherited files are merged with your
+    local entries. Inherited files are processed in the order they are listed.
+
+### Path Entry Fields
+
+Each object in the `entries` or `inherits` array supports the following fields:
+
+| Field          | Type             | Required | Description                   |
+| :------------- | :--------------- | :------- | :---------------------------- |
+| `path`         | string           | Yes      | The path to the customization |
+:                :                  :          : directory (for `entries`) or  :
+:                :                  :          : another JSON config file (for :
+:                :                  :          : `inherits`).                  :
+| `include_only` | array of strings | No       | Patterns naming items         |
+:                :                  :          : relative to `path`. If        :
+:                :                  :          : specified, only matching      :
+:                :                  :          : customizations will be        :
+:                :                  :          : loaded.                       :
+| `exclude`      | array of strings | No       | Patterns. Customizations      |
+:                :                  :          : whose directory names match   :
+:                :                  :          : any of these patterns will be :
+:                :                  :          : skipped.                      :
+
+## Explicitly Configured Paths
+
+Config files are also honored on explicitly configured customization paths (e.g.
+`skills_paths` in an agent's customization discovery config) when the configured
+path points directly at a config file (e.g. `path/to/skills.json`). A configured
+directory keeps its regular one-level scan; a manifest inside it is not
+expanded. Directories referenced from manifest `entries` follow the standard
+one-level entry scan, and top-level `exclude` patterns apply across all
+explicitly configured paths, not just the one that declared them. They never
+filter customizations inherited from the user's environment.
+
+## Path Resolution Rules
+
+The `path` field is resolved based on the following rules:
+
+1.  **Absolute Paths**: Paths starting with `/` are treated as absolute local
+    filesystem paths.
+2.  **Home-Relative Paths**: Paths starting with `~/` are resolved relative to
+    the user's home directory.
+3.  **Workspace-Relative Paths**: Paths not starting with `/` or `~/` are
+    resolved relative to the repository root (the folder containing `.git` or
+    the root of the workspace).
+
+### Pro-Tip: Team Sharing via VCS
+
+To share customizations across a team:
+
+1.  **Commit the Customizations**: Commit your team's skills to a shared
+    directory in your repository (e.g., `tools/agents/skills/`).
+2.  **Commit the Config**: Create and commit a `skills.json` at the root of your
+    repository (in `.agents/skills.json`) that points to the shared directory
+    using a workspace-relative path:
+
+    ```json
+    {
+      "entries": [
+        { "path": "tools/agents/skills" }
+      ]
+    }
+    ```
+
+3.  **Automatic Activation**: When other team members clone the repository and
+    open it, the agent will automatically discover `.agents/skills.json` and
+    load the shared skills.
+

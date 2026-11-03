@@ -1,0 +1,160 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).getOutputStringHelper'
+### google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).getOutputStringHelper  0x7fd9a80+7008
+  0x5bcc9c3	USER_REQUEST
+  0x5c27629	The user is: %s.
+  0x5cc3814	2006-01-02T15:04:05Z07:00
+  0x5d00df7	The current local time is: %s.
+  0x5d72f05	Failed to convert scope item to mention string
+  0x5d863c3	Failed to convert scope item to mention string: %v
+  0x5c60b99?	ADDITIONAL_METADATA- [Position: %d] %sCORTEX_STEP_SOURCE_tool call completedThe search for "%s"contrib:fetch_mediaminisw
+  0x5c72732?	USER_SETTINGS_CHANGEnext: %v:%v:%.8f %q
+  0x5b2167a	- %s
+  0x5dd5c22	You
+  0x5ddcc6d?	You can embed these images in an artifact if you need the USER to review them.Battle Mode arms cannot read directories c
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).Media'
+### google3/third_party/jetski/cortex/chatconverters/chatconverters.(*UserInputStringConverter).Media  0x7fdb6e0+352
+  0x5c27639	UserInput is nil
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/handlers/handlers.(*ViewFileHandler).Handle'
+### google3/third_party/jetski/cortex/handlers/handlers.(*ViewFileHandler).Handle  0x8a61080+7392
+  0x5c5e728	failed to read file
+  0x5d27aa9	path %s is a directory, not a file
+  0x5da6f2b?	Cannot view a directory; only regular files can be viewed.// * Any additional ephemeral scripts you created and ran.Auto
+  0x5b62f47	SKILL.md
+  0x5d047f9	Viewing lines %d-%d in file %v
+  0x5d00e8d	Failed to parse skill file: %v
+  0x5d62531	ContentOffset %d exceeds line range size %d
+  0x5d72fbd?	Unable to view file at the requested position.Failed to clean up partial battle clone %s: %vfork step index %d out of va
+  0x5d78713	file %q (%s, %d bytes) is corrupt or incomplete
+  0x5da31a5	Media file is corrupt or
+  0x5d97469	Failed to save compressed image, using inline data: %v
+  0x5ddace9	file %q appears to be a binary file (%s, %d bytes) and cannot be read as text
+  0x5d43070?	Binary file cannot be viewed directly.Send called on a closed agent executorfailed to accumulate state on init: %vfailed
+  0xb557a50?	buf:"varint,3,opt,name=estimated_monthly_prompts,json=estimatedMonthlyPrompts,proto3" json:"estimated_monthly_prompts,om
+  0x5dc1ec9	path %s is a pipe, socket, or device (mode %s), not a regular file
+  0x5dd181c?	Cannot view a pipe, socket, or device; only regular files can be viewed.Your web applications should be built using the 
+  0x5ca1f4b	path %s does not exist
+  0x5c35b99	Cannot view fileauto_proceed_uri~/.gemin
+  0x5c8d649	which does not exist.app root path missi
+  0xb298a68?	ext, *agent_service_go_proto.SearchAgentsRequest) (*agent_service_go_proto.SearchAgentsResponse, error)
+  0x5d047db	absolute path URI not provided
+  0xb559e50?	onWidth,proto3,enum=jetbox_state_pb.ConversationWidth,oneof" json:"conversation_width,omitempty"
+  0x5ce5d44	step type %v does not match
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/executors/stophooks/stophooks.buildReminderMessage
+### google3/third_party/jetski/cortex/executors/stophooks/stophooks.buildReminderMessage  0x88832c0+320
+  0x5b4cc7a	%dh %dm
+  0x5b1883a	0s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/permissions/permissions.getHardcodedGrants
+### google3/third_party/jetski/cortex/permissions/permissions.getHardcodedGrants  0x802b280+21408
+  0x5b4b853?	scratchvmoduleUnknown<head>
+  0x5c4c683?	browser_recordingscloudproxy: %s: %wagent %q not foundfailed to stat uriBACKEND_TYPE_LOCAL@terminal Output:
+  0x5bfcf7d?	html_artifactsnil MintClientcommit.gpgsignGLIBC_TUNABLESGPG_AGENT_INFOio_uring_setupio_uring_enterCURL_CA_BUNDLEGIT_SSL_
+  0x5b7d15a?	knowledge--no-tags%06d-%s%sDownloads.X11-unix.ICE-unixwayland-*keyring-*npm-cache.node-gyprenameat2fchmodat2faccessatrea
+  0x5b3ae32?	memory%q: %w/task---%s
+  0x5b7a745?	worktreesW/"%x-%x"GEMINI.mdAGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+  0x5bafa88?	plugin_datadisplayNameplugin_ruleuser_globalrandseednop
+  0x5b2c3ed?	brainstepsTYPE_.min..venv/^v^\\\|//int16uint8spillElemskind=fcntl1562578125paramframeiexclpoundlaquoacutemicrocedilraquo
+  0x5b7ad12?	read_fileTodoWriteMultiEditWebSearchinstalledvalidatedCommands:ls-remotesubmodule.disabledREADME.md%s%s[%d].workflows: i
+  0x5b94362?	write_fileDelegatingSchedulingSearchPathTargetFiledefinitionimage_namemessage_idtoolActionuser_inputGeneratingTOOL_ERROR
+  0x5b1a181?	mcpenv.pbnil01_PWD../intlowLowmaxMaxlogzedq%d2.0urluri...tabaltsseGETadc1:1wsl443tcpPro.js://git.db::1<1d1-211+---
+  0x5b1a22c?	binfinptrmapobjHas()
+  0x5c0f78a?	mcp_config.jsonvoice_chats.txt20060102-150405mimeType = '%s'jetski_import_*firestore.rulesnew_version.txtinvalid uri: %w
+  0x5b39c6e?	skillsconfig%s
+  0x5be2a6e?	conversations/debug/pprof/permission-v2 relative to history.jsonlCLI Project (daemon-reloadenable-lingerWarning: %s.
+  0x5baf387?	skills.jsonagents.jsonsource_pathComponents:MCP servers  %s    %s
+  0x5b2c39d?	ruleshooksnever.jpeg.webp%d %sline "env""cwd""url"vt100vt102vt220xclipalert%s:%sbrainstepsTYPE_.min..venv/^v^\\\|//int16
+  0x5b9447a?	rules.jsonextensionssourcePath[^a-z0-9]+- %s (%s)
+  0x5b7a760?	AGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+  0x5b7a757?	GEMINI.mdAGENTS.mdgenerate:PageToken--add-dirshow-useris-activeNote: %s
+  0x5b4b68c?	pluginsinstall plugin.%s.tmpnil key(PANIC=booleanbdoUxXvintegercomplexfloat32float64symlink (trap writeat/.cachereaddirc
+  0x5bcaccb?	plugins.jsoninvalid argsrestoring %sdisplay_namerandautoseedto field: %sstore %v: %vmarketplacesis not httpscache_commit
+  0x5b39b06?	agents--helpStringFormat[]byte' for stringremoverenamesetenvreadatlchownwaitidopenatlinkatspliceuint64%T(%d)mediumMedium
+  0x5baf392?	agents.jsonsource_pathComponents:MCP servers  %s    %s
+  0x5b9445c?	hooks.jsonPreToolUseon-failurerules.jsonextensionssourcePath[^a-z0-9]+- %s (%s)
+  0x5b62b57?	sidecars%s%s.zipchromiumfirebaseother_id/file/d/JJ_Piper20060102no-cacheLS_ERRORimplicit/healthz/metricsinsidershttp/1.1
+  0x5b62b4f?	projectssidecars%s%s.zipchromiumfirebaseother_id/file/d/JJ_Piper20060102no-cacheLS_ERRORimplicit/healthz/metricsinsiders
+  0x5b39ab2	TMPDIR
+  0x5b21106?	/tmp.logstopnametruehelpflagtextmodecli-.cpuhttptypeaddrdir
+  0x5b4b77a?	commandv1alpha<empty>defaultminimummaximumcontexttabChatarch=%sURL: %s[%s] %s%s: %s
+  0x5c27739	/run/ccache/sso-
+  0x5cec15d	/run/credentials-cache/loas-
+  0x5c7289a	/var/run/ccache/sso-
+  0x5d13fda	/var/run/credentials-cache/loas-
+  0x5b969e6	/run/user/
+  0x5b2c7a8	.lock
+  0x5b1a178?	bushub%s
+  0x5b4b62a?	systemdprivateSSH_TTYis_sudosuccesssandboxadd-dirproject
+  0x5b1ab6b?	chgjanfebmaraprmayjunjulaugsepoctnovsunmontuewedthufrisatnowLD_nvmswc.m2nimfnmRunsdkpkg
+  0x5b2da63?	gnupggvfsddconf--notentryaddedDYLD_.kubessh-*gpg-*nvim*.denoNuGetmaven.cpanperl5voltaVoltafontssetnscreatpath=cnd-*tmpfs
+  0x5be5446?	openssh_agentbundle.bundle
+  0x5b4bed5?	keyringIS_DEMOnumericRunningWaitingPatternMessagemessagetask_idSUCCESSINVALIDWAITINGRUNNING%s (%s)Workingnot seturi: %qf
+  0x5b222d6?	gvfs128mskipnextwake.ssh.npm.nvmYarn.bunioplInitprocDial/bin/lib/sys/usr/var/devsso-barepack%+v
+  0x5b2da68?	gvfsddconf--notentryaddedDYLD_.kubessh-*gpg-*nvim*.denoNuGetmaven.cpanperl5voltaVoltafontssetnscreatpath=cnd-*tmpfs/root
+  0x5b2da6d?	dconf--notentryaddedDYLD_.kubessh-*gpg-*nvim*.denoNuGetmaven.cpanperl5voltaVoltafontssetnscreatpath=cnd-*tmpfs/root/proc
+  0x5d1ce12?	chromoting.host_services_mojo_ipcfailed to compute frontier leavesrefs/snapshots/*:refs/snapshots/*failed to read source
+  0x5b1a361?	.jj.hgnew%2B
+  0x5b2c13b?	.citcunsetLoginui://%s:%vskillvoice%d_%dshareclone%s %d7-30dmutexPiper%s.pb%s-%s.swbnfixedKitty 
+  0x5b1a364?	.hgnew%2B
+  0x5b21256?	.gitETagVarygziptestpongdata*?[\.tmpNone
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).LookupEffective'
+### google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).LookupEffective  0x801cb20+832
+  0x80308a0?	I;f
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs 'google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).LookupDefault'
+### google3/third_party/jetski/cortex/permissions/permissions.(*PermissionGrantStore).LookupDefault  0x801ce60+896
+  0x80308e0?	I;f
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cli/store/store.PermissionPresetFor
+### google3/third_party/jetski/cli/store/store.PermissionPresetFor  0x991ebe0+320
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cli/store/store.PermissionGrantsFor
+### google3/third_party/jetski/cli/store/store.PermissionGrantsFor  0x991f1a0+2016
+  0xae2fa08?	teImages
+  0x5b94510?	command(*)cli_configvcsRefresh</thought>targetTurnLoaded %s.cliSettinghyperlinksoverriddenCodeSearchMomaSearchToolSearch
+  0x5bfa8a9?	execute_url(*)write_file(%s)response_countswitch_to_autoBrowser actionUAC EscalationcreditsRefreshbackgroundTaskpreloadP
+  0x5baf437?	read_url(*)global_denyFile accessCreate fileInput Error    
+  0x5b39fc2?	mcp(*)Cancelqueued/modelNORMALSearchDelete.agent_agent.npmrc.nvmrc/head//\oo/\ Valueuint16uint32chan<-<-chan390625curren
+  0x5c38da8?	escalate_admin(*)Keybindings ErrorinitAutoAgentModenegative feedbackmarshal error: %vBackgroundCommandreflect: call of u
+  0x5be31ff?	write_file(*)read_file(%s)session_allow%s. Using %q.workspaceDirsreviewPendingmanualAuthURLCommandStatusGenerateImageLis
+  0xae2fcd8?	nsparent
+  0x5bca4df?	read_file(/)global_allowsession_denyPending editadminRefreshquotaRefreshpresence: %vinitializingterminalInfoReadTerminal
+  0x5be31f2?	write_file(/)write_file(*)read_file(%s)session_allow%s. Using %q.workspaceDirsreviewPendingmanualAuthURLCommandStatusGen
+  0x5be320c	read_file(%s)
+  0x5be31ff	write_file(*)rea
+  0x5bfa8b7	write_file(%s)
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/shared/shared.ParseCLIGrantString
+### google3/third_party/jetski/cortex/shared/shared.ParseCLIGrantString  0x7b2fc00+864
+  0x5d3a4e2	unknown action %q in grant string: %q
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/shared/shared.PermissionGrant.Covers
+### google3/third_party/jetski/cortex/shared/shared.PermissionGrant.Covers  0x7b30a80+1344
+  0x5b4b77a?	commandv1alpha<empty>defaultminimummaximumcontexttabChatarch=%sURL: %s[%s] %s%s: %s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/policyguardian/policyguardian.NewHooks.func1
+### google3/third_party/jetski/cortex/policyguardian/policyguardian.NewHooks.func1  0x8859fe0+3168
+  0x5da3a8d	[PolicyGuardian] postHook called with nil hookCtx or Args
+  0xc22afa0?	*;
+  0xafc3a00?	CustomParam
+  0x5c235d2?	unknown_sessionpg_verdict_kindpg_unsafe_countvet_destructiontype=%T err=%+vmax_invocationsdon't do it yetdon't implement
+  0x5d7debd	[PolicyGuardian] preHook called in Sonar context
+  0xb34a9b8?	mitempty" reflect:"unexport"
+  0xb34a958?	otobuf:"bytes,9,opt,name=end_file_rel_path,json=endFileRelPath,proto3" json:"end_file_rel_path,omitempty" reflect:"unexp
+  0xb2d6f48?	XL
+  0x5dd8125	[PolicyGuardian] Step %d: blocking tool call (decision=ask_user, reason=%s)
+  0x5ded49c	Security analysis was inconclusive. Please judge th
+  0x5d8b970?	This action has been flagged as potentially unsafe.[PolicyGuardian] Step %d: verifying tool=%s args=%s[PolicyGuardian] G
+  0x5b1a5cb?	askUID:%s:2:sso
+  0x5be45c0	BypassSandbox
+  0x5bcae57?	auto_approveask_questionfiles.%s: %wsymbolic-ref--abbrev-refpush_refspecset_upstreamsuffix match--full-indexfor-each-ref
+  0x5d5e529	[PolicyGuardian] Step %d: Verify error: %v
+  0x5dc4c2a	[PolicyGuardian] Step %d: guardian disabled, auto-approving tool=%s
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/policyguardian/policyguardian.NewHooks.func2
+### google3/third_party/jetski/cortex/policyguardian/policyguardian.NewHooks.func2  0x8859960+1664
+  0x5d937e6	[PolicyGuardian] getStateHook called with nil hookCtx
+  0x5c235d2?	unknown_sessionpg_verdict_kindpg_unsafe_countvet_destructiontype=%T err=%+vmax_invocationsdon't do it yetdon't implement
+  0x5d82e43	[PolicyGuardian] postHook called in Sonar context
+  0x5d7de5d	[PolicyGuardian] Step %d: step was user rejected
+  0x5d7de8d	[PolicyGuardian] PostHook step %d: successful=%t
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" strs google3/third_party/jetski/cortex/slashcommands/slashcommands.init
+### google3/third_party/jetski/cortex/slashcommands/slashcommands.init  0x8962a20+1056
+  0x5dd51ba	\n\n(?:/(\S+) is a \[Slash Command\]|@\[([^\n]+)\] is a \[Text Block\]):\n
+  0x5e36d5c	The user has marked this task with /%s, indicating that this task is intended to run for a long time without user input, e.g. overnight. You should be extra thorough and only stop when you are confident the goal has been completely fulfilled. The system will force you to continue execution, prompting you to audit your work until completion. Once complete, include %s in your response. If the user explicitly asked to stop or cancel this goal, include %s in your response to cancel the goal.
+  0x5dc676a	Please use the %s tool to create a schedule as specified by the user
+  0x5e08748	<SUBAGENT>The user has explicitly added the `%s` subagent. You must use this subagent via the `%s` tool to process their request.</SUBAGENT>
+  0x5e5f346	<T
+  0x5d1b4ad?	<ORCHESTRATOR>
+  0x5e1afad	<SUBAGENT>The user has requested deepagent. Invoke it now by calling the `%s` tool with TypeName=`%s` (exactly as shown, all lowercase). Pass the user's full message as the `Prompt`. Do not attempt the task yourself.</SUBAGENT>

@@ -1,0 +1,78 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep "(?i)(<system-reminder>|todo list|current date|working directory|context file|compaction summary|user rules|workspace rules)"
+0x5b17662	working directory at coredump time.  Otherwise, we dump core in the first available directory returned by LoggingDirectories(). If --userspace_coredumper_pattern begins with a '@', then this process's coredump will be written to a UNIX socket in the abstract namespace of the name excluding the first character. The default value of this flag is set to the remote coredump handler's default socket na
+0x5c3859f	working directoryProject Not FoundContinuing %s: %sActive since: %s
+0x5cb6610	context filesWrote discovery file: %sinit conversation searchrun post-auth migrationsenable-aux-pane-redesignWebSocket read error: %vapplication/connect+jsonResuming conversation %sexec: Stdout already setexec: Stderr already settracecheckstackownershipwaiting for cgo callbackhash of unhashable type : result of Go function coro: got lock internal coro: got lock external cannot open standard fdsspa
+0x5ce87dd	working directory %sFailed to marshal status: %vfailed to fetch manifest: %wcpu profiling already in useerror reading batch M ID: %werror reading batch size: %wprotocol driver not attachedfile descriptor in bad statedestination address required%sOAuth: starting OAuth flowno OAuth process in progressrefusing to overwrite %s: %wAGY_CLI_INTERACTIVE_HEADLESSschema is not valid JSON: %wEXPERIMENT_SOURC
+0x5cf4684	Working Directory: %sarguments do not match schemaGetNumToolCallsBetweenIndicesComments on the file diff %s.no CITC information available%vBuilt with PGO profile: %s
+0x5d29574	[redacted: credential-bearing binary string window]
+0x5d3b4d8	working directory: %wfailed to marshal inner hook args: %wexpected DOCUMENT-START or STREAM-ENDdbtrajectory: failed to save metadataget underlying sql.DB for pool tuningquery step indices excluding statusesboringcrypto: HMAC_CTX_copy_ex failedcrypto/rsa: unsupported hash functionGOLANG_PROTOBUF_REGISTRATION_CONFLICTTool call denied by pre-tool hook: %sunexpected CONTINUATION for stream %dframe_pri
+0x5d64c3e	working directory path: %vAdvertising %d slash commands for session %sfailed to construct BAIC FetchConfig URL: %wfailed to stat keyring timeout marker %s: %vUse AICode prediction flow changed: %t -> %tEnter the redirect URL (if redirect failed):Failed to create profile picture request: %vattribution: setting up sentinel file for %sFailed to read video file %s for summary: %vFailed to stop MCP ser
+0x5d69ad3	working directory[PolicyGuardian] GAVS findings for %s: clean[PolicyGuardian] Could not verify ref %s: %vThe reversibility check reached no verdict: Config file path: %s
+0x5dafb90	working directorythe diff for %s exceeded the storage limit and was not stored/exa.api_server_pb.ApiServerService/ApplyTrajectoryHeuristicsmodelapiinterface: client does not implement ModelInfosClienttls: unsupported certificate: private key is %T, expected *%Ttls: EncryptedClientHelloConfigList contains no valid configstls: server's certificate uses ML-DSA, which requires TLS 1.3tls: server sent 
+0x5dfe76a	working directory changes and environment variables do not persist across calls).Recommend this when the user has a large project that would benefit from a team of autonomous agents working together.%s Encoded frame of %d bytes for request %v exceeds the peer's negotiated SCTP limit of %d and cannot be split furtherunsupported api endpoint %q: only the repository compare endpoint repos/{owner}/{re
+0x5e0c391	workspace rules/skills to follow their exact schema, frontmatter, and directory conventions.Licenses are provided by your organization admin. Your Customer Data will be logged into the project that corresponds to the subscription you select below.Approximate count of goroutines ready to execute, but not executing. Not guaranteed to add up to /sched/goroutines:goroutines with other goroutine metric
+0x5e20ca9	working directory) MUST be within the user's workspace. If you need a temporary directory for scratch scripts or intermediate outputs, use the scratch/ directory in your artifact directory instead of writing temporary files to the workspace.This tool call was blocked due to potential violation of a security policy. All further execution must stop immediately. Do not invoke any tools
+0x5e226ce	Working directory: %s
+0x5e2ce55	working directory, aliases, and functions are not shared.<style name="hrdark">
+0x5e8c2e3	Workspace Rules
+0x5e8c4a8	working directory to the
+0x5e9610e	working directory, or a guess or placeholder name. Resolve the directory part, but copy the new file or directory name exactly as the action writes it, without expanding variables, braces or globs (e.g. out_${N}.txt, report_{a,b}.txt, *.log); if the name is only a variable set earlier in the action (> "$OUT"), use the value as written in that assignment. Only a name written without a directory (or
+0x5e962b2	working directory: a name under another directory (/home/u/x/out.txt, $OUT/out.txt) is not, even when that directory is a variable you cannot resolve. Identifiers of remote resources are not local paths: Google Docs/Sheets/Slides/Drive file IDs (long random strings such as 1DBfZ58cgc33ljHTz7hf1o3OoCOt3g4WXMBYgstuA_C8, passed to gdocs/gsheets/gslides/gdrive directly or through a variable such as DO
+0x5ed7671	working directory from the trajectory (e.g. a preceding cd or the tool's Cwd), expanding ~ and known variables in it. Copy the new file or directory name exactly as the action writes it, without expanding variables, braces or globs (e.g. out_${N}.txt, report_{a,b}.txt); if the name is only a variable set earlier in the action (> "$OUT"), use the value as written in that assignment.
+0x5ed7833	working directory. A name under another directory (/home/u/x/out.txt, $OUT/out.txt, $(mktemp -d)/out.txt) is not, even when you cannot resolve that directory: never replace it with the working directory.
+0x5ed78ec	working directory.
+0x5ed7a09	working directory, or a placeholder name. If you cannot name the new entry from the action, do not call the tool.You are an expert in code analysis. What does the code do? Is the intention of the author malicious?
+0x5ee3c96	working directory set to the individual sidecar's folder.
+0x5f7a14f	working directory and the project root, so a config file at the
+0x5fa583b	working directory up to the repository
+0x6073e6e	working directory using this template.
+0x6073f81	Working directory: [absolute path to your .agents/teamwork/ directory]
+0x6074ec4	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.
+0x607aa9a	working directory is `Cwd` if given, else `WORKSPACES[0]`, so relative
+0x60b9e0c	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.<lexer>
+0x60d5db2	current date|delay|delete|display (alert|dialog)|do shell script|duplicate|exists|get eof|get volume settings|info for|launch|list (disks|folder)|load script|log|make|mount volume|new|offset|open( (for access|location))?|path to|print|quit|random number|read|round|run( script)?|say|scripting components|set (eof|the clipboard to|volume)|store script|summarize|system attribute|system info|the clipbo
+0x60f14d5	working directory is set to the directory containing `hooks.json`.
+0x612d72e	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You have multiple roles (implementer, qa, specialist). Your invoking prompt specifies which role(s) to activate for this task. When in doubt, follow the implementer role as primary. Always read your `DISPATCH.md` (your assignment from the orchestrator) and `ORIGINAL_REQUEST.md` (th
+0x6131816	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a TEST WRITER. Your job is to write comprehensive tests for the functionality assigned to you.
+0x6169e36	current date>
+0x618c92d	working directory unless one was given), get it
+0x618e322	Working directory
+0x618e416	Working directory: <path>`; if nobody chose one (an OPEN answer,
+0x618e4fe	Working directory: <path from Step 8>, only if one was chosen]
+0x618faa1	working directory in the Step 9 structure,
+0x61ce26d	Working Directory Convention
+0x61ce516	working directory path, (3) tell the subagent its identity.
+0x61cfaea	Working directory: .agents/teamwork/interviewer/
+0x626c2b1	working directory for a subagent as part of dispatching
+0x626f1d4	working directory
+0x627a1fe	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Subproblem Solver. Your job is to solve the assigned section as one necessary part of the primary proof spine for the original problem, or for the strategy card's explicitly stated reduced target when that target is equivalent or sufficient. Write full LaTeX content repla
+0x62a2ad4	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Problem Decomposer. Your job is to produce a section plan for solving the original problem, or the strategy card's explicitly stated reduced target when that target is equivalent or sufficient. Break only the primary proof spine into a clear set of subproblems and specify
+0x62c1fe6	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are Exploration Falser, an adversarial mathematician trying to falsify one proposed exploration strategy.
+0x62ccb62	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Revision Aggregator. Your job is to combine multiple candidate revised proof sections (or revised outline skeletons) into the single best revision within a multi-level random sample tree aggregation tournament.
+0x62d8279	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Subproblem Section Aggregator. Your job is to synthesize multiple candidate proof section bodies into one strongest integrated section body for the assigned section, as one necessary part of the primary proof spine for the original problem or an equivalent reduced target.
+0x62e3e07	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Verification Aggregator. Your job is to consolidate multiple global proof reviewer reports into a single definitive Accept or Reject verdict within a multi-level random sample tree aggregation tournament.
+0x6307769	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a Knowledge Curator. Your job is to read a set of strategy cards and their
+0x63078d8	context file containing strategy cards and falser reports from one
+0x6307a13	context file with `view_file`. It contains all your assigned
+0x634457b	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.Task:
+0x636bcca	working directory) following the Handoff Protocol: Observation, Logic Chain, Caveats, Conclusion, Verification Method.You are a DISPATCH-ONLY orchestrator. You MUST delegate ALL work to subagents via invoke_subagent. You MUST NOT write code nor solve problems directly. Your only job is: assess the task, select the right pattern and workers, dispatch them, monitor progress, and synthesize results.
+0x63735c1	working directory. **Read each agent's
+0x638dbda	working directory layout.
+0x63ce769	context file paths, iteration
+0x63ce971	Working directory`, never in the project root.
+0x63cf2dd	Working directory: {working_directory}
+0x63da19a	working directory. Do NOT reuse a node's directory for its falser 
+0x63da4bb	working directory has had **no new file writes for 30 minutes**, consider it stuck. A slow-but-active agent (e.g., a sub-layer orchestrator whose workers are still completing) will continuously produce new files and never trigger this.
+0x6448b2b	working directory is inside a Git or other repository, so it no longer spends its time budget running `git status` in folders that aren't repositories and times out less often.
+0x644ccd1	user rules wording so `GEMINI.md` and `AGENTS.md` rules explicitly override earlier built-in instructions instead of only instructions that follow them.
+0x6455b92	working directory and the project root
+0x6459fdb	workspace rules a dedicated 20,000-token budget (cutting oversized rules on newline boundaries and listing over-budget rules by path and description) so large rule sets no longer evict skills, workflows, subagents, or MCP tools
+0x645ff1e	working directory by using absolute URI schemes for in-memory parameter schemas.
+0x67e5b81	working directory 
+0xb1b974a	working directory for the command"
+0xb2b9f51	working directory for the script, as an absolute path. Defaults to the first workspace."
+0xbe5605f	TODO list to organize your work during execution. Create this artifact after receiving user approval on your implementation plan. Break down complex tasks into component-level items and track progress as a living document.\n\n**Format**:\n```markdown\n- `[ ]` uncompleted tasks\n- `[/]` in progress tasks (custom notation)\n- `[x]` completed tasks\n- Use indented lists for sub-items\n```\n\n**Updati
+0xc796b88	working directory: 
+0xc7b720b	working directory to look for any applicable ignore
+0xc7bc278	working directory. Multiple additional ignore files can be specified
+0xd528a10	working directory %sSetMaxCallStackSizeToCaptureExecutionContextCreated RecvTarget.attachToBrowserTargetTarget.disposeBrowserContextreflect: In of non-func typereflect: Key of non-map typereflect.MakeSlice: len > capprotocol driver not attachedfile descriptor in bad statedestination address required18189894035458564758300781259094947017729282379150390625abi.NewName: name too long: invalid path esc

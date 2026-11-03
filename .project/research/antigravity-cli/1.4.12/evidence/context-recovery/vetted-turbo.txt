@@ -1,0 +1,5 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" grep "(?i)(vetted.{0,80}(permission|command)|turbo.{0,80}(permission|command)|permission.{0,80}(turbo|vetted)|vetting mode)"
+0x5cf39d2	PERMISSION_PRESET_TURBOAPI_PROVIDER_ANTHROPIC_VERTEXAPI_PROVIDER_GOOGLE_EVERGREENunexpected path component: %sOAuth callback error (%s): %sEnter the authorization code:failed to decode response: %wfailed to marshal credentialsOAuth setup failed for %s: %vfailed to create directory %sserver %q not found in configaudio playback is unavailablefetching remote plugin failederror uninstalling plugin: %w
+0x5cfdd5b	PERMISSION_PRESET_VETTEDX4eQuSWcuHc5yvjsNaIgxdD5EfozMtunknown auth provider type: %vfailed to stat mcp config filefailed to get server directoryfailed to read mcp config filefailed to write updated config%s exited unexpectedly: %w: %serror initializing manager: %wdisable requires a plugin nameerror encoding plugin list: %wFailed to install %d plugins.
+0x6442183	PERMISSION_PRESET_VETTED
+0x64421a7	PERMISSION_PRESET_TURBO

@@ -1,0 +1,350 @@
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x641a046 | [select named blocks]
+enum AgentPermissionPreset {
+  AGENT_PERMISSION_PRESET_UNSPECIFIED = 0;
+  AGENT_PERMISSION_PRESET_REQUEST_REVIEW = 2;
+  AGENT_PERMISSION_PRESET_DEFAULT = 1;
+  AGENT_PERMISSION_PRESET_VETTED = 4;
+  AGENT_PERMISSION_PRESET_TURBO = 3;
+  AGENT_PERMISSION_PRESET_AUTO = 6;
+  AGENT_PERMISSION_PRESET_NONE = 5;
+}
+enum ArtifactReviewMode {
+  ARTIFACT_REVIEW_MODE_UNSPECIFIED = 0;
+  ARTIFACT_REVIEW_MODE_ALWAYS = 1;
+  ARTIFACT_REVIEW_MODE_TURBO = 2;
+  ARTIFACT_REVIEW_MODE_AUTO = 3;
+}
+message PermissionGrantsConfig {
+  repeated string allow = 1;
+  repeated string deny = 2;
+  repeated string ask = 3;
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x647546d | [select named blocks]
+enum PermissionScope {
+  PERMISSION_SCOPE_UNSPECIFIED = 0;
+  PERMISSION_SCOPE_ONCE = 1;
+  PERMISSION_SCOPE_CONVERSATION = 2;
+  PERMISSION_SCOPE_WORKSPACE = 3;
+  PERMISSION_SCOPE_GLOBAL = 4;
+  PERMISSION_SCOPE_PROJECT = 5;
+}
+enum AutoRunDecision {
+  AUTO_RUN_DECISION_UNSPECIFIED = 0;
+  AUTO_RUN_DECISION_USER_ALLOW = 1;
+  AUTO_RUN_DECISION_USER_DENY = 2;
+  AUTO_RUN_DECISION_SYSTEM_ALLOW = 3;
+  AUTO_RUN_DECISION_SYSTEM_DENY = 4;
+  AUTO_RUN_DECISION_MODEL_ALLOW = 5;
+  AUTO_RUN_DECISION_MODEL_DENY = 6;
+  AUTO_RUN_DECISION_DEFAULT_ALLOW = 7;
+  AUTO_RUN_DECISION_DEFAULT_DENY = 8;
+}
+message PermissionResource {
+  string action = 1;
+  string target = 2;
+}
+message PermissionGrant {
+  bool allow = 2;
+  PermissionScope scope = 3;
+  string user_deny_instruction = 4;
+  string action = 5;
+  string target = 6;
+  PermissionResource resource = 1;
+}
+message PermissionInteractionSpec {
+  enum PersistSuggestionType {
+    PERSIST_SUGGESTION_TYPE_UNSPECIFIED = 0;
+    PERSIST_SUGGESTION_TYPE_SUGGESTED = 1;
+    PERSIST_SUGGESTION_TYPE_BLOCKED = 2;
+  }
+  message TriggerSource {
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+      TYPE_EFFECTIVE_GRANT = 1;
+      TYPE_DEFAULT_GRANT = 2;
+      TYPE_CROSS_PROJECT_ISOLATION = 3;
+      TYPE_SECURE_MODE = 4;
+      TYPE_DEFAULT_FALLBACK = 5;
+      TYPE_FORCE_ASK_HOOK = 6;
+    }
+    Type type = 1;
+    string detail = 2;
+    // oneofs: 
+_detail
+  }
+  PermissionResource resource = 1;
+  PersistSuggestionType persist_suggestion_type = 3;
+  string suggested_persist_pattern = 2;
+  string reason = 4;
+  string action_description = 5;
+  TriggerSource trigger_source = 6;
+  string shell_name = 7;
+  repeated PermissionScope approval_scope_filter = 8;
+  // oneofs: 
+_reason, 
+_action_description, 
+_trigger_source
+}
+message PermissionInteraction {
+  bool allow = 1;
+  PermissionScope scope = 2;
+  string edited_target = 6;
+  PermissionGrantsConfig persist_grants = 4;
+  string user_deny_instruction = 5;
+  bool sandbox_override = 3;
+  // oneofs: 
+_edited_target
+}
+message CortexStepCheckpoint {
+  message EditedFileMapEntry {
+    string key = 1;
+    DiffList value = 2;
+  }
+  uint32 checkpoint_index = 1;
+  bool intent_only = 9;
+  uint32 included_step_index_start = 11;
+  uint32 included_step_index_end = 12;
+  string user_intent = 4;
+  string session_summary = 5;
+  string code_change_summary = 6;
+  bool model_summarization_failed = 16;
+  bool used_fallback_summary = 17;
+  repeated ArtifactSnapshot artifact_snapshots = 14;
+  repeated TrajectoryFileDiff trajectory_file_diffs = 18;
+  repeated string user_requests = 19;
+  repeated CapturedUserRequest captured_user_requests = 30;
+  repeated CapturedUserRequest captured_parent_messages = 31;
+  repeated SubagentSnapshot subagent_snapshots = 20;
+  uint32 total_subagent_count = 27;
+  repeated TaskSnapshot running_task_snapshots = 21;
+  bool render_latest_checkpoint = 24;
+  repeated AccumulatedSection accumulated_sections = 26;
+  string summary_prompt_content_id = 28;
+  string summary_content_id = 29;
+  string conversation_title = 10;
+  repeated EditedFileMapEntry edited_file_map = 7;
+  repeated uint32 included_step_indices = 3;
+  string memory_summary = 8;
+  repeated string conversation_log_uris = 15;
+  int64 render_user_message_step_index = 25;
+  // oneofs: 
+_total_subagent_count, 
+_render_user_message_step_index
+}
+message CortexStepDirectoryRules {
+  string content = 1;
+  repeated string rule_file_uris = 2;
+}
+message SubagentSpec {
+  string type_name = 1;
+  string role = 2;
+  string initial_prompt = 3;
+  bool inherit = 4;
+  string branch = 5;
+  string workspace_uri = 6;
+  string share = 10;
+  Model model = 7;
+  ModelTier model_tier = 8;
+  bool run_as_task = 9;
+  bool fork = 11;
+  // oneofs: 
+	workspace
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x63f079b | [select named blocks]
+message SlashCommandArgument {
+  string name = 1;
+  string description = 2;
+  bool required = 3;
+  string default_value = 4;
+  // oneofs: 
+_default_value
+}
+message SlashCommandDefinition {
+  SlashCommandInfo info = 1;
+  string title = 2;
+  string description = 3;
+  repeated SlashCommandArgument arguments = 4;
+}
+message GetSlashCommandsRequest {
+  CascadeConfig cascade_config = 1;
+  string cascade_id = 2;
+  repeated string workspace_uris = 3;
+  string active_profile = 4;
+  bool enable_personal = 5;
+  CustomAgentSpec custom_agent_spec = 6;
+  AgentScriptItem selected_agent_script = 7;
+  string project_id = 8;
+  repeated string global_customization_dirs = 9;
+  // oneofs: 
+_active_profile, 
+_enable_personal
+}
+message GetSlashCommandsResponse {
+  repeated SlashCommandDefinition commands = 1;
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5ea9699 | [select named blocks]
+message PluginUserConfig {
+  message McpEntry {
+    string key = 1;
+    PluginMcpUserConfig value = 2;
+  }
+  bool enabled = 1;
+  MarketplaceInstall installed_from = 2;
+  repeated McpEntry mcp = 3;
+  // oneofs: 
+_enabled, 
+_installed_from
+}
+message SkillUserConfig {
+  MarketplaceInstall installed_from = 1;
+  // oneofs: 
+_installed_from
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5f1e37c | [select named blocks]
+message PermissionGrants {
+  PermissionGrantsConfig permission_grants = 2;
+  bool v2_migrated = 3;
+}
+message ProjectSettings {
+  message SecurityPluginsEntry {
+    string key = 1;
+    SecurityPluginSettings value = 2;
+  }
+  AgentSettingPolicy file_access_policy = 1;
+  AgentSettingPolicy internet_policy = 2;
+  bool sandbox_mode = 3;
+  CascadeCommandsAutoExecution auto_execution_policy = 4;
+  ArtifactReviewMode artifact_review_mode = 5;
+  bool enable_permissioned_github = 6;
+  string shell_setup_script = 7;
+  AgentPermissionPreset permission_preset = 8;
+  repeated SecurityPluginsEntry security_plugins = 9;
+  // oneofs: 
+
+_sandbox_mode
+}
+message Project {
+  string id = 1;
+  string name = 2;
+  ProjectConversations project_conversations = 8;
+  Resources project_resources = 6;
+  Environments environments = 7;
+  PermissionGrants permission_grants = 9;
+  ProjectSettings settings = 10;
+  Timestamp updated_at = 11;
+  bool is_workspace_only = 12;
+  bool archived = 13;
+  BackendType backend_type = 14;
+  // oneofs: 
+_is_workspace_only, 
+	_archived
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5ed64bb | [select named blocks]
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x5f93caa | [select named blocks]
+message HookInjectedStep {
+  HookToolCall tool_call = 1;
+  string user_message = 2;
+  string ephemeral_message = 3;
+  HookSystemMessage system_message = 4;
+  HookErrorMessage error_message = 6;
+  HookUserMessage hook_user_message = 7;
+  HookEphemeralMessage hook_ephemeral_message = 8;
+  HookCheckpoint checkpoint = 9;
+  string model_api_content_id = 5;
+  // oneofs: 
+step
+}
+$ python3 tools/pbdump.py --bin "$HOME/.local/bin/agy" 0x647546d | [select named blocks]
+message CustomAgentConfig {
+  repeated PromptSection system_prompt_sections = 1;
+  repeated string tool_names = 2;
+  CustomAgentSystemPromptConfig system_prompt_config = 6;
+  repeated string pre_invocation_hooks = 9;
+  repeated string post_invocation_hooks = 10;
+  repeated string stop_hooks = 11;
+  bool exclude_default_components = 12;
+}
+message CustomAgentSpec {
+  CustomAgentConfig custom_agent = 1;
+  CodingAgentConfig coding_agent = 2;
+  AgentConfig agent_config = 18;
+  BuiltinAgentConfig builtin_agent = 3;
+  repeated McpServerSpec launched_mcp_servers = 16;
+  string command_execution_policy = 5;
+  bool enforced_workspace_validation = 8;
+  PromptSectionCustomizationConfig prompt_section_customization = 9;
+  CascadeConfig cascade_config = 11;
+  CustomizationConfig customization_config = 17;
+  repeated McpServerSpec mcp_servers = 4;
+  bool user_active_workspaces = 6;
+  WorkspacePaths workspace_paths = 7;
+  bool skip_mcp_prefixes = 10;
+  repeated string custom_tools = 13;
+  SkillsConfig skills = 14;
+  AgentDiscoveryConfig agents = 15;
+  // oneofs: 
+config, 
+	workspace, 
+
+_enforced_workspace_validation
+}
+message CortexStepViewFile {
+  string absolute_path_uri = 1;
+  uint32 start_line = 2;
+  uint32 end_line = 3;
+  string content = 4;
+  uint32 content_offset = 19;
+  uint32 line_range_bytes = 20;
+  bool is_skill_file = 17;
+  SkillMetadata skill_metadata = 18;
+  string raw_content = 9;
+  Media media_data = 15;
+  string triggered_memories = 10;
+  uint32 num_lines = 11;
+  uint32 num_bytes = 12;
+  bool is_injected_reminder = 13;
+  ImageData binary_data = 14;
+  FilePermissionInteractionSpec file_permission_request = 16;
+}
+message SkillMetadata {
+  string name = 1;
+  string description = 2;
+  string publisher = 3;
+  string version = 4;
+  string icon = 5;
+  string logo = 6;
+}
+message CortexStepUserInput {
+  repeated TextOrScopeItem items = 3;
+  string user_response = 2;
+  ContextModuleResult active_user_state = 4;
+  repeated ArtifactComment artifact_comments = 7;
+  repeated FileDiffComment file_diff_comments = 10;
+  repeated FileComment file_comments = 11;
+  ChatClientRequestStreamClientType client_type = 8;
+  CascadeConfig user_config = 12;
+  CascadeConfig last_user_config = 13;
+  repeated Any side_channels = 15;
+  repeated string tags = 16;
+  UserIdentity user_identity = 17;
+  CustomAgentSpec user_agent_spec = 18;
+  repeated Media media = 9;
+  bool is_queued_message = 6;
+  string query = 1;
+  repeated ImageData images = 5;
+}
+message ActiveUserState {
+  Document active_document = 1;
+  repeated Document open_documents = 2;
+  CodeContextItem active_node = 3;
+}
+message SnapshotToStepsOptions {
+  CodeStepCreationOptions code_step_creation_options = 1;
+  ViewFileStepCreationOptions view_file_step_creation_options = 2;
+  ViewedFileTrackerConfig viewed_file_tracker_config = 3;
+  repeated CortexStepType step_type_allow_list = 4;
+  UserGrepStepCreationOptions user_grep_step_creation_options = 5;
+  RunCommandStepCreationOptions run_command_step_creation_options = 6;
+  LintDiffStepCreationOptions lint_diff_step_creation_options = 7;
+  BrowserStepCreationOptions browser_step_creation_options = 9;
+}

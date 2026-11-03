@@ -1,0 +1,13 @@
+Source ranges for evidence/catalog-nonbase-messages.json. Values are JSON-decoded; instructions_template was intentionally omitted and is captured separately.
+gpt-6-astra <- models-manager/models.json:4-176
+gpt-6.1-sol <- models-manager/models.json:177-352
+gpt-6.1-terra <- models-manager/models.json:353-528
+gpt-6-sol <- models-manager/models.json:529-699
+gpt-6-luna <- models-manager/models.json:700-866
+gpt-5.6-sol <- models-manager/models.json:867-1007
+gpt-5.6-terra <- models-manager/models.json:1008-1148
+gpt-5.6-luna <- models-manager/models.json:1149-1289
+gpt-daybreak-blue-latest <- models-manager/models.json:1290-1405
+gpt-daybreak-red-latest <- models-manager/models.json:1406-1515
+gpt-5.5 <- models-manager/models.json:1516-1640
+codex-auto-review <- models-manager/models.json:1641-1778

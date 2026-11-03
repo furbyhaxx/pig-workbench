@@ -1,0 +1,15 @@
+Source: host:/tmp/re-recon/dsh
+Observed 2026-11-03T11:52:59+01:00. The target is read-only.
+
+$ git -C /tmp/re-recon/dsh status --short
+
+$ git -C /tmp/re-recon/dsh log -1 --format='%H%n%aI%n%s'
+8bd073392eef6f54e921a093b95076248eb08cbb
+2026-11-03T15:27:29+08:00
+Merge pull request #7798 from deepseek-harness/worktree-sync-dsh-0.2.2-to-master-1103b
+
+$ git -C /tmp/re-recon/dsh remote get-url origin
+https://github.com/deepseek-ai/deepseek-harness.git
+
+$ TZ=Europe/Zurich date -Iseconds
+2026-11-03T11:52:59+01:00

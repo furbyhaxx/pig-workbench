@@ -1,0 +1,6 @@
+$ python3 .project/research/claude-code-cli/2.1.317/evidence/verify.py
+12-instructions-and-injections.md: 51 corpus citations, 2 evidence links
+13-modes-and-approvals.md: 32 corpus citations, 1 evidence links
+14-skills-and-subagents.md: 38 corpus citations, 1 evidence links
+Simple home-path and credential-pattern scan: 27 files
+PASS: frontmatter, 121 citation ranges, 4 anchor texts, and evidence links

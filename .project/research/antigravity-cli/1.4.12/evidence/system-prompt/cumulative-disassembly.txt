@@ -1,0 +1,56 @@
+$ python3 tools/goresym.py --bin "$HOME/.local/bin/agy" funcs DefaultSystemPromptForCumulativePrompt
+0x8726980	128	google3/third_party/jetski/prompt/prompt.DefaultSystemPromptForCumulativePrompt
+
+$ objdump -d -M intel --start-address=0x8726a00 --stop-address=0x8726a80 "$HOME/.local/bin/agy" | grep -v "file format"
+
+
+
+Disassembly of section .text:
+
+0000000008726a00 <crosscall2@@Base+0x1d56440>:
+ 8726a00:	49 3b 66 10          	cmp    rsp,QWORD PTR [r14+0x10]
+ 8726a04:	76 52                	jbe    8726a58 <crosscall2@@Base+0x1d56498>
+ 8726a06:	55                   	push   rbp
+ 8726a07:	48 89 e5             	mov    rbp,rsp
+ 8726a0a:	48 83 ec 28          	sub    rsp,0x28
+ 8726a0e:	48 85 c0             	test   rax,rax
+ 8726a11:	74 1d                	je     8726a30 <crosscall2@@Base+0x1d56470>
+ 8726a13:	80 78 0c 00          	cmp    BYTE PTR [rax+0xc],0x0
+ 8726a17:	74 17                	je     8726a30 <crosscall2@@Base+0x1d56470>
+ 8726a19:	48 8b 05 60 cc ab 03 	mov    rax,QWORD PTR [rip+0x3abcc60]        # c1e3680 <_ZTISt10bad_typeid@@Base+0x4ff880>
+ 8726a20:	48 8b 1d 61 cc ab 03 	mov    rbx,QWORD PTR [rip+0x3abcc61]        # c1e3688 <_ZTISt10bad_typeid@@Base+0x4ff888>
+ 8726a27:	48 8b 0d 62 cc ab 03 	mov    rcx,QWORD PTR [rip+0x3abcc62]        # c1e3690 <_ZTISt10bad_typeid@@Base+0x4ff890>
+ 8726a2e:	eb 15                	jmp    8726a45 <crosscall2@@Base+0x1d56485>
+ 8726a30:	48 8b 05 69 cc ab 03 	mov    rax,QWORD PTR [rip+0x3abcc69]        # c1e36a0 <_ZTISt10bad_typeid@@Base+0x4ff8a0>
+ 8726a37:	48 8b 1d 6a cc ab 03 	mov    rbx,QWORD PTR [rip+0x3abcc6a]        # c1e36a8 <_ZTISt10bad_typeid@@Base+0x4ff8a8>
+ 8726a3e:	48 8b 0d 6b cc ab 03 	mov    rcx,QWORD PTR [rip+0x3abcc6b]        # c1e36b0 <_ZTISt10bad_typeid@@Base+0x4ff8b0>
+ 8726a45:	48 8d 3d ec e9 e1 fd 	lea    rdi,[rip+0xfffffffffde1e9ec]        # 6545438 <_cgo_topofstack@@Base-0x36e128>
+ 8726a4c:	be 01 00 00 00       	mov    esi,0x1
+ 8726a51:	e8 6a 60 23 fe       	call   695cac0 <_cgo_topofstack@@Base+0xa9560>
+ 8726a56:	c9                   	leave
+ 8726a57:	c3                   	ret
+ 8726a58:	48 89 44 24 08       	mov    QWORD PTR [rsp+0x8],rax
+ 8726a5d:	0f 1f 00             	nop    DWORD PTR [rax]
+ 8726a60:	e8 bb b0 18 fe       	call   68b1b20 <_cgo_topofstack@@Base-0x1a40>
+ 8726a65:	48 8b 44 24 08       	mov    rax,QWORD PTR [rsp+0x8]
+ 8726a6a:	eb 94                	jmp    8726a00 <crosscall2@@Base+0x1d56440>
+ 8726a6c:	cc                   	int3
+ 8726a6d:	cc                   	int3
+ 8726a6e:	cc                   	int3
+ 8726a6f:	cc                   	int3
+ 8726a70:	cc                   	int3
+ 8726a71:	cc                   	int3
+ 8726a72:	cc                   	int3
+ 8726a73:	cc                   	int3
+ 8726a74:	cc                   	int3
+ 8726a75:	cc                   	int3
+ 8726a76:	cc                   	int3
+ 8726a77:	cc                   	int3
+ 8726a78:	cc                   	int3
+ 8726a79:	cc                   	int3
+ 8726a7a:	cc                   	int3
+ 8726a7b:	cc                   	int3
+ 8726a7c:	cc                   	int3
+ 8726a7d:	cc                   	int3
+ 8726a7e:	cc                   	int3
+ 8726a7f:	cc                   	int3
