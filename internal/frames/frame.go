@@ -151,6 +151,7 @@ func ValidatePublish(p Publish) (Publish, error) {
 	return p, nil
 }
 
+// RFC3339 JSON timestamps encode offsets only to minute precision.
 func jsonTime(t time.Time) time.Time {
 	t = t.Round(0)
 	if _, offset := t.Zone(); offset%60 != 0 {
@@ -171,8 +172,12 @@ func validSource(source string) bool {
 	return true
 }
 
+func validSessionID(sessionID string) bool {
+	return utf8.ValidString(sessionID) && strings.TrimSpace(sessionID) != ""
+}
+
 func validContext(ctx Context) bool {
-	return validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.SessionID) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch)
+	return validSessionID(ctx.SessionID) && validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch)
 }
 
 func ownsSource(ctx Context, source string) bool {

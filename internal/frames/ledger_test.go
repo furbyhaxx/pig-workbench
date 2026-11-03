@@ -105,6 +105,20 @@ func TestValidatePublishAndOwnership(t *testing.T) {
 	if err != nil || normalized.Delivery != "nextBoundary" || normalized.DataTrust != "untrusted" {
 		t.Fatalf("defaults = %#v, %v", normalized, err)
 	}
+	for _, kind := range []string{"instruction", "reminder", "warning", "error", "notice", "info", "message"} {
+		valid := p
+		valid.Kind = kind
+		if _, err := ValidatePublish(valid); err != nil {
+			t.Fatalf("kind %q rejected: %v", kind, err)
+		}
+	}
+	for _, delivery := range []string{"nextBoundary", "nextPrompt", "beforePrompt", "followUp"} {
+		valid := p
+		valid.Delivery = delivery
+		if _, err := ValidatePublish(valid); err != nil {
+			t.Fatalf("delivery %q rejected: %v", delivery, err)
+		}
+	}
 	for name, change := range map[string]func(*Publish){
 		"empty event":      func(p *Publish) { p.EventKey = " " },
 		"empty source":     func(p *Publish) { p.Source = "" },
@@ -144,6 +158,17 @@ func TestValidatePublishAndOwnership(t *testing.T) {
 	child.Source += ".runner"
 	if _, err := l.Admit(child); err != nil {
 		t.Fatalf("dotted child rejected: %v", err)
+	}
+}
+
+func TestSessionRequiresIdentity(t *testing.T) {
+	s := NewSession("")
+	l := s.Ledger(Context{ProducerPrefix: "build-tools.build"})
+	if _, err := l.Admit(testPublish("event")); !errors.Is(err, ErrInvalidContext) {
+		t.Fatalf("empty session identity admission = %v", err)
+	}
+	if err := s.Restore(nil); !errors.Is(err, ErrInvalidContext) {
+		t.Fatalf("empty session identity restore = %v", err)
 	}
 }
 
@@ -220,6 +245,72 @@ func TestCoalescePendingNoticesButPreserveErrors(t *testing.T) {
 	}
 	if records = snapshotRecords(t, replayed); records[0].State != "pending" || records[2].State != "superseded" || records[4].State != "pending" {
 		t.Fatalf("restored coalescing states = %#v", records)
+	}
+}
+
+func TestCoalescingRespectsBranchAndEpoch(t *testing.T) {
+	s := testSession()
+	ledgers := []*Ledger{
+		testLedger(s),
+		s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "other-leaf", Epoch: "epoch-1"}),
+		s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-1", Epoch: "epoch-2"}),
+	}
+	for i, l := range ledgers {
+		p := testPublish(fmt.Sprintf("event-%d", i))
+		p.CoalesceKey, p.SubjectKey = "progress", "build/1"
+		if _, err := l.Admit(p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	duplicate := testPublish("event-0")
+	duplicate.CoalesceKey, duplicate.SubjectKey = "progress", "build/1"
+	if _, err := ledgers[1].Admit(duplicate); !errors.Is(err, ErrConflict) {
+		t.Fatalf("event key reused across branches: %v", err)
+	}
+	for _, record := range snapshotRecords(t, s) {
+		if record.State != "pending" {
+			t.Fatalf("different scope coalesced: %#v", record)
+		}
+	}
+	replayed := testSession()
+	if err := replayed.Restore(s.Snapshot()); err != nil {
+		t.Fatal(err)
+	}
+	p := testPublish("replacement")
+	p.CoalesceKey, p.SubjectKey = "progress", "build/1"
+	if _, err := testLedger(replayed).Admit(p); err != nil {
+		t.Fatal(err)
+	}
+	records := snapshotRecords(t, replayed)
+	if records[0].State != "superseded" || records[1].State != "pending" || records[2].State != "pending" || records[3].State != "pending" {
+		t.Fatalf("replacement crossed scope: %#v", records)
+	}
+}
+
+func TestCoalescingAtPendingCapacity(t *testing.T) {
+	s := testSession()
+	l := testLedger(s)
+	first := testPublish("old")
+	first.CoalesceKey = "progress"
+	firstReceipt, err := l.Admit(first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 255; i++ {
+		if _, err := l.Admit(testPublish(fmt.Sprint(i))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	newer := testPublish("new")
+	newer.CoalesceKey = "progress"
+	if _, err := l.Admit(newer); err != nil {
+		t.Fatalf("coalescing at capacity: %v", err)
+	}
+	if receipt, err := l.Admit(first); err != nil || receipt != firstReceipt {
+		t.Fatalf("superseded duplicate = %#v, %v", receipt, err)
+	}
+	if records := snapshotRecords(t, s); len(records) != 257 || records[0].State != "superseded" || records[256].State != "pending" {
+		t.Fatalf("unexpected records after coalescing: %#v", records)
 	}
 }
 

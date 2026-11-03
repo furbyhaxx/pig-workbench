@@ -17,11 +17,11 @@ type storedRecord struct {
 	SchemaVersion  int        `json:"schemaVersion"`
 	ProducerPrefix string     `json:"producerPrefix"`
 	Frame          Frame      `json:"frame"`
-	DataTrust     string     `json:"dataTrust"`
-	CoalesceKey   string     `json:"coalesceKey"`
-	ExpiresAt     *time.Time `json:"expiresAt,omitempty"`
-	State         string     `json:"state"`
-	Receipt       Receipt    `json:"receipt"`
+	DataTrust      string     `json:"dataTrust"`
+	CoalesceKey    string     `json:"coalesceKey"`
+	ExpiresAt      *time.Time `json:"expiresAt,omitempty"`
+	State          string     `json:"state"`
+	Receipt        Receipt    `json:"receipt"`
 }
 
 type eventKey struct {
@@ -81,7 +81,7 @@ func NewLedger(ctx Context) *Ledger {
 // Context returns the immutable ledger context.
 func (l *Ledger) Context() Context { return l.context }
 
-// SetClock sets the session admission clock. A nil clock restores time.Now.
+// SetClock sets the admission clock. A nil clock restores time.Now; the clock must not reenter the session.
 func (s *Session) SetClock(clock func() time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -181,7 +181,7 @@ func (s *Session) Snapshot() []json.RawMessage {
 
 // Restore atomically rebuilds the session from its complete, ordered records.
 func (s *Session) Restore(snapshot []json.RawMessage) error {
-	if !utf8.ValidString(s.sessionID) {
+	if !validSessionID(s.sessionID) {
 		return ErrInvalidContext
 	}
 	s.mu.Lock()
