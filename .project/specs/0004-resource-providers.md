@@ -5,11 +5,11 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T14:28:45+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "SPEC-0012 project model and URI namespace; pig-web R7 and R8"
       changes: ["Reserved scheme list per SPEC-0012 §5.1", "Entry kinds link and ctl; walking rules for recursive tools", "Builtin routes replaced by SPEC-0012 §5.3", "project in provider requests (R8)", "Fetch answers: locate to provider URIs, retention disclosure, egress upper bound, re-registration, fallback (R7)", "Removed per-authority scopes (withdrawn by pig-web)"]
+    - revision: 6
+      reason: "Reconcile pig-web M3 for the contract-freeze review"
+      changes: ["Defined required one-line resourceProvider summary for prompt and context catalogs"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -40,6 +43,7 @@ Register kind `resourceProvider` with:
 | Field | Meaning |
 |---|---|
 | key, label, description | Stable owner-scoped identity and inspection text |
+| summary | Required nonempty plain-text one-line summary, at most 120 Unicode characters; no control characters or terminal sequences. Used for each declared scheme in prompt/context catalogs (SPEC-0014 §3.4); never inferred from a guide or fetched resource |
 | schemes | One canonical lowercase scheme and optional aliases |
 | capabilities | stat, read, list, search, locate, write, edit, remove, move, watch as supported |
 | selectorMode | lines, provider or none |
@@ -56,7 +60,7 @@ Register kind `resourceProvider` with:
 Scheme grammar is `[a-z][a-z0-9+.-]*`, maximum 32 bytes. Registration reserves canonical name and aliases atomically. Builtin schemes file, ssh, http, https, local, out, conflict, artifact, project, session, agent, job, cfg, skill and docs cannot be shadowed, nor can the retired names history, branch, proc, skills, jobs, harness, self, workbench and projects (they answer "unknown scheme" with the replacement, SPEC-0012 §5.1). Path segments `self` and `by-*` are reserved in every scheme. An optional integration adapter can implement a reserved builtin only through a separately approved host configuration, never via normal register.
 
 ```json
-{"v":1,"id":"register-build","sessionId":"s-1","generation":"g-1","from":{"owner":"build-tools","instance":"i-1"},"method":"register","params":{"kind":"resourceProvider","key":"builds","descriptor":{"label":"Build results","description":"Inspect build status and logs","schemes":["build"],"capabilities":["stat","read","list"],"selectorMode":"lines","backing":"virtual","scope":"project","contentKinds":["text","container"],"snapshots":{"stableRevision":true,"rangedRead":true,"compareAndSwap":false},"limits":{"pageBytes":51200,"pageLines":2000,"concurrency":4}}}}
+{"v":1,"id":"register-build","sessionId":"s-1","generation":"g-1","from":{"owner":"build-tools","instance":"i-1"},"method":"register","params":{"kind":"resourceProvider","key":"builds","descriptor":{"label":"Build results","description":"Inspect build status and logs","summary":"Build status and bounded logs","schemes":["build"],"capabilities":["stat","read","list"],"selectorMode":"lines","backing":"virtual","scope":"project","contentKinds":["text","container"],"snapshots":{"stableRevision":true,"rangedRead":true,"compareAndSwap":false},"limits":{"pageBytes":51200,"pageLines":2000,"concurrency":4}}}}
 ```
 
 Registering a provider does not expose a new model tool automatically. Existing read/ls/find/grep/write/edit route supported operations; the catalog informs agents which schemes exist. Unsupported operations return unsupported with advertised alternatives rather than guessing local paths.

@@ -5,11 +5,11 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T13:33:03+01:00"
+  updated_at: "2026-11-03T14:25:25+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -47,6 +47,9 @@ document:
     - revision: 12
       reason: "Follow SPEC-0014: builtin/workbench default, no parity check, delivery auto"
       changes: ["prompt.* defaults updated"]
+    - revision: 13
+      reason: "User approved opt-in redaction for trusted extension inference"
+      changes: ["Added user/runtime-only secrets.redact-owners grants; project settings cannot enable access"]
 ---
 
 # 1. Scope and precedence
@@ -151,6 +154,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | docs.source-versions-kept / source-paths | 3 / docs, extensions/sdk, cmd, internal | user/runtime; fetch only on first access (SPEC-0012 §5.4) |
 | instructions.agents-md-reminder / backlog.validate-pointers | true / true | user/project/runtime (SPEC-0007 §2) |
 | secrets.enabled / env-injection | true / true | user/runtime (SPEC-0013 §8); detection policy lives in Secrets.toml |
+| secrets.redact-owners | [] | user/runtime only; explicit trusted-owner grants for extension inference; shared-bus confidentiality limits in SPEC-0013 §4.5 |
 | activity.enabled / placement / shortcut | true / above-editor / alt+w | user/runtime (SPEC-0009 §9) |
 | activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
 | prompt.enabled / template / delivery | true / builtin/workbench / auto | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |

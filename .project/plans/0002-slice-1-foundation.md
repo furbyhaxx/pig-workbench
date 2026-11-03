@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T15:05:00+01:00"
+  updated_at: "2026-11-03T14:28:45+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "User approved the default-prompt A/B run; model-aware prompts moved to Slice 3"
       changes: ["Exit 4 approved", "Family adapters point to PLAN-0004 C6"]
+    - revision: 5
+      reason: "User approved pig-web M1 and M2 contract choices"
+      changes: ["Recorded opt-in secrets.redact for trusted extension inference", "Recorded owner-scoped session.model fields", "Reconciled pig-web M3–M6 with explicit validation gaps", "Assigned both approvals to their owning Slice 1 phases; freeze remains pending"]
 ---
 
 # 1. Outcome
@@ -41,7 +44,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 ## Progress
 
 - **done:** M0.2 host probes (P1–P30, S1–S6, PR1–PR8), M0.3 backend matrix, M0.1 test-level audit, 14 draft specifications, bootstrap factory. D5.b adopted and D5.d rejected (SPEC-0005 rev 9). External plan review applied (rev 3).
-- **now:** Phase A (ledger and contract freeze), including the pig-web handoff [HO-pig-web-m0-4-inputs](../handoff/pig-web-m0-4-inputs.md).
+- **now:** Phase A (ledger and contract freeze), including the pig-web handoff [HO-pig-web-m0-4-inputs](../handoff/pig-web-m0-4-inputs.md). M1 and M2 choices approved by the user and recorded in SPEC-0001/0002/0010/0013/0014; these decisions are not runtime implementation or approval of the entire freeze.
 - **next:** Phases B–M.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
@@ -72,7 +75,12 @@ Before freezing, reconcile every open decision, outstanding probe, dependency ap
 
 | Item | Kind | Blocks |
 |---|---|---|
-| pig-web M1–M6 ([handoff](../handoff/pig-web-m0-4-inputs.md)) | decisions | A1 |
+| pig-web M1: extension-owned inference | decision resolved by user | C/I: opt-in `secrets.redact` for trusted owners; unprotected child sessions explicit; SPEC-0013 §4.5 |
+| pig-web M2: contributed model fields | decision resolved by user | C/F/J: owner-scoped `contextFields` on `frameProducer`, `context.fields.set`; SPEC-0014 §5.1 |
+| pig-web M3: descriptor summary | review text prepared | D/J: required one-line summary, ≤120 Unicode characters; SPEC-0004 §2 |
+| pig-web M4: native-provider credential expansion | probe pending, prior claim qualified | I acceptance: implementation owner probes native custom resolver and EnvAPIKeyAuth separately; SPEC-0013 §2/§9 |
+| pig-web M5: trailing annotations | review text prepared; both-order integration tests pending | F/G/I acceptance: intact snapshot block stays valid; annotation producer redacts appended text before returning; SPEC-0005 §10 and SPEC-0013 §4.2 |
+| pig-web M6: activity items and URI open | existing contract confirmed | M: SPEC-0009 §9 includes placement, glyph, command or URI open, count and severity; click remains PLAN-0004 C4 |
 | Messaging probes: wake from a goroutine, idle/busy state, reload rebind (SPEC-0011 §10) | probe | L1 acceptance |
 | Session title probes T1–T3 (SPEC-0012 §6) | probe | L1 titles |
 | Resumed-session cwd under `--continue` with symlinked buckets (SPEC-0012 §3.5) | probe | E2 |
@@ -117,10 +125,10 @@ Order: B; then C, D, E1 in parallel; F–K as dependencies land; L1 before E2; M
 
 ## C. Extension services v1 (SPEC-0001)
 
-- `discover` with every capability: `frames`, `presentation`, `resources`, `location`, `status`, `snapshots`, `fetch`, `sessions`, `docs`.
+- `discover` with every capability: `frames`, `presentation`, `resources`, `location`, `status`, `snapshots`, `fetch`, `sessions`, `docs`, `secrets`. `secrets.redact` requires explicit trusted-owner grants; context field contributions use `frames`.
 - `register`/`unregister`/`cancel`, idempotent registration, owner scoping, generations, late-reply discard, bounded waits, no mutex held across Emit.
 - Work that can outlive a caller's budget is admitted and run under the session supervisor with an operation receipt (SPEC-0001 §3).
-- Every registration kind consumed by its subsystem: `toolPresentation`, `frameProducer`, `resourceProvider` (incl. `guide`, `summary`), `fetchBackend`, `statusSegment`, `docs`.
+- Every registration kind consumed by its subsystem: `toolPresentation`, `frameProducer` (incl. `contextFields` and `context.fields.set`), `resourceProvider` (incl. `guide`, `summary`), `fetchBackend`, `statusSegment`, `docs`.
 - Reference producer extension kept as an integration fixture, plus a small documented example.
 
 **Acceptance:** absent, incompatible and ambiguous Workbench cases; stale generation rejected; reload re-registers cleanly; a cooperative listener stops within one poll interval after `cancel`; late replies are discarded by correlation ID; a mutation cancelled mid-flight reports `outcome: unknown`. An uncooperative listener can block Emit (SPEC-0001 §3); that limit is documented, not tested away.
@@ -182,7 +190,7 @@ Detection (auth.json incl. `!command` per A2, environment, `.env*`, token shapes
 ## J. System prompt and skills (SPEC-0014 §3–§5, §6.1–§6.2, §7, §8)
 
 - gonja engine with confined loader, sections, helpers, conditionals, limits; `builtin/workbench` as the default, keeping PiG's sections with adapted content; structure check; delivery `auto`, fallback, epochs, `before_provider_request` splice.
-- All six context frames: `session.date`, `session.environment`, `session.project`, `session.location`, `session.model` (incl. contributed fields per A2), `session.capabilities`.
+- All six context frames: `session.date`, `session.environment`, `session.project`, `session.location`, `session.model` (incl. approved owner-scoped fields, SPEC-0014 §5.1), `session.capabilities`.
 - Skills: catalog, listing budget ladder, `skill://` load/unload/loaded state, `when` and `auto_load`, declined after unload, nested skills, replay after compaction; `/workbench prompt`, `/workbench skills`, `session://self/system-prompt`.
 
 **Acceptance:** SPEC-0014 §12 except its `select = "all"` and adapter rows: golden renders for every PR5 fixture, template chain and conditionals, stability within an epoch, frame rules, every skills case.

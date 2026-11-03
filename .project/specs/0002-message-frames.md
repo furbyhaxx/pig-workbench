@@ -5,11 +5,11 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T12:29:31+01:00"
+  updated_at: "2026-11-03T14:25:25+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Context frames and prompt diffs (SPEC-0014)"
       changes: ["Delivery beforePrompt: steer from before_agent_start, lands before the user prompt (P30)", "Context frames with refresh policies are a Workbench producer on this pipeline"]
+    - revision: 7
+      reason: "User approved owner-scoped fields on Workbench context frames"
+      changes: ["Linked typed contextFields registration and update contract", "Kept internal source ownership distinct from external data contributions"]
 ---
 
 # 1. Purpose and dependency
@@ -48,8 +51,9 @@ Register kind `frameProducer`:
 | defaultVisibility | shown, collapsed or hidden; user override wins |
 | requestedAuthority | data or instruction; host/user policy grants actual authority |
 | allowWake | Request permission to schedule follow-up, default false |
+| contextFields | Optional typed field claims on Workbench context sources; initially `session.model.knowledge_cutoff` only (SPEC-0014 §5.1) |
 
-External sources default to data authority. Requesting instruction authority is not self-authorization. Trusted project data and arbitrary command output are not inherently harness instructions. Producer prefixes cannot impersonate Workbench internal sources.
+External sources default to data authority. Requesting instruction authority is not self-authorization. Trusted project data and arbitrary command output are not inherently harness instructions. Producer prefixes cannot impersonate Workbench internal sources. Declared `contextFields` are a separate, typed data contribution consumed by Workbench's producer (SPEC-0014 §5.1); they do not grant permission to publish with an internal source name.
 
 Service methods:
 - `frames.publish`: registrationId + publish request → durable admission receipt.
@@ -57,6 +61,7 @@ Service methods:
 - `frames.cancel`: frameId → cancel only an undelivered frame owned by caller.
 - `frames.list`: branch scope + filters/cursor → bounded records.
 - `frames.get`: frameId → stored record, bounded body page and delivery state.
+- `context.fields.set`: registrationId + model-bound typed contribution → acceptance (SPEC-0014 §5.1); it does not itself acknowledge frame delivery.
 
 Workbench's own source `workbench.guide.<scheme>` delivers first-touch scheme guides (SPEC-0012 §5.5) as kind `instruction`. A guide contributed by another extension keeps data authority unless the user trusts that provider.
 

@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T14:40:00+01:00"
+  updated_at: "2026-11-03T14:28:45+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "External plan review: §3 still rejected same-tag ambiguity"
       changes: ["§3 aligned with D5.b and G5.2"]
+    - revision: 10
+      reason: "Reconcile pig-web M5 for the contract-freeze review"
+      changes: ["Clarified trailing annotations do not invalidate an intact snapshot block", "Required final-content verification with both annotation handler orders"]
 ---
 
 # 1. Authority and scope
@@ -239,7 +242,7 @@ Overlapping hunks are still rejected.
 Other tools can show file content that the model may then edit with hashline anchors, without a second `read`. Capability `snapshots`:
 
 - **`snapshots.view`** `{toolCallId, uri, ranges?, raw?}`. `toolCallId` must belong to a running call of a tool the caller owns (cross-checked with host source metadata). Workbench reads the resource itself, through its own authorisation and read pipeline, records a **pending** snapshot and returns the rendered block (`[path#TAG]` header plus `N:LINE` rows), tag, revision and shown ranges. The caller includes the block verbatim in its tool result.
-- **Confirmation without trust in the caller.** When that call's `tool_execution_end` arrives, Workbench checks that the exact rendered block is present in the result content delivered to the model. Only then are the shown lines marked seen. A block that was cut, altered or not included marks nothing, and the pending snapshot expires.
+- **Confirmation without trust in the caller.** When that call's `tool_execution_end` arrives, Workbench checks that the exact rendered block is present in the result content delivered to the model. Only then are the shown lines marked seen. This is a verbatim-block presence check, not equality with the whole result: an extra trailing annotation block is allowed and cannot add seen lines. A block that was cut, altered or not included marks nothing, and the pending snapshot expires. Tests cover both annotation handler orders and compare redacted blocks consistently (SPEC-0013 §4.2–§4.3).
 - **`snapshots.status`** `{uri}` → current tag and revision, whether a seen snapshot exists, and whether it is stale. Counts only, never content.
 - **`snapshots.touched`** `{uris}` → hint that the caller changed these files. Workbench revalidates them (hint only; edits still revalidate revisions).
 

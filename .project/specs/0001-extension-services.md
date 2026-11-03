@@ -5,11 +5,11 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T14:25:25+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
       changes: ["Removed the secrets capability; R5/R6 superseded by SPEC-0013 detection"]
+    - revision: 6
+      reason: "User approved opt-in redaction for extension inference and owner-scoped context fields"
+      changes: ["Added secrets.redact with explicit shared-bus confidentiality limits", "Added context.fields.set through frameProducer registrations", "Kept child sessions without Workbench outside automatic protection"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -71,7 +74,7 @@ No reply after Emit completes means service unavailable, not an empty successful
 
 # 3. Request/reply and execution
 
-All requests except discover carry generation. IDs are unique per caller instance, at most 128 UTF-8 bytes. Objects use camelCase fields, RFC3339 timestamps when needed, nonnegative safe JSON integers (at most 2^53−1); larger offsets use decimal strings. No secrets, function references or SDK contexts in payloads.
+All requests except discover carry generation. IDs are unique per caller instance, at most 128 UTF-8 bytes. Objects use camelCase fields, RFC3339 timestamps when needed, nonnegative safe JSON integers (at most 2^53−1); larger offsets use decimal strings. No secrets, function references or SDK contexts in payloads, except plaintext input to the explicitly opted-in `secrets.redact` method (§8). That exception is visible to shared-bus listeners and MUST NOT be logged or retained by Workbench.
 
 Common fields:
 | Field | Meaning |
@@ -123,6 +126,8 @@ Methods:
 | status.update | registrationId of a `statusSegment`, text and style → accepted (SPEC-0009 §9) |
 | snapshots.view / snapshots.status / snapshots.touched | Edit-tracking service for other tools (SPEC-0005 §10) |
 | sessions.list / sessions.send | Live-session messaging (SPEC-0011 §8) |
+| secrets.redact | Opt-in extension inference redaction (SPEC-0013 §4.5); no secret lookup or substitution |
+| context.fields.set | registrationId of a `frameProducer` → replace its declared context fields (SPEC-0014 §5.1) |
 
 Register validates the whole descriptor atomically. Identical register for (owner, instance, kind, key) is idempotent. Changed descriptor requires explicit replace using registrationId and previous descriptorRevision; invalid replacement leaves the old descriptor intact. Cross-owner collisions never silently replace registrations. Resource aliases participate in collision detection too.
 
@@ -172,11 +177,13 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 
 # 8. Collaboration services and answers to integrating extensions
 
-Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `status`, `snapshots`, `fetch` and `sessions`. Each is optional; an unsupported capability fails explicitly.
+Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `status`, `snapshots`, `fetch`, `sessions`, `docs` and `secrets`. Each is optional; an unsupported capability fails explicitly. Owner-scoped context fields are part of `frames`.
 
 **Location (`location`).** The `discover` result includes `location` when requested: `{authority, cwd, displayCwd, projectRoot, project?, origin, revision}`. `project` is `{id, slug, component}` from SPEC-0012 §3.3, so clients use the same project identity as Workbench; it is absent in the builtin `global` project. `location.get` returns the same object. `location.changed` events carry `{previous, current, origin, revision, reason}`. Config roots are still the host session cwd (SPEC-0010 §1); the location is for scoping, not for loading config.
 
-**Secrets.** No bus capability. SPEC-0013 detects credentials itself (PiG `auth.json` including `!command` keys, environment, `.env*` files, token shapes), redacts every provider request and substitutes placeholders into every tool call, including other extensions' tools. Extensions need nothing to take part.
+**Secrets (`secrets`).** Ordinary agent turns and tool calls use SPEC-0013's boundary without producer registration. Extension-owned inference is different: no stock-host hook intercepts it. The user approved an explicit opt-in `secrets.redact` service for trusted extensions (SPEC-0013 §4.5). It returns placeholders, never real values, and does not make the shared bus a private channel. Research child sessions without Workbench remain outside automatic protection; their owner must redact each request itself.
+
+**Context fields (`frames`).** A `frameProducer` may declare typed fields on `session.model` and replace its own contribution through `context.fields.set` (SPEC-0014 §5.1). It cannot overwrite core facts, impersonate an internal source, or change another owner's contribution. Workbench composes and delivers the single context frame.
 
 **Status segments (`status`).** See SPEC-0009 §9.
 

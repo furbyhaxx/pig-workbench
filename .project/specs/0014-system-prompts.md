@@ -5,11 +5,11 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T13:38:33+01:00"
+  updated_at: "2026-11-03T14:25:25+01:00"
   created_by: "orchestrator"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User asked for templated system prompts that take over PiG's builtin, model-aware conditionals, nukii/nugent skill disclosure and context frames, and multiple instruction files per directory"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Probes PR7 and PR8 ran"
       changes: ["PR7 done: tools frames mid-run", "PR8 done: late sections read from the recorded system message and spliced in before_provider_request (§4.2)", "Fork candidate F-P4"]
+    - revision: 7
+      reason: "User approved owner-scoped contributions to session.model"
+      changes: ["Defined frameProducer contextFields and context.fields.set", "Specified knowledge_cutoff validation, model binding, collision and refresh behavior", "Preserved core ownership and data authority"]
 ---
 
 # 1. Purpose and scope
@@ -208,6 +211,27 @@ Session facts that change are frames, not prompt text. Workbench evaluates them 
 - Frames use SPEC-0002 rendering, kind `info`, trusted Workbench source. Time zone: setting `context.timezone`, else the system zone; unknown zone gives `Date is unavailable.`, never a guessed date.
 - Each source can be switched off (`context.frames.<source>`). All are on by default; `session.capabilities` carries the skill listing only with `skills.listing = "frame"`.
 
+## 5.1 Contributed model fields
+
+Approved by the user on 2026-11-03: a registered owner may contribute fields to `session.model`; Workbench still owns the source, refresh policy and delivery. This is not permission to publish under an internal source name.
+
+A SPEC-0002 `frameProducer` descriptor may add `contextFields`, initially a list of `{source: "session.model", field: "knowledge_cutoff"}`. Unknown sources or fields are rejected, not injected as arbitrary prompt text. Registration reserves each `(source, field)` atomically for that owner/instance/generation; a second owner claiming the same field gets `conflict`. Identical registration remains idempotent. No contribution may replace core model facts.
+
+`context.fields.set` requires that registrationId and the closed parameters `{source, model: {provider, id}, fields}`. It replaces the caller's current contribution for that source/model, rather than merging indefinitely. `fields: {}` withdraws it. A successful reply is `{accepted: true}`; it acknowledges the active value, not model delivery. An unowned field fails `permissionDenied`; a mismatched current model fails `staleRevision`. Context fields use SPEC-0001's ordinary envelope and size limits.
+
+The initial `fields` schema is:
+
+```json
+{"knowledge_cutoff":{"date":"2026-01-01","basis":"explicit","source":"models.dev"}}
+```
+
+`date` must be a valid `YYYY-MM-DD` calendar date; `basis` is `explicit` or `estimated`; `source` is a nonempty plain-text attribution of at most 120 Unicode characters, without terminal sequences or control characters. An estimate is always labelled estimated; absent data is omitted, never invented by Workbench. Workbench does not fetch cutoff metadata in this service.
+
+- Workbench renders the contribution as an attributed data line in the existing `session.model` frame, never as an instruction or a separate duplicate model frame. Ordering is stable by field name; producer authority does not elevate the contributed value.
+- A changed contribution follows the source's `on-change` policy and `beforePrompt` delivery; it does not rewrite served system-prompt bytes or wake an idle session. Compaction and branch boundaries include the current applicable contribution again.
+- Model changes clear the active contribution; the owner must submit data bound to the new model. Unregister, owner replacement or generation change withdraws its live value. Historical frames retain their provenance, but replay alone never reactivates a stale registration. Resume needs re-registration and a fresh model-bound value.
+- Disabling `context.frames.session.model` also disables delivery of contributed fields. Inspection still identifies the owner and the withheld contribution.
+
 # 6. Model-aware prompts
 
 ## 6.1 Rules
@@ -349,6 +373,7 @@ Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - Conditionals: `family`, `glob`, `regex`, `has_tool`, `variant` select the expected text for fixture models (one per builtin family plus an unmatched one).
 - Stability: two consecutive requests of one epoch carry identical prompt bytes; a template edit produces a diff frame and changes the prompt only at the next epoch; a model change re-renders.
 - Frames: date on every input, `on-change` sources only on change, all sources after compaction and on a new branch; frames precede the user message; nothing is committed on continuations.
+- Contributed model fields: wrong owner, unknown field, invalid date and duplicate claim refused; explicit versus estimated cutoff visibly distinguished; identical updates produce no duplicate frame; model change rejects stale data; unregister/reload withdraws live state; compaction repeats the applicable value with provenance; no system-prompt prefix change.
 - Skills: listing budget ladder; load, repeated load, unload with sub-skills; `when`, `auto_load`, declined after unload; replay after compaction; listing changes do not alter the system prompt with `listing = "frame"`.
 - Instructions: `select = "all"` injects `AGENTS.md` and `CONVENTIONS.md` of one directory in list order; `first` keeps one.
 - Prompt changes are evaluated on fixed tasks (golden transcripts, A/B, cache-hit rate) before an adapter or `builtin/workbench` change ships.

@@ -5,11 +5,11 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-03T11:47:47+01:00"
+  updated_at: "2026-11-03T14:25:25+01:00"
   created_by: "orchestrator"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User replaced the donor secret guard with the nukii-revived design, plus ask_user secret requests and a secrets scheme"
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "User renamed the settings file"
       changes: ["pig-workbench.toml renamed to Workbench.toml"]
+    - revision: 5
+      reason: "User approved explicit opt-in redaction for extension-owned inference"
+      changes: ["Specified secrets.redact, failure behavior and shared-bus limits", "Clarified research child sessions without Workbench are not automatically protected", "Added user-only redaction-owner grants and acceptance cases", "Qualified auth command expansion by registration kind and trailing-annotation redaction responsibilities"]
 ---
 
 # 1. Purpose
@@ -40,7 +43,7 @@ Source design: `host:/mnt/Projects/nukular/nukii-revived/.project/specs/secrets/
 Secrets are found, never listed by hand:
 - **Token shapes:** built-in high-confidence patterns (GitHub, GitLab, Anthropic, OpenAI, Slack, AWS access keys, JWTs, PEM private keys, …) plus user `patterns` (`name` + exactly one of `regex`, `prefix`, `suffix`, with `min-length` ≥ 8 for prefix/suffix).
 - **Environment values** whose variable **name** matches an `[env] names` glob (case-insensitive; default `*KEY*`, `*SECRET*`, `*TOKEN*`, `*PASSWORD*`, `*PASS`, `*AUTH*`, `*CREDENTIAL*`, `*PRIVATE*`): the process environment, `~/.env`, `.env*` files from the session cwd up to the repository root, and any env file a tool call references (loaded before the call runs, so its values are already known when the result comes back).
-- **PiG credentials:** every `auth.json` entry, resolved through the host (`ModelRuntime.ListCredentials`, `ModelRegistry.GetProviderAuth`), so `!command` keys arrive expanded; Workbench never runs those commands (probe S6).
+- **PiG credentials:** every `auth.json` entry, resolved through the host (`ModelRuntime.ListCredentials`, `ModelRegistry.GetProviderAuth`), with expansion verified for models.json and `RegisterProvider` key-only registrations (probe S6). `RegisterNativeProvider` with a custom resolver may return literal `!command` strings; S6 does not establish expansion there. Workbench never executes credential command strings itself or learns the literal command as though it were the resolved secret. Native-resolver coverage needs a separate probe; an unresolved inventory entry is reported as a coverage gap, not complete detection.
 - **URL passwords** in `scheme://user:password@host`.
 - **Explicit:** `write secret://…`, `ask_user` secret questions, `/workbench secrets add`.
 - **Exclusions** remove false positives: `values`, `hashes` (placeholders, no plaintext), `patterns`, `env-names`.
@@ -81,13 +84,15 @@ Verified in [probes S1–S6](../analyses/2026-11-03-secrets-host-probes/README.m
 | Every message of an agent turn, including the system message (context files such as `AGENTS.md`, other extensions' messages, frames) | `context_with_system` | replace any remaining value (`context` alone does not include the system message) |
 | Serialized payload of an agent turn | `before_provider_request` | final pass; fail closed (§4.4) |
 | Compaction and branch-summary requests | none fires | clean because they are built from session entries already redacted at entry (§4.2) |
-| Extension inference (`ModelRegistry`/`ModelRuntime` `Complete`/`Stream`) | none fires | outside the boundary (§4.5); Workbench's own inference redacts its request itself |
+| Extension inference (`ModelRegistry`/`ModelRuntime` `Complete`/`Stream`) | none fires | owner explicitly redacts its request, using `secrets.redact` when opted in (§4.5); Workbench's own inference redacts its request itself |
 
 Tool `details` and live progress updates (`tool_execution_update`) are not sent to providers and are not altered.
 
 ## 4.2 Entry-time redaction
 
 **This is the primary boundary.** Content is replaced when it enters the session (prompt, tool result, user shell), so the stored transcript already holds placeholders and every later request, compaction, branch summary, fork, export or other extension reading the session gets them too. No request hook fires for compaction or branch summaries, so nothing else protects them. `context_with_system` and `before_provider_request` are the per-turn backstop for content that entered another way (another extension's hook after Workbench's, the system prompt, new context files). Replacement is deterministic, so prompt caches stay stable.
+
+Other extensions may append trailing tool-result blocks without modifying the owner's existing blocks or Details. Workbench redacts every model-visible block present when its handler runs, but stock PiG does not guarantee that it runs last. A cooperating extension that appends text must redact that text through §4.5 before returning it, regardless of load order; if redaction is unavailable it omits the annotation with a diagnostic, never appends plaintext. The later per-turn backstops do not retroactively sanitize stored entries used for compaction or branch summaries. Both handler orders require captured transcript and provider-payload tests before claiming coverage.
 
 PiG stores the rendered system message, including `project_context`, in the session file and in compaction entries. It is rebuilt every turn and redacted by `context_with_system`; the stored copy is local only (§1).
 
@@ -109,6 +114,14 @@ PiG stores the rendered system message, including `project_context`, in the sess
 ## 4.5 Limits (stated to the agent and the user)
 
 Transformed values (base64, split, hashed) and secrets inside images escape detection. Another extension's own inference request (`ModelRegistry.Complete`) passes no hook: content it took from the session is already redacted, content it read elsewhere is not (host request H-S1). The fixed system-prompt section tells the agent not to transform secrets.
+
+**Approved opt-in service (user, 2026-11-03).** Trusted extensions may request capability `secrets` and call `secrets.redact` through SPEC-0001. Parameters are the closed object `{text: string}`; success is `{text: string, enabled: true}`. Workbench applies the same detector, vault and deterministic placeholders as its own boundary before replying. The whole request and reply must fit SPEC-0001's 64 KiB control envelope; oversized input fails `limitExceeded`, never truncates. The caller redacts every model-visible text field before each request. Arbitrarily chunking an oversized field is not safe: a secret split between calls may evade detection. Such input needs a boundary-preserving larger-input API or must be withheld; this v1 method does not advertise streaming redaction. The API never resolves placeholders back to values.
+
+- Access requires the user/runtime owner grant `secrets.redact-owners`; default `[]`. Project settings cannot grant access. Workbench checks the claimed owner against the grant, but SPEC-0001's bus cannot authenticate that claim; this is an accidental-misrouting guard, not protection against a malicious loaded extension. A grant acknowledges that the existing shared bus exposes plaintext requests to other loaded listeners; it is not a private or authenticated channel. This service is only for a runtime whose loaded extensions the user trusts, not for an external bridge. Workbench never logs the plaintext envelope or stores it in operation receipts.
+- Disabled detection, unavailable key/vault, deadline, cancellation or redaction failure returns an error without echoing the input. No raw-input success fallback. The caller MUST withhold its inference on any failure or unavailable service unless the user explicitly chooses an unprotected mode; discovery absence is not permission to send plaintext.
+- Redaction does not intercept subsequent calls. The extension remains responsible for fields added after the service returns, appended annotations, retries and outputs re-entering its own inference pipeline.
+- A research child session created without Workbench has no Workbench hooks. The parent may explicitly redact each request it constructs, but pre-redacting the initial prompt does not protect later child tool results or internal continuations. An autonomous child needs Workbench loaded or an equivalent verified request boundary before handling secret-bearing content. No claim of automatic child protection on stock PiG.
+- Fork-wide interception is a Slice 3 enhancement, not a prerequisite or a stock-host guarantee.
 
 ## 4.6 Agent awareness
 
@@ -168,6 +181,7 @@ User command `/workbench secrets`: list by scope (name, kind, source, env, place
 |---|---|---|
 | `secrets.enabled` | true | user/runtime |
 | `secrets.env-injection` | true | user/runtime |
+| `secrets.redact-owners` | [] | user/runtime only; explicit trusted-owner grants for §4.5 |
 
 Detection policy lives in `Secrets.toml` (§2), not in `Workbench.toml`.
 
@@ -182,7 +196,7 @@ Run 2026-11-03 against pig 0.5.3+1.4.0: [ANA-2026-11-03-secrets-host-probes](../
 | S3 | `context_with_system` replaces the system prompt | yes |
 | S4 | `tool_call` changes reach every tool kind | yes, including MCP and codemode children |
 | S5 | `input` covers typed, pasted and RPC prompts | yes |
-| S6 | `GetProviderAuth` expands `!command` keys | yes, models.json and extension providers |
+| S6 | `GetProviderAuth` expands `!command` keys | yes for models.json and `RegisterProvider` key-only providers; not a claim about `RegisterNativeProvider` custom resolvers |
 
 Host requests (not filed; external publication needs user go-ahead):
 - **H-S1:** fire `before_provider_request` (or a dedicated hook) for compaction, branch summaries and extension-initiated model streams.
@@ -198,6 +212,7 @@ The boundary does not depend on either: entry-time redaction covers compaction a
 | Q2 | No imports from pi-secret-guard or nukii; no legacy placeholder forms |
 | Q3 | AES-256-GCM. Measured on an Intel Core Ultra 7 265H, Go 1.24, `x/crypto` v0.58.0: 64-byte value 82 ns vs 240 ns for XChaCha20-Poly1305, 4 KiB 591 ns vs 1293 ns (2.2–2.9× faster, hardware AES); standard library, so no new dependency |
 | Q4 | `Secrets.toml` version 2 with nukii's schema; every Workbench config file is TOML (SPEC-0010 §1) |
+| Q5 | Opt-in `secrets.redact` for trusted extension-owned inference on stock PiG; child sessions without Workbench remain outside automatic protection; fork-wide interception stays in Slice 3 |
 
 # 11. Acceptance
 
@@ -207,4 +222,6 @@ The boundary does not depend on either: entry-time redaction covers compaction a
 - Vault or key failure withholds provider requests visibly; recovery resumes without restart.
 - `secret://` operations and approvals; `.not-a-secret` stops redaction everywhere and stores only the hash; `secrets://` gives the hint.
 - `ask_user` secret: value never in transcript, history or frames; env available in bash and jobs immediately, in all sessions of that scope.
+- Opt-in extension inference: granted owner receives the same placeholders as an ordinary agent turn; unknown or ungranted owner is refused; key/vault failure, disabled detection and oversized requests never return raw input as success. Capture the extension's final provider payload, not just the service reply.
+- Child-session coverage: a child without Workbench is reported as unprotected; pre-redacting its initial input is not advertised as protecting subsequent tool results or continuations.
 - Throughput: redaction of a 300k-token context adds bounded latency per request (memoized per immutable entry; measured, budget set in PLAN-0001 performance evidence).
