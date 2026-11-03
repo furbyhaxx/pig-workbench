@@ -152,7 +152,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			continue
 		}
-		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection})
+		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, budget)
 		if err == nil && target.Scheme != "file" {
 			// Non-local providers already applied their own budget.
 			page.Facts.RequestedURI = target.Requested

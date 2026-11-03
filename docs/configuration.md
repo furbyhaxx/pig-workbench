@@ -41,7 +41,7 @@ Values use TOML syntax: quote strings, use `true`/`false`, and write arrays as `
 
 Reset deletes the chosen scope's key, revealing the lower-layer value. Runtime changes never touch a file and disappear on session replacement or extension reload.
 
-Inspection shows value, source scope, source file, configuration revision and application status. A save separately reports `saved`, `published` and `pending`; unavailable consumers remain pending rather than being described as applied.
+Inspection shows value, source scope, source file, configuration revision and application status. The same data is readable through `cfg://`: `cfg://workbench/status` for readiness and the effective read policy, `cfg://<group>/<key>` for one value with provenance, and `cfg://` for every entry. A save separately reports `saved`, `published` and `pending`; unavailable consumers remain pending rather than being described as applied.
 
 ## Project restrictions
 

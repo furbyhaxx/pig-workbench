@@ -146,7 +146,7 @@ func (r *Router) Provider(target Target) (Provider, error) {
 }
 
 // Read resolves and reads one target, preserving its requested spelling in errors.
-func (r *Router) Read(ctx context.Context, target Target) (ReadResult, error) {
+func (r *Router) Read(ctx context.Context, target Target, budget Budget) (ReadResult, error) {
 	provider, err := r.Provider(target)
 	if err != nil {
 		return ReadResult{}, err
@@ -154,7 +154,7 @@ func (r *Router) Read(ctx context.Context, target Target) (ReadResult, error) {
 	if err := ctx.Err(); err != nil {
 		return ReadResult{}, err
 	}
-	result, err := provider.Read(ctx, ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: Budget{Bytes: 51200, Lines: 2000}})
+	result, err := provider.Read(ctx, ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: budget})
 	if err != nil {
 		return ReadResult{}, fmt.Errorf("read %s: %w", target.Requested, err)
 	}

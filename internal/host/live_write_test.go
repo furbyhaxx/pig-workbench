@@ -101,3 +101,69 @@ func TestLiveWriteRevisionAndLs(t *testing.T) {
 		t.Fatalf("new file mode %o, want 0600", info.Mode().Perm())
 	}
 }
+
+func TestLiveSessionResources(t *testing.T) {
+	repo := repoRoot(t)
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	if err := os.MkdirAll(work, 0700); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	var requests []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		index := len(requests)
+		requests = append(requests, body)
+		mu.Unlock()
+		steps := []struct {
+			name string
+			args map[string]any
+		}{
+			{"read", map[string]any{"path": "session://self/meta"}},
+			{"read", map[string]any{"path": "session://self/transcript:1-6"}},
+			{"read", map[string]any{"path": "session://self/entries:1-2"}},
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": fmt.Sprintf("r%d", index), "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if index < len(steps) {
+			args, _ := json.Marshal(steps[index].args)
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("c%d", index), "type": "function", "function": map[string]any{"name": steps[index].name, "arguments": string(args)}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "done"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	output := runPigJSON(t, ctx, repo, root, work, []string{"--tools", "read"}, "exercise session resources")
+	mu.Lock()
+	defer mu.Unlock()
+	if len(requests) < 4 {
+		t.Fatalf("expected 4 provider calls, got %d\n%s", len(requests), output)
+	}
+	text := func(i int) string {
+		data, _ := json.Marshal(requests[i]["messages"])
+		return string(data)
+	}
+	if !strings.Contains(text(1), `\"sessionId\"`) || !strings.Contains(text(1), `\"cwd\"`) {
+		t.Fatalf("session meta missing: %s", text(1))
+	}
+	if !strings.Contains(text(3), "## user") {
+		t.Fatalf("transcript projection missing: %s", text(3))
+	}
+}
