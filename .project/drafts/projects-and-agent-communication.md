@@ -5,9 +5,9 @@ document:
   title: "Projects, the project artifact tree, pseudo-filesystem URIs, agent addressing and the coordinator"
   description: "Proposal for a stable Project entity with .project/Project.toml, the builtin .project convention shared across worktrees, all schemes as browsable pseudo-filesystems, agent:// communication and an opt-in coordinator"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-03T08:25:00+01:00"
-  updated_at: "2026-11-03T08:55:00+01:00"
+  updated_at: "2026-11-03T09:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,14 @@ document:
         - "Added the builtin project conventions, project:// artifact tree shared across worktrees, and worktree links"
         - "Session storage: option B, verified by ANA-2026-11-03-session-bucket-symlink-probe"
         - "Components in scope; revival recorded as a later idea only"
+    - revision: 3
+      reason: "User decisions N0\u2013N6, docs:// scheme, first-touch scheme guides, question on storing artifacts in git refs"
+      changes:
+        - "Naming rule: singular schemes, root lists items, self = current; project:// lists projects; artifact:// = .project tree; out:// = spilled outputs; job://; skill:// only; history://, branch://, proc://, skills:// dropped"
+        - "by-id/by-name/by-project link directories for session://, agent:// and project://"
+        - "docs:// for PiG, Workbench and extension documentation and source; harness:// dissolved"
+        - "Progressive scheme guides injected as frames on first touch"
+        - "Analysed storing artifacts in git refs"
 ---
 
 # 1. Scope
@@ -95,6 +103,7 @@ description = "Workbench and web extensions for PiG"
 
 [component]
 slug = "pig-workbench"                # this repository's role in the project
+primary = true                        # holds project-wide artifacts (§4.3); exactly one component
 default_remote = "github.com/furbyhaxx/pig-workbench"
 default_branch = "main"
 
@@ -160,7 +169,7 @@ The `dot-project` and `agents-md` skills become Workbench conventions: shipped a
 
 - `.project/` types, naming, frontmatter, revisions and evidence follow the `dot-project` standard.
 - Workbench validates artifact frontmatter on `write`/`edit` under `.project/` (missing `document:` block, wrong type for the directory, revision not bumped) and reports problems in the tool result. It does not block the write.
-- `ls project://specs/` shows id, title, status and revision as columns from frontmatter.
+- `ls artifact://specs/` shows id, title, status and revision as columns from frontmatter.
 - `Project.toml` lives in `.project/` and is not an artifact (no frontmatter).
 - Dependency to resolve: the standard says live claims go to project-scope `tasks`, which Workbench does not provide (task tracking is excluded). The bundled skill must name whatever tasks tool is present, or drop the line when none is.
 
@@ -168,9 +177,9 @@ The `dot-project` and `agents-md` skills become Workbench conventions: shipped a
 
 SPEC-0007 already injects `AGENTS.md` and `BACKLOG.md` (ancestors, nearest, caps, diffs). Adoption adds: the bundled `agents-md` skill; a reminder frame when an agent creates a new module directory without `AGENTS.md` (configurable); and `BACKLOG.md` pointer validation (target item exists, item `status: "open"`).
 
-## 4.3 `project://`: one artifact tree for all worktrees
+## 4.3 `artifact://`: one artifact tree for all worktrees
 
-`project://<path>` resolves to `<main worktree>/.project/<path>`, whichever checkout the agent works in. All agents of a project read and write the same artifacts.
+`artifact://<path>` resolves to `<main worktree>/.project/<path>` of the current component, whichever checkout the agent works in. All agents of a project read and write the same artifacts. `project://self/artifacts/` links to the **primary** component's tree, which holds artifacts spanning components; `project://<slug>/components/<c>/artifacts/` reaches any component. Rule for the bundled skill: component-specific artifacts go into this repository's tree, artifacts spanning components into the primary's. A primary not checked out on this host is reported as unavailable with its remote.
 
 On top of the URI, Workbench makes linked worktrees consistent (verified in the probe): per-worktree sparse checkout excludes `.project/`, a `.project` symlink points to the main worktree's tree, `/.project` goes into the common `info/exclude`. The order matters (`sparse.expectFilesOutsideOfPatterns` first); Workbench does it when it creates a worktree and repairs existing ones on request.
 
@@ -178,112 +187,176 @@ Consequences to accept:
 - Artifacts are committed from the main worktree, on whatever branch it has checked out. Worktree branches never carry `.project/` changes and never conflict on them.
 - An artifact describing unmerged work in a worktree is visible to everyone immediately. This is the point.
 
-`share_project_tree = false` keeps per-branch `.project/` copies (plain git behaviour); `project://` then resolves to the current checkout.
+`share_project_tree = false` keeps per-branch `.project/` copies (plain git behaviour); `artifact://` then resolves to the current checkout.
+
+## 4.5 Storing artifacts in git refs instead (analysis, not proposed as default)
+
+Idea: keep `.project/` content out of the code branches, in its own ref.
+
+Two variants:
+- **Raw ref** `refs/pig/artifacts` written with plumbing (`hash-object`, a temporary index, `commit-tree`, `update-ref` with the expected old value as compare-and-swap). No files on disk.
+- **Orphan branch** `artifacts` (no shared history with code), materialized as a worktree, e.g. `<repo>/.worktrees/.artifacts`, with `.project` in every code checkout a symlink to it.
+
+| Aspect | Raw ref | Orphan branch + worktree | Current design (§4.3) |
+|---|---|---|---|
+| Shared across worktrees | Yes (refs live in the common dir) | Yes | Yes (sparse + symlink) |
+| Humans open as files | No; only `git show artifacts:specs/x.md`, forge UI, or a FUSE mount | Yes, normal files in any editor | Yes |
+| Agents' plain file tools | Need `artifact://` for everything | Work | Work |
+| Code PRs carry spec changes | No | No | Yes, when committed in the main worktree on the PR branch |
+| Teammates get it | Needs a fetch refspec `+refs/pig/*:refs/pig/*` on every clone | Fetched by default (it is a branch) | Fetched by default |
+| Concurrent writers | Workbench must merge trees itself on CAS failure | Normal git | Normal git |
+| Which artifact matched which code commit | Needs a trailer (`Code-Commit: <sha>`) per artifact commit | Same | Implicit in history |
+| Effort | High (plumbing, merging, conflict UX) | Low (worktree + symlinks, as §4.3/§4.4) | Low |
+
+Assessment: the raw ref is easy to read but hard to write correctly and hostile to humans; not worth it. The orphan branch is easy and keeps code history free of artifacts, at the price of losing "spec and code change in one PR" (which the `dot-project` rule "specs track reality, update in the same change" relies on). It fits as an option `[artifacts] storage = "tree" | "branch"` with `tree` as default. Decision Q1 in §9.
 
 ## 4.4 Worktree links
 
-`[worktrees] links` lists untracked files or directories that every worktree gets as symlinks to the main worktree (`.env`, local config, `.references/`). Created when Workbench creates a worktree, checked on `cd` into one, listed under `projects://<slug>/locations/`. Tracked paths are rejected (they would need the sparse technique of §4.3). A link whose target is missing is reported, not created empty.
+`[worktrees] links` lists untracked files or directories that every worktree gets as symlinks to the main worktree (`.env`, local config, `.references/`). Created when Workbench creates a worktree, checked on `cd` into one, listed under `project://<slug>/locations`. Tracked paths are rejected (they would need the sparse technique of §4.3). A link whose target is missing is reported, not created empty.
 
 # 5. Pseudo-filesystem URIs
 
-## 5.1 Model
+## 5.1 Naming rule (decided N0)
+
+- One **singular** noun per scheme. The root lists the items; `self` is the current one.
+- `by-<key>/` directories are **link directories** (like `/dev/disk/by-id/`): alternative ways to reach the same canonical entry. `ls` shows them as `link → <canonical URI>`.
+- Every result reports the canonical URI, so stored references never split across names.
+- Reserved segments in every scheme: `self`, `by-*`. Slugs and names cannot use them.
+- Dropped names (`history://`, `branch://`, `proc://`, `skills://`, `jobs://`, `harness://`, `self://`, `workbench://`, `projects://`) return "unknown scheme" with a "did you mean" pointing to the replacement. No aliases.
+
+## 5.2 Tool semantics
 
 Every scheme is a tree, like `/proc` and `/sys`. The builtin tools work on it as on files:
 
 | Tool | On a scheme |
 |---|---|
-| `ls` | Directory entries with typed columns (`ls jobs://` = jobs with state, runtime, command) |
+| `ls` | Directory entries with typed columns (`ls job://` = jobs with state, runtime, command) |
 | `read` | File content; selectors `:N`, `:A-B`, `:-N`, `:raw` |
-| `find` / glob | Walk the tree by name pattern (`find session:// -name '*parser*'`) |
-| `grep` | Search file contents across the tree (`grep -r timeout jobs://*/log`, `grep -r "hashline" session://`) |
+| `find` / glob | Walk the tree by name pattern (`find session://by-name -name '*parser*'`) |
+| `grep` | Search file contents across the tree (`grep -r timeout job://*/log`) |
 | `write` | Write a file: content, a message, a setting, or a command to a control file |
 | `edit` | Hashline edit where the file is writable |
 | stat | Through `ls -l` / `read` metadata |
 
-Entry kinds: `file`, `dir`, `link` (to another URI), `ctl` (write-only control file, like `/sys` attributes). Providers implement SPEC-0004 `stat`/`list`/`read`/`search`; when a provider has no `search`, Workbench walks with `list`+`read` under bounds (depth, entries, bytes, time) and reports incomplete results explicitly. Providers mark files `volatile` (changes on every read, e.g. status) or `immutable` (transcripts, artifacts), and can mark subtrees `noWalk` (expensive) so recursive tools skip them unless named directly.
+Entry kinds: `file`, `dir`, `link` (to another URI), `ctl` (write-only control file, like `/sys` attributes). Providers implement SPEC-0004 `stat`/`list`/`read`/`search`; when a provider has no `search`, Workbench walks with `list`+`read` under bounds (depth, entries, bytes, time) and reports incomplete results explicitly. Providers mark files `volatile` (changes on every read, e.g. status) or `immutable` (transcripts, artifacts), and subtrees `noWalk` (expensive) so recursive tools skip them unless named directly. Recursive tools never follow `by-*` links, so a walk visits each entry once.
 
 Writes to `ctl` files are actions: they obey permissions and plan/read-only modes unless they only cancel (`kill`).
 
-## 5.2 Trees
+## 5.3 Trees
 
 Files and locations:
 
 ```text
 path | file:///abs | ssh://host/abs      real files (local or remote), all tools
 local://                                 per-session scratch directory
-artifact://<n>                           spilled large outputs, immutable
+out://<n>                                spilled large tool outputs, immutable
 conflict://<n>/{ours,theirs,base,resolved}   merge conflict hunks; write resolved
 http(s)://…                              web content via static reader or fetch backend; read only
 <file>:<table>:<key>, <archive>/<inner>  adapters inside real paths (SPEC-0006)
 ```
 
-Projects and artifacts:
+Artifacts and projects:
 
 ```text
-project://                               current project's .project/ tree (shared, §4.3)
-  Project.toml
-  AGENTS.md
+artifact://                              current component's .project/ tree (shared by all worktrees, §4.3)
+  Project.toml  AGENTS.md
   specs/0001-extension-services.md       ls columns: id, title, status, revision
   plans/ analyses/ drafts/ backlog/ …
-projects://                              all projects: slug, id, components, locations, live agents
-projects://<slug>/
+project://                               all projects: slug, id, components, locations, live agents
+project://self → project://<slug>
+project://<slug>/
   Project.toml                           registry view
-  components/<component>/                link → that component's .project/ tree
-  locations                              table: host, path, kind, last seen, link status
-  sessions/                              link → session catalog filtered to the project
-  agents/                                link → live agents of the project
+  artifacts → primary component's artifact tree
+  components/<component>/artifacts → that component's tree
+  locations                              host, path, kind, last seen, worktree link status
+  sessions → session://by-project/<slug>/
+  agents → agent://by-project/<slug>/
   private/                               personal notes (writable)
+project://by-id/<prj-id> → project://<slug>
 ```
 
-Sessions:
+Sessions (canonical `session://<id>`):
 
 ```text
-session://                               sessions of the current project (newest first); ?scope=all
-session://self/ → session://<id>/
+session://                               sessions of the current project, newest first
+session://self → session://<id>
 session://<id>/
   meta                                   header, name, project, cwd, model, counts, timestamps
-  transcript                             full current branch as Markdown, paged
+  transcript                             current branch as Markdown, paged
   tree                                   entry tree with branches and labels
-  entries/<entryId>                      one entry
+  entries/<entryId>
   messages                               inter-session messages recorded in this session
+  frames/<frameId>                       frames delivered in this session (was harness://frames)
+  instructions/                          instruction files selected for this session, with reasons; ctl: pin/unpin (was harness://instructions)
+session://by-id/<id> → session://<id>    all sessions of all projects
+session://by-project/<slug>/<id> → session://<id>
+session://by-name/<name> → session://<id>   ambiguous names list all candidates
 ```
 
-Agents:
+Agents (canonical `agent://<id>`, `<id>` = session short ID):
 
 ```text
-agent://                                 live agents of the current project; ?scope=all
-agent://self/ → agent://<id>/
-agent://<id>/                            <id> = session short ID; also by name
+agent://                                 live agents of the current project
+agent://self → agent://<id>
+agent://<id>/
   status                                 state, idle time, model, activity, pending ask
   inbox                                  read: own unread messages (?wait=60&from=<id>); write: send to that agent
   messages                               conversation with this agent
-  session → session://<id>/
+  session → session://<id>
   asks/<askId>                           coordinator: read the pending form, write the answer
   ctl                                    coordinator: abort | compact | model <ref> | new | prompt <text>
-agent://by-project/<slug>/<name> → agent://<id>/
+agent://by-project/<slug>/<id> → agent://<id>
+agent://by-name/<name> → agent://<id>
 ```
 
-Runtime:
+Runtime and configuration:
 
 ```text
-jobs://                                  jobs: id, state, runtime, command
-jobs://<id>/
+job://                                   jobs: id, state, runtime, command
+job://<id>/
   status cmdline cwd
   log stdout stderr                      paged, selectors, grep-able
   stdin                                  write: send to stdin
   ctl                                    write: eof | kill | signal <name>
-harness://                               Workbench itself
-  status
-  instructions/                          selected instruction files with reasons; write pin/unpin to ctl
-  frames/<frameId>
-  integrations/<owner>
-  schemes/<scheme>
-  ctl                                    write: reload
 cfg://<group>/<key>                      effective value + provenance; write sets (typed, confirmed)
+cfg://ctl                                write: reload (was harness://reload)
 skill://<name>/{SKILL.md,…}              enabled skills and their files; read only
 ```
 
-Contributed (SPEC-0004 providers): `kb://public/…`, `kb://project/…`, `git://…`, `research://…` (pig-web), any registered scheme.
+Documentation (§5.4):
+
+```text
+docs://                                  documentation sets: owner, title, version, has source
+docs://harness/                          PiG docs bundle of the running build
+docs://harness/source/                   PiG source of the running version (read-only sparse checkout)
+docs://workbench/                        Workbench docs
+docs://workbench/schemes/<scheme>        full guide per scheme, including contributed ones (was harness://schemes)
+docs://workbench/integrations/<owner>    registrations and their state (was harness://integrations)
+docs://workbench/status                  Workbench runtime status (was harness://status)
+docs://<owner>/ , docs://<owner>/source/ registered by other extensions (e.g. docs://pig-web/)
+```
+
+Contributed resource providers (SPEC-0004): `kb://public/…`, `kb://project/…`, `git://…`, `research://…` (pig-web), any registered scheme.
+
+## 5.4 `docs://`
+
+PiG materializes its docs for the running build in `~/.pig/docs/bundle-<hash>/` and names them in the system prompt. Workbench wraps that as `docs://harness/` and becomes the single entry point for documentation of the harness, Workbench and other extensions.
+
+- **PiG docs.** `docs://harness/` maps to the running build's bundle (`pig docs path`). Workbench replaces the bundle paths in the system prompt with `docs://harness/…` (mechanism to verify: system prompt hook).
+- **PiG source.** A read-only sparse checkout of the PiG repository at the running version (`pig --version` → `0.5.3+1.4.0.74f46864`, commit `74f46864`), reachable as `docs://harness/source/`. Location: you asked for `~/.pig/docs/source/{version|current}/`. Risk: PiG owns `~/.pig/docs/` and prunes old bundles on sync; it documents pruning only for `bundle-*`, so a sibling `source/` probably survives, but that is PiG's directory. Alternative: Workbench data dir with the same URI. Decision Q2.
+- **Fetching.** First access clones (blobless, sparse: docs, `extensions/sdk`, `cmd`, `internal` or a configured set) and checks out the build's commit. Network access is explicit, never at startup; offline shows what is cached. Versions other than the running one are retained by count (default 3).
+- **Extensions.** Registration kind `docs`: `{key, title, version, root, source?: {repo, ref, paths} | {dir}}`. `root` must be a directory inside the extension's package or data directory. Contributions appear as `docs://<owner>/` and `docs://<owner>/source/`, read-only, searchable.
+- **Every docs tree** is `immutable`, `grep`/`find`/`ls` work, hashline anchors are off (nothing to edit).
+
+## 5.5 Progressive guides on first touch
+
+Tool descriptions and the system prompt carry only what is always needed: one line per scheme ("`session://` sessions: ls, read, by-id/by-project/by-name"). The full usage guide arrives when the agent first touches a scheme or a sub-namespace in a session:
+
+- Each scheme (builtin or registered) declares a **guide**: short Markdown (≤ 2 KiB) about its tree, link directories, writable files, `ctl` commands, limits and examples. The full version lives at `docs://workbench/schemes/<scheme>`.
+- The first `ls`/`read`/`find`/`grep`/`write` on a scheme (and on a sub-namespace that declares its own guide, e.g. `session://by-project/`) injects the guide as a frame (SPEC-0002, kind `instruction`, source `workbench.guide.<scheme>`), alongside the tool result, like `AGENTS.md` on first path touch (SPEC-0007).
+- Once per session and guide revision. Re-injected after compaction drops it, or when the guide revision changes (provider update).
+- Settings: `guides.enabled` (true), `guides.maxBytes`, per-scheme opt-out.
+- A provider's guide is data authority unless the user trusts that provider (SPEC-0002 authority rules), so a contributed scheme cannot smuggle instructions.
 
 # 6. Agent communication
 
@@ -295,7 +368,7 @@ An agent is an addressable conversation participant: today each live session's m
 
 | Action | URI form |
 |---|---|
-| List | `ls agent://`, `ls agent://?scope=all`, `ls projects://<slug>/agents/` |
+| List | `ls agent://`, `ls agent://by-project/<slug>/`, `ls agent://by-name/` |
 | Look | `read agent://<id>/status` |
 | Send | `write agent://<id>/inbox` (text, or JSON5 `{subject, body, attachments, wake, expectReceipt, replyTo, progress}`) |
 | Receive | `read agent://self/inbox?wait=60&from=<id>` |
@@ -307,7 +380,7 @@ Receipt `delivered` (aside at the next boundary), `woken` (idle agent started a 
 
 ## 6.4 Broadcast
 
-`write projects://<slug>/agents/inbox` sends to every live agent of a project. Setting `sessions.broadcast` (default `project`; `off`, `all`).
+`write agent://by-project/<slug>/inbox` sends to every live agent of a project. Setting `sessions.broadcast` (default `project`; `off`, `all`).
 
 ## 6.5 Later idea, not designed
 
@@ -352,28 +425,34 @@ Fixed, because they are not friction but correctness: enabling stays a user acti
 
 ## 7.4 Interface
 
-`agent://<id>/asks/<askId>` and `agent://<id>/ctl` (§5.2). Without a granted class they return `policyDenied` naming the class.
+`agent://<id>/asks/<askId>` and `agent://<id>/ctl` (§5.3). Without a granted class they return `policyDenied` naming the class.
 
 # 8. Effects on specs (after approval)
 
 | Spec | Change |
 |---|---|
-| SPEC-0004 | §5: walking rules for `find`/`grep` over providers (bounds, `volatile`, `immutable`, `noWalk`, `ctl` entries). §9: replace route list with the trees of §5.2; project membership by project ID |
-| SPEC-0005 | Hashline anchors on `project://` files (real backing files) |
-| SPEC-0007 | Ambient class `projectPrivate`; AGENTS.md reminder; BACKLOG pointer validation |
-| SPEC-0008 | Worktree creation applies §4.3 and §4.4; jobs tree with `stdin` and `ctl` |
-| SPEC-0010 | Project registry, `Project.toml` schema, bucket symlinks, `coordinator.*` and `projects.*` settings |
+| SPEC-0001 | Registration kind `docs`; scheme `guide` field |
+| SPEC-0002 | Guide frames (`workbench.guide.<scheme>`) |
+| SPEC-0004 | §2 reserved scheme list per §5.1; §5 walking rules (bounds, `volatile`, `immutable`, `noWalk`, `ctl`, links not followed); §9 replaced by the trees of §5.3; project membership by project ID |
+| SPEC-0005 | Hashline anchors on `artifact://` files (real backing files) |
+| SPEC-0006 | `artifact://` → `out://` for spilled outputs |
+| SPEC-0007 | Ambient class `projectPrivate`; guides on first touch; AGENTS.md reminder; BACKLOG pointer validation |
+| SPEC-0008 | Worktree creation applies §4.3 and §4.4; `job://` tree with `stdin` and `ctl` |
+| SPEC-0009 | Inspection routes moved to `session://self/frames`, `session://self/instructions`, `docs://workbench/…`, `cfg://ctl` |
+| SPEC-0010 | Project registry, `Project.toml` schema, bucket symlinks, `coordinator.*`, `projects.*`, `guides.*`, docs cache settings |
 | SPEC-0011 | Addressing via `agent://` trees, project-scoped discovery, broadcast, coordinator requests |
-| New spec | Projects and conventions (§3–§4) |
-| pig-web | KB project scope keyed by project ID (handoff `HO-workbench-answers`) |
+| PLAN-0001, sketches | Scheme names in WB-07…WB-10 and the UI captures |
+| New spec | Projects, conventions and URI namespace (§3–§5) |
+| pig-web | KB project scope keyed by project ID; `docs://pig-web/` registration (handoff `HO-workbench-answers`) |
 
-# 9. Open questions
+# 9. Decisions
+
+Decided (rev 3): N0 singular rule; N1 `project://` = all projects, `artifact://` = artifact tree, `out://` = spilled outputs; N2 drop `history://`/`branch://`; N3 `job://`, `docs://` replaces `harness://`; N4 `skill://`; N5 `by-id/`, `by-name/`, `by-project/` link directories with canonical `session://<id>`; N6 per-component trees plus a primary.
+
+Open:
 
 | # | Question |
 |---|---|
-| N1 | `project://` = current project's artifact tree and `projects://` = all projects (this draft), or `project://` = all projects with the current one under `project://self/`? |
-| N2 | Keep `history://` and `branch://` as aliases of `session://`, or drop them? |
-| N3 | Keep `proc://` as alias of `jobs://`; `self://`/`workbench://` as aliases of `harness://`? |
-| N4 | `skill://` vs `skills://`: one name? |
-| N5 | Session catalog: `session://` (current project) plus `projects://<slug>/sessions/`, or only one of them? |
-| N6 | `.project/` per component repository (this draft) or one tree for the whole project in the primary component? |
+| Q1 | Artifacts storage option `tree` (default) / `branch` (orphan branch + worktree), or tree only? (§4.5) |
+| Q2 | PiG source checkout under `~/.pig/docs/source/` (PiG's directory) or Workbench's data directory, same URI either way? (§5.4) |
+| Q3 | Where Workbench runtime state goes now that `harness://` is gone: frames/instructions under `session://self/`, status and integrations under `docs://workbench/`, reload as `cfg://ctl` (this draft)? |
