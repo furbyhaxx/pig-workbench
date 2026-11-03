@@ -8,3 +8,4 @@ Pure source snapshots, tags and rendering for hashline editing; no SDK or filesy
 - Line numbers are one-based original-source coordinates; `Line == 0` only denotes EOF for `PUT_INSERT_AFTER`, never a source line. `Op.Target` is set only for `PUT_FROM_REGISTER`.
 - A CUT without `@name` uses the batch-only anonymous register. `Document.NoFinalNewline` retains the patch's terminal-newline choice.
 - `StageLines` transforms validated line operations against an intact `Normalize` snapshot; it returns LF bytes and separate, sorted consumed source spans. Callers resolve blocks and register pastes, capture CUT registers, and validate seen state and file operations separately.
+- `CheckSeen` authorizes line ops against fully delivered intervals in the matching current epoch; callers must bind the view to the exact snapshot. Only explicit `<1` and `>$` bypass anchor visibility; policy bypass is a host decision.
