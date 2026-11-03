@@ -56,6 +56,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
 	a.registerTools(ext)
 	a.registerWriteAndList(ext)
+	a.registerSearchTools(ext)
 	a.registerCommands(ext)
 }
 
