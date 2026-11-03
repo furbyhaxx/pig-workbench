@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 21
+  revision: 22
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T13:53:58+01:00"
+  updated_at: "2026-11-03T14:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -74,6 +74,9 @@ document:
     - revision: 21
       reason: "User split delivery into three slice plans"
       changes: ["Delivery now sequenced by PLAN-0002 (foundation), PLAN-0003 (feature-complete), PLAN-0004 (completion)", "Milestones stay as the definition of scope and exits; the slices own order and detail"]
+    - revision: 22
+      reason: "User defined the foundation slice and decided D5.b and D5.d"
+      changes: ["Slice table: Slice 1 is everything fully working on final implementations, Slice 2 is depth only", "D5.b adopted, D5.d rejected"]
 ---
 
 # 1. Outcome and authority
@@ -110,7 +113,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
 - **done (M0.2, secrets):** [Secrets probes](../analyses/2026-11-03-secrets-host-probes/README.md) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** [PLAN-0002](0002-slice-1-foundation.md) Phase A: M0.1 decisions (D5.b, D5.d), M0.4 contract freeze including pig-web's [M0.4 inputs](../handoff/pig-web-m0-4-inputs.md). Personal PiG fork (D13) in parallel.
+- **now:** [PLAN-0002](0002-slice-1-foundation.md) Phase A: M0.4 contract freeze including pig-web's [M0.4 inputs](../handoff/pig-web-m0-4-inputs.md). Personal PiG fork (D13) in parallel.
 - **next:** PLAN-0002 Phases B–L, then [PLAN-0003](0003-slice-2-feature-complete.md) and [PLAN-0004](0004-slice-3-completion.md).
 - **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR8: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3). PR7: mid-run `tools` frames work; PR8: late sections (`mcp_servers`) need the `before_provider_request` splice (fork candidate F-P4). SPEC-0014 decisions Q1–Q6 accepted.
 - **later:** Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3), in PLAN-0004 C5.
@@ -121,8 +124,8 @@ The milestones in section 5 define scope and exits; three slice plans own the or
 
 | Slice | Plan | Contains | Exit |
 |---|---|---|---|
-| 1 Foundation | [PLAN-0002](0002-slice-1-foundation.md) | M0.1 decisions, M0.4, M1, plus the foundation of M2–M7: every subsystem's data model, persistence, public contract and one working path; every extension seam live | pig-web co-load gate |
-| 2 Feature-complete | [PLAN-0003](0003-slice-2-feature-complete.md) | Remaining functional scope of M2–M7 with plain UI | Every scope row usable by agents in TUI, RPC and print |
+| 1 Foundation | [PLAN-0002](0002-slice-1-foundation.md) | M0.4, M1 and the foundation of M2–M7: every tool, extension seam and abstraction, the URI system with core schemes, the system prompt, fully working on final implementations; no stubs | pig-web co-load gate and a live agent run |
+| 2 Depth | [PLAN-0003](0003-slice-2-feature-complete.md) | Depth of M2–M7 on the same engines (adapters, remaining schemes, SSH, worktrees, PTY, parity heuristics, secondary flows), plain UI | Every scope row usable by agents in TUI, RPC and print |
 | 3 Completion | [PLAN-0004](0004-slice-3-completion.md) | M0.5, UI part of M7, fork-dependent features, enhancements, performance, platforms, M8 | Release gate |
 
 A milestone can be implemented incrementally. Shipping the complete extension requires all scope rows to pass; an early milestone is not a reduced-scope release.
@@ -245,7 +248,7 @@ Sequencing and detail live in the slice plans (section 1, Delivery slices); the 
 3. Enumerate hashline grammar/recovery/preview behaviors, read adapters/selectors, dynamic commands and instruction hooks into a feature matrix tied to WB IDs.
 4. Mark each row as donor behavior, intentional improvement, or unresolved design—not simply “ported”.
 
-**Status (2026-11-02):** test-level audit done: [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), 3,269 donor test titles mapped. Gaps were added to SPEC-0002, 0003, and 0005–0010 as "Donor parity" sections. Open: the decisions in audit §4 and the G5.10 streaming probe. Line-by-line source reading happens per work package, when code is ported.
+**Status (2026-11-02):** test-level audit done: [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), 3,269 donor test titles mapped. Gaps were added to SPEC-0002, 0003, and 0005–0010 as "Donor parity" sections. Audit §4 decisions closed 2026-11-03 (D5.b adopted, D5.d rejected; the rest recorded in the specs). Open: the G5.10 streaming probe (PLAN-0003 W1). Line-by-line source reading happens per work package, when code is ported.
 
 **Deliverable:** the ten existing `.project/specs/0001-*.md` through `0010-*.md` contracts revised with full donor/probe evidence and an approved backend/format matrix. The draft behavior/command inventories exist; source-parity audit and runtime verification remain. Do not reuse allocated specification IDs. Raw probe evidence belongs under `.project/analyses/<probe>/evidence/`.
 
