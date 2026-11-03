@@ -13,5 +13,7 @@ require (
 require (
 	github.com/nikolalohinski/gonja/v2 v2.9.1
 	github.com/odvcencio/gotreesitter v0.56.0
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.23.0
 )
