@@ -83,7 +83,7 @@ func ValidateForm(form Form) (Form, error) {
 	if len(form.Questions) == 0 || len(form.Questions) > maxQuestions {
 		return Form{}, fmt.Errorf("questions: must contain 1 to %d questions", maxQuestions)
 	}
-	form.Questions = slices.Clone(form.Questions)
+	form = cloneForm(form)
 	ids := make(map[string]struct{}, len(form.Questions))
 	for i := range form.Questions {
 		q := &form.Questions[i]
@@ -140,18 +140,15 @@ func ValidateForm(form Form) (Form, error) {
 			if q.Secret == nil {
 				return Form{}, fmt.Errorf("%s.secret: secret metadata is required", field)
 			}
-			secret := *q.Secret
-			if secret.Scope == "" {
-				secret.Scope = "project"
+			if q.Secret.Scope == "" {
+				q.Secret.Scope = "project"
 			}
-			if err := validateSecret(field+".secret", secret); err != nil {
+			if err := validateSecret(field+".secret", *q.Secret); err != nil {
 				return Form{}, err
 			}
-			q.Secret = &secret
 		} else if q.Secret != nil {
 			return Form{}, fmt.Errorf("%s.secret: only allowed for secret questions", field)
 		}
-		q.Options = slices.Clone(q.Options)
 		values := make(map[string]struct{}, len(q.Options))
 		for j, option := range q.Options {
 			optionField := fmt.Sprintf("%s.options[%d]", field, j)
@@ -189,6 +186,19 @@ func ValidateForm(form Form) (Form, error) {
 		return Form{}, fmt.Errorf("form: exceeds %d bytes", maxPayload)
 	}
 	return form, nil
+}
+
+func cloneForm(form Form) Form {
+	form.Questions = slices.Clone(form.Questions)
+	for i := range form.Questions {
+		question := &form.Questions[i]
+		question.Options = slices.Clone(question.Options)
+		if question.Secret != nil {
+			secret := *question.Secret
+			question.Secret = &secret
+		}
+	}
+	return form
 }
 
 func validateText(field, value string, multiline bool) error {
