@@ -3,11 +3,11 @@ document:
   type: "specification"
   id: "SPEC-0014"
   title: "System prompt templates, context frames and progressive skill disclosure"
-  description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), starting byte-identical to PiG's builtin; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
+  description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T12:53:30+01:00"
+  updated_at: "2026-11-03T13:03:50+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -17,11 +17,14 @@ document:
     - revision: 2
       reason: "User correction on OpenAI behaviour; host limits made explicit"
       changes: ["§6.3 example: OpenAI models over-apply security, not under-apply", "§3.3 raw sections only with force delivery", "§2 Anthropic OAuth identity block"]
+    - revision: 3
+      reason: "User: no verbatim copy of PiG's prompt; keep PiG's sections adapted to Workbench; host changes go to a personal PiG fork"
+      changes: ["builtin/pig and the parity check removed; builtin/workbench is the default and keeps PiG's sections with adapted content (§7)", "<docs> as docs:// URIs, new <resources> section, <cwd> holds the stable project root", "H-P1 becomes fork patch F-P1; no upstream filing", "Acceptance, probes, settings and decisions updated"]
 ---
 
 # 1. Purpose and scope
 
-Workbench owns the system prompt. It renders it from Jinja templates and sends it in place of PiG's builtin. The first builtin template, `builtin/pig`, reproduces PiG's prompt byte for byte, so taking over changes nothing until a template changes. Model-aware templates are built on top: the same instructions, worded for each model family, plus countersteering for a family's known weaknesses.
+Workbench owns the system prompt. It renders it from Jinja templates and sends it in place of PiG's builtin. The builtin template, `builtin/workbench` (§7), keeps PiG's sections, order and markup and adapts their content: documentation as `docs://` URIs, skills as `skill://`, instructions from SPEC-0007, a new `<resources>` section. It does not copy PiG's text. Model-aware templates are built on top: the same instructions, worded for each model family, plus countersteering for a family's known weaknesses.
 
 Three related mechanisms ship with it, because a cacheable prompt needs them:
 - **Context frames** (nugent): date, environment, project, location, model and capabilities arrive as framed messages before the user's input, not in the system prompt.
@@ -68,27 +71,27 @@ Configuration: strict undefined, `trim_blocks` and `lstrip_blocks` on, trailing 
 | user | `sdk.AgentDir()/system-prompts/` | user |
 | project | `sdk.ConfigDirName()/system-prompts/` in the project | only while the host trusts the project (SPEC-0010 §5) |
 
-- The entry template is the setting `prompt.template`: `builtin/pig` (default), `builtin/workbench` (§7), or a file name such as `system.md` in the user or project root. A project file shadows the user file of the same name; partials fall back to the user root.
+- The entry template is the setting `prompt.template`: `builtin/workbench` (default, §7) or a file name such as `system.md` in the user or project root. A project file shadows the user file of the same name; partials fall back to the user root.
 - Includes resolve only below these roots. Absolute paths, `..`, backslashes, NUL bytes and symlinks that leave the root are rejected after canonicalisation.
-- PiG's own `SYSTEM.md`, `APPEND_SYSTEM.md`, `--system-prompt` and `--append-system-prompt` keep working: they reach the templates as `host.custom_prompt` and `host.append`, and `builtin/pig` applies them exactly as PiG does.
+- PiG's own `SYSTEM.md`, `APPEND_SYSTEM.md`, `--system-prompt` and `--append-system-prompt` keep working: they reach the templates as `host.custom_prompt` and `host.append`, and `builtin/workbench` applies them where PiG does: the custom prompt replaces the preamble, the append fills `<addendum>`.
 
 ## 3.3 Sections
 
 A template renders **sections**, the unit PiG records and patches:
 
 ```jinja
-{% extends "builtin/pig" %}
+{% extends "builtin/workbench" %}
 {% block rules %}
 {{ super() }}
 {% if model is family("openai") %}
-- Do not refuse ordinary security work in this repository: …
+- Do exactly the requested scope. Add security measures only for a concrete threat in this change: …
 {% endif %}
 {% endblock %}
 ```
 
 - Text before the first section is the preamble. `{% section "name" %}…{% endsection %}` (custom tag) delimits a section; its body is wrapped as `<name>\n…\n</name>`, as PiG does. `{% section "name" raw %}` emits it untagged; only `force` delivery can send untagged sections (PiG wraps every custom section).
 - Names follow PiG's rule `[a-z][a-z0-9_-]*`; duplicates are a render error. A section whose body is empty after trimming is left out.
-- `builtin/pig` wraps each PiG section in a block of the same name (`preamble`, `tools`, `rules`, `docs`, `addendum`, `project_context`, `skills`, `cwd`), so a child template changes one section without copying the rest.
+- `builtin/workbench` wraps each section in a block of the same name (`preamble`, `tools`, `rules`, `resources`, `docs`, `addendum`, `project_context`, `skills`, `cwd`), so a child template changes one section without copying the rest.
 
 ## 3.4 Inputs
 
@@ -98,11 +101,11 @@ Only typed values that are fixed for the request. No clock, environment variable
 |---|---|
 | `model` | `provider`, `id`, `name`, `api`, `family` (§3.5), `reasoning`, `context_window`, `max_output`, `thinking` (level) |
 | `tools` | `selected` (ordered), `declared` (selected minus hidden), `hidden`, `snippets` (name → text), `guidelines` (name → list) |
-| `host` | `custom_prompt`, `append`, `prompt_guidelines`, `docs` (PiG docs paths, absent when stripped), `context_files` (path, content), `skills` (PiG's discovered list), `sections` (other extensions' custom sections, name → text), `mode` (`interactive`, `rpc`, `print`, `json`), `os`, `shell` |
+| `host` | `custom_prompt`, `append`, `prompt_guidelines`, `docs` (whether PiG's docs bundle is present), `context_files` (path, content), `skills` (PiG's discovered list), `sections` (other extensions' custom sections, name → text), `mode` (`interactive`, `rpc`, `print`, `json`), `os`, `shell` |
 | `instructions` | Stable instruction set selected by SPEC-0007 at the epoch start: list of `{class, path, display_path, role, content}` |
 | `skills` | Workbench catalog (§8): `{name, description, location, source, bundle}`, plus `listing` (`prompt` or `frame`) |
 | `workbench` | Prompt-relevant settings: `edit.mode`, `read` features, `secrets.enabled`, registered schemes (name, one-line summary) |
-| `cwd` | Working location; volatile. Only `builtin/pig` uses it (PiG's `<cwd>`); `builtin/workbench` uses the location frame |
+| `project_root` | Host session cwd; stable for the session (`<cwd>`). The current Workbench location is a frame (§5), not a template input |
 
 Helpers:
 
@@ -141,17 +144,16 @@ match = ["anthropic/*", "*/claude-*"]
 | Mode | Mechanism | Recorded | Status |
 |---|---|---|---|
 | `force` | `before_agent_start` sets `forceSystemPrompt` to the full render | No: requests get the render; the transcript keeps PiG's base sections | works today (PR1) |
-| `sections` | `before_agent_start` sets the render as sections: preamble and deletions need host request **H-P1** | Yes, patched by section name; mid-conversation system messages for supporting models | needs H-P1; interim variant in PR3 |
+| `sections` | `before_agent_start` sets the render as sections: preamble, deletions and section order need fork patch **F-P1** (§11) | Yes, patched by section name; mid-conversation system messages for supporting models | needs F-P1 |
 
-Default `prompt.delivery = "force"`. `sections` becomes the default once H-P1 lands, because it keeps the transcript truthful (exports, forks, compaction `systemMessage`) and re-sends only changed sections.
+Default `prompt.delivery = "force"`. `sections` becomes the default once the PiG fork carries F-P1, because it keeps the transcript truthful (exports, forks, compaction `systemMessage`) and re-sends only changed sections.
 
-Interim `sections` without H-P1 (PR3): `customPrompt` = preamble, `contextFiles` and `skills` emptied, other sections as custom sections. PiG then keeps `<cwd>` in second place and cannot drop it, so `builtin/pig` is not byte-identical in this mode; `/workbench prompt` says so.
+Without F-P1, stock PiG keeps its own preamble, keeps its section order, appends new sections after `<cwd>` and cannot delete a section, so `builtin/workbench` (adapted preamble, `<resources>` before `<docs>`) cannot be expressed. Workbench refuses `sections` on a host without F-P1 (detected by a capability flag in the fork) and says so in `/workbench prompt`.
 
-## 4.2 Parity and failure
+## 4.2 Failure and other extensions
 
-- **Parity check** (`prompt.parity-check`, default true): while the entry template is `builtin/pig`, Workbench compares its render with the host-rendered `systemPrompt` of the same `before_agent_start`. On a difference it sends the host's prompt unchanged for that run, records the first differing section and byte offset, and shows a notice once per session. A PiG update that changes its prompt therefore degrades to "PiG's prompt", never to a wrong one.
 - **Render error** (syntax, strict undefined, limit, timeout): use the last good render of this epoch; without one, leave the host prompt. Notice names the template, line and cause. Never send an empty or partial prompt.
-- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/pig` appends them where PiG would. A handler that runs after Workbench and edits sections is ignored by `force`; Workbench detects that at the next `before_agent_start` (sections it did not see) and reports the extension. Handler order is probe PR2.
+- **Other extensions**: Workbench passes their custom sections to the template as `host.sections`; `builtin/workbench` appends them where PiG would. A handler that runs after Workbench and edits sections is ignored by `force`; Workbench detects that at the next `before_agent_start` (sections it did not see) and reports the extension. Handler order is probe PR2.
 
 ## 4.3 Epochs: what re-renders when
 
@@ -185,7 +187,7 @@ Session facts that change are frames, not prompt text. Workbench evaluates them 
 - Delivery: `SendMessage(steer)` from `before_agent_start` (SPEC-0002 delivery `beforePrompt`), so frames precede the user's message and are persisted. Persisting keeps history byte-stable; projecting them per request would rewrite the past.
 - The ledger is rebuilt from the branch's `pig-workbench.frame` entries; a compaction entry after a source's last frame counts as a boundary.
 - Frames use SPEC-0002 rendering, kind `info`, trusted Workbench source. Time zone: setting `context.timezone`, else the system zone; unknown zone gives `Date is unavailable.`, never a guessed date.
-- Each source can be switched off (`context.frames.<source>`). With `builtin/pig`, only `session.date` is on by default (PiG's prompt carries cwd and skills already); with `builtin/workbench`, all are on.
+- Each source can be switched off (`context.frames.<source>`). All are on by default; `session.capabilities` carries the skill listing only with `skills.listing = "frame"`.
 
 # 6. Model-aware prompts
 
@@ -200,7 +202,7 @@ Session facts that change are frames, not prompt text. Workbench evaluates them 
 
 ```text
 system-prompts/
-  system.md                    entry (or builtin/workbench)
+  system.md                    entry; usually extends builtin/workbench
   partials/
     autonomy.md                shared wording
     family/openai/autonomy.md  family wording, found by variant("autonomy.md")
@@ -213,7 +215,24 @@ The harness dossiers record how each vendor prompts its own models in its native
 
 # 7. `builtin/workbench`
 
-The Workbench default for users who opt in (`prompt.template = "builtin/workbench"`). Sections: identity and operating policy, harness rules, tool rules (from tool guidelines), resource schemes, skills usage rule, stable instructions (§3.4 `instructions`), host addendum, other extensions' sections. No `<cwd>`, no skill listing (frames), no volatile values. Its content is written after the family analysis; until then it is `builtin/pig` with `cwd` and `skills` moved to frames. `force` delivery is required to drop `<cwd>` until H-P1.
+The default entry template. It keeps PiG's sections, order and markup, so models and users who know PiG's prompt recognise it, and adapts their content to Workbench. It does not reproduce PiG's text.
+
+| Section | PiG content | Workbench content |
+|---|---|---|
+| `preamble` | "You are an expert coding assistant operating inside pig…" | Same role, plus one sentence that Workbench resources are reachable by URI through the file tools; `host.custom_prompt` replaces it as in PiG |
+| `<tools>` | One line per declared tool, then "you may have access to other custom tools" | Same, from `tools.declared` and snippets (Workbench's tool overrides supply their own snippets) |
+| `<rules>` | Tool guidelines, prompt guidelines, "Be concise", "Show file paths clearly", bash fallback for missing grep/find/ls | Tool and prompt guidelines; Workbench rules (selectors, edit mode, secret placeholders) only for active features; PiG's generic lines kept unless a family adapter rewords them; bash fallback dropped when Workbench provides the tools |
+| `<resources>` (new) | — | Registered schemes, one line each, and "`ls scheme://` and the scheme guide explain the tree"; changes with registrations, so it re-renders per epoch |
+| `<docs>` | Absolute paths to PiG's docs bundle, README and examples, topic → file map | Same topic map as URIs: `docs://harness/…` (PiG), `docs://workbench/…`, `docs://<owner>/…` for registered extensions; source under `docs://harness/source/` |
+| `<addendum>` | APPEND_SYSTEM.md and `--append-system-prompt` | Unchanged (`host.append`) |
+| `<project_context>` | "Project-specific instructions and guidelines:" and one `<project_instructions path=…>` per context file | Same markup, filled from the SPEC-0007 stable set (`instructions`), with `display_path` |
+| `<skills>` | `<available_skills>` with file locations | Same markup with `skill://<name>` locations and the load/unload rule (§8); left out when `skills.listing = "frame"` |
+| `<cwd>` | Host cwd | Project root: the host session cwd, which Workbench `cd` does not change (SPEC-0010 §1), so the section is stable for the session. The current Workbench location arrives as the `session.location` frame |
+| others | Custom sections of other extensions, appended | Appended where PiG would, from `host.sections` |
+
+- Each section is a block of the same name, so user templates change one section with `{% extends "builtin/workbench" %}` and `{% block rules %}{{ super() }}…{% endblock %}`.
+- **Structure check:** Workbench compares the section names of the host-rendered prompt with the names it knows. A section that a later PiG version adds is reported in `/workbench prompt` and passed to templates in `host.sections`, so it is not lost silently.
+- Family adapters (§6.3) change wording inside these sections, not the structure.
 
 # 8. Progressive skill disclosure
 
@@ -275,13 +294,13 @@ select = "all"
 placement = "ancestors"
 ```
 
-Separate classes remain the tool when files need different placement, caps or roles. When Workbench owns the prompt, the host's `contextFiles` are cleared and the stable set (§3.4 `instructions`) replaces them; `builtin/pig` renders it with PiG's `<project_instructions>` markup. While `prompt.enabled = false`, SPEC-0007 §9 suppression applies unchanged.
+Separate classes remain the tool when files need different placement, caps or roles. When Workbench owns the prompt, the host's `contextFiles` are cleared and the stable set (§3.4 `instructions`) replaces them; `builtin/workbench` renders it with PiG's `<project_instructions>` markup. While `prompt.enabled = false`, SPEC-0007 §9 suppression applies unchanged.
 
 # 10. Commands, resources and settings
 
-- `/workbench prompt`: entry template and its chain, matched family, delivery mode, parity state, epoch, last error, rendered sections with byte counts, diff against PiG's builtin. `/workbench prompt render --model <ref> [--tools …]` previews another model without sending anything.
+- `/workbench prompt`: entry template and its chain, matched family, delivery mode, epoch, last error, rendered sections with byte counts, diff against the host-rendered prompt, structure check result. `/workbench prompt render --model <ref> [--tools …]` previews another model without sending anything.
 - `session://<id>/system-prompt`: the prompt served in the current epoch (read only). `docs://workbench/prompts`: template variables, helpers, gonja differences.
-- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/pig`), `prompt.delivery` (`force`), `prompt.parity-check` (true), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing` (`prompt`), `skills.listing-budget` (4096), `skills.conditions` (true).
+- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/workbench`), `prompt.delivery` (`force`), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing` (`prompt`), `skills.listing-budget` (4096), `skills.conditions` (true).
 
 # 11. Host probes and requests
 
@@ -289,17 +308,17 @@ Separate classes remain the tool when files need different placement, caps or ro
 |---|---|
 | PR1 | A forced prompt from `before_agent_start` reaches every request of the run, including after a mid-run tool change, and is absent from the transcript. What does the compaction request and its `systemMessage` contain? |
 | PR2 | Handler order between extensions; can Workbench run last, and what do later handlers see after a forced prompt? |
-| PR3 | Interim `sections`: `customPrompt` + empty `contextFiles`/`skills` + custom sections are recorded and patched; which providers get mid-conversation system messages; position of `<cwd>` |
+| PR3 | Which providers get mid-conversation system messages for section patches; on the fork, that a reordered, preamble-replacing section set is recorded and patched correctly |
 | PR4 | `steer` from `before_agent_start` precedes the prompt in TUI, RPC and print modes, on the first prompt of a session and after compaction (extends P30) |
-| PR5 | Parity: `builtin/pig` equals the host render for fixtures: default tools, hidden tools, no `read`, `SYSTEM.md`, `APPEND_SYSTEM.md`, repeated `--append-system-prompt`, docs stripped, custom sections from another extension, skills with `disable-model-invocation`, Windows-style cwd |
+| PR5 | Host inputs reach templates intact for fixtures: default tools, hidden tools, no `read`, `SYSTEM.md`, `APPEND_SYSTEM.md`, repeated `--append-system-prompt`, docs stripped, custom sections from another extension, skills with `disable-model-invocation`, Windows-style cwd |
 | PR6 | `ModelInfo` exposes enough to match families (provider and id); thinking level is readable in `before_agent_start` |
 
-Host request (not filed; external publication needs user go-ahead):
-- **H-P1:** in `before_agent_start` custom sections, allow `preamble` and let `null` delete a base section (the transcript patch format already uses `null` for removal).
+Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
+- **F-P1:** in `before_agent_start`, accept a complete ordered section list (preamble included, base sections deletable and reorderable) and record it as the session's system sections. Exposes a capability flag that Workbench checks.
 
 # 12. Acceptance
 
-- `builtin/pig` byte-identical to PiG's prompt for every PR5 fixture; the parity check falls back on a seeded difference.
+- `builtin/workbench` golden renders for every PR5 fixture: PiG's section order and markup, `<docs>` without filesystem paths, `<skills>` with `skill://` locations, `<cwd>` unchanged after a Workbench `cd`; a host prompt with an unknown section is reported by the structure check.
 - Template chain: user/project shadowing, `builtin/` not shadowable, untrusted project ignored, traversal and symlink escape rejected, strict undefined error, limits and deadline.
 - Conditionals: `family`, `glob`, `regex`, `has_tool`, `variant` select the expected text for fixture models (one per builtin family plus an unmatched one).
 - Stability: two consecutive requests of one epoch carry identical prompt bytes; a template edit produces a diff frame and changes the prompt only at the next epoch; a model change re-renders.
@@ -313,8 +332,8 @@ Host request (not filed; external publication needs user go-ahead):
 | # | Question | Recommendation |
 |---|---|---|
 | Q1 | Template engine | gonja v2 (pure Go). Alternative: pongo2 (Django dialect, less Jinja-compatible) |
-| Q2 | Takeover on by default | Yes with `builtin/pig`: no visible change, parity-checked |
-| Q3 | Default delivery | `force` until H-P1, then `sections` |
+| Q2 | Takeover on by default | Yes, with `builtin/workbench`; `prompt.enabled = false` restores PiG's own prompt |
+| Q3 | Default delivery | `force` on stock PiG; `sections` on the fork with F-P1 |
 | Q4 | Skill condition keys | nukii's `when` / `auto_load` (shared skills), not kebab-case |
-| Q5 | Skill listing default | `prompt` with `builtin/pig`, `frame` with `builtin/workbench` |
+| Q5 | Skill listing default | `prompt` (in `<skills>`, as PiG); `frame` once A/B runs show the cache gain |
 | Q6 | Template directory | `system-prompts/` in agent dir and `.pig/`; PiG's `prompts/` is taken by prompt templates |
