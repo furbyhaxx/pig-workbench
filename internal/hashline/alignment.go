@@ -91,13 +91,19 @@ func alignEndings(original, edited []sourceLine, dominant string, endings []stri
 		editedText[line.text] = true
 	}
 	var commonOriginal, commonEdited []sourceLine
-	positions := make(map[string]*endingPositions)
 	for _, line := range original {
-		if !editedText[line.text] {
-			continue
+		if editedText[line.text] {
+			commonOriginal = append(commonOriginal, line)
 		}
-		i := len(commonOriginal)
-		commonOriginal = append(commonOriginal, line)
+	}
+	for _, line := range edited {
+		if originalText[line.text] {
+			commonEdited = append(commonEdited, line)
+		}
+	}
+	commonOriginal, commonEdited = trimAnchors(commonOriginal, commonEdited, dominant, endings)
+	positions := make(map[string]*endingPositions)
+	for i, line := range commonOriginal {
 		p := positions[line.text]
 		if p == nil {
 			p = &endingPositions{}
@@ -109,11 +115,6 @@ func alignEndings(original, edited []sourceLine, dominant string, endings []stri
 			p.crlf = append(p.crlf, i)
 		}
 	}
-	for _, line := range edited {
-		if originalText[line.text] {
-			commonEdited = append(commonEdited, line)
-		}
-	}
 	if subsequence(commonOriginal, commonEdited) {
 		return alignInsertions(commonOriginal, commonEdited, dominant, endings, positions)
 	}
@@ -121,6 +122,50 @@ func alignEndings(original, edited []sourceLine, dominant string, endings []stri
 		return alignDeletions(commonOriginal, commonEdited, endings, positions)
 	}
 	return alignLCS(commonOriginal, commonEdited, dominant, endings, positions)
+}
+
+func trimAnchors(original, edited []sourceLine, dominant string, endings []string) ([]sourceLine, []sourceLine) {
+	originalCount := make(map[string]int, len(original))
+	editedCount := make(map[string]int, len(edited))
+	for _, line := range original {
+		originalCount[line.text]++
+	}
+	for _, line := range edited {
+		editedCount[line.text]++
+	}
+	prefix := 0
+	for i := 0; i < min(len(original), len(edited)) && original[i].text == edited[i].text; i++ {
+		if originalCount[original[i].text] == 1 && editedCount[edited[i].text] == 1 {
+			prefix = i + 1
+		}
+	}
+	suffix := 0
+	for i := 0; i < min(len(original)-prefix, len(edited)-prefix); i++ {
+		old, line := original[len(original)-1-i], edited[len(edited)-1-i]
+		if old.text != line.text {
+			break
+		}
+		if originalCount[old.text] == 1 && editedCount[old.text] == 1 {
+			suffix = i + 1
+		}
+	}
+	// A unique anchor in a common prefix or suffix belongs to every optimal alignment.
+	assign := func(old, line sourceLine) {
+		if line.ending != "" {
+			ending := old.ending
+			if ending == "" {
+				ending = dominant
+			}
+			endings[line.outputLine-1] = ending
+		}
+	}
+	for i := 0; i < prefix; i++ {
+		assign(original[i], edited[i])
+	}
+	for i := 0; i < suffix; i++ {
+		assign(original[len(original)-1-i], edited[len(edited)-1-i])
+	}
+	return original[prefix : len(original)-suffix], edited[prefix : len(edited)-suffix]
 }
 
 func alignInsertions(original, edited []sourceLine, dominant string, endings []string, positions map[string]*endingPositions) error {
@@ -225,6 +270,7 @@ func alignLCS(original, edited []sourceLine, dominant string, endings []string, 
 			return nil
 		}
 		if end-start == 1 {
+			// Count both matched and unmatched paths through every optimal alignment.
 			line := edited[start]
 			mask := 0
 			for i := 0; i <= len(original); i++ {

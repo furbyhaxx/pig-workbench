@@ -17,6 +17,7 @@ type LineRecord struct {
 }
 
 // Normalized holds a BOM-free LF view and the source metadata needed to restore it.
+// Warnings reports ties in the source line-ending counts, which default to LF.
 type Normalized struct {
 	Bytes    []byte
 	Tag      string

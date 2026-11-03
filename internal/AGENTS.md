@@ -7,5 +7,14 @@ Feature packages keep domain logic independent of the SDK; `host/` adapts contex
 - `location/` — immutable local locations, mutation leases and transactional transitions.
 - `resource/` — ToolPath selectors, provider router (file/local/out) and bounded source paging.
 - `search/` — bounded grep and glob walking with honest completeness.
+- `syntax/` — tree-sitter summaries and block spans (bounded cache, byte-confident coordinates).
+- `hashline/` — byte model, XXH32 tags, tagged rendering and ending-safe restore.
+- `frames/` — session-wide frame ledger: dedup, bounds, replay, per-producer views.
+- `instructions/` — instruction class discovery, root+nearest selection, caps and rendering.
+- `ask/` — questionnaire schema, validation and pending-record recovery.
+- `project/` — `Project.toml` document model and creation.
+- `secrets/` — deterministic placeholders, key handling and fail-closed redaction.
+- `jobs/` — process supervision (see its AGENTS.md before touching process groups).
+- `endpoint/` — live-session endpoint records and liveness probing.
 - `host/` — SDK lifecycle, commands and tool wiring; no duplicated domain policy.
 - Do not retain request-scoped SDK contexts in session state. Read captured configuration/location once per operation.

@@ -84,6 +84,7 @@ func TestNormalizeLineBoundariesAndOwnership(t *testing.T) {
 		{"a", "a", []LineRecord{{1, 0, 1, ""}}},
 		{"a\n", "a\n", []LineRecord{{1, 0, 1, "\n"}}},
 		{"\n\n", "\n\n", []LineRecord{{1, 0, 0, "\n"}, {2, 1, 1, "\n"}}},
+		{"a\r\r\n", "a\r\n", []LineRecord{{1, 0, 2, "\r\n"}}},
 		{"é\r\nx\ny", "é\nx\ny", []LineRecord{{1, 0, 2, "\r\n"}, {2, 3, 4, "\n"}, {3, 5, 6, ""}}},
 	} {
 		t.Run(test.source, func(t *testing.T) {
@@ -174,6 +175,17 @@ func TestRestoreKeepsPrivateSnapshot(t *testing.T) {
 	got, err := Restore(snapshot, []byte("left\nright\n"))
 	if err != nil || string(got) != "left\r\nright\n" {
 		t.Fatalf("Restore after modifying exposed fields = %q, %v", got, err)
+	}
+}
+
+func TestRestoreRejectsUnrepresentableTrailingCR(t *testing.T) {
+	snapshot, err := Normalize([]byte("a\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := Restore(snapshot, []byte("b\r\n"))
+	if err == nil || got != nil {
+		t.Fatalf("Restore silently changed a trailing CR: %q, %v", got, err)
 	}
 }
 

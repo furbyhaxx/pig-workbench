@@ -2,7 +2,6 @@ package hashline
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -54,7 +53,7 @@ func endingOracle(original []oracleLine, edited []string, dominant string) []int
 }
 
 func TestRestoreAgainstAllSmallAlignments(t *testing.T) {
-	for n := 0; n <= 3; n++ {
+	for n := 0; n <= 4; n++ {
 		for texts := 0; texts < 1<<n; texts++ {
 			for styles := 0; styles < 1<<n; styles++ {
 				var original []oracleLine
@@ -78,7 +77,7 @@ func TestRestoreAgainstAllSmallAlignments(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				for m := 0; m <= 3; m++ {
+				for m := 0; m <= 4; m++ {
 					for bits := 0; bits < 1<<m; bits++ {
 						var edited []string
 						var view strings.Builder
@@ -109,7 +108,7 @@ func TestRestoreAgainstAllSmallAlignments(t *testing.T) {
 								t.Fatalf("source %q view %q: got %q, %v; want ambiguous line %d", source.String(), view.String(), got, err, ambiguousLine)
 							}
 						} else if err != nil || string(got) != expected.String() {
-							t.Fatal(fmt.Sprintf("source %q view %q: got %q, %v; want %q", source.String(), view.String(), got, err, expected.String()))
+							t.Fatalf("source %q view %q: got %q, %v; want %q", source.String(), view.String(), got, err, expected.String())
 						}
 					}
 				}
