@@ -5,9 +5,9 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T11:48:07+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 4
+      reason: "User: agents read and change session titles through URIs"
+      changes: ["session://<id>/title read/write with per-target mechanism and permissions", "Title = PiG session name; by-name resolves titles", "Probes T1–T3"]
 ---
 
 # 1. Scope
@@ -35,6 +38,7 @@ What Workbench provides for projects and for addressing everything it exposes. S
 | Extensions can create/open/fork/list sessions in any directory and switch to any file | SDK `session_manager_class.go`, `context.go` |
 | Own-session control: `SendUserMessage`, `SendMessage`, `Abort`, `IsIdle`, `WaitForIdle`, `Compact`, `SetModel`, `SetThinkingLevel`, `NewSession`, `Shutdown` | SDK `context.go` |
 | No hook to choose where the host creates its session file | SDK, absence |
+| Session title = PiG session name: `GetSessionName`/`SetSessionName` for the own session, `SessionManager.AppendSessionInfo` (a `session_info` entry) for an opened file | SDK `context.go`, `session_manager_class.go`, `docs/session-format.md` |
 
 # 3. Project
 
@@ -179,7 +183,7 @@ Every scheme is a tree, like `/proc` and `/sys`. The builtin tools work on it as
 |---|---|
 | `ls` | Directory entries with typed columns (`ls job://` = jobs with state, runtime, command) |
 | `read` | File content; selectors `:N`, `:A-B`, `:-N`, `:raw` |
-| `find` / glob | Walk the tree by name pattern (`find session://by-name -name '*parser*'`) |
+| `find` / glob | Walk the tree by name pattern (`find session://by-name -name '*parser*'` finds sessions by title) |
 | `grep` | Search file contents across the tree (`grep -r timeout job://*/log`) |
 | `write` | Write a file: content, a message, a setting, or a command to a control file |
 | `edit` | Hashline edit where the file is writable |
@@ -228,7 +232,8 @@ Sessions (canonical `session://<id>`):
 session://                               sessions of the current project, newest first
 session://self → session://<id>
 session://<id>/
-  meta                                   header, name, project, cwd, model, counts, timestamps
+  meta                                   header, title, project, cwd, model, counts, timestamps
+  title                                  read: current title (empty when untitled); write: set it (§5.3.1)
   transcript                             current branch as Markdown, paged
   tree                                   entry tree with branches and labels
   entries/<entryId>
@@ -237,8 +242,22 @@ session://<id>/
   instructions/                          instruction files selected for this session, with reasons; ctl: pin/unpin
 session://by-id/<id> → session://<id>    all sessions of all projects
 session://by-project/<slug>/<id> → session://<id>
-session://by-name/<name> → session://<id>   ambiguous names list all candidates
+session://by-name/<title> → session://<id>   ambiguous titles list all candidates
 ```
+
+### 5.3.1 Session titles
+
+The title is PiG's session name; `by-name/` resolves it, listings show it as `Title`. Writing `session://<id>/title` sets it:
+
+| Target | Mechanism | Allowed |
+|---|---|---|
+| Own session (`self`) | `ctx.SetSessionName` | always, in every mode (session metadata only, like `/name`) |
+| Another live session | `control` request over its endpoint (SPEC-0011); the target calls `ctx.SetSessionName` | coordinator with class `lifecycle`; otherwise `policyDenied` |
+| A stored session nobody runs | `SessionManagerOpen` + `AppendSessionInfo` | after user confirmation; refused with `sessionLive` when an endpoint for it appears |
+
+- Value: one line, control characters stripped, at most 200 characters; an empty write clears the title. Secrets placeholders stay placeholders (the title is shown to agents and users).
+- Workbench's own session listings and frames pick up the change on the next read; PiG's header follows its own state update.
+- Automatic title generation comes later (PLAN-0001); it will write through the same path.
 
 Agents (canonical `agent://<id>`, `<id>` = session short ID):
 
@@ -317,4 +336,5 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - URIs: every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds; links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
 - Guides: injected once per session and revision on first touch, re-injected after compaction, untrusted provider guides stay data.
 - `docs://harness/` follows the running build; source fetch only on first access, offline shows cache; extension docs confined to their roots.
+- Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes: **T1** `SetSessionName` updates `GetSessionName` and the TUI header without reload, and whether an empty name clears the title; **T2** `AppendSessionInfo` on a stored file is what `SessionManagerList` and `/resume` show; **T3** which `session_info` wins when it is not on the active branch.
 - Evidence for storage and worktree behaviour: [ANA-2026-11-03](../analyses/2026-11-03-session-bucket-symlink-probe/README.md).

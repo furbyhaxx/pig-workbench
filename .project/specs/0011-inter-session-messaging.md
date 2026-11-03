@@ -5,9 +5,9 @@ document:
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
   status: "draft"
-  revision: 4
+  revision: 6
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T11:50:07+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,12 @@ document:
     - revision: 4
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 5
+      reason: "Session titles are writable through session://<id>/title"
+      changes: ["lifecycle class includes setting another session's title"]
+    - revision: 6
+      reason: "Session titles are writable"
+      changes: ["Endpoint record follows title changes"]
 ---
 
 # 1. Purpose and boundary
@@ -44,6 +50,8 @@ Each live session owns one **endpoint**: a Unix domain socket plus a record file
 | Windows 10 1803+ | `%LOCALAPPDATA%\pig-workbench\run\v1\` (AF_UNIX) |
 
 The directory is created with mode 0700 and must be owned by the current user; otherwise the feature is disabled with a diagnostic. File names are `<endpointId>.sock` and `<endpointId>.json`, where `endpointId` is 10 random base32 characters. This keeps socket paths under the 104-byte `sun_path` limit.
+
+The record's `sessionName` is the session title; it is rewritten on `session_info_changed` (title set by `/name`, Workbench or a coordinator, SPEC-0012 §5.3.1).
 
 The record file is written atomically (temporary file plus rename, mode 0600):
 
@@ -136,7 +144,7 @@ Agents use the `agent://` tree of [SPEC-0012](0012-projects-uri-namespace.md) §
 
 | Action | URI form |
 |---|---|
-| List | `ls agent://` (current project), `ls agent://by-project/<slug>/`, `ls agent://by-name/`; columns: short ID, name, project, cwd, state, idle time, model, trusted/blocked |
+| List | `ls agent://` (current project), `ls agent://by-project/<slug>/`, `ls agent://by-name/`; columns: short ID, title, project, cwd, state, idle time, model, trusted/blocked |
 | Look | `read agent://<id>/status` |
 | Send | `write agent://<id>/inbox` with text, or JSON5 `{subject, body, attachments, wake, expectReceipt, replyTo, progress}`; the write result is the synchronous receipt plus message and conversation IDs |
 | Receive | `read agent://self/inbox?wait=60&from=<id>`: unread messages, waiting up to the given seconds; a `progress` message extends the wait |
@@ -172,7 +180,7 @@ A session the user marks as coordinator (`/workbench coordinator on`). Its agent
 | message | Messages without wake budget | SPEC-0011 |
 | steer | Prompt as the user, steer, follow-up | `ctx.SendUserMessage` |
 | answer | Answer or cancel Workbench `ask_user` forms | Workbench owns the form |
-| lifecycle | Abort, compact, model and thinking changes, new session | `ctx.Abort`, `Compact`, `SetModel`, `NewSession` |
+| lifecycle | Abort, compact, model and thinking changes, new session, title | `ctx.Abort`, `Compact`, `SetModel`, `NewSession`, `SetSessionName` (SPEC-0012 §5.3.1) |
 | jobs | List, write stdin, kill | SPEC-0008 supervisor |
 
 Host limit: an extension cannot answer PiG's own dialogs, permission prompts or other extensions' `ctx.UI` prompts. The coordinator sees "waiting on host dialog".
