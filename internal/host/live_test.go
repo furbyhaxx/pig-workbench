@@ -35,7 +35,7 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for path, text := range map[string]string{filepath.Join(work, "source.txt"): "one\nβ\nthree\n", filepath.Join(next, "source.txt"): "nested-location\n"} {
+	for path, text := range map[string]string{filepath.Join(work, "source.txt"): "one\nβ\nthree\n" + strings.Repeat("overflow\n", 100), filepath.Join(next, "source.txt"): "nested-location\n"} {
 		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
 			t.Fatal(err)
 		}
@@ -49,6 +49,7 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 		{"read", map[string]any{"path": "source.txt:raw"}},
 		{"codemode", map[string]any{"code": "const r = await Promise.allSettled([tools.read({path:'source.txt:raw'}), tools.read({path:'missing.txt'})]); for (const v of r) text(v.status === 'fulfilled' ? v.value : v.reason.message);"}},
 		{"cd", map[string]any{"reset": true}},
+		{"read", map[string]any{"path": "source.txt:raw"}},
 	}
 	var mu sync.Mutex
 	var requests []map[string]any
@@ -84,6 +85,9 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 	}))
 	defer server.Close()
 	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[read]\nmax-lines = 8\nmax-bytes = 4096\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "pig", "--offline", "--no-session", "-e", repo, "--mode", "json", "--model", "workbench-fixture/mock", "--tools", "read,cd,codemode", "Exercise the scripted fixture.")
@@ -121,12 +125,20 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 	if !strings.Contains(requestText(4), "nested-location") || !strings.Contains(requestText(4), "Script completed") {
 		t.Fatalf("codemode lost nested result: %s", requestText(4))
 	}
-	var nestedVerified bool
+	var nestedVerified, budgetVerified bool
 	for _, line := range bytes.Split(output, []byte{'\n'}) {
 		var event struct {
 			Type    string `json:"type"`
 			Message struct {
-				ToolName    string `json:"toolName"`
+				ToolName   string          `json:"toolName"`
+				ToolCallID string          `json:"toolCallId"`
+				Content    json.RawMessage `json:"content"`
+				Details    struct {
+					ConfigRevision uint64 `json:"configRevision"`
+					Resources      []struct {
+						SelectionComplete bool `json:"selectionComplete"`
+					} `json:"resources"`
+				} `json:"details"`
 				NestedCalls struct {
 					Complete bool `json:"complete"`
 					Calls    []struct {
@@ -149,6 +161,29 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 			}
 			nestedVerified = true
 		}
+		if event.Type == "message_end" && event.Message.ToolCallID == "call-5" {
+			details := event.Message.Details
+			if details.ConfigRevision == 0 || len(details.Resources) != 1 || details.Resources[0].SelectionComplete {
+				t.Fatalf("configured read ceiling or provenance lost: %+v", details)
+			}
+			var blocks []struct {
+				Text string `json:"text"`
+			}
+			if err := json.Unmarshal(event.Message.Content, &blocks); err != nil {
+				t.Fatal(err)
+			}
+			var text strings.Builder
+			for _, block := range blocks {
+				text.WriteString(block.Text)
+			}
+			if strings.Count(text.String(), "\n")+1 > 8 || len(text.String()) > 4096 {
+				t.Fatal("read ignored configured result budget")
+			}
+			budgetVerified = true
+		}
+	}
+	if !budgetVerified {
+		t.Fatal("no configured-budget read result was observed")
 	}
 	if !nestedVerified {
 		t.Fatal("no retained codemode call tree")

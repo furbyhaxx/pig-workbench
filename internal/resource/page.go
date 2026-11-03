@@ -9,11 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // Budget bounds the complete model-visible result, including its framing.
@@ -48,25 +49,11 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 	if err != nil {
 		return page, fmt.Errorf("resolve file: %w", err)
 	}
-	info, err := os.Stat(canonical)
-	if err != nil {
-		return page, fmt.Errorf("stat file: %w", err)
-	}
-	if !info.Mode().IsRegular() {
-		return page, fmt.Errorf("%q is not a regular file", canonical)
-	}
-	f, err := os.OpenFile(canonical, os.O_RDONLY|nonblockFlag(), 0)
-	if err != nil {
-		return page, fmt.Errorf("open file: %w", err)
-	}
-	defer f.Close()
-	opened, err := f.Stat()
+	f, opened, err := fileio.OpenRegular(canonical)
 	if err != nil {
 		return page, err
 	}
-	if !opened.Mode().IsRegular() || !os.SameFile(info, opened) {
-		return page, errors.New("file identity changed while opening; retry read")
-	}
+	defer f.Close()
 	digest, total, err := inspect(ctx, f)
 	if err != nil {
 		return page, err

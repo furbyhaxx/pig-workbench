@@ -5,6 +5,7 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 ## Layout
 - `extension.go` — `Extension()` factory, package `workbench`. Registration and wiring only; feature logic goes in `internal/<feature>/`.
 - `internal/` — feature packages; each gets its own AGENTS.md when created. `internal/host/` owns SDK adapters and composition.
+- `docs/` — human-facing product documentation; settings changes cross-update `docs/configuration.md`.
 - `api/` — public v1 protocol types; keep wire changes aligned with `.project/specs/0001-extension-services.md` and consumer fixtures.
 - `.project/` — development artifacts; never in `docs/`; committed. Load skill `dot-project` before writing one. Every Markdown artifact needs `document:` frontmatter (`.project/AGENTS.md`). Open work: `BACKLOG.md` pointers + `.project/backlog/`; live claims: project-scope `tasks`. Never put drift/TODOs in AGENTS.md.
 - `.tmp/` — generated modfile for direct `go` commands; git-ignored.
@@ -23,7 +24,7 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 - Load skill `extending-pig` for extension work. Verify SDK signatures against `pig reload --sdk-path`; do not copy TypeScript runtime assumptions.
 - Scope, milestones and acceptance gates: `.project/plans/0001-pig-workbench.md`. UI layouts: `.project/sketches/workbench-ui/README.md`; new surfaces or layout changes need user review and captures.
 - Proposals in `.project/drafts/` are not approved implementation contracts.
-- New runtime dependency → user approval first (plan decisions D1/D2), then record its license in `THIRD_PARTY_NOTICES.md` (create on first entry).
+- Runtime dependencies have standing user approval after checking the latest available version and whether the project is maintained or superseded. Prefer its maintained replacement when applicable; record licenses in `THIRD_PARTY_NOTICES.md` and the check in the producing plan.
 - Code adapted from donors (pi-workbench, oh-my-pi, nugent) → keep its license notice and add an entry to `THIRD_PARTY_NOTICES.md` in the same change.
 - New tool, command, setting or scheme → update `README.md` in the same change.
 

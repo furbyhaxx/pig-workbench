@@ -5,11 +5,11 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 24
+  revision: 25
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T15:05:00+01:00"
+  updated_at: "2026-11-03T15:57:29+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User requested an implementation plan before coding"
@@ -83,13 +83,16 @@ document:
     - revision: 24
       reason: "User moved model-aware prompt evaluation to Slice 3"
       changes: ["SPEC-0014 §6.3 owned by PLAN-0004 C6"]
+    - revision: 25
+      reason: "Record explicit implementation authorization and standing dependency approval"
+      changes: ["Slice 1 runtime/configuration work is underway, not complete", "Runtime dependencies may be added after latest-version and maintenance/supersession checks, without another approval question"]
 ---
 
 # 1. Outcome and authority
 
 Deliver `pig-workbench` as a Go factory extension that makes PiG's tools substantially more capable while providing consistent configuration, rendering, working locations, frames, questionnaires and background jobs.
 
-**This is a plan, not an implementation report or authorization to start coding.** The user corrections are requirements: full hashline, advanced read behavior including suffixes, session/history/skills/jobs schemes, codemode integration, enhanced instruction injection, `/workbench` and companion commands such as `/tools`. Dependency and host limitations must be resolved, not used to quietly remove features.
+**The user has explicitly authorized Slice 1 implementation. This plan defines scope, not evidence of completion.** The user corrections are requirements: full hashline, advanced read behavior including suffixes, session/history/skills/jobs schemes, codemode integration, enhanced instruction injection, `/workbench` and companion commands such as `/tools`. Dependency and host limitations must be resolved, not used to quietly remove features.
 
 Scope reference: `.project/drafts/pig-workbench-proposal.md`, revision 2. That document remains an unapproved proposal; its implementation claims are not established facts. This plan qualifies its unsafe or unsupported assumptions in section 3 rather than silently treating them as decisions. Do not overwrite its editor swap file or unrelated reference-repository work.
 
@@ -119,7 +122,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
 - **done (M0.2, secrets):** [Secrets probes](../analyses/2026-11-03-secrets-host-probes/README.md) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** [PLAN-0002](0002-slice-1-foundation.md) Phase A: M0.4 contract freeze including pig-web's [M0.4 inputs](../handoff/pig-web-m0-4-inputs.md). Personal PiG fork (D13) in parallel.
+- **now:** [PLAN-0002](0002-slice-1-foundation.md): local runtime and scalar configuration foundations implemented and verified; remaining phases and Phase A formal freeze/ledger/handoff closeout are still open. Personal PiG fork (D13) in parallel.
 - **next:** PLAN-0002 Phases B–L, then [PLAN-0003](0003-slice-2-feature-complete.md) and [PLAN-0004](0004-slice-3-completion.md).
 - **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR8: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3). PR7: mid-run `tools` frames work; PR8: late sections (`mcp_servers`) need the `before_provider_request` splice (fork candidate F-P4). SPEC-0014 decisions Q1–Q6 accepted.
 - **later:** Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3), in PLAN-0004 C5.
@@ -181,7 +184,7 @@ Inventory dynamically registered donor commands in M0 as well as literal `regist
 
 # 3. Decisions and corrections needed before implementation
 
-These are engineering decisions, not scope cuts. M0 must produce evidence and a recommendation for each; dependency additions require user approval. **Resolved 2026-11-02:** D1, D2 and D7 by the approved [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md); D3 by the [host probes](../analyses/2026-11-02-host-integration-probes/README.md) (overrides, suppression, projection and codemode observation verified; codemode child rendering and `--list-tools` output remain upstream issues).
+These are engineering decisions, not scope cuts. M0 must produce evidence and a recommendation for each; dependency additions have standing user approval (03.11.2026) after checking the latest available version and whether the project is maintained or superseded; record licenses and verification. **Resolved 2026-11-02:** D1, D2 and D7 by the approved [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md); D3 by the [host probes](../analyses/2026-11-02-host-integration-probes/README.md) (overrides, suppression, projection and codemode observation verified; codemode child rendering and `--list-tools` output remain upstream issues).
 
 | Decision | Why it matters | Planned resolution |
 |---|---|---|

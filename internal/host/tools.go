@@ -121,6 +121,10 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer release()
+	configuration, err := s.settings.Current()
+	if err != nil {
+		return nil, err
+	}
 	captured, done, err := s.location.Acquire(ctx.ToolCallID(), false)
 	if err != nil {
 		return nil, err
@@ -133,7 +137,8 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			return nil, fmt.Errorf("path %d: %w", i+1, err)
 		}
 	}
-	budget := resource.Budget{Bytes: 51200, Lines: 2000}
+	policy := configuration.Read()
+	budget := resource.Budget{Bytes: policy.MaxBytes, Lines: policy.MaxLines}
 	var content strings.Builder
 	facts := make([]any, 0, len(targets))
 	complete := true
@@ -177,7 +182,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	if !complete && budget.Bytes >= 64 && budget.Lines > 0 {
 		content.WriteString("\nBatch incomplete; consult per-resource continuation in Details.")
 	}
-	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"resources": facts, "complete": complete, "locationRevision": captured.Revision}, IsError: failed}, nil
+	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"resources": facts, "complete": complete, "locationRevision": captured.Revision, "configRevision": configuration.Revision()}, IsError: failed}, nil
 }
 
 func decode(params map[string]any, dst any) error {

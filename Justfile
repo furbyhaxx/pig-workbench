@@ -11,7 +11,7 @@ default: check
 _modfile:
 	mkdir -p "{{tmp}}"
 	cp go.mod "{{tmp}}/go.mod"
-	touch "{{tmp}}/go.sum"
+	if test -f go.sum; then cp go.sum "{{tmp}}/go.sum"; else : > "{{tmp}}/go.sum"; fi
 	printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "{{tmp}}/go.mod"
 
 fmt:

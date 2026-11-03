@@ -11,16 +11,8 @@ import (
 
 func (a *app) registerCommands(ext *sdk.Extension) {
 	ext.RegisterCommand("workbench", sdk.CommandOptions{
-		Description: "Inspect Workbench state, tools or working location.",
-		GetArgumentCompletions: func(prefix string) ([]sdk.AutocompleteItem, error) {
-			var items []sdk.AutocompleteItem
-			for _, name := range []string{"show", "tools", "cd"} {
-				if strings.HasPrefix(name, prefix) {
-					items = append(items, sdk.AutocompleteItem{Value: name, Label: name})
-				}
-			}
-			return items, nil
-		},
+		Description:            "Inspect Workbench state, settings, tools or working location.",
+		GetArgumentCompletions: workbenchCompletions,
 		Handler: func(ctx sdk.Context, args string) error {
 			verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
 			switch verb {
@@ -30,8 +22,10 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.toolsCommand(ctx, rest)
 			case "cd":
 				return a.cdCommand(ctx, rest)
+			case "settings":
+				return a.settingsCommand(ctx, rest)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {
@@ -46,7 +40,12 @@ func (a *app) show(ctx sdk.Context) error {
 		return err
 	}
 	info := s.location.Current()
-	notify(ctx, fmt.Sprintf("Workbench\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d", s.id, s.generation, info.Cwd, info.Revision))
+	_, settings := s.settings.Inspect()
+	text := fmt.Sprintf("Workbench\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d\nConfig revision: %d", s.id, s.generation, info.Cwd, info.Revision, settings.Revision)
+	if settings.Stale {
+		text += "\nConfiguration error: " + settings.Error
+	}
+	notify(ctx, text)
 	return nil
 }
 

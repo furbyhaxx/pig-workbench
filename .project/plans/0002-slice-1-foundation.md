@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T15:08:26+01:00"
+  updated_at: "2026-11-03T16:12:29+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Implementation resumed after the user rejected documentation-only progress"
       changes: ["Recorded the wired local read/location runtime and live verification", "Kept every phase exit and the full slice explicitly incomplete", "Recorded the configuration dependency approval needed for strict TOML validation"]
+    - revision: 7
+      reason: "User granted standing dependency approval conditioned on current-version and supersession checks"
+      changes: ["Recorded verified dependencies and license notices", "Implemented scoped scalar TOML configuration, source-safe validation, merge/conflict handling, trust rechecks and private atomic saves", "Wired settings commands and live read budgets; verified separate-process writers and real-host reload/scope behavior", "Added the documented consumer client and exercised it from a separate extension", "Retained incomplete Slice 1 exits explicitly"]
 ---
 
 # 1. Outcome
@@ -50,7 +53,10 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **now:** Phase A (ledger and contract freeze), including the pig-web handoff [HO-pig-web-m0-4-inputs](../handoff/pig-web-m0-4-inputs.md). M1 and M2 choices approved by the user and recorded in SPEC-0001/0002/0010/0013/0014; these decisions are not runtime implementation or approval of the entire freeze.
 - **implementation checkpoint:** `extension.go` now wires `internal/host/`; `api/` contains v1 wire types. Owned shutdown draining, local location leases/transitions/replay, selector parsing, bounded UTF-8 source paging, `read`, `cd`, plain inspection commands and the `location` service are implemented. These are parts of B/C/D/E1/G, not completed phases. Discovery advertises only the wired `location` capability; no placeholder registration kinds or other services are advertised.
 - **verified:** `just check`, `just race`, `just integration`. `internal/host/live_test.go` drives the real PiG agent loop against a localhost scripted provider: direct raw selection, cd-relative reads, codemode success/error child captures and reset. `internal/host/live_services_test.go` co-loads the independent `service-client` factory in RPC: discovery, stale-generation rejection, location changes, session replacement and persisted-location resume. No billed inference. Width/control-character tests cover notices at 36/57/80/140 columns; these are not live TUI captures.
-- **next:** Finish B configuration after the dependency approval below; continue C–M on the same engines. Full hashline, syntax summaries, remaining tools/schemes, project identity/storage, registries, frames, instructions, jobs, secrets, prompts, skills, asks and messaging are still unimplemented. Phase A's freeze/ledger/handoff exit also remains open. No Slice 1 exit is claimed.
+- **configuration checkpoint:** `internal/config/` now owns scoped scalar loading, validation/provenance, last-valid stale state, whole-array replacement, runtime reset, strict project reductions and user/runtime-only fields. Saves merge disjoint key updates under native cross-process locks, reject same-key/canonical-target conflicts, preserve comments/unknown data, validate the round-trip result, use private temporary files and distinguish saved versus published. `internal/host/settings.go` wires plain inspection/set/reset/reload and completions; read byte/line ceilings are captured per operation and included in Details. Other scalar entries are explicitly unavailable, not falsely applied. Complex instruction classes, trust-rule editing and dynamic producer settings are not implemented.
+- **configuration evidence:** `internal/config/*_test.go` covers malformed reloads, project denial, source-safe diagnostics, symlink retention/retarget rejection, comments on reset, reconciliation failure, cancellation and separate-process disjoint saves against the same captured baseline. `internal/host/live_settings_test.go` verifies user/project/runtime precedence, reset, persistence, reload, ignored untrusted project settings and config roots surviving cd. `live_test.go` verifies configured read limits in a real agent loop. Windows/amd64 and Darwin/arm64 config test binaries compile; neither platform was run. `just check`, `just race` and `just integration` pass on Linux.
+- **service-consumer checkpoint:** `api/client.go` provides the optional v1 consumer (`Discover`, synchronous `Call`, `Close`) with correlation by request/session/generation/identity, duplicate-responder and missing-capability refusal, local oversized rejection, non-blocking deadlock avoidance and outcome-classified transport errors. The integration fixture uses it instead of a private reimplementation; live tests cover discovery, stale-generation rejection and local `limitExceeded`. Documented in `docs/extension-services.md`. Timeouts remain cooperative because the shared bus cannot preempt a hung listener (SPEC-0001 host limit).
+- **next:** Continue C–M on these engines and finish the remaining B storage/project/trust foundations. Full hashline, syntax summaries, remaining tools/schemes, project identity/storage, registries, frames, instructions, jobs, secrets, prompts, skills, asks and messaging are still unimplemented. Phase A's freeze/ledger/handoff exit also remains open. No Slice 1 exit is claimed.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
 # 2. What is in Slice 1 and what is depth
@@ -80,7 +86,7 @@ Before freezing, reconcile every open decision, outstanding probe, dependency ap
 
 | Item | Kind | Blocks |
 |---|---|---|
-| Strict TOML validation alongside round-trip editing | new runtime dependency approval requested | B and its dependents: `github.com/creachadair/tomledit` v0.0.29 for round-trip edits, plus `github.com/BurntSushi/toml` v1.6.0 for semantic validation; both MIT. tomledit's package documentation explicitly excludes duplicate-key/table-order/redefinition validation, so parsing alone cannot satisfy malformed-file refusal. Neither dependency has been added. |
+| Dependency policy and TOML/locking selection | resolved by user standing approval, checks performed 03.11.2026 | `go list -m -json <module>@latest`: `creachadair/tomledit` v0.0.29 and `BurntSushi/toml` v1.6.0 (MIT), `gofrs/flock` v0.13.1 (BSD-3-Clause) and its `golang.org/x/sys` dependency updated to latest v0.49.0 (BSD-3-Clause). Upstream GitHub repository metadata and current READMEs show maintained/non-archived projects with no deprecation/replacement notice; flock is the successor to theckman/go-flock. Latest/maintenance checks are required for future additions, not repeated approval questions. Licenses: `THIRD_PARTY_NOTICES.md`. |
 | pig-web M1: extension-owned inference | decision resolved by user | C/I: opt-in `secrets.redact` for trusted owners; unprotected child sessions explicit; SPEC-0013 §4.5 |
 | pig-web M2: contributed model fields | decision resolved by user | C/F/J: owner-scoped `contextFields` on `frameProducer`, `context.fields.set`; SPEC-0014 §5.1 |
 | pig-web M3: descriptor summary | review text prepared | D/J: required one-line summary, ≤120 Unicode characters; SPEC-0004 §2 |

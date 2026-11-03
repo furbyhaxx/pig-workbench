@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 )
@@ -29,6 +30,7 @@ type session struct {
 	generation  string
 	supervisor  *lifecycle.Supervisor
 	location    *location.Manager
+	settings    *config.Manager
 }
 
 type app struct {
@@ -68,7 +70,11 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if _, err := rand.Read(token[:]); err != nil {
 		return nil, a.fail(fmt.Errorf("create session generation: %w", err))
 	}
-	s := &session{id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, requests: make(map[string]activeRequest)}
+	settings, err := loadSettings(ctx)
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	s := &session{id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)
