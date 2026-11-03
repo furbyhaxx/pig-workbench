@@ -5,15 +5,18 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), starting byte-identical to PiG's builtin; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T12:26:45+01:00"
+  updated_at: "2026-11-03T12:53:30+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User asked for templated system prompts that take over PiG's builtin, model-aware conditionals, nukii/nugent skill disclosure and context frames, and multiple instruction files per directory"
       changes: ["Host facts from PiG source and SDK", "Template engine, files, sections, inputs, model families", "Delivery modes force and sections, parity check, epochs", "Context frames", "Progressive skill disclosure", "Settings, probes PR1–PR6, host request H-P1, acceptance, open decisions"]
+    - revision: 2
+      reason: "User correction on OpenAI behaviour; host limits made explicit"
+      changes: ["§6.3 example: OpenAI models over-apply security, not under-apply", "§3.3 raw sections only with force delivery", "§2 Anthropic OAuth identity block"]
 ---
 
 # 1. Purpose and scope
@@ -47,6 +50,7 @@ Source: PiG `main@9b4efdd6` (2026-11-02; the installed build is `0.5.3+1.4.0.74f
 | Unforced prompts are recorded as a `system` message with all sections, then patch messages by section name (`null` removes). Models with `supportsMidConvoSystemMessages` receive patches as mid-conversation system messages; others get the transcript collapsed into one system prompt | `coding/session_transcript.go`, `ai/transcript.go`, `docs/session-format.md` |
 | `SendMessage(steer)` from `before_agent_start` is persisted before the user prompt; a returned `message` lands right after it | probes P30 |
 | `GetSystemPromptOptions` returns the base options in commands | SDK `context.go` |
+| Anthropic OAuth requests get a fixed first system block (`You are Claude Code, Anthropic's official CLI for Claude.`) before the prompt; only `before_provider_request` sees it | `ai/anthropic_client.go`, `ai/anthropic.go` `anthSystemBlocks` |
 
 # 3. Templates
 
@@ -82,7 +86,7 @@ A template renders **sections**, the unit PiG records and patches:
 {% endblock %}
 ```
 
-- Text before the first section is the preamble. `{% section "name" %}…{% endsection %}` (custom tag) delimits a section; its body is wrapped as `<name>\n…\n</name>`, as PiG does. `{% section "name" raw %}` emits it untagged.
+- Text before the first section is the preamble. `{% section "name" %}…{% endsection %}` (custom tag) delimits a section; its body is wrapped as `<name>\n…\n</name>`, as PiG does. `{% section "name" raw %}` emits it untagged; only `force` delivery can send untagged sections (PiG wraps every custom section).
 - Names follow PiG's rule `[a-z][a-z0-9_-]*`; duplicates are a render error. A section whose body is empty after trimming is left out.
 - `builtin/pig` wraps each PiG section in a block of the same name (`preamble`, `tools`, `rules`, `docs`, `addendum`, `project_context`, `skills`, `cwd`), so a child template changes one section without copying the rest.
 
@@ -205,7 +209,7 @@ system-prompts/
 
 ## 6.3 Family adapters from research
 
-The harness dossiers record how each vendor prompts its own models in its native harness. An analysis artifact (`.project/analyses/<date>-model-family-prompting/`) will compare them per instruction topic (autonomy, tool use, editing, verification, safety posture, output style) and propose adapters, with evidence links. `builtin/workbench` adopts an adapter only after an A/B run on fixed tasks shows a measured gain without regressions (§11). Example to verify, not a decided fact: OpenAI models refusing routine security work, countered by stating the authorised security scope.
+The harness dossiers record how each vendor prompts its own models in its native harness. An analysis artifact (`.project/analyses/<date>-model-family-prompting/`) will compare them per instruction topic (autonomy, tool use, editing, verification, safety posture, output style) and propose adapters, with evidence links. `builtin/workbench` adopts an adapter only after an A/B run on fixed tasks shows a measured gain without regressions (§11). Example (user observation, to be confirmed by the analysis): OpenAI models over-apply security, adding hardening, validation, warnings and refusals where none belongs. The adapter countersteers by stating that the requested scope is the whole job and extra security measures need a concrete threat.
 
 # 7. `builtin/workbench`
 
