@@ -52,11 +52,17 @@ type Section struct {
 
 // Header renders the section's tagged path.
 func (s Section) Header() string {
-	path := s.Path
-	if s.Quoted || strings.Contains(path, "#") || needsQuotes(path) {
+	return Header(s.Path, s.Tag)
+}
+
+// Header renders a tagged section header, quoting the path when the grammar
+// requires it. Every renderer of an editable handle must use it so a path
+// containing spaces or '#' stays parseable.
+func Header(path, tag string) string {
+	if needsQuotes(path) || strings.Contains(path, "#") {
 		path = strconv.Quote(path)
 	}
-	return "[" + path + "#" + s.Tag + "]"
+	return "[" + path + "#" + tag + "]"
 }
 
 // Document is an ordered batch of tagged sections.

@@ -204,7 +204,7 @@ func TestRejectInvalidUTF8(t *testing.T) {
 
 func TestRender(t *testing.T) {
 	rows := []Row{{Line: 2, Text: "  line"}, {Line: 4, Text: ""}, {Line: 7, Text: "+item"}}
-	if got, want := Render("src/a b.go", "53FF", rows), "[src/a b.go#53FF]\n2:  line\n4:\n7:+item\n"; got != want {
+	if got, want := Render("src/a b.go", "53FF", rows), "[\"src/a b.go\"#53FF]\n2:  line\n4:\n7:+item\n"; got != want {
 		t.Fatalf("Render = %q, want %q", got, want)
 	}
 	if got := Render("empty", "5D05", nil); got != "[empty#5D05]\n" {

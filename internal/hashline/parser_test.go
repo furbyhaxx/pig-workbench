@@ -200,3 +200,26 @@ func TestFormatRejectsInvalidOperations(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderedHeaderFeedsTheParser(t *testing.T) {
+	for _, path := range []string{"src/a b.go", "src/a#b.go", "plain.go", "dir/with space/and#hash.go"} {
+		header := Header(path, "A1B2")
+		if first := strings.SplitN(Render(path, "A1B2", []Row{{Line: 3, Text: "line"}}), "\n", 2)[0]; first != header {
+			t.Fatalf("render and header disagree for %q: %q vs %q", path, first, header)
+		}
+		document, err := Parse(header + "\nREM\n")
+		if err != nil {
+			t.Fatalf("header for %q is not parseable: %v (%s)", path, err, header)
+		}
+		if len(document.Sections) != 1 || document.Sections[0].Path != path || document.Sections[0].Tag != "A1B2" {
+			t.Fatalf("path or tag round-trip failed for %q: %+v", path, document.Sections)
+		}
+		formatted, err := Format(document)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if formatted != header+"\nREM\n" {
+			t.Fatalf("format of parsed header changed for %q: %q", path, formatted)
+		}
+	}
+}
