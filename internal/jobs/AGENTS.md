@@ -6,4 +6,7 @@ Local process supervision for session-owned jobs; no SDK dependencies.
 - Unix jobs use dedicated process groups. Escalate before reaping: the zombie leader pins the PGID. After reaping, `Kill` and `Signal` refuse to touch the PGID. Descendants that leave the group are outside this guarantee. Group disappearance is checked after reaping and failure is reported.
 - Linux `waitid(WNOWAIT)`, Darwin kqueue plus a zombie check, and Windows process handles observe exit without reaping. Other platforms reject startup with `ErrWatcherUnsupported`; never pretend safe escalation is available there.
 - Windows group termination is unsupported and reports `ErrGroupKillUnsupported` after terminating the direct child.
-- The package does not provide job admission, IDs, log retention, or the jobs tool.
+- `LogStore` owns raw output bytes. Readers use immutable snapshots; they never hold the writer lock. Pages are at most 64 KiB, and cursor gaps identify the first retained byte.
+- Session quota evicts whole logs FIFO by the start of the current retention window, breaking ties by job ID; the appending job is protected and tail-capped to the smaller quota. `Facts` reports evicted logs. Appending after eviction or `Drop` resumes at the old offset with any loss recorded.
+- Dropped and evicted IDs retain offset metadata until the store closes; the byte quotas do not bound that metadata.
+- The package does not provide job admission, ID generation, finished-job retention, or the jobs tool.
