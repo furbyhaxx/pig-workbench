@@ -5,7 +5,7 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 10
+  revision: 11
   created_at: "2026-11-02T15:26:05+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -41,6 +41,9 @@ document:
     - revision: 10
       reason: "SPEC-0012 approved (DRAFT-0002 rev 3, Q1–Q3)"
       changes: ["WB-07…WB-10 renamed to the SPEC-0012 scheme trees", "Added WB-22 projects, conventions, docs:// and guides; WB-20 gains agent:// and the coordinator", "D6 points to SPEC-0012"]
+    - revision: 11
+      reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
+      changes: ["WB-23 activity line", "M0.2 probe and upstream request for widget view events"]
 ---
 
 # 1. Outcome and authority
@@ -106,6 +109,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-18 | Extensibility for external project notifications without implementing task tracking | M6 | Validated project/path-scoped frame inputs; explicit transport boundary |
 | WB-20 | Live session discovery across projects, messaging through `agent://` that can wake idle sessions, broadcast and the opt-in coordinator (SPEC-0011); collaboration services for other extensions: location, secret sources, status segments, edit tracking, fetch backends, docs (SPEC-0001 §8) | M5 (endpoint, `agent://`), M7 (panel, coordinator), services with their owning milestone | Two-session wake/steer/loop-guard tests; coordinator class and safeguard tests; pig-web integration against the services |
 | WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
+| WB-23 | Activity line above the editor with click-to-inspect and contributed items (SPEC-0009 §9) | M1 (line, shortcut), M7 (contributions, click once the host delivers widget events) | Captures at 36/57/80/140 in fullscreen; counts match registries; click and shortcut open the same targets |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -210,6 +214,7 @@ Use a temporary test agent directory and controlled fixtures; do not modify user
 | Session and skill catalog access | Actual enabled/trusted resources and configured sessionDir, including in-memory session |
 | Bus service plus cancellation/reload | JSON request/reply, bounded waits, unsubscribe, no mutex-held synchronous emit deadlock |
 | UI and command/flag registration | `/workbench`, `/tools`, `--list-tools`, kit views, RPC dialogs and print/JSON behavior |
+| Widget view events (fullscreen) | Whether the host emits `ui.view.event` for a `MouseRegion` inside an `aboveEditor` widget view; then an upstream PiG SDK request to route widget/header/footer view events to the extension (today `viewEvent` serves overlays only) |
 
 **Exit:** runnable probe evidence for every seam, or a documented host blocker. Isolated probes are not product completion and do not justify weakening the contract.
 

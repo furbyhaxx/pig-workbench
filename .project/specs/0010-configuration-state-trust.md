@@ -5,7 +5,7 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "SPEC-0012 project model and URI namespace; pig-web R6"
       changes: ["Settings for projects, artifacts, guides, docs, broadcast and coordinator", "Project registry and docs cache storage", "Removed history.globalAccess (session access has no consent gate, history:// retired)"]
+    - revision: 7
+      reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
+      changes: ["Activity line settings"]
 ---
 
 # 1. Scope and precedence
@@ -120,6 +123,9 @@ All defaults below are proposals subject to design review and measurements, not 
 | guides.enabled / maxBytes / disabled | true / 2048 / [] | user/project/runtime presentation (SPEC-0012 §5.5) |
 | docs.sourceVersionsKept / sourcePaths | 3 / docs, extensions/sdk, cmd, internal | user/runtime; fetch only on first access (SPEC-0012 §5.4) |
 | instructions.agentsMdReminder / backlog.validatePointers | true / true | user/project/runtime (SPEC-0007 §2) |
+| activity.enabled / placement / shortcut | true / aboveEditor / alt+w | user/runtime (SPEC-0009 §9) |
+| activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
+| activity.replaceWorkingIndicator | false | user/runtime; enabling requires verified retry/compaction events |
 
 `Project.toml` (`[component]`, `[[components]]`, `[worktrees]`, `[artifacts]`, `[conventions]`) is project data, not settings: it is committed, parsed strictly, and cannot carry any key of this catalog (SPEC-0012 §3.2).
 

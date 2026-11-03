@@ -4,17 +4,22 @@ document:
   id: "DRAFT-0003"
   title: "Activity line above the editor"
   description: "Proposal for a one-row live summary above the editor (state, agents, jobs, instructions, skills, contributions) that opens the matching Workbench inspector, adapted from the pi-workbench showcase"
-  status: "draft"
-  revision: 1
+  status: "archived"
+  revision: 2
   created_at: "2026-11-03T10:45:00+01:00"
-  updated_at: "2026-11-03T10:45:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User asked for an adapted version of the pi-workbench showcase status row above the editor"
       changes: ["Recorded the showcase design, the PiG seams, a proposed design, contribution API, interaction and open decisions"]
+    - revision: 2
+      reason: "Approved with Q1–Q5 as recommended; superseded by SPEC-0009 rev 6 §9"
+      changes: ["Archived with successor pointer"]
 ---
+
+> **Archived.** Approved with the recommendations of §8; the user targets fullscreen mode only, so clicking is the primary path once the host gap of §7 is closed. Successor: [SPEC-0009](../specs/0009-interaction-commands.md) §9, settings in [SPEC-0010](../specs/0010-configuration-state-trust.md) §3, WB-23 in [PLAN-0001](../plans/0001-pig-workbench.md).
 
 # 1. Problem
 

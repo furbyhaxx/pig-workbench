@@ -5,7 +5,7 @@ document:
   title: "Workbench UI and UX design"
   description: "Reviewable terminal wireframes, navigation, interaction states and responsive/headless behavior"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T15:31:51+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "SPEC-0012 scheme names"
       changes: ["jobs:// → job://, skills:// → skill://, session://project → session:// with canonical session URIs"]
+    - revision: 4
+      reason: "DRAFT-0003 approved: activity line"
+      changes: ["§14 activity line wireframes at four widths"]
 ---
 
 # Workbench UI/UX
@@ -394,6 +397,23 @@ Resource inspection primarily uses enhanced read/list/search and their renderers
 Default contribution is short: `workbench local` or `jobs 2 running`, width-fitted and removable. A multi-line running-job widget is opt-in and clears when idle. Do not install a replacement footer as a side effect of loading Workbench.
 
 `/workbench statusline` configures available contributed segments, ordering and visibility with a narrow-width preview. If a full layout requires a dedicated host/Piglet owner, the panel explains that prerequisite and offers the contribution-only configuration; it does not pretend to own the host footer. Designs for a full footer owner require a separate capture/review before activation.
+
+### Activity line (SPEC-0009 §9)
+
+```text
+ ●●● Working 1m12s · 2 agents · 1 message · 2 jobs, 1 failed · 5 instructions, 1 changed · 12 skills · ⎇ feat-parser
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ❯ Ask anything                                                                                                       │
+```
+
+```text
+80  ●●● Working 1m12s · 2 agents · 2 jobs, 1 failed · 5 instructions · 12 skills
+57  ●●● Working · 2 agents · 2 jobs, 1 failed · 5 instr
+36  ●●● Working · ⚇2 ⚙2✗1 ◆5
+idle ● ∙ ∙ Ready · 12 skills            (zero counts hidden; skills pinned here as an example)
+```
+
+Fixture data, not captures. Click on an item opens its inspector; click on the state or `alt+w` opens the hub. Captures at 36/57/80/140 in fullscreen are required before implementation is accepted.
 
 ## 15. Responsive layouts
 
