@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T16:32:34+01:00"
+  updated_at: "2026-11-03T16:51:32+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -31,10 +31,13 @@ document:
       changes: ["Recorded the wired local read/location runtime and live verification", "Kept every phase exit and the full slice explicitly incomplete", "Recorded the configuration dependency approval needed for strict TOML validation"]
     - revision: 7
       reason: "User granted standing dependency approval conditioned on current-version and supersession checks"
+      changes: ["Recorded verified dependencies and license notices", "Implemented scoped scalar TOML configuration, source-safe validation, merge/conflict handling, trust rechecks and private atomic saves", "Wired settings commands and live read budgets; verified separate-process writers and real-host reload/scope behavior", "Added the documented consumer client and exercised it from a separate extension", "Retained incomplete Slice 1 exits explicitly"]
     - revision: 8
       reason: "Parallel single-unit delegation for the remaining Slice 1 engines"
       changes: ["Recorded ten in-flight units and the six correctly refused mis-sized briefs", "Recorded every lead API decision that unblocked a unit", "Retained the no-stubs rule: ask_user and other tools stay unregistered until their full path exists"]
-      changes: ["Recorded verified dependencies and license notices", "Implemented scoped scalar TOML configuration, source-safe validation, merge/conflict handling, trust rechecks and private atomic saves", "Wired settings commands and live read budgets; verified separate-process writers and real-host reload/scope behavior", "Added the documented consumer client and exercised it from a separate extension", "Retained incomplete Slice 1 exits explicitly"]
+    - revision: 9
+      reason: "Consolidated the committed engine inventory and remaining one-unit completions"
+      changes: ["Recorded which engines are wired versus tested-but-unwired", "Recorded the exact unit that unblocks each remaining feature"]
 ---
 
 # 1. Outcome
@@ -68,6 +71,9 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
   - frames: admission takes an explicit `Context{SessionID, ProducerPrefix, BranchLeaf, Epoch}`.
   - instructions: steering defaults exclude `CLAUDE.md`/`GEMINI.md`; digests are exact-byte, so CRLF and LF differ; user roots are user-trust and searched once.
   - ask: the tool stays unregistered until schema, dialogs, TUI panel and secret storage all exist; SDK `ok=false` ambiguity is resolved in the dialogs unit.
+- **engine inventory (committed):** `resource` (selectors, provider router, file/local/out/artifact providers, paging, tags), `config` (scoped TOML, provenance, safe saves), `search`, `syntax` (summaries + blocks), `hashline` (byte model, XXH32 tags, tagged headers, patch grammar), `jobs` (process supervision, group escalation, exit watcher), `secrets` (placeholders + fail-closed redaction), `frames` (session ledger), `instructions` (discovery + caps), `ask` (schema + records), `project` (document model), `endpoint` (session records), `prompt` (render core, strict `attr`, `ErrEmptyRender`), `api` (protocol + consumer client).
+- **wired to the model:** `read` (selectors, tags, code summaries, directory listings), `write`, `ls`, `grep`, `find`, `cd`; schemes `file`, `local`, `out`, `cfg`, `session`, `artifact`; location service and consumer client. Everything else is a tested engine awaiting its wiring unit and is not advertised.
+- **next completions, one unit each:** `edit` needs hashline staging/seen guards/exact-text; `bash`+`jobs`+`job://` need the jobs Manager; `ask_user` needs the vault plus dialogs; prompt takeover needs confinement, section tags and `builtin/workbench`; `session.project` needs the project registry detection unit.
 - **next:** Continue C–M on these engines and finish the remaining B storage/project/trust foundations. Full hashline, syntax summaries, remaining tools/schemes, project identity/storage, registries, frames, instructions, jobs, secrets, prompts, skills, asks and messaging are still unimplemented. Phase A's freeze/ledger/handoff exit also remains open. No Slice 1 exit is claimed.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
