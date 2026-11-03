@@ -5,7 +5,7 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "SPEC-0012 project model and URI namespace; pig-web R6"
       changes: ["Worktree creation applies SPEC-0012 §4.3–4.5", "job:// tree with stdin and ctl files", "Core inventory resolves every auth.json entry through the host"]
+    - revision: 6
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
+      changes: ["G8.1 replaced by SPEC-0013 substitution and env injection", "Job logs keep raw output", "Removed display/log suppression of credentials", "G8.20 scheme commands in bash"]
 ---
 
 # 1. Scope and references
@@ -95,7 +98,6 @@ Host config manager /remote:
 - In-place edits only for uniquely identified owned/supported blocks; complex Match/Include arrangements stay inspectable without pretending full safe rewrite support.
 - Rename previews affected alias references and notes; never rewrite unrelated aliases or known_hosts automatically.
 - Host notes are Markdown with round-trip-preserved TOML metadata for description/shell/hidden; they are not arbitrary executable configuration.
-- Secret key contents, expanded credential environment and auth agent material never enter renderers/logs.
 - Remote project configuration is not auto-loaded as local executable policy; note/instruction trust is explicit.
 
 # 5. Bash execution and supervision
@@ -152,9 +154,9 @@ One supervisor serves the jobs tool, /workbench jobs, /wb:jobs and the `job://` 
 - `ls job://` catalog; `job://<id>/status`, `cmdline`, `cwd`; `log`, `stdout`, `stderr` paged and grep-able; write `stdin`; write `ctl` with `eof`, `kill` or `signal <name>`.
 - Same authorization and identity checks on every path; URIs cannot bypass approval.
 
-Log storage is private session-owned state. Default per-job 10 MiB retained output, per-session 100 MiB; bounded rolling segments with monotonic cursor (job ID, stream, segment/generation, offset). Rotation reports lost byte intervals. No quota-triggered process blocking/deadlock; continue draining and record loss. Order across stdout/stderr is observed ingestion order, not a guaranteed global write order. UTF-8 chunk boundaries and redaction across chunks require stateful decoding.
+Log storage is private session-owned state. Default per-job 10 MiB retained output, per-session 100 MiB; bounded rolling segments with monotonic cursor (job ID, stream, segment/generation, offset). Rotation reports lost byte intervals. No quota-triggered process blocking/deadlock; continue draining and record loss. Order across stdout/stderr is observed ingestion order, not a guaranteed global write order. UTF-8 chunk boundaries require stateful decoding.
 
-Known-secret redaction happens before persisted/displayed output where feasible; raw log retention is opt-in under user policy. Redaction cannot guarantee arbitrary unknown secrets: warn/document scope and avoid exporting logs automatically. Curated process metadata excludes environment secrets. Terminal controls are sanitized for display without interpreting them as UI commands.
+Logs keep raw output, including secret values a command prints; output read back through the jobs tool or `job://` passes the SPEC-0013 boundary like any tool result. Terminal controls are sanitized for display without interpreting them as UI commands.
 
 Completion emits one frame keyed by job ID/terminal revision. Per-policy follow-up wake may be requested; default no automatic new paid turn. UI viewing does not consume completion notification state. Output progress is coalesced, not one frame per line.
 
@@ -167,7 +169,7 @@ Reload/shutdown default: terminate owned jobs and record final/interrupted state
 - SSH Include/Match preservation, hostile paths/aliases, host-key refusal, auth prompt unavailable, disconnect mid-write.
 - Foreground/background/promotion ownership race, spawn failure, output-before-ready and cancel-after-transfer.
 - Pipe vs PTY keys/EOF/signals, partial writes, closed stdin and output/wait timeout distinction.
-- Noisy dual streams, giant lines, redaction across chunks, disk quota/rotation and cursor gaps.
+- Noisy dual streams, giant lines, disk quota/rotation and cursor gaps.
 - Kill local process descendants, remote watchdog loss, parent SIGKILL, reload/shutdown; document observed platform guarantees.
 - Same results through tools/URIs/panels, no notification acknowledgement merely by inspection.
 - Retained stale PID cannot control a reused process; unknown outcomes stay unknown.
@@ -179,11 +181,7 @@ POSIX local+SSH is the primary target. Windows requires job-object/process and p
 From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench `core/*` at `bc7ce0e` and oh-my-pi `bash-*` tests. Normative.
 
 **Jobs and output**
-- **G8.1 Secret guard.**
-  - Inventory: PiG credential stores (every `auth.json` entry, built-in and extension providers alike, resolved through the host with `ModelRuntime.ListCredentials` and `ModelRegistry.GetProviderAuth`, so `!command` keys are expanded by the host or the owning provider and Workbench never runs them itself; resolved lazily at the first launch and cached in memory for the session; a provider that still yields a raw `!…` value is reported as not covered; host probe pending: `GetProviderAuth` for a key-only extension provider whose stored key is `!command`), credential-shaped environment variables, Workbench state, and secret sources other extensions register by reference (SPEC-0001 §8; a failing contributed source is reported but does not block launches). Placeholders are preserved. Overlapping or straddling values merge without cascading.
-  - Credential shapes such as private keys are withheld until complete, using a bounded buffer. Interleaved stdout/stderr is withheld, never reordered, at a buffer limit counted in UTF-8 bytes.
-  - A malformed or oversized inventory **refuses the launch**.
-  - A failing listener or redaction callback never writes raw output. A failed reload discards the previous snapshot. Redacting before the inventory is loaded is refused. Secrets are never written to any store.
+- **G8.1 Secrets** (SPEC-0013). Placeholders in command text, cwd, stdin writes and job input are substituted right before execution; the displayed and stored call keeps them. Secrets with an `env` name in the session's scope chain are injected into the environment of bash calls and jobs, local and SSH. Results go back through the SPEC-0013 boundary.
 - **G8.2** Non-interactive commands get EOF on stdin instead of hanging.
 - **G8.3** Aborting a `jobs wait` call leaves the job running.
 - **G8.4** Shutdown closes admission first, coalesces kill attempts, reports failed and unfinished kills, and permits a retry.
@@ -217,4 +215,5 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - **G8.16** Terminal graphics (Sixel, kitty) are extracted before sanitisation and kept even on timeout or failure.
 - **G8.17** Non-interactive environment defaults: pager off, no prompts. `exec` cannot replace the supervisor. A grandchild holding stdout open does not block completion. Grandchildren are killed on timeout and abort.
 - **G8.18 Result shape.** A non-zero exit is an error result with details, not a thrown tool failure. A timeout is a warning state with one notice; cancellation is distinct from timeout. A pipeline ending in `head`/`tail` keeps the final-stage output. Late results never flush into a replacement session or branch.
-- **G8.19** The cwd may be a locatable URI (`skill://`, `local://`) and resolves to its backing path. A non-locatable or read-only scheme as cwd or redirect target fails explicitly. Shell text is never rewritten.
+- **G8.19** The cwd may be a locatable URI (`skill://`, `local://`) and resolves to its backing path. A non-locatable or read-only scheme as cwd or redirect target fails explicitly. Shell text is never rewritten, except for SPEC-0013 placeholder substitution.
+- **G8.20 Scheme commands.** A standalone `ls`, `cat`, `rm`, `mv`, `cp` or `mkdir` (or a `>` redirect) whose path arguments use a registered non-locatable scheme (e.g. `rm secret://global/old-token`) runs in-process through the resource router with that provider's approval rules, and returns shell-like output and exit status. Any other command with such a path fails with an error naming the supported forms. Scheme paths in commands for an `ssh://` cwd fail explicitly.

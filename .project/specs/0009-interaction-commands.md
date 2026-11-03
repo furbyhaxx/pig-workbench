@@ -5,7 +5,7 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
       changes: ["Activity line above the editor", "statusSegment placement activity with count, severity, glyph and open target"]
+    - revision: 7
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
+      changes: ["ask_user question type secret", "Removed answer, tldr and history value masking; provider requests pass the SPEC-0013 boundary"]
 ---
 
 # 1. Scope and sources
@@ -44,7 +47,9 @@ Input:
 {"title":"Storage policy","questions":[{"id":"scope","label":"Scope","prompt":"Where should history be discoverable?","type":"single","required":true,"options":[{"value":"project","label":"Project only","description":"Restrict discovery to this project"},{"value":"global","label":"Project and global","description":"Require explicit authorization for global content","recommended":true}]}]}
 ```
 
-Question fields: id unique stable string, optional label, prompt, type single|multi|preview (default single), required advisory boolean (default false), options[]. Option values are unique within question; label required, description/preview/recommended optional. Preview type requires nonempty preview on every option. An empty options[] permits freeform-only input without fabricated choices. Title/IDs/text are bounded: 32 questions, 100 options/question, 64 KiB total prompt payload by default. Validation names the exact field.
+Question fields: id unique stable string, optional label, prompt, type single|multi|preview|secret (default single), required advisory boolean (default false), options[]. Option values are unique within question; label required, description/preview/recommended optional. Preview type requires nonempty preview on every option. An empty options[] permits freeform-only input without fabricated choices. Title/IDs/text are bounded: 32 questions, 100 options/question, 64 KiB total prompt payload by default. Validation names the exact field.
+
+Type `secret` requests a credential from the user (SPEC-0013 §7): it carries `secret: {name, scope: project|global, env?, description?}`, has no options and no freeform choice, and its answer is the placeholder plus metadata; the value goes to the vault, never into the transcript, answer history or frames. In a form, a secret question is one step like any other; review shows `stored as red-sec-…`.
 
 Custom freeform is always available, separate from model-provided choices; no need to append a fake Other option. Several custom answers can exist for multi mode. Requested type and presented type are retained: user may change single↔multi or use configured presentSingleAsMulti without changing what the original request asked. Preview content is data, never executable HTML/commands.
 
@@ -108,7 +113,7 @@ Print/JSON: if no authorized remote bridge exists, return interactionUnavailable
 
 Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
 
-Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retentionDays` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Values are redacted; drafts are never recorded. Session payloads can still contain sensitive text; display redaction does not erase the transcript.
+Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retentionDays` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Drafts are never recorded. Secret answers are recorded as their placeholder.
 
 # 6. /answer extraction and replay
 
@@ -128,7 +133,7 @@ Algorithm:
 1. Capture branch leaf/generation and last applicable checkpoint's covered source interval.
 2. Select delta since it (or entire branch for first checkpoint); include prior checkpoint context and explicit extra instructions as needed. Expand relevant compaction records from persisted history only under normal permission.
 3. Segment by token budget using host tokenizer/estimator, label estimates, keep tool call/result associations. Avoid treating bytes as exact tokens.
-4. Generate bounded parallel notes (default concurrency 2) and synthesis, with session cancellation. Redact known secrets before sending; never use unconfigured external inference endpoints.
+4. Generate bounded parallel notes (default concurrency 2) and synthesis, with session cancellation. Requests go through host models and therefore the SPEC-0013 boundary; never use unconfigured external inference endpoints.
 5. Validate scope/branch still applicable, append a completed versioned recovery card with covered IDs, source digest, instructions digest, model reference and known usage/duration.
 6. Failure/cancel retains old checkpoint; partial notes are not published as complete checkpoint.
 
@@ -191,7 +196,8 @@ Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `s
 - Pending recovery, duplicate local/remote submission, wrong generation, timeout and branch change.
 - RPC equivalence and print/JSON failure without UI; optional bridge explicit bounded wait.
 - /answer no questions, malformed extraction, empty concrete choices, stale source, cancel, configured retry and replay without inference.
-- Checkpoint source interval, compaction, cancellation, regeneration, secret redaction and unknown metrics.
+- Checkpoint source interval, compaction, cancellation, regeneration and unknown metrics.
+- Secret question in TUI and RPC: value reaches the vault, the tool result and history hold only the placeholder, `env` is usable in the next bash call.
 - Every route/completion/headless alternative; top-level and family handlers agree.
 - Codemode handled child failure remains visible; historical preview never executes tools.
 - Width/height/focus/keybinding captures per SKETCH-0001/2 and workflow designs in SKETCH-0003.
@@ -216,7 +222,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 
 **/answer**
 - **G9.7 Extraction.** Tool-call arguments win over text; multiple tool calls are rejected; fenced JSON is a fallback. Option spam is flagged, options are capped, and generic conversational prompts are dropped. The extraction model is the first configured model with auth inside the session's model scope; a fallback outside that scope is rejected.
-- **G9.8 History store** (when enabled). Per project and session under XDG data, as append-only whole records. The file mode is tightened. Values are redacted while keeping their structure, and errors are value-free. Disabled means nothing is written. A failed history write never loses the answer.
+- **G9.8 History store** (when enabled). Per project and session under XDG data, as append-only whole records. The file mode is tightened. Errors are value-free. Disabled means nothing is written. A failed history write never loses the answer.
 
 **/tldr**
 - **G9.10 Evidence filter.** Context, instruction and alias frames are excluded even when explicitly included; job event frames are kept; hidden or empty extension messages are dropped. Unfinished calls cross checkpoints as background without repeating work. Late corrections to already-summarised messages are kept. Folded edits apply locally and never to a shared ancestor.

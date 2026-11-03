@@ -5,9 +5,9 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Resolver reads the live registry at first use (pig-web R2)", "Typed table cells including uri (R3)"]
+    - revision: 5
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
+      changes: ["Call rendering no longer hides secret-bearing arguments"]
 ---
 
 # 1. Goal and verified host mechanisms
@@ -51,7 +54,7 @@ The producer registers its normal tool with PiG, then registers `toolPresentatio
 
 Caller must own the tool or the user explicitly grants an integration adapter permission for that tool. Cross-check host source metadata when available. If ownership cannot be established, report verificationRequired; do not silently claim arbitrary tools. A tool cannot have two active Workbench presentation owners. Replacing an existing external renderer is opt-in, visible in /tools and reversible.
 
-Call extraction uses JSON Pointer and a closed formatting set (plain, path, URI, count, duration); no evaluation, templates with execution, regex scripts or host calls. Optional fields can be absent. Any required secret-bearing argument is omitted/redacted by the producer; Workbench additionally sanitizes terminal/control sequences.
+Call extraction uses JSON Pointer and a closed formatting set (plain, path, URI, count, duration); no evaluation, templates with execution, regex scripts or host calls. Optional fields can be absent. Workbench sanitizes terminal/control sequences.
 
 ```json
 {"v":1,"id":"register-view","sessionId":"s-1","generation":"g-1","from":{"owner":"build-tools","instance":"i-1"},"method":"register","params":{"kind":"toolPresentation","key":"build_run","descriptor":{"toolNames":["build_run"],"label":"Build","description":"Build command output","category":"Build tools","presentationVersion":1,"preset":"process","defaultDisplay":{"density":"normal","previewLines":8},"detailsPath":"/workbenchPresentation","callFields":[{"pointer":"/target","label":"target","format":"plain"}],"metricDefinitions":[{"id":"durationMs","label":"duration","unit":"ms","priority":20}],"settings":[]}}}

@@ -5,7 +5,7 @@ document:
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T20:55:00+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "orchestrator"
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Approved DRAFT-0002 rev 3: agents addressed as agent:// files, project IDs, omp-style receipts, broadcast and the coordinator"
       changes: ["Project identity by SPEC-0012 project ID", "Agent interface moved from the sessions tool to the agent:// tree", "Receipts delivered/woken/queued/failed, unanswered-send tracking, waits", "Project broadcast", "Coordinator with configurable safeguards"]
+    - revision: 3
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
+      changes: ["Bodies are not masked by the sender; the receiver's SPEC-0013 boundary applies"]
 ---
 
 # 1. Purpose and boundary
@@ -75,7 +78,7 @@ Requests: `hello`, `info`, `control` (coordinator only, §9) (returns the record
  "attachments":["session://0193f1aa-…/entries/e-812"],"wake":"ifIdle","progress":false,"expiresAt":"2026-11-02T21:41:00+01:00"}
 ```
 
-- `body` is plain text, ≤ 32 KiB after redaction. The sender's secret guard (SPEC-0008 G8.1) redacts it before sending.
+- `body` is plain text, ≤ 32 KiB. An agent's text already holds placeholders only; the receiving session's SPEC-0013 boundary applies when the frame enters its context, and placeholders resolve there because all sessions of the user share the vault.
 - `attachments` are resource URIs (≤ 16). They are never content. The receiver resolves them under its own policy when the agent reads them.
 - `channel` is `agent` (delivered to the model) or an extension channel such as `ext:pig-web` (delivered to that extension, §8).
 - `to.sessionId` must match the target's current session; otherwise the message is rejected with `sessionChanged` and the current identity, so a message meant for one conversation never lands in another.
@@ -204,7 +207,7 @@ Acceptance:
 - Two sessions in different projects discover each other; a third user's process cannot connect (Linux peer UID check plus a wrong-token test).
 - Idle wake, busy steer, waitingForUser untouched, `sessionChanged` after `/new`, expiry, and stale-record cleanup after `kill -9`.
 - Ping-pong between two agents stops waking after `maxHops`; the budget and rate limits hold; blocked peers are rejected.
-- Secrets in a body are redacted before they leave the sender; untrusted text cannot escape the frame envelope.
+- A raw secret typed into `/workbench sessions send` never reaches the receiver's provider requests; untrusted text cannot escape the frame envelope.
 - Coordinator: enabling only by user command; each class denied with `policyDenied` until granted; lease expiry; target consent, destructive confirmation, marks, frames and audit each on and off; answering a Workbench `ask_user` form from the coordinator.
 - `agent://` list/send/wait/broadcast through `ls`, `read`, `write`; receipts `delivered`, `woken`, `queued`, `failed`.
 - Linux runtime verification; macOS and Windows compile-level only until run there (as with the backend evaluation §9).

@@ -5,7 +5,7 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
       changes: ["Activity line settings"]
+    - revision: 8
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
+      changes: ["Known-secret guard replaced by SPEC-0013", "Secrets settings and vault storage"]
 ---
 
 # 1. Scope and precedence
@@ -123,6 +126,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | guides.enabled / maxBytes / disabled | true / 2048 / [] | user/project/runtime presentation (SPEC-0012 §5.5) |
 | docs.sourceVersionsKept / sourcePaths | 3 / docs, extensions/sdk, cmd, internal | user/runtime; fetch only on first access (SPEC-0012 §5.4) |
 | instructions.agentsMdReminder / backlog.validatePointers | true / true | user/project/runtime (SPEC-0007 §2) |
+| secrets.enabled / envInjection / keyFile | true / true / see SPEC-0013 Q1 | user/runtime; keyFile user only (SPEC-0013 §8) |
 | activity.enabled / placement / shortcut | true / aboveEditor / alt+w | user/runtime (SPEC-0009 §9) |
 | activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
 | activity.replaceWorkingIndicator | false | user/runtime; enabling requires verified retry/compaction events |
@@ -143,7 +147,7 @@ Additional adapter/backend size/pixel/decompression/grammar limits must be added
 
 User can Save/Discard/Continue editing when dirty. A failed save retains staged edits. A successful file write followed by a consumer restart failure reports saved-but-not-applied, keeps last working runtime snapshot if safe and exposes reconciliation error. Do not report everything applied because rename succeeded.
 
-cfg:// reads redact sensitive values and expose provenance. Writes use typed key/value/scope/revision, same validator/save path and confirmation policy. Never serialize credential inventories or allow arbitrary path writes through config. A project cannot enable custom notification commands, host-shell execution, model billing destinations or broader resource access.
+cfg:// reads expose values and provenance. Writes use typed key/value/scope/revision, same validator/save path and confirmation policy. Never serialize credential inventories or allow arbitrary path writes through config. A project cannot enable custom notification commands, host-shell execution, model billing destinations or broader resource access.
 
 # 5. Trust and authorization matrix
 
@@ -176,6 +180,7 @@ Use host-resolved config/agent/state roots (or platform equivalent), not current
 | Job metadata/logs | Private state/session/job directory; retention policy |
 | Spilled outputs (`out://`) | Private state/session/out, referenced by resource URI |
 | Project registry | `{agentDir}/projects/` (index, per-project registry copy, private notes, sessions, sidecars; SPEC-0012 §3.4) |
+| Secret vault | `$XDG_DATA_HOME/pig-workbench/secrets/vault.jsonl`, encrypted values, shared by all sessions (SPEC-0013 §3.3) |
 | PiG source checkouts | `$XDG_DATA_HOME/pig-workbench/docs/source/<version>/`, symlinked from `~/.pig/docs/source` (SPEC-0012 §5.4) |
 | Scratch local:// | Private per-session directory under platform temporary root |
 | Syntax/suffix/index caches | Rebuildable bounded state/cache; no secrets by default |
@@ -195,16 +200,11 @@ Retention does not delete active job logs, pending ask state, active artifact re
 
 Atomic state writes prevent torn JSON; append journals tolerate incomplete last record with diagnostic. Reconcile receipts after crash before retrying mutation. Do not relaunch shell jobs, reissue inference or replay user submissions because a pending record exists.
 
-Known-secret guard:
-- Learns only authorized known secret inventory; never logs that inventory.
-- Redacts before display/export and before auxiliary inference where possible.
-- Streaming redaction retains boundary overlap so split tokens do not leak.
-- Raw file contents/tool results intended for the model are not silently altered into editable source: if redaction changes source text, mark it a derived non-editable view.
-- Masking cannot promise detection of unknown secrets. Users must be warned before export/share and no automatic external publication is permitted.
+Secrets: [SPEC-0013](0013-secrets.md). Nothing here hides data from the user, the screen or local files.
 
 Session catalog ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P24–P25): `SessionManagerListAll` returns every project's sessions with `allMessagesText`, also in `--no-session` runs. Workbench exposes all of them through `session://` (SPEC-0004) without consent steps. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), not from a directory scan.
 
-Question/answer session history is potentially sensitive. Extra archive off by default, raw logs off by default, debug payload capture off by default. Opt-in debug evidence goes only to a private local path with bounded retention; never stdout protocol stream. API errors include safe context, not full environment/config snippets.
+Debug payload capture is off by default; opt-in evidence goes to a private local path with bounded retention, never to the stdout protocol stream.
 
 # 8. Lifecycle ownership
 
@@ -220,7 +220,7 @@ Reload creates a new generation: dormant settings remain, contribution handles a
 - Security keys denied from project config; runtime changes cannot fake host trust.
 - Replay/fork/compaction rebuild correct branch; unknown stored version blocks unsafe operations.
 - No-session durability labels and cleanup; ownership checks prevent deleting another session's data.
-- Secret redaction across chunks and export, non-editable redacted source, no incidental credential logs.
+- SPEC-0013 §11 acceptance.
 - Crash recovery refuses PID reuse and mutation replay; retention protects active references.
 - Schema/UI/docs generated from same catalog or consistency-tested; per-feature tests prove changed consumers applied settings.
 

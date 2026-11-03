@@ -5,7 +5,7 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 11
+  revision: 12
   created_at: "2026-11-02T15:26:05+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -44,6 +44,9 @@ document:
     - revision: 11
       reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
       changes: ["WB-23 activity line", "M0.2 probe and upstream request for widget view events"]
+    - revision: 12
+      reason: "SPEC-0013 secrets (nukii-revived design) replaces the donor secret guard"
+      changes: ["WB-24 secrets with milestone split", "D11 secrets decisions Q1–Q4", "M0 host probes S1–S6"]
 ---
 
 # 1. Outcome and authority
@@ -110,6 +113,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-20 | Live session discovery across projects, messaging through `agent://` that can wake idle sessions, broadcast and the opt-in coordinator (SPEC-0011); collaboration services for other extensions: location, secret sources, status segments, edit tracking, fetch backends, docs (SPEC-0001 §8) | M5 (endpoint, `agent://`), M7 (panel, coordinator), services with their owning milestone | Two-session wake/steer/loop-guard tests; coordinator class and safeguard tests; pig-web integration against the services |
 | WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
 | WB-23 | Activity line above the editor with click-to-inspect and contributed items (SPEC-0009 §9) | M1 (line, shortcut), M7 (contributions, click once the host delivers widget events) | Captures at 36/57/80/140 in fullscreen; counts match registries; click and shortcut open the same targets |
+| WB-24 | Secrets (SPEC-0013): `red-sec-` placeholders at every provider-bound boundary, substitution before every tool call, encrypted vault, env injection, `secret://`, `ask_user` type `secret`, `/workbench secrets` | M0 (probes S1–S6), M1 (detection, vault, boundary hooks, substitution, prompt section), M4 (`secret://`), M5 (env injection, G8.20 scheme commands), M7 (`ask_user` secret, panel) | SPEC-0013 §11; captured provider payloads contain no known secret |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -141,6 +145,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D7: terminal job input | Sending a control byte through a pipe is not a terminal signal/EOF | Distinguish stdin bytes, close, signals and PTY input. Preserve key controls with defined backend semantics and a tested PTY backend where needed; unsupported terminal operations fail explicitly |
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
+| D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | SPEC-0013 §10 Q1–Q4; recommendations recorded, user decision pending |
 | D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 
 Further corrections carried into implementation contracts:

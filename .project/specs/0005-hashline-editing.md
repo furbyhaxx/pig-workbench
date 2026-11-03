@@ -5,7 +5,7 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "SPEC-0012 project model and URI namespace"
       changes: ["artifact:// files carry hashline anchors through their backing file"]
+    - revision: 6
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
+      changes: ["Placeholders in snapshots and replacement text"]
 ---
 
 # 1. Authority and scope
@@ -146,6 +149,8 @@ Preserve encoding/BOM/newline convention and permissions where supported; do not
 Local commit uses same-directory temporary file, flush/close and atomic replacement with mode preservation. Locks coordinate Workbench callers only: ordinary filesystem rename is not CAS against arbitrary external writers. Record the limited guarantee and recheck identity as late as feasible. Remote/provider writes use declared revision checks and receipts from SPEC-0004.
 
 Preflight failure commits nothing. A later I/O failure may produce a partial batch; report every committed/failed/unattempted resource. Do not blindly roll back over external changes. Recovery data is private, bounded and referenced by receipt; retaining backups requires configured policy. Cancellation after a commit reports effects, not “not applied”. Cross-provider move requires an explicit coordinator; unsupported is safer than a disguised copy/delete.
+
+Secret placeholders (SPEC-0013 §4.3): tags and seen-state cover the real file bytes; rows shown to the model carry placeholders; placeholders in replacement text are substituted before validation and commit, so an edit never writes a placeholder into a file by accident.
 
 # 8. Result, invalidation and verification
 

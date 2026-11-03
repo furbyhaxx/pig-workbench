@@ -5,7 +5,7 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:00:47+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "SPEC-0012 project model and URI namespace; pig-web R6 and R8"
       changes: ["Registration kind docs and scheme guides", "Diagnostics moved from harness:// to cfg://workbench/ and session://self/", "location carries the project ID", "Secret reference kind dotenvFile; core inventory covers auth.json through host resolution (R6)", "Dropped per-authority scopes (pig-web no longer needs R4)"]
+    - revision: 5
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
+      changes: ["Removed the secrets capability; R5/R6 superseded by SPEC-0013 detection"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -117,7 +120,6 @@ Methods:
 | operation.status | operationId → receipt state for admitted deferred work |
 | cancel | requestId of the caller's own pending request → no reply; idempotent |
 | location.get | → current location (§8) |
-| secrets.registerSources | secret source references → registration receipt (§8) |
 | status.update | registrationId of a `statusSegment`, text and style → accepted (SPEC-0009 §9) |
 | snapshots.view / snapshots.status / snapshots.touched | Edit-tracking service for other tools (SPEC-0005 §10) |
 | sessions.list / sessions.send | Live-session messaging (SPEC-0011 §8) |
@@ -170,16 +172,11 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 
 # 8. Collaboration services and answers to integrating extensions
 
-Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `secrets`, `status`, `snapshots`, `fetch` and `sessions`. Each is optional; an unsupported capability fails explicitly.
+Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `status`, `snapshots`, `fetch` and `sessions`. Each is optional; an unsupported capability fails explicitly.
 
 **Location (`location`).** The `discover` result includes `location` when requested: `{authority, cwd, displayCwd, projectRoot, project?, origin, revision}`. `project` is `{id, slug, component}` from SPEC-0012 §3.3, so clients use the same project identity as Workbench; it is absent in the builtin `global` project. `location.get` returns the same object. `location.changed` events carry `{previous, current, origin, revision, reason}`. Config roots are still the host session cwd (SPEC-0010 §1); the location is for scoping, not for loading config.
 
-**Secret sources (`secrets`).** `secrets.registerSources` registers *references*, never values, because every listener on the shared bus sees request payloads. Allowed references:
-- `{kind:"env", names:[…]}`;
-- `{kind:"jsonFile", path, pointers:[…]}` for a file inside the agent directory or the owner's config root that is owned by the user and has mode 0600. A pointer may use `*` for one path segment;
-- `{kind:"dotenvFile", names:[…]}` for `<host session cwd>/.env` only, and only while that project is trusted (SPEC-0010) and the file is owned by the user and not group- or world-writable. Workbench rechecks trust, owner and mode each time it reads; a failing check drops the values from the guard and reports it. Parsing follows the common dotenv subset (`KEY=value`, quotes, `export`, comments, no interpolation).
-
-Workbench never runs `!command` values of referenced files. `auth.json` needs no reference: the core inventory covers it (SPEC-0008 G8.1). Workbench reads the values itself, refreshes them when the file fingerprint changes, and adds them to the SPEC-0008 secret guard. At most 32 references per owner. An unreadable contributed source is reported in `/workbench integrations` and does not block job launches; only the core inventory fails closed (SPEC-0008 G8.1). Unregister removes the values from the guard.
+**Secrets.** No bus capability. SPEC-0013 detects credentials itself (PiG `auth.json` including `!command` keys, environment, `.env*` files, token shapes), redacts every provider request and substitutes placeholders into every tool call, including other extensions' tools. Extensions need nothing to take part.
 
 **Status segments (`status`).** See SPEC-0009 §9.
 
@@ -201,8 +198,8 @@ Workbench never runs `!command` values of referenced files. `auth.json` needs no
 | R2 registry timing | Accepted: the resolver reads the live registry when the host first asks about a tool name, not a snapshot from Workbench's `session_start`; see SPEC-0003 §5 |
 | R3 `search` preset with URI rows | Accepted: table cells are typed and include `uri` (SPEC-0003 §3) |
 | R4 per-authority scope | Withdrawn by pig-web (central KB); removed from SPEC-0004 |
-| R5 secret contribution | Accepted as references, not values: `secrets` capability above |
-| R6 unreadable secret sources | `.env`: reference kind `dotenvFile` (option A). `!command` keys: covered by the core inventory, which resolves every `auth.json` entry through the host (SPEC-0008 G8.1), so no Workbench-run commands (no option B) |
+| R5 secret contribution | Superseded: SPEC-0013 needs no contribution |
+| R6 unreadable secret sources | Superseded: SPEC-0013 §2 detects `.env*` files and resolves `auth.json` through the host |
 | R7 fetch backend shape | SPEC-0004 §11 |
 | R8 project identity in requests | SPEC-0004 §4: `project` present when known, absent for `global` |
 | Edit tracking (dropped by pig-web) | Offered as the `snapshots` service (SPEC-0005 §10) |

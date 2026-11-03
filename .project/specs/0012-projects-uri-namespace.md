@@ -5,7 +5,7 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-03T10:00:00+01:00"
   updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "orchestrator"
@@ -14,6 +14,9 @@ document:
     - revision: 1
       reason: "Approved DRAFT-0002 rev 3 with decisions N0–N6 and Q1–Q3"
       changes: ["Specified project model, identity, storage, conventions, artifact storage modes, naming rule, tool semantics, scheme trees, docs:// and guides"]
+    - revision: 2
+      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
+      changes: ["secret:// in the tree list"]
 ---
 
 # 1. Scope
@@ -264,6 +267,7 @@ cfg://ctl                                write: reload
 cfg://workbench/status                   Workbench runtime status
 cfg://workbench/integrations/<owner>     registrations and their state
 skill://<name>/{SKILL.md,…}              enabled skills and their files; read only
+secret://{global,project/<slug>}/<name>  placeholder + metadata, never the value; write stores (SPEC-0013 §6)
 ```
 
 Documentation (§5.4):
