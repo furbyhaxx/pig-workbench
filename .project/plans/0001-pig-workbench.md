@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 20
+  revision: 21
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T13:38:33+01:00"
+  updated_at: "2026-11-03T13:53:58+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -71,6 +71,9 @@ document:
     - revision: 20
       reason: "Probes PR7 and PR8 ran"
       changes: ["Progress: prompt probes complete"]
+    - revision: 21
+      reason: "User split delivery into three slice plans"
+      changes: ["Delivery now sequenced by PLAN-0002 (foundation), PLAN-0003 (feature-complete), PLAN-0004 (completion)", "Milestones stay as the definition of scope and exits; the slices own order and detail"]
 ---
 
 # 1. Outcome and authority
@@ -107,10 +110,20 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
 - **done (M0.2, secrets):** [Secrets probes](../analyses/2026-11-03-secrets-host-probes/README.md) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** Set up the personal PiG fork for host fixes (D13); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
-- **next:** M0 evidence and contract closure, then M1 integrated foundation.
+- **now:** [PLAN-0002](0002-slice-1-foundation.md) Phase A: M0.1 decisions (D5.b, D5.d), M0.4 contract freeze including pig-web's [M0.4 inputs](../handoff/pig-web-m0-4-inputs.md). Personal PiG fork (D13) in parallel.
+- **next:** PLAN-0002 Phases B–L, then [PLAN-0003](0003-slice-2-feature-complete.md) and [PLAN-0004](0004-slice-3-completion.md).
 - **done (M0.2, prompts):** [System prompt probes](../analyses/2026-11-03-system-prompt-host-probes/README.md) PR1–PR8: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3). PR7: mid-run `tools` frames work; PR8: late sections (`mcp_servers`) need the `before_provider_request` splice (fork candidate F-P4). SPEC-0014 decisions Q1–Q6 accepted.
-- **later:** M2–M8, expanded into detailed work packages as prerequisites pass. Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3).
+- **later:** Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3), in PLAN-0004 C5.
+
+## Delivery slices
+
+The milestones in section 5 define scope and exits; three slice plans own the order and the detail. No milestone requirement is dropped by the split.
+
+| Slice | Plan | Contains | Exit |
+|---|---|---|---|
+| 1 Foundation | [PLAN-0002](0002-slice-1-foundation.md) | M0.1 decisions, M0.4, M1, plus the foundation of M2–M7: every subsystem's data model, persistence, public contract and one working path; every extension seam live | pig-web co-load gate |
+| 2 Feature-complete | [PLAN-0003](0003-slice-2-feature-complete.md) | Remaining functional scope of M2–M7 with plain UI | Every scope row usable by agents in TUI, RPC and print |
+| 3 Completion | [PLAN-0004](0004-slice-3-completion.md) | M0.5, UI part of M7, fork-dependent features, enhancements, performance, platforms, M8 | Release gate |
 
 A milestone can be implemented incrementally. Shipping the complete extension requires all scope rows to pass; an early milestone is not a reduced-scope release.
 
@@ -218,6 +231,8 @@ Ownership boundaries:
 Create packages when they have concrete responsibilities, not empty scaffolding for every box. Public integration contracts are versioned; internal functions use direct Go calls rather than event round trips.
 
 # 5. Work packages and milestone exits
+
+Sequencing and detail live in the slice plans (section 1, Delivery slices); the "next"/"later" labels below are historical.
 
 ## M0 — Close contracts and prove host seams (next; detailed)
 
