@@ -75,6 +75,11 @@ func TestSummaryViewFoldsBodiesOnly(t *testing.T) {
 	if view.Facts.TotalLines != total {
 		t.Fatalf("total lines %d != %d", view.Facts.TotalLines, total)
 	}
+	for _, span := range view.Facts.OmittedRanges {
+		if span[1] > total {
+			t.Fatalf("summary invents a line after EOF: %v > %d", span, total)
+		}
+	}
 	ranged := target
 	ranged.Selection, _ = resource.ParseSelector(":10-20:raw")
 	if _, ok, err := app.summaryView(context.Background(), ranged, snapshot); ok || err != nil {

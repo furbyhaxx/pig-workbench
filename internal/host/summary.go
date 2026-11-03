@@ -98,6 +98,9 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 
 func renderSummary(source string, summary syntax.Summary) (string, [][2]int) {
 	lines := strings.Split(strings.ReplaceAll(source, "\r\n", "\n"), "\n")
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
 	var out strings.Builder
 	var omitted [][2]int
 	previous := 0
