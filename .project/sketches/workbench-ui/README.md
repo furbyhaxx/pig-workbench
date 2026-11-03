@@ -5,9 +5,9 @@ document:
   title: "Workbench UI and UX design"
   description: "Reviewable terminal wireframes, navigation, interaction states and responsive/headless behavior"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T15:31:51+01:00"
-  updated_at: "2026-11-03T11:49:31+01:00"
+  updated_at: "2026-11-03T12:29:54+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "Session titles and path display conventions"
       changes: ["Session listing shows Title; title write example", "Path display examples per width and footer path styles (SPEC-0003 §10)"]
+    - revision: 6
+      reason: "System prompt inspector (SPEC-0014)"
+      changes: ["Surface row and §13 wireframe for /workbench prompt"]
 ---
 
 # Workbench UI/UX
@@ -64,6 +67,7 @@ Preserve search, selection and scroll when returning from detail. Restore by sta
 | Questionnaire | `ask_user`, `/answer`, replay | Answer single/multi/preview/freeform questions | 11 |
 | Checkpoints | `/tldr` | Generate, inspect, regenerate and cancel summaries | 12 |
 | Resource views | `read scheme://...` | Consistent catalog/history/skill/job displays | 13 |
+| System prompt | `/workbench prompt`, `/workbench skills` | Template chain, family, delivery, parity, served sections; skill catalog | 13 |
 | Status composition | `/workbench statusline` | Configure contributed segments without taking over host UI | 14 |
 
 ## 3. Hub
@@ -389,6 +393,19 @@ Resource inspection primarily uses enhanced read/list/search and their renderers
 
  ✓ read job://j12/log:-40 · 40 lines
    [job log view; current snapshot/cursor]
+```
+
+```text
+ Workbench › Prompt
+ Template  builtin/pig ← ~/.pig/agent/system-prompts/system.md
+ Family    openai  (matched "*/gpt-*", user table)
+ Delivery  force · parity ok · epoch 3 (since compaction 12:04)
+ → preamble          212 B
+   tools             640 B
+   rules           1 980 B   changed in system.md (next epoch; diff frame sent)
+   project_context 4 310 B   3 files
+   cwd                31 B
+ render --model …   diff vs PiG   open template
 ```
 
 - Project/global scope is always visible. Global history access requiring approval explains which scope will be exposed; denying it leaks no search snippets.

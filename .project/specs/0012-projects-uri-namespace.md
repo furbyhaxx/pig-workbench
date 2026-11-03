@@ -5,9 +5,9 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-03T11:48:07+01:00"
+  updated_at: "2026-11-03T12:29:31+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "User: agents read and change session titles through URIs"
       changes: ["session://<id>/title read/write with per-target mechanism and permissions", "Title = PiG session name; by-name resolves titles", "Probes T1–T3"]
+    - revision: 5
+      reason: "Progressive skill disclosure and served prompt (SPEC-0014)"
+      changes: ["skill:// load through read, unload through ctl, loaded/ listing", "session://<id>/system-prompt", "docs://workbench/prompts"]
 ---
 
 # 1. Scope
@@ -234,6 +237,7 @@ session://self → session://<id>
 session://<id>/
   meta                                   header, title, project, cwd, model, counts, timestamps
   title                                  read: current title (empty when untitled); write: set it (§5.3.1)
+  system-prompt                          prompt served in the current epoch, by section (SPEC-0014 §4.3); read only
   transcript                             current branch as Markdown, paged
   tree                                   entry tree with branches and labels
   entries/<entryId>
@@ -288,7 +292,9 @@ cfg://<group>/<key>                      effective value + provenance; write set
 cfg://ctl                                write: reload
 cfg://workbench/status                   Workbench runtime status
 cfg://workbench/integrations/<owner>     registrations and their state
-skill://<name>/{SKILL.md,…}              enabled skills and their files; read only
+skill://<name>/{SKILL.md,…}              listed skills and their files; reading skill://<name> loads it (SPEC-0014 §8.2)
+skill://<name>/ctl                       write: unload
+skill://loaded/                          skills loaded in this session, with reason (explicit, auto)
 secret://{global,project/<slug>}/<name>  placeholder + metadata, never the value; write stores (SPEC-0013 §6)
 ```
 
@@ -300,6 +306,7 @@ docs://harness/                          PiG docs bundle of the running build
 docs://harness/source/                   PiG source of the running version (read-only sparse checkout)
 docs://workbench/                        Workbench docs
 docs://workbench/schemes/<scheme>        full guide per scheme, including contributed ones
+docs://workbench/prompts                 template variables, helpers, families, gonja differences (SPEC-0014)
 docs://<owner>/ , docs://<owner>/source/ registered by other extensions (e.g. docs://pig-web/)
 ```
 

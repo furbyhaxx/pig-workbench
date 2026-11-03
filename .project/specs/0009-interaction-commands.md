@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:49:19+01:00"
+  updated_at: "2026-11-03T12:29:54+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "Path display conventions"
       changes: ["Footer path segment styles and activity line location use SPEC-0003 §10"]
+    - revision: 10
+      reason: "System prompt commands (SPEC-0014)"
+      changes: ["/workbench prompt and /workbench skills"]
 ---
 
 # 1. Scope and sources
@@ -164,6 +167,8 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /remote [alias[:/path]|off|reload|add|config] | Host/location manager; per-alias show/note/shell/hide/unhide/rename |
 | /workbench frames [ls|show|hide|collapse] [target] | Frame inspection/display policy; not deletion from model context |
 | /workbench instructions [ls|pin|unpin|reload|rules] | Applicability reasons, class/pin actions |
+| /workbench prompt [show|render --model <ref> [--tools …]|diff] | Template chain, family, delivery, parity, epoch, sections; preview without sending (SPEC-0014 §10) |
+| /workbench skills [ls|load|unload] [name] | Catalog with conditions, listed/hidden reason, loaded set, diagnostics (SPEC-0014 §8) |
 | /workbench trust [ls|add|rm] | Workbench source trust rules; distinct from host /trust |
 | /workbench integrations [owner], /workbench resources [scheme] | Read-only contribution/capability inspection |
 | /answer, /answer:again, /ask:replay, /ask-settings | Extraction/replay/shared Ask settings |

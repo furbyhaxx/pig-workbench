@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 15
+  revision: 16
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T11:47:47+01:00"
+  updated_at: "2026-11-03T12:28:56+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -56,6 +56,9 @@ document:
     - revision: 15
       reason: "Settings file rename, session titles, path display"
       changes: ["Workbench.toml", "M1.2 ports the donor path display; session title through session:// (SPEC-0012); title generation later"]
+    - revision: 16
+      reason: "User: templated system prompts, context frames, skill disclosure, several instruction files"
+      changes: ["WB-25 and decision D12 (SPEC-0014)", "M0.2 probes PR1–PR6", "M1.5 prompt engine with builtin/pig and date frame; M4 skill disclosure; M6 select=all and builtin/workbench"]
 ---
 
 # 1. Outcome and authority
@@ -94,6 +97,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
 - **now:** File the upstream issues (needs user go-ahead: external publication); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
+- **designed:** [SPEC-0014](../specs/0014-system-prompts.md) system prompt templates; decisions Q1–Q6 and probes PR1–PR6 open.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass. Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3).
 
 A milestone can be implemented incrementally. Shipping the complete extension requires all scope rows to pass; an early milestone is not a reduced-scope release.
@@ -124,6 +128,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
 | WB-23 | Activity line above the editor with click-to-inspect and contributed items (SPEC-0009 §9) | M1 (line, shortcut), M7 (contributions, click once the host delivers widget events) | Captures at 36/57/80/140 in fullscreen; counts match registries; click and shortcut open the same targets |
 | WB-24 | Secrets (SPEC-0013): `red-sec-` placeholders at every provider-bound boundary, substitution before every tool call, encrypted vault, env injection, `secret://`, `ask_user` type `secret`, `/workbench secrets` | M0 (probes S1–S6), M1 (detection, vault, boundary hooks, substitution, prompt section), M4 (`secret://`), M5 (env injection, G8.20 scheme commands), M7 (`ask_user` secret, panel) | SPEC-0013 §11; captured provider payloads contain no known secret |
+| WB-25 | System prompt templates (SPEC-0014): gonja engine, `builtin/pig` byte-identical takeover with parity check, model families and conditionals, context frames, progressive skill disclosure, `select = "all"` instruction classes | M1 (engine, `builtin/pig`, date frame), M4 (skills), M6 (frames, `select`, `builtin/workbench`) | SPEC-0014 §12 |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -156,6 +161,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
 | D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | **Resolved 2026-11-03** (SPEC-0013 §10): own key in the agent dir, no imports, AES-256-GCM, `Secrets.toml` |
+| D12: system prompt ownership | Templates need a delivery that PiG accepts; custom sections cannot replace the preamble or delete sections | **Proposed** (SPEC-0014 §13): `force` delivery now, `sections` after host request H-P1; Q1–Q6 open |
 | D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 
 Further corrections carried into implementation contracts:
@@ -229,6 +235,7 @@ Use a temporary test agent directory and controlled fixtures; do not modify user
 | Session and skill catalog access | Actual enabled/trusted resources and configured sessionDir, including in-memory session |
 | Bus service plus cancellation/reload | JSON request/reply, bounded waits, unsubscribe, no mutex-held synchronous emit deadlock |
 | UI and command/flag registration | `/workbench`, `/tools`, `--list-tools`, kit views, RPC dialogs and print/JSON behavior |
+| System prompt takeover (SPEC-0014 §11) | PR1–PR6: forced prompt scope, handler order, interim sections recording, steer before the prompt, `builtin/pig` parity fixtures, model facts |
 | Widget view events (fullscreen) | Whether the host emits `ui.view.event` for a `MouseRegion` inside an `aboveEditor` widget view; then an upstream PiG SDK request to route widget/header/footer view events to the extension (today `viewEvent` serves overlays only) |
 
 **Exit:** runnable probe evidence for every seam, or a documented host blocker. Isolated probes are not product completion and do not justify weakening the contract.
@@ -289,6 +296,14 @@ Review SKETCH-0001 against the command/feature inventory. Resolve navigation, de
 
 **Acceptance:** one controlled read receives the correct baseline before relevant model continuation; branch change invalidates queued work; untrusted payload cannot request elevated trust; bus timeouts do not deadlock tools.
 
+### M1.5 — System prompt engine
+
+- gonja environment with the confined loader, section tag, helpers and limits (SPEC-0014 §3); `builtin/pig` ported with PR5 fixtures as golden cases.
+- `force` delivery, parity check, render-failure fallback and epochs (§4); `/workbench prompt` and `session://self/system-prompt`.
+- `session.date` frame through `beforePrompt` delivery (§5).
+
+**Acceptance:** byte parity for every fixture; a seeded difference falls back to PiG's prompt; prompt bytes stable within an epoch; the date frame precedes each user input.
+
 **M1 exit:** integrated local vertical slice plus stable contracts. Do not label hashline, full instruction lifecycle or advanced readers complete yet.
 
 ## M2 — Full hashline engine and coordinated mutations (later)
@@ -309,7 +324,7 @@ Deliver specialized adapters as independent, testable slices: JSON/JSONL query a
 
 ## M4 — Catalog and control schemes (later)
 
-Depends on M1; integrates with M3. Implement the SPEC-0012 trees: `session://`, `agent://`, `project://`, `artifact://` browsing, search and transcript/tree/entry projections; `skill://` catalog/supporting files; `cfg://` controls and `cfg://workbench/`; `docs://`; conflict resource registry; walking rules and first-touch guides.
+Depends on M1; integrates with M3. Implement the SPEC-0012 trees: `session://`, `agent://`, `project://`, `artifact://` browsing, search and transcript/tree/entry projections; `skill://` catalog/supporting files with progressive disclosure (SPEC-0014 §8); `cfg://` controls and `cfg://workbench/`; `docs://`; conflict resource registry; walking rules and first-touch guides.
 
 Use host-owned catalogs or a documented indexed reader when no API exists. Account for configured session roots, partially appended JSONL, renamed/deleted sessions, compaction, branch selection and no-session mode. Bind pages to a stable revision/cursor rather than renumbering an actively growing log mid-read. Global authorization applies to search snippets as well as full reads.
 
@@ -327,7 +342,7 @@ Implement bash foreground/background/promotion and one supervisor used by `jobs`
 
 Depends on M1, M3–M5. Deliver the section 6 contract: file classes, ancestors/root+nearest/root/nearest selection, pins, local/remote watchers, discovery of newly created candidates, diff updates, capped views, deduplication/relocation/withdrawal, self-edit behavior and branch/compaction reconstruction.
 
-Provide `/workbench instructions` inspection with reasons: selected, shadowed, pinned, ignored, untrusted, capped, withdrawn. Implement external project/path-scoped notification ingress without storing tasks or agent definitions.
+Add `select = "all"` classes, the remaining context frames and `builtin/workbench` (SPEC-0014 §5, §7, §9). Provide `/workbench instructions` inspection with reasons: selected, shadowed, pinned, ignored, untrusted, capped, withdrawn. Implement external project/path-scoped notification ingress without storing tasks or agent definitions.
 
 **Exit:** full instruction matrix passes, including parallel codemode touches and changes during compaction. User-visible captures and model-context evidence show the same facts with independently configurable display visibility.
 

@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 10
+  revision: 11
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:47:47+01:00"
+  updated_at: "2026-11-03T12:29:31+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -41,6 +41,9 @@ document:
     - revision: 10
       reason: "User renamed the settings file"
       changes: ["pig-workbench.toml renamed to Workbench.toml", "statusline.path-style in the catalog (SPEC-0003 §10)"]
+    - revision: 11
+      reason: "System prompt templates (SPEC-0014)"
+      changes: ["Template directories with trust", "prompt.*, context.*, skills.* settings"]
 ---
 
 # 1. Scope and precedence
@@ -55,6 +58,8 @@ Draft cross-cutting contract. Owns config paths/layering, storage lifecycle, tru
 | user | sdk.AgentDir()/Workbench.toml, sdk.AgentDir()/Secrets.toml | User preferences/security policy; secret detection policy (SPEC-0013 §2) |
 | trusted project | host session cwd + sdk.ConfigDirName()/Workbench.toml, …/Secrets.toml | Only if host project trust currently permits it; Secrets.toml may only add patterns and exclusions |
 | runtime | Session-owned memory | Explicit overrides; cleared on extension reload/session replacement |
+
+System prompt templates (SPEC-0014 §3.2) are files, not settings: `sdk.AgentDir()/system-prompts/` (user) and `sdk.ConfigDirName()/system-prompts/` in the project (only while trusted); the embedded `builtin/` namespace cannot be shadowed.
 
 Config project root is host session cwd, **not mutable Workbench cd**. Changing location must not silently load another repository's execution configuration. Remote/project-specific instruction classes are applicability context, not permission to read arbitrary remote Workbench config.
 
@@ -145,6 +150,10 @@ All defaults below are proposals subject to design review and measurements, not 
 | secrets.enabled / env-injection | true / true | user/runtime (SPEC-0013 §8); detection policy lives in Secrets.toml |
 | activity.enabled / placement / shortcut | true / above-editor / alt+w | user/runtime (SPEC-0009 §9) |
 | activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
+| prompt.enabled / template / delivery / parity-check | true / builtin/pig / force / true | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |
+| prompt.families | builtin family table | user/runtime; user entries are matched first (SPEC-0014 §3.5) |
+| context.timezone / context.frames.<source> | system zone / date on, others per template | user/runtime (SPEC-0014 §5) |
+| skills.listing / listing-budget / conditions | prompt / 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |
 | activity.replace-working-indicator | false | user/runtime; enabling requires verified retry/compaction events |
 
 `Project.toml` (`[component]`, `[[components]]`, `[worktrees]`, `[artifacts]`, `[conventions]`) is project data, not settings: it is committed, parsed strictly, and cannot carry any key of this catalog (SPEC-0012 §3.2).

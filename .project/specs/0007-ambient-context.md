@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T12:29:09+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 6
+      reason: "Several instruction files per directory (SPEC-0014 §9)"
+      changes: ["Class field select = first | all", "Configuration example in TOML with kebab-case keys (SPEC-0010)", "Prompt engine owns the stable set when enabled"]
 ---
 
 # 1. Purpose and inputs
@@ -40,73 +43,70 @@ The engine does not create backlog items, claim tasks, execute file contents or 
 
 # 2. Classes and configuration
 
-Configuration uses a keyed `instructions.classes` object; class IDs are stable. Ordered filename alternatives select the first existing candidate **per directory**. Different classes compose independently. Includes add explicit candidate patterns; they do not imply recursive injection of every matching file.
+Configuration uses keyed `instructions.classes` tables in `Workbench.toml`; class IDs are stable. With `select = "first"` (default), ordered filename alternatives select the first existing candidate **per directory**; with `select = "all"`, every listed file that exists in a directory is selected, in list order (e.g. `AGENTS.md` and `CONVENTIONS.md`). Different classes compose independently. Includes add explicit candidate patterns; they do not imply recursive injection of every matching file.
 
-```json
-{
-  "instructions": {
-    "boundary": "project",
-    "classes": {
-      "steering": {
-        "filenames": ["AGENTS.override.md", "AGENTS.md"],
-        "placement": "ancestors",
-        "contentRole": "instruction",
-        "updateMode": "auto",
-        "allowPin": false
-      },
-      "backlog": {
-        "filenames": ["BACKLOG.md"],
-        "placement": "ancestors",
-        "contentRole": "context",
-        "itemFormat": "backlogPointers",
-        "maxItems": 25,
-        "maxLines": 200,
-        "maxBytes": 16384,
-        "updateMode": "auto",
-        "allowPin": true,
-        "pinMode": "add"
-      },
-      "projectPrivate": {
-        "include": ["{projectDir}/private/*.md"],
-        "placement": "root",
-        "contentRole": "instruction",
-        "maxBytes": 16384,
-        "updateMode": "auto",
-        "allowPin": true,
-        "pinMode": "add"
-      },
-      "architecture": {
-        "filenames": ["ARCHITECTURE.md", "DESIGN.md"],
-        "placement": "root+nearest",
-        "contentRole": "context",
-        "maxLines": 200,
-        "maxBytes": 16384,
-        "updateMode": "auto",
-        "allowPin": true,
-        "pinMode": "replaceNearest"
-      }
-    }
-  }
-}
+```toml
+[instructions]
+boundary = "project"
+
+[instructions.classes.steering]
+filenames = ["AGENTS.override.md", "AGENTS.md"]
+select = "first"
+placement = "ancestors"
+content-role = "instruction"
+update-mode = "auto"
+allow-pin = false
+
+[instructions.classes.backlog]
+filenames = ["BACKLOG.md"]
+placement = "ancestors"
+content-role = "context"
+item-format = "backlog-pointers"
+max-items = 25
+max-lines = 200
+max-bytes = 16384
+update-mode = "auto"
+allow-pin = true
+pin-mode = "add"
+
+[instructions.classes.project-private]
+include = ["{projectDir}/private/*.md"]
+placement = "root"
+content-role = "instruction"
+max-bytes = 16384
+update-mode = "auto"
+allow-pin = true
+pin-mode = "add"
+
+[instructions.classes.architecture]
+filenames = ["ARCHITECTURE.md", "DESIGN.md"]
+placement = "root+nearest"
+content-role = "context"
+max-lines = 200
+max-bytes = 16384
+update-mode = "auto"
+allow-pin = true
+pin-mode = "replace-nearest"
 ```
 
-`projectPrivate` reads the personal notes of SPEC-0012 §3.6 from `{projectDir}` (the project's registry directory, outside any repository). It is user-owned, so it carries the user's authority, not the project's.
+`project-private` reads the personal notes of SPEC-0012 §3.6 from `{projectDir}` (the project's registry directory, outside any repository). It is user-owned, so it carries the user's authority, not the project's.
 
 Recognition of AGENTS.override.md preserves the existing proposal's precedence; Workbench authors steering in AGENTS.md only and creates no alternate harness-specific files. Users may explicitly configure additional names; never auto-discover CLAUDE.md/GEMINI.md as aliases.
 
 Class fields:
 | Field | Contract |
 |---|---|
-| filenames / include | Basename alternatives / authorized relative patterns; bounded matching |
+| filenames / include | Basenames / authorized relative patterns; bounded matching |
+| select | `first` (alternatives, first existing per directory) or `all` (every existing one, list order) |
 | placement | ancestors, root+nearest, nearest or root |
-| contentRole | instruction or context; does not itself grant authority |
-| updateMode | auto, diff or full; diff still requires valid delivered baseline |
-| maxItems/maxLines/maxBytes | Positive view budgets; item format required for item counting |
-| allowPin/pinMode | Policy, not automatic permission; add or replaceNearest |
-| afterCompaction | reinject or onTouch; root/global/pinned steering always rebuilt |
+| content-role | instruction or context; does not itself grant authority |
+| update-mode | auto, diff or full; diff still requires valid delivered baseline |
+| max-items/max-lines/max-bytes | Positive view budgets; item format required for item counting |
+| allow-pin/pin-mode | Policy, not automatic permission; add or replace-nearest |
+| after-compaction | reinject or on-touch; root/global/pinned steering always rebuilt |
 | enabled | Disable class selection with explicit withdrawals |
 
-Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agents-md-reminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validate-pointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `afterCompaction: onTouch`.
+Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agents-md-reminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validate-pointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `after-compaction = "on-touch"`.
 
 Project classes can add bounded context within the trusted project; they cannot widen boundaries/trust, enable external paths or change authority to instruction without user policy. User config owns safety-affecting controls. A filename that matches several classes is deduplicated by canonical identity while preserving all applicability reasons; differing role/trust settings use the less-privileged effective interpretation and expose the conflict.
 
@@ -173,7 +173,7 @@ Maintain two independent identities:
 - Source revision/digest: exact full source bytes.
 - Delivered view revision/digest: capped content and continuation actually injected.
 
-For backlogPointers, an item is a complete pointer record `- B-NNNN kind priority — title → path`; each valid line counts once. Preserve comments/non-item lines within maxLines/maxBytes; malformed pointer lines remain visible with a diagnostic, never silently discarded. Do not use a loose “any nonempty line” guess to claim an exact item count.
+For `backlog-pointers`, an item is a complete pointer record `- B-NNNN kind priority — title → path`; each valid line counts once. Preserve comments/non-item lines within maxLines/maxBytes; malformed pointer lines remain visible with a diagnostic, never silently discarded. Do not use a loose “any nonempty line” guess to claim an exact item count.
 
 Inject first N items in file order, then `(+K more → canonical-or-repo-relative-path)`. Count omitted items by bounded full scan when possible. If scan limits prevent exact count, say “more items; count unavailable” rather than invent K. Keep a complete item or omit it; never cut a pointer in half. Caps affect injection only, never mutate BACKLOG.md. Source read still obeys ordinary paging.
 
@@ -195,11 +195,11 @@ If auto-format/repair/backend transformation changed bytes the model did not aut
 
 Ledger is branch/context-epoch scoped, rebuilt from structured frame records. Equal bytes **and trust** plus compatible applicability permit SkipIdentical. Relocation references existing same-epoch content and updates scope without resending. Loaded/added/changed/selfEdit retain replacement view; removed/withdrawn remove applicability; pinned facts are independent of content frames. Do not advance delivered baseline on enqueue alone: use the delivery status available in SPEC-0002.
 
-On compaction, invalidate diff bases and seen state; rebuild global/root/pins plus nested reinject scopes. onTouch nested scopes wait for their next relevant access. A failed compaction retains the prior epoch. Session/tree/fork transitions cancel stale discovery work and reconcile before accepting new mutations.
+On compaction, invalidate diff bases and seen state; rebuild global/root/pins plus nested reinject scopes. on-touch nested scopes wait for their next relevant access. A failed compaction retains the prior epoch. Session/tree/fork transitions cancel stale discovery work and reconcile before accepting new mutations.
 
 # 9. Trust, host integration and external notifications
 
-Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. Verified mechanism ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P23): in every `before_agent_start`, remove exactly the owned paths from `data["systemPromptOptions"]["contextFiles"]`; the host re-renders the prompt without them. The edit is per prompt and must be repeated; never return a `systemPrompt` string (the value is a `*sdk.SystemPrompt`, and a string would replace the whole prompt). If another extension re-adds a suppressed path, report the conflict and keep both copies rather than fight over it.
+When the prompt engine is enabled (SPEC-0014 §9), Workbench owns the whole prompt: host `contextFiles` are cleared and the stable set is rendered by the template; the rest of this paragraph applies while `prompt.enabled = false`. Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. Verified mechanism ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P23): in every `before_agent_start`, remove exactly the owned paths from `data["systemPromptOptions"]["contextFiles"]`; the host re-renders the prompt without them. The edit is per prompt and must be repeated; never return a `systemPrompt` string (the value is a `*sdk.SystemPrompt`, and a string would replace the whole prompt). If another extension re-adds a suppressed path, report the conflict and keep both copies rather than fight over it.
 
 Projection timing (P5, P21): instruction views and pins are appended by the `context` hook to every outgoing provider request, exactly once per request. The host does not persist them, compaction summary requests do not pass through the hook, and after compaction the hook sees `compactionSummary` plus kept messages — so the "rebuild after compaction" rule is satisfied by recomputing the projection on the next hook call. Resume (`--continue`) reports `session_start.reason = "startup"` (P22); Workbench detects resume by finding its own records on the restored branch, not by the reason. Disabling Workbench instructions restores host behavior at a safe boundary with visible reconciliation.
 
@@ -209,9 +209,9 @@ External claim/completion messages enter through registered frame producers with
 
 # 10. Acceptance
 
-- Selection table, filename precedence, root missing, same root/nearest and linked worktree boundaries.
+- Selection table, filename precedence, `select = "all"` order and dedup, root missing, same root/nearest and linked worktree boundaries.
 - Parallel multi-read/edit batches in different subtrees, completion out of order and cwd transition during pending discovery.
-- Pin add/replaceNearest/unpin, deletion, trust revocation, fork/resume and authority separation.
+- Pin add/replace-nearest/unpin, deletion, trust revocation, fork/resume and authority separation.
 - BACKLOG first-N exact counts, malformed pointers, oversized source, hidden change, cap change and item reorder.
 - Diff application reconstructs injected view byte-for-byte; no use of an absent epoch baseline.
 - New file, atomic replacement, watcher overflow, remote disconnect and turn-boundary healing.

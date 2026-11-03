@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T12:29:31+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "SPEC-0012 project model and URI namespace"
       changes: ["Scheme guide frames"]
+    - revision: 6
+      reason: "Context frames and prompt diffs (SPEC-0014)"
+      changes: ["Delivery beforePrompt: steer from before_agent_start, lands before the user prompt (P30)", "Context frames with refresh policies are a Workbench producer on this pipeline"]
 ---
 
 # 1. Purpose and dependency
@@ -68,7 +71,7 @@ Required: `eventKey,kind,source,body`. Optional fields:
 | resource | Canonical resource URI concerned |
 | subjectKey | Stable semantic entity under source, e.g. build/412 |
 | scope | session, or explicit branch binding; default current branch |
-| delivery | nextBoundary (default), nextPrompt, followUp |
+| delivery | nextBoundary (default), nextPrompt, beforePrompt, followUp |
 | coalesceKey | Only pending replaceable notices; same source/subject/scope |
 | dataTrust | trusted or untrusted; actual trust is policy-constrained |
 | expiresAt | Optional pending-notice expiry; never silently expires instruction changes |
@@ -82,6 +85,7 @@ EventKey deduplicates within (session, producer key, eventKey). Same key/same pa
 |---|---|---|---|
 | nextBoundary | `SendMessage(customType, body, display, {DeliverAs: "steer", TriggerTurn: false})` | Lands after the current tool batch, before the next assistant call; persisted as `role: custom` | Persisted immediately; seen with the next prompt; no turn |
 | nextPrompt | Workbench-held queue, returned as `{"message": {customType, content, display}}` from the next `before_agent_start` | Same as idle | Lands directly after the next user prompt and is persisted (P30). A `steer` sent from that hook would land *before* the prompt instead |
+| beforePrompt | Workbench-held queue, sent as `SendMessage(steer)` from the next `before_agent_start` | Same as idle | Lands directly before the next user prompt and is persisted (P30); used by context frames (SPEC-0014 §5) |
 | followUp | `SendMessage(..., {DeliverAs: "followUp", TriggerTurn: true})` | After the run | Starts a turn |
 
 Workbench does not use host `nextTurn`: its in-memory queue survives tree navigation and is delivered on the new branch (P20), which violates the branch guard below. Workbench always sets `TriggerTurn` explicitly and validates `DeliverAs` itself; the host accepts unknown values silently (P19). Custom messages reach the model as user-role content; stored history keeps `role: custom` and `customType` for replay.
