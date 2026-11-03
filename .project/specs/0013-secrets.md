@@ -5,15 +5,18 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-03T11:12:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User replaced the donor secret guard with the nukii-revived design, plus ask_user secret requests and a secrets scheme"
       changes: ["Purpose, detection, placeholders, keys, vault, boundary hooks, substitution, env injection, secret:// tree, ask_user secret type, settings, host probes and acceptance"]
+    - revision: 2
+      reason: "User decided Q1–Q4"
+      changes: ["Own key at sdk.AgentDir()/secret.key", "No imports, no legacy placeholders", "AES-256-GCM (measured faster than XChaCha20-Poly1305)", "Secrets.toml v2 with nukii's schema; kebab-case keys"]
 ---
 
 # 1. Purpose
@@ -29,33 +32,33 @@ Source design: `host:/mnt/Projects/nukular/nukii-revived/.project/specs/secrets/
 # 2. Detection
 
 Secrets are found, never listed by hand:
-- **Token shapes:** built-in high-confidence patterns (GitHub, GitLab, Anthropic, OpenAI, Slack, AWS access keys, JWTs, PEM private keys, …) plus user `patterns` (`name` + exactly one of `regex`, `prefix`, `suffix`, with `minLength` ≥ 8 for prefix/suffix).
-- **Environment values** whose variable **name** matches an `envNames` glob (case-insensitive; default `*KEY*`, `*SECRET*`, `*TOKEN*`, `*PASSWORD*`, `*PASS`, `*AUTH*`, `*CREDENTIAL*`, `*PRIVATE*`): the process environment, `~/.env`, `.env*` files from the session cwd up to the repository root, and any env file a tool call references (loaded before the call runs, so its values are already known when the result comes back).
+- **Token shapes:** built-in high-confidence patterns (GitHub, GitLab, Anthropic, OpenAI, Slack, AWS access keys, JWTs, PEM private keys, …) plus user `patterns` (`name` + exactly one of `regex`, `prefix`, `suffix`, with `min-length` ≥ 8 for prefix/suffix).
+- **Environment values** whose variable **name** matches an `[env] names` glob (case-insensitive; default `*KEY*`, `*SECRET*`, `*TOKEN*`, `*PASSWORD*`, `*PASS`, `*AUTH*`, `*CREDENTIAL*`, `*PRIVATE*`): the process environment, `~/.env`, `.env*` files from the session cwd up to the repository root, and any env file a tool call references (loaded before the call runs, so its values are already known when the result comes back).
 - **PiG credentials:** every `auth.json` entry, resolved through the host (`ModelRuntime.ListCredentials`, `ModelRegistry.GetProviderAuth`), so `!command` keys arrive expanded; Workbench never runs those commands (probe S6).
 - **URL passwords** in `scheme://user:password@host`.
 - **Explicit:** `write secret://…`, `ask_user` secret questions, `/workbench secrets add`.
-- **Exclusions** remove false positives: `values`, `hashes` (placeholders, no plaintext), `patterns`, `envNames`.
+- **Exclusions** remove false positives: `values`, `hashes` (placeholders, no plaintext), `patterns`, `env-names`.
 - Values shorter than 8 characters are never treated as secrets. Placeholders are never re-detected.
 
-A trusted project's config may add `patterns` and `exclusions`, not `envNames`. Detection config is shared by all sessions of the user; a project pattern can only cause over-redaction elsewhere, never a leak.
+Detection policy is `Secrets.toml` version 2 with nukii's schema (`version`, `[env] names`, `[[patterns]]`, `[exclusions]`; Q4): `sdk.AgentDir()/Secrets.toml`, and in a trusted project `.pig/Secrets.toml`, which may add `patterns` and `exclusions` but not `[env] names`. Each layer's `patterns` and `exclusions` lists are appended. The file holds no values. Detection config is shared by all sessions of the user; a project pattern can only cause over-redaction elsewhere, never a leak.
 
 # 3. Placeholders, keys and vault
 
 ## 3.1 Placeholders
 
-`red-sec-<hash>`: `<hash>` is the first 16 characters of lowercase RFC 4648 base32 (`a-z2-7`, no padding) of `HMAC-SHA256(hmacKey, value)` (80 bits). Same value, same placeholder, on every host sharing the key. Identical to nukii and pi-secret-guard when they use the same master key (§3.2).
+`red-sec-<hash>`: `<hash>` is the first 16 characters of lowercase RFC 4648 base32 (`a-z2-7`, no padding) of `HMAC-SHA256(hmacKey, value)` (80 bits). Same value, same placeholder, on every host sharing the key. The algorithm is nukii's, so copying the key file between Workbench and nukii gives identical placeholders; nothing shares a key by default.
 
 ## 3.2 Keys
 
-- **Master key:** 32 random bytes, file mode 0600, created on first start if missing. Path: setting `secrets.keyFile`; default per decision Q1 (§10). A key file with a wider mode is reported.
-- **Derived keys** via HKDF-SHA256 (no salt): `info = "nukii red-sec hmac v1"` for the placeholder HMAC (kept verbatim so placeholders match nukii), `info = "pig-workbench secret value v1"` for value encryption.
+- **Master key:** 32 random bytes, file mode 0600, created on first start if missing. Path: `sdk.AgentDir()/secret.key` (normally `~/.pig/agent/secret.key`; Q1), not configurable. A key file with a wider mode is reported. Losing it makes the vault unreadable and changes every future placeholder.
+- **Derived keys** via HKDF-SHA256 (no salt): `info = "nukii red-sec hmac v1"` for the placeholder HMAC (nukii's string, so a copied key gives nukii's placeholders), `info = "pig-workbench secret value v1"` for value encryption.
 - Copying the key file to another host gives it the same placeholders and lets it decrypt a copied vault.
 
 ## 3.3 Vault
 
 - `$XDG_DATA_HOME/pig-workbench/secrets/vault.jsonl`, directory 0700, file 0600, append-only records under an advisory file lock; all sessions of the user share it and reload on fingerprint change.
-- Record: `{v, placeholder, ciphertext, nonce, kind, source: detected|env|envFile|auth|user|import, scope: global|project, projectId?, name?, env?, description?, legacy?[], created, deleted?}`. Values are insert-if-absent per placeholder; metadata changes and soft deletes are new records (last wins); ciphertext never changes.
-- Encryption: per decision Q3 (§10); the AAD is the placeholder.
+- Record: `{v, placeholder, ciphertext, nonce, kind, source: detected|env|env-file|auth|user, scope: global|project, projectId?, name?, env?, description?, created, deleted?}`. Values are insert-if-absent per placeholder; metadata changes and soft deletes are new records (last wins); ciphertext never changes.
+- Encryption: AES-256-GCM (Q3) with a random 96-bit nonce per record and the placeholder as AAD. Records are written once per value, far below the 2^32 random-nonce limit per key.
 - A torn last line is ignored with a diagnostic; an unreadable vault or key makes the boundary fail closed (§4.4).
 
 # 4. The LLM boundary
@@ -81,7 +84,6 @@ Content is replaced when it enters the session (prompt, tool result, user shell)
 - `tool_call`: every placeholder in the call's arguments is replaced with its real value right before execution, for every tool. The stored assistant message keeps the placeholders.
 - Workbench's own tools substitute inside their execution path too (bash command text, file content written by `write`/`edit`, jobs stdin), so behaviour does not depend on hook order.
 - Hashline edits: tags and seen-state are computed over the real file bytes; displayed rows carry placeholders; replacement text is substituted before validation and commit (SPEC-0005). `snapshots.view` returns the block already redacted, so its presence check (SPEC-0005 §10) compares like with like.
-- Legacy placeholders (`secret-placeholder-<name>-<id>`, `nks_<name>_<id>`) are substituted only when an imported record lists them; they are never produced.
 
 ## 4.4 Failure
 
@@ -125,7 +127,7 @@ secret://.not-a-secret/                move target only (false positives)
 | `write` with an existing placeholder | names or moves that secret to the path (metadata only) | none |
 | `rm` | soft delete | user |
 | `mv <a> <b>` | rename or move between scopes | none |
-| `mv <a> secret://.not-a-secret/` | stops redacting that value everywhere: adds its placeholder to user `exclusions.hashes` (never plaintext, never project config), then soft-deletes. The exclusion is persisted before the vault changes; an interrupted operation reports uncertainty | user |
+| `mv <a> secret://.not-a-secret/` | stops redacting that value everywhere: adds its placeholder to `[exclusions] hashes` in the user `Secrets.toml` with a round-trip edit (never plaintext, never project config), then soft-deletes. The exclusion is persisted before the vault changes; an interrupted operation reports uncertainty | user |
 
 `rm` and `mv` reach the router through the bash scheme-command path (SPEC-0008 G8.20). Approvals use the Workbench confirm dialog in the session the user sees; denial, timeout (only when one was set) and cancellation are distinct results.
 
@@ -149,12 +151,9 @@ User command `/workbench secrets`: list by scope (name, kind, source, env, place
 | Key | Default | Scope |
 |---|---|---|
 | `secrets.enabled` | true | user/runtime |
-| `secrets.keyFile` | see Q1 | user only |
-| `secrets.envNames` | §2 list | user only |
-| `secrets.patterns` / `secrets.exclusions` | built-ins / empty | user; trusted project may add |
-| `secrets.envInjection` | true | user/runtime |
+| `secrets.env-injection` | true | user/runtime |
 
-Detection config lives in the location decided by Q4.
+Detection policy lives in `Secrets.toml` (§2), not in `pig-workbench.toml`.
 
 # 9. Host probes (before relying on the boundary)
 
@@ -169,20 +168,20 @@ Detection config lives in the location decided by Q4.
 
 A probe that fails becomes a named host blocker with an upstream request; the boundary is not declared complete without it.
 
-# 10. Decisions needed
+# 10. Decisions (user, 2026-11-03)
 
-| # | Question | Recommendation |
-|---|---|---|
-| Q1 | Master key: share nukii's `${NUKII_CONFIG_DIR:-$XDG_CONFIG_HOME/nukii}/secret.key` (same placeholders as nukii and pi-secret-guard) or Workbench's own key? | Use nukii's key when it exists, else create `$XDG_CONFIG_HOME/pig-workbench/secret.key`; `secrets.keyFile` overrides; `/workbench secrets` shows which |
-| Q2 | Import pi-secret-guard's values (`~/.local/state/pi-secret-guard/values.json`) once, keeping their legacy placeholders substitutable? | Yes, on explicit `/workbench secrets import pi-secret-guard`, never automatically |
-| Q3 | Encryption: XChaCha20-Poly1305 as nukii (needs `golang.org/x/crypto`, a new dependency) or AES-256-GCM from the Go standard library? Vault compatibility with nukii is not needed (separate stores); placeholders match either way | AES-256-GCM, no new dependency |
-| Q4 | Detection config: a section of `pig-workbench.json` (SPEC-0010 convention) or a `Secrets.toml` v2 file with nukii's exact schema, shareable with nukii and pi-secret-guard? | `Secrets.toml` v2 (`$XDG_CONFIG_HOME/pig-workbench/Secrets.toml`, trusted project `.pig/Secrets.toml`), read with nukii's schema; it is security policy you edit by hand, and one schema across three tools beats one config format inside Workbench |
+| # | Decision |
+|---|---|
+| Q1 | Own master key at `sdk.AgentDir()/secret.key`; no sharing with nukii or pi-secret-guard |
+| Q2 | No imports from pi-secret-guard or nukii; no legacy placeholder forms |
+| Q3 | AES-256-GCM. Measured on an Intel Core Ultra 7 265H, Go 1.24, `x/crypto` v0.58.0: 64-byte value 82 ns vs 240 ns for XChaCha20-Poly1305, 4 KiB 591 ns vs 1293 ns (2.2–2.9× faster, hardware AES); standard library, so no new dependency |
+| Q4 | `Secrets.toml` version 2 with nukii's schema; every Workbench config file is TOML (SPEC-0010 §1) |
 
 # 11. Acceptance
 
 - A secret in a file, command output, pasted prompt, `AGENTS.md`, env file or `auth.json` never appears in any captured provider payload (dump of `before_provider_request` across turns, compaction and extension inference).
 - The agent uses a placeholder in bash, `write`, `edit`, an HTTP call through another extension and a codemode child call; each receives the real value; the transcript keeps the placeholder.
-- Same value, same placeholder across sessions and after restart; with a shared nukii key, equal to nukii's.
+- Same value, same placeholder across sessions and after restart; equal to nukii's placeholder for a test key shared with nukii's test vectors.
 - Vault or key failure withholds provider requests visibly; recovery resumes without restart.
 - `secret://` operations and approvals; `.not-a-secret` stops redaction everywhere and stores only the hash; `secrets://` gives the hint.
 - `ask_user` secret: value never in transcript, history or frames; env available in bash and jobs immediately, in all sessions of that scope.

@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -47,6 +47,9 @@ document:
     - revision: 12
       reason: "SPEC-0013 secrets (nukii-revived design) replaces the donor secret guard"
       changes: ["WB-24 secrets with milestone split", "D11 secrets decisions Q1–Q4", "M0 host probes S1–S6"]
+    - revision: 13
+      reason: "User decided SPEC-0013 Q1–Q4; all config files TOML"
+      changes: ["D11 resolved", "M1 config is layered TOML"]
 ---
 
 # 1. Outcome and authority
@@ -145,7 +148,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D7: terminal job input | Sending a control byte through a pipe is not a terminal signal/EOF | Distinguish stdin bytes, close, signals and PTY input. Preserve key controls with defined backend semantics and a tested PTY backend where needed; unsupported terminal operations fail explicitly |
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
-| D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | SPEC-0013 §10 Q1–Q4; recommendations recorded, user decision pending |
+| D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | **Resolved 2026-11-03** (SPEC-0013 §10): own key in the agent dir, no imports, AES-256-GCM, `Secrets.toml` |
 | D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 
 Further corrections carried into implementation contracts:
@@ -254,7 +257,7 @@ Review SKETCH-0001 against the command/feature inventory. Resolve navigation, de
 
 ### M1.2 — Configuration and command skeleton with real behavior
 
-- Implement layered JSON config, trust restrictions, source attribution, explicit save/reset, inter-session locking and atomic private writes.
+- Implement layered TOML config (`pig-workbench.toml`, `Secrets.toml`; round-trip-safe saves), trust restrictions, source attribution, explicit save/reset, inter-session locking and atomic private writes.
 - Register `/workbench show`, settings and `/tools` using actual effective state/host schemas, not placeholders. Add completions and CLI output contract.
 - Build common sanitization, width fitting, metrics and preview/result types.
 - Prototype the approved UI direction from M0.5 using fixture data; capture and review layouts before finalizing common panel/renderer abstractions. Carry accepted layouts forward to each feature milestone.

@@ -5,9 +5,9 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
       changes: ["G8.1 replaced by SPEC-0013 substitution and env injection", "Job logs keep raw output", "Removed display/log suppression of credentials", "G8.20 scheme commands in bash"]
+    - revision: 7
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Scope and references
@@ -196,7 +199,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
   - A branch created by this command is deleted again if worktree creation fails or is cancelled. Pre-existing branches are never touched.
   - Dismissal during creation waits for the rollback and never switches.
 - **G8.6 Worktrees.**
-  - The `.worktrees` parent must be git-ignored. If not, fail with the exact fix and create nothing. An absolute external parent is configurable (`locations.worktreeParent`).
+  - The `.worktrees` parent must be git-ignored. If not, fail with the exact fix and create nothing. An absolute external parent is configurable (`locations.worktree-parent`).
   - A bare repository is not a checkout. Prunable worktrees are rejected; locked and detached ones are allowed. Paths containing newlines work.
   - Git runs in its own process group, killed on timeout or abort.
 - **G8.14** Forks and tree branches keep their own current location and share the origin. A session without records inherits a snapshot or establishes the launch origin. Returned locations are immutable.
@@ -211,7 +214,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - **G8.10** Host descriptions and SSH definitions are sanitised against terminal-control injection.
 
 **Bash**
-- **G8.15 Command routing guard** (`bash.routeToTools`, default on). A standalone `cat file`, a recursive grep, `find`, or an unquoted `> file` / heredoc write is refused with a suggestion to use read/grep/find/write. Pipe stages consuming stdin, `/dev` sinks, and quoted or commented text are not matched. The guard never blocks when the suggested tool is unavailable. Both the original and the leading-`cd`-normalised command are checked.
+- **G8.15 Command routing guard** (`bash.route-to-tools`, default on). A standalone `cat file`, a recursive grep, `find`, or an unquoted `> file` / heredoc write is refused with a suggestion to use read/grep/find/write. Pipe stages consuming stdin, `/dev` sinks, and quoted or commented text are not matched. The guard never blocks when the suggested tool is unavailable. Both the original and the leading-`cd`-normalised command are checked.
 - **G8.16** Terminal graphics (Sixel, kitty) are extracted before sanitisation and kept even on timeout or failure.
 - **G8.17** Non-interactive environment defaults: pager off, no prompts. `exec` cannot replace the supervisor. A grandchild holding stdout open does not block completion. Grandchildren are killed on timeout and abort.
 - **G8.18 Result shape.** A non-zero exit is an error result with details, not a thrown tool failure. A timeout is a warning state with one notice; cancellation is distinct from timeout. A pipeline ending in `head`/`tail` keeps the final-stage output. Late results never flush into a replacement session or branch.

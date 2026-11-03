@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
       changes: ["ask_user question type secret", "Removed answer, tldr and history value masking; provider requests pass the SPEC-0013 boundary"]
+    - revision: 8
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Scope and sources
@@ -113,7 +116,7 @@ Print/JSON: if no authorized remote bridge exists, return interactionUnavailable
 
 Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
 
-Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retentionDays` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Drafts are never recorded. Secret answers are recorded as their placeholder.
+Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retention-days` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Drafts are never recorded. Secret answers are recorded as their placeholder.
 
 # 6. /answer extraction and replay
 
@@ -185,7 +188,7 @@ Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `s
   - Zero counts are hidden unless the user pins the item (`show: always`). Severity pairs color with a word (`1 failed`). Below 50 columns items become glyph + number (`⚇2 ⚙2✗1 ◆5`). Lowest priority drops first; no item is cut mid-word.
   - Sent on change, coalesced to ≤ 4 per second; once per second while working (elapsed time). No I/O in render.
   - Click (fullscreen mode, the target mode): an item opens its inspector (`/workbench sessions`, `jobs`, `instructions`, `ls skill://`, `/cd`, a contributed `open` target); the state opens the hub (SKETCH-0001 §3). Keyboard: shortcut `alt+w` (setting `activity.shortcut`) opens the hub with the first non-zero item selected. Headless: `/workbench show` and `cfg://workbench/status` carry the same items.
-  - While the line is on, Workbench publishes no `SetStatus` segments for jobs, peers or pending ask. PiG's own working indicator stays visible; `activity.replaceWorkingIndicator` (default false) hides it only after the retry/compaction events it shows are verified observable.
+  - While the line is on, Workbench publishes no `SetStatus` segments for jobs, peers or pending ask. PiG's own working indicator stays visible; `activity.replace-working-indicator` (default false) hides it only after the retry/compaction events it shows are verified observable.
   - Host gap: the SDK delivers kit view events only to open `ctx.Custom` overlays (`view.go` `viewEvent`), so clicks on a widget `MouseRegion` are dropped today. Until the PiG change lands (PLAN-0001 M0.2), the line renders without hover affordances and the shortcut is the entry.
 - Other extensions register `statusSegment` contributions `{key, label, priority, minColumns, maxColumns, align, placement?, glyph?, open?}`, where `placement` is `status` (default) or `activity`, `glyph` is one cell for narrow widths, and `open` is a command or resource URI run only on an explicit click or Enter. `status.update` also accepts `count` and `severity` for activity items, which Workbench renders as `N <label>` and hides at zero. and push values with `status.update` `{text ≤ 64 columns plain, style: normal|dim|success|warning|error}`, coalesced to 4 updates per second. In both modes the user orders and hides them in `/workbench statusline`. The receipt says `composedByWorkbench: true`, so the producer stops its own `SetStatus` to avoid duplicates; it resumes when Workbench closes.
 

@@ -5,9 +5,9 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
       changes: ["secret:// in the tree list"]
+    - revision: 3
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Scope
@@ -300,7 +303,7 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - Each scheme (builtin or registered) declares a **guide**: short Markdown (≤ 2 KiB) about its tree, link directories, writable files, `ctl` commands, limits and examples. The full version lives at `docs://workbench/schemes/<scheme>`.
 - The first `ls`/`read`/`find`/`grep`/`write` on a scheme (and on a sub-namespace that declares its own guide, e.g. `session://by-project/`) injects the guide as a frame (SPEC-0002, kind `instruction`, source `workbench.guide.<scheme>`), alongside the tool result, like `AGENTS.md` on first path touch (SPEC-0007).
 - Once per session and guide revision. Re-injected after compaction drops it, or when the guide revision changes (provider update).
-- Settings: `guides.enabled` (true), `guides.maxBytes`, per-scheme opt-out.
+- Settings: `guides.enabled` (true), `guides.max-bytes`, per-scheme opt-out.
 - A provider's guide is data authority unless the user trusts that provider (SPEC-0002 authority rules), so a contributed scheme cannot smuggle instructions.
 
 

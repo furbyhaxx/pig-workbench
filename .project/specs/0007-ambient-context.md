@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "SPEC-0012 project model and URI namespace"
       changes: ["Class projectPrivate", "AGENTS.md reminder and BACKLOG.md pointer validation", "Pins through session://self/instructions", "Scheme guides follow the first-touch model"]
+    - revision: 5
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Purpose and inputs
@@ -103,7 +106,7 @@ Class fields:
 | afterCompaction | reinject or onTouch; root/global/pinned steering always rebuilt |
 | enabled | Disable class selection with explicit withdrawals |
 
-Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agentsMdReminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validatePointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `afterCompaction: onTouch`.
+Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agents-md-reminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validate-pointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `afterCompaction: onTouch`.
 
 Project classes can add bounded context within the trusted project; they cannot widen boundaries/trust, enable external paths or change authority to instruction without user policy. User config owns safety-affecting controls. A filename that matches several classes is deduplicated by canonical identity while preserving all applicability reasons; differing role/trust settings use the less-privileged effective interpretation and expose the conflict.
 

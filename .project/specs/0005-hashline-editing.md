@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
       changes: ["Placeholders in snapshots and replacement text"]
+    - revision: 7
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Authority and scope
@@ -217,7 +220,7 @@ Overlapping hunks are still rejected.
 
 **G5.8 Diff preview.** Unchanged gaps between distant edits collapse. A matching bracket line beyond the context is added. Compact previews count, renumber and collapse long added runs. Unified diffs are numbered and have no duplicate boundary rows.
 
-**G5.9 Per-model mode.** `edit.modeRules` maps model-family patterns to a mode and ships the donor list as defaults: Kimi/K3, MiMo, DeepSeek, Step 3.7 Flash, Codex Spark, MiniMax and GLM 5.3 Flash use replace. An explicit user mode wins. Rules apply only when the resolved mode is hashline.
+**G5.9 Per-model mode.** `edit.mode-rules` maps model-family patterns to a mode and ships the donor list as defaults: Kimi/K3, MiMo, DeepSeek, Step 3.7 Flash, Codex Spark, MiniMax and GLM 5.3 Flash use replace. An explicit user mode wins. Rules apply only when the resolved mode is hashline.
 
 **G5.10 Early abort while streaming (conditional on a host probe).** When the final streamed preview already fails, abort the assistant stream and re-drive with the diagnostic. The recovery budget is per prompt and is skipped once the prompt is superseded or the session generation changes. Execution always uses the final arguments and re-resolves URL targets.
 

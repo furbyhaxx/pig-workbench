@@ -5,9 +5,9 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "SPEC-0012 project model and URI namespace"
       changes: ["Spilled outputs are out://; docs:// is immutable"]
+    - revision: 7
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Scope and evidence
@@ -168,7 +171,7 @@ Final support/backend matrix and adapter-specific query schemas must be approved
 
 From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi read/grep/glob/fetch/sqlite/write tests at `553f0d1`. Normative.
 
-- **G6.1** Per-line column cap, `read.outputMaxColumns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
+- **G6.1** Per-line column cap, `read.output-max-columns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
 - **G6.2 HTTP.**
   - Prefer a page-specific `<link rel="alternate" type="text/markdown">`. Never substitute a site-wide `llms.txt` or feed for a deep page; a section-scoped `llms.txt` is an allowed fallback.
   - Render RSS/Atom as title, date, summary and link; `:raw` returns the feed itself.

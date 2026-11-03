@@ -5,9 +5,9 @@ document:
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:21:24+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
       changes: ["Bodies are not masked by the sender; the receiver's SPEC-0013 boundary applies"]
+    - revision: 4
+      reason: "All config files are TOML (SPEC-0010 §1)"
+      changes: ["Setting keys renamed to kebab-case"]
 ---
 
 # 1. Purpose and boundary
@@ -116,9 +119,9 @@ Inbound messages are persisted in the receiver's session as frame records, so th
 | `sessions.discoverable` | true | Publish the record |
 | `sessions.inbound` | all | `all` (same user), `sameProject`, `allowlist` or `off` |
 | `sessions.wake` | always | `always`, `trustedPeers` or `never`. A wake starts a paid turn |
-| `sessions.wakeBudget` | 10 per peer per hour | Further messages are delivered without waking |
-| `sessions.maxHops` | 8 per conversation | Beyond this, delivery continues without waking, and both users are notified |
-| `sessions.rateLimit` | 30 messages per peer per minute | Further messages are rejected with `rateLimited` |
+| `sessions.wake-budget` | 10 per peer per hour | Further messages are delivered without waking |
+| `sessions.max-hops` | 8 per conversation | Beyond this, delivery continues without waking, and both users are notified |
+| `sessions.rate-limit` | 30 messages per peer per minute | Further messages are rejected with `rateLimited` |
 | `sessions.broadcast` | project | `project` (to `agent://by-project/<slug>/inbox`), `all`, or `off`. A broadcast wakes nobody beyond each receiver's own wake policy and budget |
 
 All are user/runtime settings. A project config cannot enable inbound messages, raise budgets or trust peers.
@@ -181,14 +184,14 @@ Every safeguard is a setting with a default; each can be relaxed or switched off
 | Setting | Default | Off / alternatives |
 |---|---|---|
 | `coordinator.classes` | observe, message | any subset up to all six |
-| `coordinator.leaseHours` | 8 | any number, `0` = no expiry |
-| `coordinator.targetConsent` | `firstAction` (notice in the target, user can refuse) | `never` (no prompt), `always` |
+| `coordinator.lease-hours` | 8 | any number, `0` = no expiry |
+| `coordinator.target-consent` | `first-action` (notice in the target, user can refuse) | `never` (no prompt), `always` |
 | `coordinator.single` | true (one coordinator per user) | false |
-| `coordinator.confirmDestructive` | true (coordinator asks the user before abort/new session) | false |
-| `coordinator.markTargets` | true (status segment "coordinated by …") | false |
+| `coordinator.confirm-destructive` | true (coordinator asks the user before abort/new session) | false |
+| `coordinator.mark-targets` | true (status segment "coordinated by …") | false |
 | `coordinator.frames` | true (each action as an attributed frame in the target) | false |
 | `coordinator.audit` | true (`projects/<id>/coordinator.log`) | false |
-| `coordinator.answerAttribution` | true (`answeredBy: coordinator`) | false |
+| `coordinator.answer-attribution` | true (`answeredBy: coordinator`) | false |
 
 Fixed, because they are not friction but correctness: enabling stays a user action (otherwise any prompt injection could appoint itself); peer messages stay untrusted data and never grant classes; `/workbench coordinator off` works from any session.
 
