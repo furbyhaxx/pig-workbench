@@ -64,6 +64,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnToolResult(a.confirmRead)
 	a.registerTools(ext)
+	a.registerAsk(ext)
 	a.registerWriteAndList(ext)
 	a.registerSearchTools(ext)
 	a.registerCommands(ext)

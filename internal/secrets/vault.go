@@ -262,7 +262,7 @@ func containsVaultValue(record Record, value []byte) bool {
 	if len(value) == 0 {
 		return false
 	}
-	for _, field := range []string{record.Placeholder, record.Kind, record.Source, record.Scope, record.ProjectID, record.Name, record.Env, record.Description} {
+	for _, field := range []string{record.Kind, record.ProjectID, record.Name, record.Env, record.Description} {
 		if bytes.Contains([]byte(field), value) {
 			return true
 		}
