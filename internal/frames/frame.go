@@ -17,6 +17,10 @@ const (
 	schemaVersion   = 1
 	statePending    = "pending"
 	stateSuperseded = "superseded"
+	stateDelivered  = "delivered"
+	stateCancelled  = "cancelled"
+	stateFailed     = "failed"
+	stateExpired    = "expired"
 )
 
 var (
@@ -36,6 +40,12 @@ var (
 	ErrInvalidSnapshot = errors.New("invalid frame snapshot")
 	// ErrInvalidClock indicates the clock returned a time outside the JSON timestamp range.
 	ErrInvalidClock = errors.New("invalid frame clock time")
+	// ErrInvalidDelivery indicates a delivery mode outside the frame contract.
+	ErrInvalidDelivery = errors.New("invalid frame delivery mode")
+	// ErrStaleContext indicates a delivery transition for another branch or context epoch.
+	ErrStaleContext = errors.New("stale frame delivery context")
+	// ErrInvalidTransition indicates a transition on an unknown or non-pending frame.
+	ErrInvalidTransition = errors.New("invalid frame delivery transition")
 )
 
 // OwnershipError identifies a source outside the ledger's producer prefix.
@@ -130,9 +140,7 @@ func ValidatePublish(p Publish) (Publish, error) {
 	if p.Delivery == "" {
 		p.Delivery = "nextBoundary"
 	}
-	switch p.Delivery {
-	case "nextBoundary", "nextPrompt", "beforePrompt", "followUp":
-	default:
+	if !validDelivery(p.Delivery) {
 		return Publish{}, fmt.Errorf("%w: unsupported delivery", ErrInvalidPublish)
 	}
 	if p.DataTrust == "" {
@@ -158,6 +166,14 @@ func jsonTime(t time.Time) time.Time {
 		return t.UTC()
 	}
 	return t
+}
+
+func validDelivery(delivery string) bool {
+	switch delivery {
+	case "nextBoundary", "nextPrompt", "beforePrompt", "followUp":
+		return true
+	}
+	return false
 }
 
 func validSource(source string) bool {

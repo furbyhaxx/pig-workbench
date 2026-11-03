@@ -47,6 +47,7 @@ type Session struct {
 	records   []*storedRecord
 	events    map[eventKey]*storedRecord
 	pending   map[coalesceKey]*storedRecord
+	byID      map[string]*storedRecord
 	count     int
 	bodySize  int
 }
@@ -64,6 +65,7 @@ func NewSession(sessionID string) *Session {
 		clock:     time.Now,
 		events:    make(map[eventKey]*storedRecord),
 		pending:   make(map[coalesceKey]*storedRecord),
+		byID:      make(map[string]*storedRecord),
 	}
 }
 
@@ -107,6 +109,8 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	s := l.session
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	now := s.clock()
+	s.expireLocked(now)
 	event := eventKey{producer: l.context.ProducerPrefix, event: p.EventKey}
 	if existing := s.events[event]; existing != nil {
 		if !samePublish(existing.publish(), p) || existing.Frame.BranchLeaf != l.context.BranchLeaf || existing.Frame.Epoch != l.context.Epoch {
@@ -133,7 +137,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	if s.sequence == math.MaxInt64 {
 		return Receipt{}, ErrSequenceExhausted
 	}
-	created := jsonTime(s.clock())
+	created := jsonTime(now)
 	if _, err := created.MarshalJSON(); err != nil {
 		return Receipt{}, ErrInvalidClock
 	}
@@ -156,6 +160,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	s.sequence = frame.Sequence
 	s.records = append(s.records, record)
 	s.events[event] = record
+	s.byID[frame.FrameID] = record
 	if eligible {
 		s.pending[key] = record
 	}
@@ -190,6 +195,7 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 	records := make([]*storedRecord, 0, len(snapshot))
 	events := make(map[eventKey]*storedRecord, len(snapshot))
 	pending := make(map[coalesceKey]*storedRecord)
+	byID := make(map[string]*storedRecord, len(snapshot))
 	var sequence int64
 	var count, bodySize int
 	for i, raw := range snapshot {
@@ -238,6 +244,11 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 			if !eligible {
 				return fmt.Errorf("%w: non-replaceable record superseded", ErrInvalidSnapshot)
 			}
+		case stateDelivered, stateCancelled, stateFailed:
+		case stateExpired:
+			if record.ExpiresAt == nil {
+				return fmt.Errorf("%w: record %d expired without an expiry", ErrInvalidSnapshot, i)
+			}
 		default:
 			return fmt.Errorf("%w: record %d has an unsupported state", ErrInvalidSnapshot, i)
 		}
@@ -245,6 +256,7 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 		bodySize += len(p.Body)
 		records = append(records, &record)
 		events[event] = &record
+		byID[record.Frame.FrameID] = &record
 	}
 	if len(records) < len(s.records) || sequence < s.sequence {
 		return fmt.Errorf("%w: snapshot would discard admitted records", ErrInvalidSnapshot)
@@ -259,6 +271,7 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 	s.records = records
 	s.events = events
 	s.pending = pending
+	s.byID = byID
 	s.sequence = sequence
 	s.count = count
 	s.bodySize = bodySize
