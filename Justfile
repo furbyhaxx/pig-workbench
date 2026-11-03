@@ -35,4 +35,19 @@ integration: _modfile
 validate:
 	pig install . --validate-only --json
 
+# Verify the COMMITTED tree builds and passes in a throwaway worktree.
+# Guards against committing code that imports still-untracked files.
+[script]
+head-check:
+    set -euo pipefail
+    work="$(mktemp -d)"
+    git worktree add -q --detach "$work" HEAD
+    cp go.mod go.sum "$work/"
+    mkdir -p "$work/.tmp"
+    cp go.mod "$work/.tmp/go.mod"
+    cp go.sum "$work/.tmp/go.sum"
+    printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$work/.tmp/go.mod"
+    ( cd "$work" && go build -modfile=.tmp/go.mod ./... && go test -modfile=.tmp/go.mod ./... )
+    git worktree remove --force "$work"
+
 check: fmt-check vet test validate
