@@ -143,6 +143,10 @@ func (v *Vault) Warnings() []string {
 // or project, with a project ID for project scope. Metadata must not contain
 // the supplied value or the value already stored for that placeholder.
 func (v *Vault) Put(record Record, value []byte) error {
+	return v.put(record, value, false)
+}
+
+func (v *Vault) put(record Record, value []byte, preserveActive bool) error {
 	return v.mutate(func(records map[string]Record) (Record, error) {
 		if record.Version != 0 && record.Version != 1 {
 			return Record{}, &ErrRecordInvalid{}
@@ -150,6 +154,12 @@ func (v *Vault) Put(record Record, value []byte) error {
 		record.Version = 1
 		record.Deleted = false
 		old, exists := records[record.Placeholder]
+		if preserveActive && exists && !old.Deleted {
+			if _, err := v.decrypt(old); err != nil {
+				return Record{}, err
+			}
+			return Record{}, errVaultUnchanged
+		}
 		if record.Created.IsZero() {
 			if exists {
 				record.Created = old.Created
@@ -262,7 +272,7 @@ func containsVaultValue(record Record, value []byte) bool {
 	if len(value) == 0 {
 		return false
 	}
-	for _, field := range []string{record.Kind, record.ProjectID, record.Name, record.Env, record.Description} {
+	for _, field := range []string{record.Name, record.Env, record.Description} {
 		if bytes.Contains([]byte(field), value) {
 			return true
 		}

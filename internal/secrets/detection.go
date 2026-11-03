@@ -199,22 +199,12 @@ func (d *Detector) Learn(value []byte, kind, source string) error {
 		return nil
 	}
 	placeholder := Placeholder(d.hmacKey, value)
-	records, err := d.vault.Load()
-	if err != nil {
-		return err
-	}
-	if len(d.vault.Warnings()) != 0 {
-		return &ErrRecordInvalid{}
-	}
-	if record, ok := records[placeholder]; ok && !record.Deleted {
-		return nil
-	}
-	return d.vault.Put(Record{
+	return d.vault.put(Record{
 		Placeholder: placeholder,
 		Kind:        kind,
 		Source:      source,
 		Scope:       "global",
-	}, value)
+	}, value, true)
 }
 
 // Redact replaces learned and newly detected values with their placeholders. It

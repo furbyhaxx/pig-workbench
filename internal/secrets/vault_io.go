@@ -2,11 +2,13 @@ package secrets
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
@@ -34,7 +36,10 @@ func (v *Vault) lock() (*flock.Flock, error) {
 	}
 	path := v.path + ".lock"
 	lock := flock.New(path, flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
-	if err := lock.Lock(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	locked, err := lock.TryLockContext(ctx, 10*time.Millisecond)
+	if err != nil || !locked {
 		lock.Close()
 		return nil, &ErrVaultLocked{}
 	}
@@ -128,6 +133,8 @@ func validVaultRecord(record Record) bool {
 	}
 }
 
+var errVaultUnchanged = errors.New("vault record is unchanged")
+
 func (v *Vault) mutate(change func(map[string]Record) (Record, error)) error {
 	lock, err := v.lock()
 	if err != nil {
@@ -147,6 +154,9 @@ func (v *Vault) mutate(change func(map[string]Record) (Record, error)) error {
 		return &ErrRecordInvalid{}
 	}
 	record, err := change(records)
+	if errors.Is(err, errVaultUnchanged) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}

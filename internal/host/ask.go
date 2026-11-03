@@ -96,7 +96,11 @@ func (s questionSecrets) Store(name, scope, description, env string, value []byt
 		return "", errors.New("secret key derivation failed")
 	}
 	defer clear(key)
-	vault, err := secrets.OpenVault(filepath.Join(agent, "secrets.jsonl"), master)
+	vaultPath, err := secrets.VaultPath()
+	if err != nil {
+		return "", errors.New("private secret data directory unavailable")
+	}
+	vault, err := secrets.OpenVault(vaultPath, master)
 	if err != nil {
 		return "", errors.New("secret vault unavailable")
 	}

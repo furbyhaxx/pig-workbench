@@ -88,7 +88,7 @@ func TestLiveBackgroundJobStdinAndCompletion(t *testing.T) {
 			command.Env = append(command.Env, value)
 		}
 	}
-	command.Env = append(command.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent)
+	command.Env = append(command.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	output, err := command.Output()

@@ -49,7 +49,7 @@ func startRPC(t *testing.T, root string, args ...string) *rpcFixture {
 			cmd.Env = append(cmd.Env, v)
 		}
 	}
-	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"))
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
 	fixture := &rpcFixture{t: t, ctx: ctx, cancel: cancel, cmd: cmd, records: make(chan map[string]any, 32), done: make(chan struct{})}
 	cmd.Stderr = &fixture.stderr
 	stdin, err := cmd.StdinPipe()

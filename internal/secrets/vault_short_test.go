@@ -12,7 +12,7 @@ func TestVaultDoesNotRejectIncidentalPlaceholderOrEnumOverlap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, value := range []string{"red", "user", "global"} {
+	for _, value := range []string{"red", "user", "global", "token"} {
 		record := vaultTestRecord(t, master, []byte(value))
 		if err := vault.Put(record, []byte(value)); err != nil {
 			t.Fatalf("valid short secret rejected: %v", err)
