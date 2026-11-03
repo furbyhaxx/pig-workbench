@@ -5,9 +5,9 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-03T11:37:12+01:00"
+  updated_at: "2026-11-03T11:47:47+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "Probes S1–S6 run (ANA-2026-11-03-secrets-host-probes)"
       changes: ["Hook table matches observed coverage; entry-time redaction is the primary boundary", "Fail closed via ctx.Abort in before_provider_request", "Codemode substitution in children only", "Extension inference outside the boundary; host requests H-S1, H-S2", "Probe results replace the probe list"]
+    - revision: 4
+      reason: "User renamed the settings file"
+      changes: ["pig-workbench.toml renamed to Workbench.toml"]
 ---
 
 # 1. Purpose
@@ -166,7 +169,7 @@ User command `/workbench secrets`: list by scope (name, kind, source, env, place
 | `secrets.enabled` | true | user/runtime |
 | `secrets.env-injection` | true | user/runtime |
 
-Detection policy lives in `Secrets.toml` (§2), not in `pig-workbench.toml`.
+Detection policy lives in `Secrets.toml` (§2), not in `Workbench.toml`.
 
 # 9. Host probes
 

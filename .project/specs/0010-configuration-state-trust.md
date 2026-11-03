@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:31+01:00"
+  updated_at: "2026-11-03T11:47:47+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "User decision: every Workbench config file is TOML; Secrets.toml as its own file"
       changes: ["Config files are TOML (pig-workbench.toml, Secrets.toml) with kebab-case keys", "Round-trip-safe saves with tomledit", "Setting keys renamed to kebab-case"]
+    - revision: 10
+      reason: "User renamed the settings file"
+      changes: ["pig-workbench.toml renamed to Workbench.toml", "statusline.path-style in the catalog (SPEC-0003 §10)"]
 ---
 
 # 1. Scope and precedence
@@ -49,8 +52,8 @@ Draft cross-cutting contract. Owns config paths/layering, storage lifecycle, tru
 | Layer | Location/ownership | Meaning |
 |---|---|---|
 | defaults | Typed versioned Workbench defaults | Complete baseline |
-| user | sdk.AgentDir()/pig-workbench.toml, sdk.AgentDir()/Secrets.toml | User preferences/security policy; secret detection policy (SPEC-0013 §2) |
-| trusted project | host session cwd + sdk.ConfigDirName()/pig-workbench.toml, …/Secrets.toml | Only if host project trust currently permits it; Secrets.toml may only add patterns and exclusions |
+| user | sdk.AgentDir()/Workbench.toml, sdk.AgentDir()/Secrets.toml | User preferences/security policy; secret detection policy (SPEC-0013 §2) |
+| trusted project | host session cwd + sdk.ConfigDirName()/Workbench.toml, …/Secrets.toml | Only if host project trust currently permits it; Secrets.toml may only add patterns and exclusions |
 | runtime | Session-owned memory | Explicit overrides; cleared on extension reload/session replacement |
 
 Config project root is host session cwd, **not mutable Workbench cd**. Changing location must not silently load another repository's execution configuration. Remote/project-specific instruction classes are applicability context, not permission to read arbitrary remote Workbench config.
@@ -125,6 +128,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | trust.rules | no extra grants | user/runtime only; never project |
 | storage.finished-retention-days/out-retention-days | 7 / 7 | user/runtime; active references protected |
 | statusline.mode / statusline.layout | segments / donor default layout | user/runtime; `footer` only by explicit user choice (SPEC-0009 §9) |
+| statusline.path-style | fish | user/runtime; `fish`, `full`, `relative`, `basename` (SPEC-0003 §10) |
 | ask.history.enabled / retention-days | true / 90 | user/runtime (SPEC-0009 §5, provisional) |
 | edit.mode-rules | donor model-family list → replace | user/runtime (SPEC-0005 G5.9) |
 | bash.route-to-tools | true | user/project/runtime (SPEC-0008 G8.15) |
