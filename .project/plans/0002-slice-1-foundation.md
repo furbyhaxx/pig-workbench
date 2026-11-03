@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T14:40:00+01:00"
+  updated_at: "2026-11-03T15:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "External plan review (2026-11-03): eight findings, all confirmed"
       changes: ["builtin/workbench instead of the removed builtin/pig", "Project identity (E1) split from session-storage adoption (E2), which now follows the endpoint registry and has its own gate", "G8.20 scheme commands owned by Phase H", "Mode and host matrix (§6); ask_user headless result is interactionUnavailable", "Commands /workbench skills, sessions, projects unlink-storage added", "Skills, all six context frames and G5.2 relocation validation in scope", "Bus acceptance scoped to cooperative listeners", "Phase A produces a reconciled decision/probe/dependency ledger", "Requirement ownership moved to PLAN-0001 §9"]
+    - revision: 4
+      reason: "User approved the default-prompt A/B run; model-aware prompts moved to Slice 3"
+      changes: ["Exit 4 approved", "Family adapters point to PLAN-0004 C6"]
 ---
 
 # 1. Outcome
@@ -55,7 +58,7 @@ Summary by area; PLAN-0001 §9 is authoritative.
 | Location and projects | Location abstraction with revisions and leases, local backend, `cd`; project identity and registry; symlinked session buckets with undo | SSH backend, `/remote`, worktrees and links, shared artifact tree, artifact storage modes, project conventions (SPEC-0012 §4.1–4.2) |
 | Jobs | One supervisor: foreground, background, promotion, stdin/EOF/signals, logs with cursors, cancel, cleanup, env injection | PTY backend and key controls, remote jobs |
 | Context | Frame ledger, presentation resolver, instruction class engine (AGENTS.md, BACKLOG.md, project private notes), root+nearest, pins, caps with both baselines, diff updates, local watching, compaction and branch reconstruction | Remote watching, external notification ingress, further classes and `select = "all"` |
-| System prompt | gonja engine, `builtin/workbench` (default, SPEC-0014 §7), conditionals, delivery `auto`, epochs, late-section splice, all six context frames, skills complete (listing ladder, load/unload, `when`, `auto_load`, nested, compaction replay) | Model-family adapters of SPEC-0014 §6.3, each with A/B evidence |
+| System prompt | gonja engine, `builtin/workbench` (default, SPEC-0014 §7), conditionals, delivery `auto`, epochs, late-section splice, all six context frames, skills complete (listing ladder, load/unload, `when`, `auto_load`, nested, compaction replay) | `select = "all"` (PLAN-0003 W5); model-family adapters of SPEC-0014 §6.3 with A/B evidence (PLAN-0004 C6) |
 | Secrets | Detection, placeholders, vault, boundary hooks, substitution, env injection, prompt section, `ask_user` type `secret` | `secret://` and `/workbench secrets` |
 | Interaction | `ask_user` complete in TUI and RPC, `interactionUnavailable` in print/JSON, pending recovery | Remote bridge, replay, answer history, `/answer`, `/tldr` |
 | Sessions | Endpoint, transport, auth, wake, state, delivery, loop guards, `agent://` send/read/wait, `sessions` channel | Broadcast, coordinator with `/workbench coordinator` |
@@ -213,7 +216,7 @@ Every command from §2 with completions; activity line (SPEC-0009 §9) with buil
 1. `just check`, `just race`, package validation pass; reload and shutdown leak nothing.
 2. Every PLAN-0001 §9 row assigned to Slice 1 passes its acceptance anchor, recorded in a progress table here with links to tests. A grep for unwired registrations, `unsupported` paths of advertised capabilities and TODO markers comes back empty.
 3. A live agent session (user-authorized inference) uses every tool, the core schemes and `ask_user` end to end; transcript kept as evidence.
-4. `builtin/workbench` is evaluated against PiG's own prompt on fixed tasks (golden transcripts, A/B, cache-hit rate) before it becomes the default (SPEC-0014 §12; user-authorized inference).
+4. `builtin/workbench` is evaluated against PiG's own prompt on fixed tasks (golden transcripts, A/B, cache-hit rate) before it becomes the default (SPEC-0014 §12). Inference for this run approved by the user on 2026-11-03.
 5. **pig-web co-load gate** (its PLAN-0001 Slice 5, real Workbench): `pig -e ../pig-workbench -e ../pig-web` renders `web_*` through Workbench; `read git://…:120-180` uses Workbench selectors; `edit git://…` is refused; a research notice arrives as a frame; `/workbench integrations` lists pig-web; `read https://…` is served by pig-web's fetch backend; the `web` status segment appears once; a stored search key is redacted in a `jobs` log. `cd` into a worktree waits for PLAN-0003 and is named in the gate report.
 6. Handoff to pig-web naming the slice-exit commit and the depth still pending.
 

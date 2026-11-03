@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 23
+  revision: 24
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T14:40:00+01:00"
+  updated_at: "2026-11-03T15:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -80,6 +80,9 @@ document:
     - revision: 23
       reason: "External plan review (2026-11-03)"
       changes: ["WB-25 row follows SPEC-0014 rev 3+: builtin/workbench, no builtin/pig parity", "§9 requirement ownership matrix: spec section → slice and phase → acceptance anchor"]
+    - revision: 24
+      reason: "User moved model-aware prompt evaluation to Slice 3"
+      changes: ["SPEC-0014 §6.3 owned by PLAN-0004 C6"]
 ---
 
 # 1. Outcome and authority
@@ -159,7 +162,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
 | WB-23 | Activity line above the editor with click-to-inspect and contributed items (SPEC-0009 §9) | M1 (line, shortcut), M7 (contributions, click once the host delivers widget events) | Captures at 36/57/80/140 in fullscreen; counts match registries; click and shortcut open the same targets |
 | WB-24 | Secrets (SPEC-0013): `red-sec-` placeholders at every provider-bound boundary, substitution before every tool call, encrypted vault, env injection, `secret://`, `ask_user` type `secret`, `/workbench secrets` | M0 (probes S1–S6), M1 (detection, vault, boundary hooks, substitution, prompt section), M4 (`secret://`), M5 (env injection, G8.20 scheme commands), M7 (`ask_user` secret, panel) | SPEC-0013 §11; captured provider payloads contain no known secret |
-| WB-25 | System prompt templates (SPEC-0014): gonja engine, `builtin/workbench` default keeping PiG's sections with adapted content and a structure check, model families and conditionals, context frames, progressive skill disclosure, `select = "all"` instruction classes | Slice 1 (engine, `builtin/workbench`, frames, skills), Slice 2 (family adapters, `select`), Slice 3 (fork `sections` delivery); see §9 | SPEC-0014 §12 |
+| WB-25 | System prompt templates (SPEC-0014): gonja engine, `builtin/workbench` default keeping PiG's sections with adapted content and a structure check, model families and conditionals, context frames, progressive skill disclosure, `select = "all"` instruction classes | Slice 1 (engine, `builtin/workbench`, frames, skills), Slice 2 (`select`), Slice 3 (family adapters, fork `sections` delivery); see §9 | SPEC-0014 §12 |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -484,6 +487,7 @@ Authoritative assignment of every specification section to a slice and phase. Sl
 | 0013 §2–§5, §7 | Detection, vault, boundary, env injection, ask secret | S1 I | SPEC-0013 §11 |
 | 0013 §6, §8 UI | `secret://`, `/workbench secrets` | S2 W4 | SPEC-0013 §11 |
 | 0014 §3–§5, §6.1–§6.2, §7, §8 | Engine, delivery, frames, conditionals, `builtin/workbench`, skills | S1 J | SPEC-0014 §12; PLAN-0002 exit 4 |
-| 0014 §6.3, §9 | Family adapters with A/B evidence, `select = "all"` | S2 W5 | SPEC-0014 §12 |
+| 0014 §9 | `select = "all"` | S2 W5 | SPEC-0014 §12 |
+| 0014 §6.3 | Family adapters from the harness research, each with A/B evidence | S3 C6 | SPEC-0014 §12; PLAN-0004 C6 |
 | 0014 fork delivery | `sections` delivery, F-P3, F-P4 | S3 C4 | Fork-host rows |
 | All UI chrome | Hub, panels, renderers by density, captures | S3 C1–C3 | SPEC-0003 §8 captures |

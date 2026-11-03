@@ -5,9 +5,9 @@ document:
   title: "Slice 2: full depth, every feature usable by agents"
   description: "Depth on the Slice 1 foundation: format adapters, remaining schemes, SSH, worktrees, PTY, donor-parity heuristics, project conventions, remaining instruction, interaction and messaging flows, with plain UI"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T14:40:00+01:00"
+  updated_at: "2026-11-03T15:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "External plan review (2026-11-03)"
       changes: ["Dependencies split into parallel development and completion dependencies with interface owners", "W7 project conventions added", "Coordinator commands, other-live-session titles and --list-tools assigned", "G5.2 moved to Slice 1; builtin/workbench moved to Slice 1; A/B evidence per adapter", "Exit separates stock-host, fork-host and deferred rows"]
+    - revision: 4
+      reason: "User moved model-aware prompt evaluation to Slice 3"
+      changes: ["Model-family adapters (SPEC-0014 §6.3) moved from W5 to PLAN-0004 C6"]
 ---
 
 # 1. Outcome
@@ -72,11 +75,11 @@ SSH backend for the location, resource and job abstractions; `ssh://`; remote ed
 
 **Exit:** SPEC-0012 §6 and SPEC-0013 §11 rows for these schemes; read/list/search/control tests with pagination; false-positive removal through `mv … secret://.not-a-secret/` with the approval states of SPEC-0013 §6; no credential exposure or trust widening through project config.
 
-## W5. Context depth (SPEC-0007 §8–§9, SPEC-0014 §6.3 and §9, WB-13/18/25)
+## W5. Context depth (SPEC-0007 §8–§9, SPEC-0014 §9, WB-13/18/25)
 
-Remote watching with on-turn fallback, external project notification ingress, further instruction classes and `select = "all"`, model-family adapters.
+Remote watching with on-turn fallback, external project notification ingress, further instruction classes and `select = "all"`. Model-family adapters are PLAN-0004 C6.
 
-**Exit:** SPEC-0007 §10 remaining rows; SPEC-0014 §12 `select = "all"` row; every adapter ships only with golden transcripts, A/B and cache-hit evidence on fixed tasks (user-authorized inference); model-context evidence matches `/workbench instructions`.
+**Exit:** SPEC-0007 §10 remaining rows; SPEC-0014 §12 `select = "all"` row; model-context evidence matches `/workbench instructions`.
 
 ## W6. Interaction and messaging depth (SPEC-0009 §4, §6–§7, §9; SPEC-0011 §9; WB-15/16/17/20)
 
