@@ -5,15 +5,18 @@ document:
   title: "M0.1 donor parity audit"
   description: "Behavior inventory of oh-my-pi, pi-workbench and the nukular frame ledger from their test suites, mapped onto SPEC-0002 to SPEC-0010 with gaps, divergences and decisions"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T20:20:00+01:00"
-  updated_at: "2026-11-02T20:20:00+01:00"
+  updated_at: "2026-11-03T14:10:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "document creation"
       changes: ["Inventoried 3,269 donor test titles, mapped them to the specs and listed gaps and divergences"]
+    - revision: 2
+      reason: "User decisions on D5.b and D5.d"
+      changes: ["D5.b adopted, D5.d rejected"]
 ---
 
 # 1. Method and limits
@@ -60,9 +63,9 @@ M0.1 asks for each row to be marked as donor behavior, an intentional improvemen
 | ID | Donor behavior | Spec today | Recommendation |
 |---|---|---|---|
 | D5.a | Rejects overlapping hunks; merges only a bare-row recovery placeholder with an explicit op | Same | No divergence (verified in `hashline_parse.rs:493`) |
-| D5.b | On a tag collision within one file, recovers from the **newest** snapshot (`hashline_apply.rs:1153`) | Rejects | **Adopt the donor rule**, but only for snapshots of the same canonical resource, followed by full relocation validation |
+| D5.b | On a tag collision within one file, recovers from the **newest** snapshot (`hashline_apply.rs:1153`) | Rejects | **Decided 2026-11-03 (user):** adopt the donor rule within one canonical resource, followed by full relocation validation |
 | D5.c | `replace` mode runs a fuzzy ladder (whitespace and indentation normalisation, similarity threshold) | Exact only | Keep exact. A fuzzy match edits text the model never saw |
-| D5.d | Extra edit modes: `apply_patch` (Codex envelope), unified `patch`, prose-style `sloppy` | Hashline and replace only | **Decision needed.** Hashline already recovers `apply_patch` envelope noise. A separate `apply_patch` mode would help GPT-family models |
+| D5.d | Extra edit modes: `apply_patch` (Codex envelope), unified `patch`, prose-style `sloppy` | Hashline and replace only | **Decided 2026-11-03 (user): no.** Hashline and exact-text modes only; hashline keeps recovering `apply_patch` envelope noise |
 | D5.e | Model families that do badly with hashline fall back to `replace` by default | One global mode | Adopt as a configurable per-model rule list seeded with the donor families (G5.9) |
 | D6.a | SQLite rows can be written through `write` (JSON5 insert/update/delete, schema enforced) | Read-only | **Decision needed** |
 | D6.b | `ast_grep` / `ast_edit` structural search and rewrite tools | Not in scope | **Decision needed.** The tree-sitter backend is already approved |

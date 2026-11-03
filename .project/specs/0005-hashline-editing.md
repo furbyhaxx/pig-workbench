@@ -5,11 +5,11 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T14:10:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 8
+      reason: "User decisions D5.b and D5.d (2026-11-03)"
+      changes: ["Tag collisions recover from the newest snapshot of the same resource", "No separate apply_patch edit mode"]
 ---
 
 # 1. Authority and scope
@@ -128,7 +131,7 @@ Default enforceSeenLines true. Replacements/CUT require touched source lines kno
 
 Recovery stages are ordered:
 1. Parse canonical grammar; tolerate only donor-recognized wrappers/copied prefixes/bare-op mistakes with explicit diagnostics.
-2. Resolve tag against canonical resource snapshots, detect wrong-resource tags and collisions.
+2. Resolve tag against canonical resource snapshots, refuse wrong-resource tags; a collision within one resource resolves to the newest matching snapshot (G5.2, D5.b).
 3. If source drifted, compute snapshot→current changes. Relocate only unchanged spans with unique adequate non-whitespace evidence (donor threshold >=8 chars), preserving all intervening external edits. Block bounds and seen coverage must still validate.
 4. Unseen or stale/ambiguous target: no mutation; return bounded current numbered context with new tag and requested next read.
 5. Optional model-assisted repair: separate opt-in, maximum one proposal per call, uses configured authorized inference and reruns all validation. It cannot widen target scope, suppress policy, fabricate seen-state or auto-commit ambiguous semantic changes. Present altered interpretation explicitly.
@@ -185,7 +188,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - When a trailing comma is what keeps a one-row replacement from parsing, the error names it. The edit is still rejected if dropping the comma would not parse.
 - A body shallower than its block slides past the closing line, across several closer levels, stopping at body depth, with a warning. It never crosses a line that another hunk targets.
 
-**G5.2 Recovery.** Body comparison has a character (not byte) budget shared across all hunks and is skipped past that budget. A body written for the tagged line is remapped; one written for the current line is refused. A remap that breaks the parse, or that moves into a sibling construct, is refused. An isolated unique line with no neighbour offset is refused. A duplicated range is remapped only when its context matches. A refused remap leaves the clipboard untouched; an accepted remap publishes its registers. An unchanged anchor replays onto the current text. Tag collision within one canonical resource: see the D5.b decision in the audit.
+**G5.2 Recovery.** Body comparison has a character (not byte) budget shared across all hunks and is skipped past that budget. A body written for the tagged line is remapped; one written for the current line is refused. A remap that breaks the parse, or that moves into a sibling construct, is refused. An isolated unique line with no neighbour offset is refused. A duplicated range is remapped only when its context matches. A refused remap leaves the clipboard untouched; an accepted remap publishes its registers. An unchanged anchor replays onto the current text. Tag collision within one canonical resource (user decision D5.b): recover from the newest retained snapshot of that resource whose tag matches, then run the full relocation validation; a collision across different resources is refused.
 
 **G5.3 Parser leniency.** Each case is recognised and warned about, never silent:
 - lenient range separators and dangling ranges;
