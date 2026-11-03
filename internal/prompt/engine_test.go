@@ -140,7 +140,7 @@ func TestEmptyRender(t *testing.T) {
 func TestGonjaFilteredLoopUndefinedLimitation(t *testing.T) {
 	// gonja v2.9.1 builtins/control_structures/for.go:202 ignores filter evaluation errors.
 	source := `{% for tool in tools.declared if model.unknown_field %}{{ tool }}{% endfor %}`
-	loader := memoryLoader{"filter": source}
+	loader := memoryLoader{"filter": source, "partial": "prefix " + source}
 	config := config.New()
 	config.StrictUndefined = true
 	environment := &exec.Environment{
@@ -162,6 +162,10 @@ func TestGonjaFilteredLoopUndefinedLimitation(t *testing.T) {
 	var empty *ErrEmptyRender
 	if !errors.As(err, &empty) || empty.Template != "filter" || got.Text != "" {
 		t.Fatalf("engine: got %q, %v; want named ErrEmptyRender", got.Text, err)
+	}
+	got, err = engine.Render(context.Background(), "partial", data)
+	if err != nil || got.Text != "prefix " {
+		t.Fatalf("gonja behavior changed: partial output %q, %v; revisit the limitation", got.Text, err)
 	}
 }
 
