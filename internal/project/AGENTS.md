@@ -8,4 +8,6 @@
 - `registry.go` and `registry_store.go` own `<agentDir>/projects/<id>/project.toml` and `index.toml`; records contain shared fields plus observed locations, and the index is a disposable cache rebuilt from validated records.
 - Serialize registration and rebuilding with the registry lock; atomically replace private 0600 files in private 0700 directories. `List` returns valid entries alongside errors for invalid records.
 - Registry privacy checks require Unix ownership; Windows fails closed until ACL validation exists.
-- Directory detection is not implemented. It must resolve project file, root commit, remote, path, then global without writing; `List`/`Lookup` acquire a lock and `List` may rebuild the cache. Git markers and session storage are separate.
+- `detect*.go` recognizes project file → root commit → normalized remote → longest local host/path → global. Ambiguous claims and invalid registry records are errors; root-commit probes use locally accessible registered locations.
+- Detection is read-only: `List`/`Lookup` acquire a lock and `List` may rebuild the cache, so use the read-only scan. Git probes suppress optional writes, tracing and inherited repository overrides; never write Git markers during detection.
+- Detection returns the repository, project-file ancestor or matched location as `Root`; global outside Git uses the queried directory. The global `RegistryDir` can be absent until storage is adopted.

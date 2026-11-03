@@ -1,6 +1,7 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -181,6 +182,13 @@ func validateLocation(path string, location Location) error {
 }
 
 func (r *Registry) scan() ([]Entry, []error, error) {
+	return r.scanContext(context.Background())
+}
+
+func (r *Registry) scanContext(ctx context.Context) ([]Entry, []error, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
 	dirs, err := os.ReadDir(r.dir)
 	if err != nil {
 		return nil, nil, fmt.Errorf("list project registry: %w", err)
@@ -188,6 +196,9 @@ func (r *Registry) scan() ([]Entry, []error, error) {
 	entries := make([]Entry, 0)
 	var problems []error
 	for _, dir := range dirs {
+		if err := ctx.Err(); err != nil {
+			return nil, nil, err
+		}
 		id := dir.Name()
 		if !strings.HasPrefix(id, "prj-") {
 			continue
