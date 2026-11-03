@@ -85,6 +85,9 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 	}))
 	defer server.Close()
 	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "AGENTS.md"), []byte("WB_STEERING_FIXTURE: preserve fixture behavior.\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[read]\nmax-lines = 8\nmax-bytes = 4096\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +100,7 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 			cmd.Env = append(cmd.Env, v)
 		}
 	}
-	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent)
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	output, err := cmd.Output()
@@ -115,6 +118,14 @@ func TestLiveReadLocationAndCodemode(t *testing.T) {
 			t.Fatal(err)
 		}
 		return string(data)
+	}
+	if strings.Count(requestText(0), "WB_STEERING_FIXTURE") != 1 {
+		t.Fatalf("steering was missing or duplicated: %s", requestText(0))
+	}
+	for _, source := range []string{"session.date", "session.environment", "session.project", "session.location", "session.model", "session.capabilities"} {
+		if !strings.Contains(requestText(0), source) {
+			t.Fatalf("context frame %s did not reach the first request: %s", source, requestText(0))
+		}
 	}
 	if !strings.Contains(requestText(1), "β\\nthree\\n") {
 		t.Fatalf("direct raw selector lost exact content: %s", requestText(1))

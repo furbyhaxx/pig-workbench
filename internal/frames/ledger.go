@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +13,8 @@ import (
 )
 
 type storedRecord struct {
+	Trusted        bool       `json:"trusted,omitempty"`
+	Authority      string     `json:"authority,omitempty"`
 	SchemaVersion  int        `json:"schemaVersion"`
 	ProducerPrefix string     `json:"producerPrefix"`
 	Frame          Frame      `json:"frame"`
@@ -99,7 +100,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	if err != nil {
 		return Receipt{}, err
 	}
-	if !validContext(l.context) {
+	if !validContext(l.context) || l.context.Authority == "instruction" && p.DataTrust != "trusted" {
 		return Receipt{}, ErrInvalidContext
 	}
 	if !ownsSource(l.context, p.Source) {
@@ -113,7 +114,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	s.expireLocked(now)
 	event := eventKey{producer: l.context.ProducerPrefix, event: p.EventKey}
 	if existing := s.events[event]; existing != nil {
-		if !samePublish(existing.publish(), p) || existing.Frame.BranchLeaf != l.context.BranchLeaf || existing.Frame.Epoch != l.context.Epoch {
+		if !samePublish(existing.publish(), p) || existing.Frame.BranchLeaf != l.context.BranchLeaf || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
 			return Receipt{}, ErrConflict
 		}
 		return existing.Receipt, nil
@@ -134,7 +135,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	if len(p.Body) > maxBodyMemory-s.bodySize {
 		return Receipt{}, fmt.Errorf("%w: retained body memory", ErrLimitExceeded)
 	}
-	if s.sequence == math.MaxInt64 {
+	if s.sequence >= 1<<53-1 {
 		return Receipt{}, ErrSequenceExhausted
 	}
 	created := jsonTime(now)
@@ -144,6 +145,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	frame := makeFrame(l.context, p, s.sequence+1, created)
 	receipt := makeReceipt(frame)
 	record := &storedRecord{
+		Trusted: l.context.Trusted, Authority: l.context.Authority,
 		SchemaVersion:  schemaVersion,
 		ProducerPrefix: l.context.ProducerPrefix,
 		Frame:          frame,
@@ -208,10 +210,10 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 		if err := decoder.Decode(&record); err != nil {
 			return fmt.Errorf("%w: record %d cannot be decoded", ErrInvalidSnapshot, i)
 		}
-		if record.SchemaVersion != schemaVersion || record.Frame.SchemaVersion != schemaVersion || record.Frame.Sequence <= sequence {
+		if record.SchemaVersion != schemaVersion || record.Frame.SchemaVersion != schemaVersion || record.Frame.Sequence <= sequence || record.Frame.Sequence > 1<<53-1 {
 			return fmt.Errorf("%w: record %d has an invalid version or sequence", ErrInvalidSnapshot, i)
 		}
-		ctx := Context{SessionID: s.sessionID, ProducerPrefix: record.ProducerPrefix, BranchLeaf: record.Frame.BranchLeaf, Epoch: record.Frame.Epoch}
+		ctx := Context{SessionID: s.sessionID, ProducerPrefix: record.ProducerPrefix, BranchLeaf: record.Frame.BranchLeaf, Epoch: record.Frame.Epoch, Trusted: record.Trusted, Authority: record.Authority}
 		p := record.publish()
 		normalized, err := ValidatePublish(p)
 		if err != nil || !samePublish(normalized, p) || !validContext(ctx) || !ownsSource(ctx, p.Source) {
@@ -314,11 +316,18 @@ func makeFrame(ctx Context, p Publish, sequence int64, created time.Time) Frame 
 	idDigest := sha256.Sum256(identity)
 	bodyDigest := sha256.Sum256([]byte(p.Body))
 	owner, _, _ := strings.Cut(ctx.ProducerPrefix, ".")
+	trust, authority := "untrusted", "data"
+	if ctx.Trusted {
+		trust = p.DataTrust
+		if ctx.Authority != "" {
+			authority = ctx.Authority
+		}
+	}
 	return Frame{
 		SchemaVersion: schemaVersion, FrameID: "f-" + hex.EncodeToString(idDigest[:16]), Sequence: sequence,
 		SessionID: ctx.SessionID, Source: p.Source, ProducerOwner: owner, Kind: p.Kind, Body: p.Body,
 		Title: p.Title, Summary: p.Summary, SubjectKey: p.SubjectKey, Resource: p.Resource,
-		Delivery: p.Delivery, Trust: "untrusted", Authority: "data", EventKey: p.EventKey,
+		Delivery: p.Delivery, Trust: trust, Authority: authority, EventKey: p.EventKey,
 		ContentDigest: "sha256:" + hex.EncodeToString(bodyDigest[:]), CreatedAt: created,
 		Nonce: strings.ToUpper(hex.EncodeToString(idDigest[16:20])), BranchLeaf: ctx.BranchLeaf, Epoch: ctx.Epoch,
 	}

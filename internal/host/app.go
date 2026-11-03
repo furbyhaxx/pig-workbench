@@ -28,21 +28,22 @@ type activeRequest struct {
 }
 
 type session struct {
-	jobs         *jobs.Manager
-	jobMeta      jobMetadataStore
-	snapshots    *hashline.Store
-	viewsMu      sync.Mutex
-	pendingViews map[string][]pendingView
-	requestsMu   sync.Mutex
-	requests     map[string]activeRequest
-	unsubscribe  func()
-	id           string
-	generation   string
-	supervisor   *lifecycle.Supervisor
-	location     *location.Manager
-	settings     *config.Manager
-	router       *resource.Router
-	scratch      string
+	contextFrames *contextFrameState
+	jobs          *jobs.Manager
+	jobMeta       jobMetadataStore
+	snapshots     *hashline.Store
+	viewsMu       sync.Mutex
+	pendingViews  map[string][]pendingView
+	requestsMu    sync.Mutex
+	requests      map[string]activeRequest
+	unsubscribe   func()
+	id            string
+	generation    string
+	supervisor    *lifecycle.Supervisor
+	location      *location.Manager
+	settings      *config.Manager
+	router        *resource.Router
+	scratch       string
 }
 
 type app struct {
@@ -66,6 +67,9 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnToolResult(a.confirmRead)
+	ext.OnEvent("before_agent_start", a.contextFrames)
+	ext.OnEvent("context", a.confirmContextFrames)
+	ext.OnEvent("tool_call", a.toolInstructions)
 	a.registerTools(ext)
 	a.registerAsk(ext)
 	a.registerJobs(ext)
@@ -106,7 +110,12 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	s := &session{jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
+	contextState, err := restoreFrameLedger(ctx, id)
+	if err != nil {
+		_ = jobManager.Close()
+		return nil, a.fail(err)
+	}
+	s := &session{contextFrames: contextState, jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)

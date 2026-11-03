@@ -66,6 +66,10 @@ type Context struct {
 	ProducerPrefix string `json:"producerPrefix"`
 	BranchLeaf     string `json:"branchLeaf"`
 	Epoch          string `json:"epoch"`
+	// Trusted is a host policy grant, never a producer-requested value.
+	Trusted bool `json:"trusted,omitempty"`
+	// Authority is the host-approved data or instruction authority.
+	Authority string `json:"authority,omitempty"`
 }
 
 // Frame is the immutable attributed fact admitted by a ledger.
@@ -193,7 +197,7 @@ func validSessionID(sessionID string) bool {
 }
 
 func validContext(ctx Context) bool {
-	return validSessionID(ctx.SessionID) && validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch)
+	return validSessionID(ctx.SessionID) && validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch) && (ctx.Authority == "" || ctx.Authority == "data" || ctx.Trusted && ctx.Authority == "instruction")
 }
 
 func ownsSource(ctx Context, source string) bool {
