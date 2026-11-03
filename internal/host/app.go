@@ -80,7 +80,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	providers, scratch, err := buildRouter(ctx)
+	providers, scratch, err := buildRouter(ctx, settings)
 	if err != nil {
 		return nil, a.fail(err)
 	}

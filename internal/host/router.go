@@ -6,12 +6,18 @@ import (
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func buildRouter(ctx sdk.Context) (*resource.Router, string, error) {
+func buildRouter(ctx sdk.Context, settings *config.Manager) (*resource.Router, string, error) {
 	router := resource.NewRouter()
 	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
+		return nil, "", err
+	}
+	if err := router.RegisterBuiltin(cfgProvider{source: func() (*config.Snapshot, config.Status) {
+		return settings.Inspect()
+	}}); err != nil {
 		return nil, "", err
 	}
 	cache, err := os.UserCacheDir()

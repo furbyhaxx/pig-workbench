@@ -48,9 +48,10 @@ type StatResult struct {
 
 // ReadRequest is one bounded read through the router.
 type ReadRequest struct {
-	URI      string
-	Selector Selection
-	Budget   Budget
+	URI       string
+	Requested string
+	Selector  Selection
+	Budget    Budget
 }
 
 // ReadResult carries the rendered page and its facts.
@@ -153,7 +154,7 @@ func (r *Router) Read(ctx context.Context, target Target) (ReadResult, error) {
 	if err := ctx.Err(); err != nil {
 		return ReadResult{}, err
 	}
-	result, err := provider.Read(ctx, ReadRequest{URI: target.URI, Selector: target.Selection, Budget: Budget{Bytes: 51200, Lines: 2000}})
+	result, err := provider.Read(ctx, ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: Budget{Bytes: 51200, Lines: 2000}})
 	if err != nil {
 		return ReadResult{}, fmt.Errorf("read %s: %w", target.Requested, err)
 	}

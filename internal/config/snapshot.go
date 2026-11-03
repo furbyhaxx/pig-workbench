@@ -7,9 +7,9 @@ import (
 
 // ReadPolicy is the typed per-operation read ceiling.
 type ReadPolicy struct {
-	MaxBytes    int
-	MaxLines    int
-	Concurrency int
+	MaxBytes    int `json:"maxBytes"`
+	MaxLines    int `json:"maxLines"`
+	Concurrency int `json:"concurrency"`
 }
 
 // Entry describes one effective value and its source.
@@ -56,7 +56,13 @@ func (s *Snapshot) Entries() []Entry {
 }
 
 // Warnings returns source diagnostics without values.
-func (s *Snapshot) Warnings() []string { return slices.Clone(s.warnings) }
+func (s *Snapshot) Warnings() []string {
+	result := slices.Clone(s.warnings)
+	if result == nil {
+		return []string{}
+	}
+	return result
+}
 
 func compose(documents map[Scope]*document, revision uint64) (*Snapshot, error) {
 	snapshot := &Snapshot{revision: revision, values: make(map[string]Entry), documents: documents}

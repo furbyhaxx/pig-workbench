@@ -3,7 +3,14 @@ package host
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
@@ -65,5 +72,56 @@ func TestCancellationIsOwnerScoped(t *testing.T) {
 	}
 	if ctx.Err() == nil {
 		t.Fatal("owner cancellation lost")
+	}
+}
+
+func TestCfgProviderExposesSettings(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "agent"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "agent", "Workbench.toml")
+	if err := os.WriteFile(path, []byte("[read]\nmax-lines = 400\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	manager, err := config.New(config.Paths{User: path, Project: filepath.Join(root, "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Load(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	provider := cfgProvider{source: func() (*config.Snapshot, config.Status) { return manager.Inspect() }}
+	budget := resource.Budget{Bytes: 51200, Lines: 2000}
+	status, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://workbench/status", Requested: "cfg://workbench/status", Budget: budget})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(status.Content, `"configRevision"`) || !strings.Contains(status.Content, `"maxLines": 400`) {
+		t.Fatalf("status does not expose effective settings: %s", status.Content)
+	}
+	if !strings.Contains(status.Content, `"maxBytes"`) {
+		t.Fatalf("typed read policy missing: %s", status.Content)
+	}
+	entry, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://read/max-lines", Requested: "cfg://read/max-lines", Budget: budget})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(entry.Content, `"scope": "user"`) || !strings.Contains(entry.Content, `"value": 400`) {
+		t.Fatalf("entry lacks provenance: %s", entry.Content)
+	}
+	selected, err := resource.ParseSelector(":2:raw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ranged, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://read/max-lines", Requested: "cfg://read/max-lines", Selector: selected, Budget: budget})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(ranged.Content, "\n") != 1 || ranged.Facts.ResourceComplete || len(ranged.Facts.FullyShownRanges) != 1 {
+		t.Fatalf("selector not applied to produced content: %+v", ranged.Facts)
+	}
+	if _, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://absent/key", Requested: "cfg://absent/key", Budget: budget}); !errors.Is(err, resource.ErrNotFound) {
+		t.Fatalf("unknown key not reported: %v", err)
 	}
 }
