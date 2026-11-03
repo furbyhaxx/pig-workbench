@@ -7,10 +7,11 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func buildRouter(ctx sdk.Context, settings *config.Manager) (*resource.Router, string, error) {
+func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.Manager) (*resource.Router, string, error) {
 	router := resource.NewRouter()
 	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
 		return nil, "", err
@@ -18,6 +19,9 @@ func buildRouter(ctx sdk.Context, settings *config.Manager) (*resource.Router, s
 	if err := router.RegisterBuiltin(cfgProvider{source: func() (*config.Snapshot, config.Status) {
 		return settings.Inspect()
 	}}); err != nil {
+		return nil, "", err
+	}
+	if err := router.RegisterBuiltin(artifactProvider{location: locations}); err != nil {
 		return nil, "", err
 	}
 	live := ctx

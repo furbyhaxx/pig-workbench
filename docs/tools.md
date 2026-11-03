@@ -19,7 +19,9 @@ Selectors: `:N` (onward), `:A-B`, `:A+C`, `:-N` (tail), comma lists, and `:raw` 
 
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, total lines, shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.
 
-Supported schemes today: `file://`, `local://`, `out://`, `cfg://`, `session://`.
+Supported schemes today: `file://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`.
+
+`artifact://specs/0001-x.md` resolves to the nearest `.project/` directory above the session's project root, so every worktree and subdirectory of a project sees the same artifact tree without absolute paths. Paths cannot escape it, and a working location with no artifact tree reports not-found.
 
 Reading a **directory** returns a stable listing view instead of an error: `dir/` for subdirectories, `name (N bytes)` for files, `name -> target` for links, directories first then lexical order. A single range or a tail pages the listing (`:10-20`, `:-5`); multiple ranges and `:raw` are refused because a listing is not source text.
 

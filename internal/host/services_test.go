@@ -125,3 +125,51 @@ func TestCfgProviderExposesSettings(t *testing.T) {
 		t.Fatalf("unknown key not reported: %v", err)
 	}
 }
+
+func TestArtifactProviderResolvesProjectTree(t *testing.T) {
+	repo := t.TempDir()
+	tree := filepath.Join(repo, ".project", "specs")
+	if err := os.MkdirAll(tree, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tree, "0001-a.md"), []byte("---\ntype: spec\n---\nbody\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	nested := filepath.Join(repo, "cmd", "tool")
+	if err := os.MkdirAll(nested, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	locations, err := location.New(nested)
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider := artifactProvider{location: locations}
+	page, err := provider.Read(context.Background(), resource.ReadRequest{URI: "artifact://specs/0001-a.md", Requested: "artifact://specs/0001-a.md", Budget: resource.Budget{Bytes: 4096, Lines: 100}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(page.Content, "body") {
+		t.Fatalf("artifact content missing: %q", page.Content)
+	}
+	if page.Facts.CanonicalURI != "artifact://specs/0001-a.md" {
+		t.Fatalf("canonical artifact URI lost: %q", page.Facts.CanonicalURI)
+	}
+	listing, err := provider.List(context.Background(), "artifact://specs", "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Entries) != 1 || listing.Entries[0].URI != "artifact://specs/0001-a.md" {
+		t.Fatalf("listing URIs not rebased: %+v", listing.Entries)
+	}
+	if _, err := provider.Read(context.Background(), resource.ReadRequest{URI: "artifact://../escape", Requested: "x", Budget: resource.Budget{Bytes: 4096, Lines: 100}}); err == nil {
+		t.Fatal("path traversal accepted")
+	}
+	outside := t.TempDir()
+	detached, err := location.New(outside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (artifactProvider{location: detached}).Stat(context.Background(), "artifact://specs"); !errors.Is(err, resource.ErrNotFound) {
+		t.Fatalf("missing artifact tree reported as %v", err)
+	}
+}
