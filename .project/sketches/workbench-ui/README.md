@@ -5,9 +5,9 @@ document:
   title: "Workbench UI and UX design"
   description: "Reviewable terminal wireframes, navigation, interaction states and responsive/headless behavior"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T15:31:51+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:49:31+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "DRAFT-0003 approved: activity line"
       changes: ["§14 activity line wireframes at four widths"]
+    - revision: 5
+      reason: "Session titles and path display conventions"
+      changes: ["Session listing shows Title; title write example", "Path display examples per width and footer path styles (SPEC-0003 §10)"]
 ---
 
 # Workbench UI/UX
@@ -373,10 +376,12 @@ Resource inspection primarily uses enhanced read/list/search and their renderers
 
 ```text
  ✓ ls session:// · 12 sessions
-   ID       Name                   Last activity
+   ID       Title                  Last activity
    s-a12    parser investigation   4 m ago
    s-b34    storage review         2 h ago
    More: session://s-a12/transcript
+
+ ✓ write session://self/title · "parser investigation" → "parser: hashline edge cases"
 
  ✓ ls skill:// · 8 enabled skills
    Name          Scope      Description
@@ -393,6 +398,29 @@ Resource inspection primarily uses enhanced read/list/search and their renderers
 - Unknown schemes show supported routes. Misspelled resource names do not silently trigger network work.
 
 ## 14. Status contribution and layout editor
+
+### Paths at each width (SPEC-0003 §10)
+
+Values computed with the donor formatter; row layout is illustrative.
+
+```text
+140  ✓ read services/api/internal/runtime/worker/scheduler.go:20-60 · 41 lines
+80   ✓ read services/api/internal/runtime/worker/scheduler.go:20-60 · 41 lines
+57   ✓ read s/a/i/r/worker/scheduler.go:20-60 · 41 lines
+36   ✓ read …/scheduler.go:20-60
+     ✓ read build:src/a.go                   (SSH authority is never shortened)
+     ✓ read local:/tmp/x.log                 (local target beside a remote root)
+     ✓ bash cd . && go test ./...            (literal root path shown relative)
+```
+
+Footer path segment, `statusline.path-style`, cwd `~/src/pig-workbench/.worktrees/feat-parser`, session started in `~/src/pig-workbench`, 24 cells:
+
+```text
+fish      ~/s/p/.w/feat-parser
+full      ~/src/pig-workbench/.worktrees/feat-parser   (not shortened; layout priority decides)
+relative  .worktrees/feat-parser
+basename  feat-parser
+```
 
 Default contribution is short: `workbench local` or `jobs 2 running`, width-fitted and removable. A multi-line running-job widget is opt-in and clears when idle. Do not install a replacement footer as a side effect of loading Workbench.
 

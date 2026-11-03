@@ -5,9 +5,9 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-03T11:49:19+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
       changes: ["Call rendering no longer hides secret-bearing arguments"]
+    - revision: 6
+      reason: "User: adopt pi-workbench path display conventions"
+      changes: ["§10 path display: shortest of relative/absolute, ~, authorities, fish shortening, shell command display, styles", "G8.13 points to §10"]
 ---
 
 # 1. Goal and verified host mechanisms
@@ -126,7 +129,7 @@ Historical rendering uses retained presentation version and safe snapshot labels
 
 Every registered tool appears in `/workbench settings tools`, grouped by owner. Configuration identity is owner + stable key, not ephemeral registrationId.
 
-Supported built-in controls: enabled (presentation only), density, previewLines, metric visibility, target shortening, nested child density, and allowed preset-specific display toggles. External descriptors may add boolean, bounded integer or enum display fields with stable key, label, description and default. They cannot add arbitrary command buttons, execute scripts or modify producer execution settings.
+Supported built-in controls: enabled (presentation only), density, previewLines, metric visibility, target shortening (§10), nested child density, and allowed preset-specific display toggles. External descriptors may add boolean, bounded integer or enum display fields with stable key, label, description and default. They cannot add arbitrary command buttons, execute scripts or modify producer execution settings.
 
 Effective precedence: builtin preset < producer defaults < user < trusted project < runtime. Reset deletes the chosen scope's override. Producer cannot write user overrides via registration. Dynamic descriptors preserve unknown/dormant keys; removed fields are labeled unavailable rather than erased. Changing descriptor type requires a new key or explicit migration—never reinterpret a saved boolean as a numeric mode.
 
@@ -140,7 +143,7 @@ Compact: header with status/target/primary metric; incomplete/error/effects mark
 Normal: header + bounded preview + explicit expand/continuation.
 Full: all retained content allowed by viewport; omitted upstream output still requires resource read.
 
-Header priority: tool/subject identity, terminal status, partial-effect warning, then metrics. Paths preserve authority and basename. Text is stripped of terminal sequences before styling. Color always pairs with a word/glyph. Theme tokens and user keybinding hints only.
+Header priority: tool/subject identity, terminal status, partial-effect warning, then metrics. Paths preserve authority and basename (§10). Text is stripped of terminal sequences before styling. Color always pairs with a word/glyph. Theme tokens and user keybinding hints only.
 
 Codemode draws its child rows itself; extension resolvers are not consulted for them (P9). Unified child presentation therefore needs either an upstream hook for child rows or a Workbench-owned `codemode` renderer that reconstructs children from `tool_execution_start/end` events (they carry `parentToolCallId`; IDs look like `call_0_0/1` but are treated as opaque). Until one exists, child rows keep codemode's native rendering and the inspector shows Workbench's captured child data.
 
@@ -153,6 +156,7 @@ Composite/codemode renderer uses the same child snapshots/presets. It must show 
 - Host failure + claimed producer success stays error; stale update cannot regress final state.
 - Success+incomplete and failure+partial-commit have different truthful headers.
 - Every preset/state at 36/57/80/140 columns and short height; hostile ANSI and very long URI fixtures.
+- Path display: the donor path-display tests and §10.3 pass as golden cases; no shown path exceeds its width at 36/57/80/140 columns; an SSH authority and the basename survive every width where they fit.
 - Unknown metrics, image-only results, malformed Details, unsupported schema versions and omitted child captures preserve usable output.
 - User/project/runtime precedence, reset, dormant provider, descriptor replacement and settings-change invalidation.
 - Direct tool vs codemode child have identical formatting semantics; replay without producer performs no I/O.
@@ -169,4 +173,43 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 - G3.6 Frame rows: hidden means zero lines; a click toggles one row and the expand binding resets it; the untrusted label appears before secondary metrics; diff fences render with add/remove tokens; invalid details fall back to sanitized plain text.
 - G5.14 Edit rows show the target path from partial arguments while they stream, window a streaming diff to the viewport tail, render a move-only result as `src → dst`, put change stats in the header, and bound oversized hunks.
 - G6.15 Consecutive reads group into one row with same-file ranges merged. A late result repaints a pending preview; a call that never resolves is sealed instead of left spinning.
-- G8.13 Paths: home becomes `~`; a local path uses the shorter of root-relative and absolute; a remote path keeps its authority and is shortened only against the same authority; fish-style shortening keeps the basename and never exceeds the width; shell command display shortens only standalone literal paths.
+- G8.13 Paths follow §10 (donor `path-display.ts`).
+
+# 10. Path display
+
+One shared formatter for every path Workbench shows: tool rows (targets, bash commands), frame titles, the activity line, the footer path segment, panels and inspectors. Donor: `host:/mnt/Projects/furbyhaxx/pi-workbench/src/core/path-display.ts` and `tests/core/path-display.test.ts` (commit `bc7ce0e`); the donor tests become golden cases of the Go port.
+
+## 10.1 Rules
+
+1. **Recorded vs shown.** Rows store the full target (absolute path or URI) and the root it was resolved against (G3.2). Display is pure string work: no disk, SSH or provider I/O. Inspectors and details show the full target.
+2. **Parsing.** `ssh://<authority>/<path>` gives authority and percent-decoded path (`/~` and `/~/…` become `~`, `~/…`). `file:///<path>` gives the path. Workbench resource URIs (`session://`, `artifact://`, `job://`, …) keep `scheme://` in front and are never related to a filesystem root; rule 6 applies to the part after it.
+3. **Home.** The current user's home prefix becomes `~` (for SSH targets the remote home, when the location knows it). Deviation from the donor, which rewrote any `/home/<user>`: another user's home stays absolute.
+4. **Shortest of relative and absolute.** With a root, show the root-relative form when it is not wider than the absolute one (`.` for the root itself, `../` allowed). Relative only between two absolute or two `~` paths of the same authority.
+5. **Authority.** An SSH authority is always shown as `<authority>:<path>` and never shortened. A different authority keeps the absolute path. A local target beside a remote root is marked `local:`.
+6. **Fish shortening** when the width is short: abbreviate non-final segments from the left, one at a time, to their first character (leading dots kept: `.config` → `.c`), stopping as soon as it fits. Leading `/`, `~`, `.`, `..`, the first named segment after `..`, the basename and a trailing `/` stay intact. Fallbacks: `<kept prefix>/…/<basename>`, then `…/<basename>`, then a middle ellipsis inside the basename. The result never exceeds the width; the authority's width is subtracted first.
+7. **Shell commands.** Only standalone literal absolute path words (bare or quoted) are shortened against the root. Words with `$`, backticks, `\`, globs, inner quotes or `#`, and everything after a comment stay as typed. A command containing newlines, backticks, `$(`, `<(`, `>(`, `${` or a heredoc is shown unchanged, as is any command whose location has a different authority. The executed and stored command never changes.
+8. **Widths** are terminal cells after sanitization (wide runes count 2).
+
+## 10.2 Styles and settings
+
+| Where | Setting | Values |
+|---|---|---|
+| Footer path segment (SPEC-0009 §9) | `statusline.path-style` | `fish` (default; rules 3–6 fitted to the segment), `full` (absolute with `~`), `relative` (against the session's starting root), `basename` |
+| Tool rows | `tools.<owner>.target-shortening` (§6) | on (default): rules 3–6; off: rules 3–5, then a middle ellipsis |
+| Activity line location, frame titles, panels | none | rules 3–6 |
+
+## 10.3 Examples (checked against the donor implementation)
+
+| Input | Root | Width | Shown |
+|---|---|---|---|
+| `/work/app/src/a.ts` | `/work/app` | any | `src/a.ts` |
+| `/work/other/a.ts` | `/work/app` | any | `../other/a.ts` |
+| `/etc/hosts` | `/work/deep/er/app` | any | `/etc/hosts` |
+| `$HOME/projects/pi-workbench/src/renderers.ts` | none | 30 | `~/p/p/src/renderers.ts` |
+| `/srv/projects/pi-workbench/src/renderers.ts` | none | 22 | `/s/p/p/s/renderers.ts` |
+| `../pkg/lib/deep/dir/file.ts` | none | 18 | `../pkg/…/file.ts` |
+| `ssh://dev@build:2222/srv/app/src/a.ts` | `ssh://dev@build:2222/srv/app` | any | `dev@build:2222:src/a.ts` |
+| `/tmp/x.log` | `ssh://build/srv/app` | any | `local:/tmp/x.log` |
+| `cd /work/app && cat '/work/app/src/a.ts'` | `/work/app` | any | `cd . && cat 'src/a.ts'` |
+| `echo $(cat /work/app/a.ts)` | `/work/app` | any | unchanged |
+

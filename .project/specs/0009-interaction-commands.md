@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-03T11:49:19+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 9
+      reason: "Path display conventions"
+      changes: ["Footer path segment styles and activity line location use SPEC-0003 §10"]
 ---
 
 # 1. Scope and sources
@@ -182,9 +185,9 @@ Codemode remains PiG's builtin execution engine. Workbench adds semantic nested 
 
 Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `segments`.
 - `segments`: Workbench publishes short status entries through the host (`ctx.SetStatus`): location, running jobs, pending ask, context warning, live peers (SPEC-0011). At most a short ambient status; multi-line widgets are opt-in and cleared after completion.
-- `footer`: Workbench composes the whole footer with the donor layout engine (lines, items, priority, minimum columns, merge, right alignment, conditions, wrapping, hit regions) and builtin segments (usage, cost, agent, model, fish-style path with branch, remote identity). Only an explicit user choice enables it; installing an extension never does.
+- `footer`: Workbench composes the whole footer with the donor layout engine (lines, items, priority, minimum columns, merge, right alignment, conditions, wrapping, hit regions) and builtin segments (usage, cost, agent, model, path with branch in the `statusline.path-style` style (SPEC-0003 §10), remote identity). Only an explicit user choice enables it; installing an extension never does.
 - **Activity line** (DRAFT-0003): one row above the editor, on by default (`activity.enabled`), drawn as a kit view widget (`SetWidget` with `placement: aboveEditor`).
-  - Content, by priority: state (`Ready`, `Working <elapsed>`, `Waiting for you`, `Compacting`, `Retrying n/m`) with host-animated dots (`kit.Loader` frames); live agents and unread messages (SPEC-0011); running and failed jobs (SPEC-0008); active and changed instruction files (SPEC-0007); enabled skills; location only when away from the starting checkout; contributed items; coordinator mark.
+  - Content, by priority: state (`Ready`, `Working <elapsed>`, `Waiting for you`, `Compacting`, `Retrying n/m`) with host-animated dots (`kit.Loader` frames); live agents and unread messages (SPEC-0011); running and failed jobs (SPEC-0008); active and changed instruction files (SPEC-0007); enabled skills; location only when away from the starting checkout (SPEC-0003 §10); contributed items; coordinator mark.
   - Zero counts are hidden unless the user pins the item (`show: always`). Severity pairs color with a word (`1 failed`). Below 50 columns items become glyph + number (`⚇2 ⚙2✗1 ◆5`). Lowest priority drops first; no item is cut mid-word.
   - Sent on change, coalesced to ≤ 4 per second; once per second while working (elapsed time). No I/O in render.
   - Click (fullscreen mode, the target mode): an item opens its inspector (`/workbench sessions`, `jobs`, `instructions`, `ls skill://`, `/cd`, a contributed `open` target); the state opens the hub (SKETCH-0001 §3). Keyboard: shortcut `alt+w` (setting `activity.shortcut`) opens the hub with the first non-zero item selected. Headless: `/workbench show` and `cfg://workbench/status` carry the same items.
