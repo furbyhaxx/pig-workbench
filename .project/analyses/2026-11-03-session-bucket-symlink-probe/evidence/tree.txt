@@ -1,0 +1,10 @@
+total 0
+drwxr-xr-x 2 furbyhaxx furbyhaxx  80  3. Nov 08:44 .
+drwxr-xr-x 5 furbyhaxx furbyhaxx 200  3. Nov 08:44 ..
+lrwxrwxrwx 1 furbyhaxx furbyhaxx  54  3. Nov 08:44 --tmp-wb-symprobe-work-clone-- -> $P/home/agent/projects/prj-test/sessions
+lrwxrwxrwx 1 furbyhaxx furbyhaxx  54  3. Nov 08:44 --tmp-wb-symprobe-work-repo-- -> $P/home/agent/projects/prj-test/sessions
+total 20
+drwxr-xr-x 2 furbyhaxx furbyhaxx   80  3. Nov 08:44 .
+drwxr-xr-x 3 furbyhaxx furbyhaxx   60  3. Nov 08:44 ..
+-rw-r--r-- 1 furbyhaxx furbyhaxx 7954  3. Nov 08:44 2026-11-03T07-44-11-475Z_01a1a05d-9ad3-7251-b70a-6a06971d9b31.jsonl
+-rw-r--r-- 1 furbyhaxx furbyhaxx 8685  3. Nov 08:44 2026-11-03T07-44-16-585Z_01a1a05d-aec9-703c-af5f-d74d1164b49d.jsonl
