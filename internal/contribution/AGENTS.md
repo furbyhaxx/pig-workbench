@@ -1,0 +1,14 @@
+# contribution
+
+Generation-scoped contribution registry for SPEC-0001 §4. SDK-free, stdlib-only, no I/O; `host/` supplies lifecycle, generation routing and per-kind descriptor schema.
+- One `Registry` per Workbench generation, held by the extension instance, never a global: reload keeps package state (SPEC-0001 §4). Old handles report `ErrStaleGeneration`; a new generation builds a new registry.
+- `Register` takes `api.Identity`, `Kind`, a stable owner-scoped `key` and an opaque JSON descriptor. Registration identity is `(owner, kind, key)`; only `resourceProvider` schemes and SPEC-0014 context sources are exclusive.
+- `Validator` runs before the lock and owns per-kind schema. It reports `Claims` (scheme names and `SourceClaim` pairs); the registry admits all claims or none, and refuses claims held by another live registration.
+- Identical descriptors are idempotent: descriptors are canonicalized (`encoding/json` with `UseNumber`, sorted keys, no HTML escaping) and the revision is `rev-<sha256 prefix>`, so key order and whitespace do not change the ID or revision. A changed body conflicts; `Replace` requires the previous revision and is atomic.
+- One active instance per owner. A second instance is `ErrInstanceConflict` until the host calls `ReplaceOwner(owner, previous, next)`; `RetireOwner` withdraws one incarnation. Retired instances are refused with `ErrStaleInstance`, and `Withdrawal` carries deep-copied descriptors for consumers that must withdraw state.
+- Only an owner never seen before may auto-establish an incarnation through `Register`. A retired owner (no active instance) is activated only by `ReplaceOwner(owner, "", next)`, so a forgotten or replayed instance gets `ErrInstanceConflict`/`ErrStaleInstance`, never implicit success; reads and unregisters are refused the same way. Tombstones stay bounded (8 instances per owner) because the transition is explicit, not inferred.
+- Limits: 128 live registrations per owner, 64 KiB descriptor, defaults in `MaxRegistrationsPerOwner`/`MaxDescriptorBytes`. Limits may be lowered for a registry, never raised (SPEC-0001 §4); refusals are `*LimitError` naming the limit.
+- Snapshots (`Get`, `List`, `Withdrawal`) return cloned descriptors; caller mutation never reaches stored state.
+- Don't treat identity as authentication: SPEC-0001 §4 does not authenticate bus senders, so this package prevents accidents and cross-owner collisions only. Don't infer the newest incarnation from arrival order; require `ReplaceOwner`.
+- Reserved and retired scheme names are resource-layer policy (`internal/resource/router.go`); reject them in the host validator. The registry enforces mutual exclusion and the SPEC-0004 §2 grammar only.
+- Change a limit, claim rule or transition → update SPEC-0001 §4/§7 and the host wiring together.
