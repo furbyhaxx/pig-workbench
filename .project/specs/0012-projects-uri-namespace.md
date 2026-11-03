@@ -5,9 +5,9 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-03T12:29:31+01:00"
+  updated_at: "2026-11-03T13:04:17+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "Progressive skill disclosure and served prompt (SPEC-0014)"
       changes: ["skill:// load through read, unload through ctl, loaded/ listing", "session://<id>/system-prompt", "docs://workbench/prompts"]
+    - revision: 6
+      reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
+      changes: ["Session dedup by real path is a fork change"]
 ---
 
 # 1. Scope
@@ -118,7 +121,7 @@ Conflicts (two projects claim one directory, e.g. a fork sharing root commits) a
 Every location's PiG bucket `sessions/--<encoded path>--` becomes a symlink to `projects/<id>/sessions/`. Verified in the [probe](../analyses/2026-11-03-session-bucket-symlink-probe/README.md): PiG writes, lists and continues through the symlink, so `/resume` in any checkout shows all sessions of the project.
 
 - **Adoption.** PiG creates the bucket as a real directory before extensions start. Workbench converts it at session start: move existing files into the project directory (rename on the same filesystem), replace the directory with the symlink. If another live session uses the same bucket (SPEC-0011 registry) or the filesystems differ, conversion waits for the next start and the reason is shown.
-- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; ask PiG upstream to deduplicate by real path). `--continue` may pick a session recorded in another checkout of the same project (by design of B; the cwd used afterwards still needs a probe).
+- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; the PiG fork deduplicates by real path, PLAN-0001 D13). `--continue` may pick a session recorded in another checkout of the same project (by design of B; the cwd used afterwards still needs a probe).
 - **Move and link.** A session has one home project and optional links. Moving rewrites nothing in the transcript; the file moves between project directories and links update.
 - **Undo.** `/workbench projects unlink-storage` replaces symlinks with real directories again.
 - **Windows.** Directory junctions instead of symlinks; untested.

@@ -5,9 +5,9 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T11:49:19+01:00"
+  updated_at: "2026-11-03T13:04:17+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "User: adopt pi-workbench path display conventions"
       changes: ["§10 path display: shortest of relative/absolute, ~, authorities, fish shortening, shell command display, styles", "G8.13 points to §10"]
+    - revision: 7
+      reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
+      changes: ["Child-row hook is a fork change"]
 ---
 
 # 1. Goal and verified host mechanisms
@@ -145,7 +148,7 @@ Full: all retained content allowed by viewport; omitted upstream output still re
 
 Header priority: tool/subject identity, terminal status, partial-effect warning, then metrics. Paths preserve authority and basename (§10). Text is stripped of terminal sequences before styling. Color always pairs with a word/glyph. Theme tokens and user keybinding hints only.
 
-Codemode draws its child rows itself; extension resolvers are not consulted for them (P9). Unified child presentation therefore needs either an upstream hook for child rows or a Workbench-owned `codemode` renderer that reconstructs children from `tool_execution_start/end` events (they carry `parentToolCallId`; IDs look like `call_0_0/1` but are treated as opaque). Until one exists, child rows keep codemode's native rendering and the inspector shows Workbench's captured child data.
+Codemode draws its child rows itself; extension resolvers are not consulted for them (P9). Unified child presentation therefore needs either a fork hook for child rows (PLAN-0001 D13) or a Workbench-owned `codemode` renderer that reconstructs children from `tool_execution_start/end` events (they carry `parentToolCallId`; IDs look like `call_0_0/1` but are treated as opaque). Until one exists, child rows keep codemode's native rendering and the inspector shows Workbench's captured child data.
 
 Composite/codemode renderer uses the same child snapshots/presets. It must show failed/cancelled/running children even when successes collapse. Parent outcome derives from actual codemode result, not a guessed aggregate (a script may handle a child failure). Child failures remain visible even when parent succeeded. Missing historical children say “not retained”. Scripts/arguments are inspectable, never re-executed by preview.
 

@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 16
+  revision: 17
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T12:28:56+01:00"
+  updated_at: "2026-11-03T13:04:04+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -59,6 +59,9 @@ document:
     - revision: 16
       reason: "User: templated system prompts, context frames, skill disclosure, several instruction files"
       changes: ["WB-25 and decision D12 (SPEC-0014)", "M0.2 probes PR1–PR6", "M1.5 prompt engine with builtin/pig and date frame; M4 skill disclosure; M6 select=all and builtin/workbench"]
+    - revision: 17
+      reason: "User: no upstream filing; host changes go to a personal PiG fork. SPEC-0014 drops the verbatim builtin"
+      changes: ["D13 host changes in a personal PiG fork; upstream lists become fork candidates", "D12 and M1.5 follow SPEC-0014 revision 3"]
 ---
 
 # 1. Outcome and authority
@@ -95,7 +98,7 @@ Together these ten specifications and three design artifacts cover the planned f
 - **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — [host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
 - **done (M0.2, secrets):** [Secrets probes](../analyses/2026-11-03-secrets-host-probes/README.md) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
 - **done (M0.3):** Backend matrix approved as proposed, including HEIC — [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** File the upstream issues (needs user go-ahead: external publication); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
+- **now:** Set up the personal PiG fork for host fixes (D13); M0.1 decisions (audit §4); M0.4 contract freeze; M0.5 design review.
 - **next:** M0 evidence and contract closure, then M1 integrated foundation.
 - **designed:** [SPEC-0014](../specs/0014-system-prompts.md) system prompt templates; decisions Q1–Q6 and probes PR1–PR6 open.
 - **later:** M2–M8, expanded into detailed work packages as prerequisites pass. Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3).
@@ -153,7 +156,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 |---|---|---|
 | D1: syntax engine | The proposal's lexical block resolver cannot promise full tree-sitter semantics across languages | Evaluate Go tree-sitter bindings/grammar packaging against donor block and summary fixtures; recommend a maintained parser backend. Keep the extension Go. Any native/helper dependency needs explicit approval and packability checks |
 | D2: advanced reader backends | Standard library alone does not implement SQLite, jq, PDF conversion, SVG rasterization, video or pseudocode | Produce backend/license/platform matrix, preferring existing host capabilities and maintained libraries. Specify required bundled vs external backends and unavailable-backend errors. No automatic installation or network grammar download |
-| D3: host interception | Same-name overrides, instruction suppression, provider context projection and codemode observation are host-sensitive | Run isolated probes before relying on them. A host gap becomes a named blocker with proposed upstream change, not an omitted feature or invented SDK API |
+| D3: host interception | Same-name overrides, instruction suppression, provider context projection and codemode observation are host-sensitive | Run isolated probes before relying on them. A host gap becomes a named blocker with a proposed fork change (D13), not an omitted feature or invented SDK API |
 | D4: full hashline recovery | Parser tolerance, evidence-based relocation and model-assisted repair are different behaviors | Inventory all donor recovery paths and fixtures; preserve full functionality with explicit warnings/policy. Model-assisted repair must be opt-in, bounded and disclose inference. Reject ambiguous mutations |
 | D5: short snapshot tags | Four-hex normalized tags are not unique integrity identifiers | Keep the user-facing grammar, but bind tags to canonical paths, retained bytes and seen spans; detect collisions and raw-byte changes before mutation. Do not mark unseen bytes seen after a partial edit |
 | D6: session addressing | Agents need the current session, any session and project sessions | **Resolved:** `session://<id>` canonical, `self`, `by-id/`, `by-project/<slug>/`, `by-name/` link directories; nested worktrees belong to the project; no consent gates (SPEC-0012 §5.3). Use host session listing, not hardcoded paths |
@@ -161,7 +164,8 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
 | D11: secrets | Key sharing with nukii, pi-secret-guard import, cipher, config file format | **Resolved 2026-11-03** (SPEC-0013 §10): own key in the agent dir, no imports, AES-256-GCM, `Secrets.toml` |
-| D12: system prompt ownership | Templates need a delivery that PiG accepts; custom sections cannot replace the preamble or delete sections | **Proposed** (SPEC-0014 §13): `force` delivery now, `sections` after host request H-P1; Q1–Q6 open |
+| D12: system prompt ownership | Templates need a delivery that PiG accepts; custom sections cannot replace the preamble, reorder or delete sections | **Proposed** (SPEC-0014 §13): `builtin/workbench` keeps PiG's sections with Workbench content; `force` delivery on stock PiG, `sections` on the fork (F-P1) |
+| D13: host changes | Probes found host gaps (P-series, S-series, F-P1) | **Decided 2026-11-03 (user):** fixed in a personal PiG fork, not filed upstream. The "upstream" lists in the probe analyses are fork candidates. Workbench keeps working on stock PiG and detects fork capabilities by flag |
 | D10: bus and project fan-out | PiG's event bus is JSON and session-scoped, not a cross-process project broadcast service. **Resolved for live sessions:** Workbench's own per-user local socket endpoints (SPEC-0011); project notifications from non-PiG tools still need their own ingress | Define versioned serializable services and external bridge ingress. Identify an existing project notification transport or propose a small approved transport; do not claim a session bus alone reaches every agent |
 
 Further corrections carried into implementation contracts:
@@ -236,7 +240,7 @@ Use a temporary test agent directory and controlled fixtures; do not modify user
 | Bus service plus cancellation/reload | JSON request/reply, bounded waits, unsubscribe, no mutex-held synchronous emit deadlock |
 | UI and command/flag registration | `/workbench`, `/tools`, `--list-tools`, kit views, RPC dialogs and print/JSON behavior |
 | System prompt takeover (SPEC-0014 §11) | PR1–PR6: forced prompt scope, handler order, interim sections recording, steer before the prompt, `builtin/pig` parity fixtures, model facts |
-| Widget view events (fullscreen) | Whether the host emits `ui.view.event` for a `MouseRegion` inside an `aboveEditor` widget view; then an upstream PiG SDK request to route widget/header/footer view events to the extension (today `viewEvent` serves overlays only) |
+| Widget view events (fullscreen) | Whether the host emits `ui.view.event` for a `MouseRegion` inside an `aboveEditor` widget view; then a fork change (D13) to route widget/header/footer view events to the extension (today `viewEvent` serves overlays only) |
 
 **Exit:** runnable probe evidence for every seam, or a documented host blocker. Isolated probes are not product completion and do not justify weakening the contract.
 
@@ -298,11 +302,11 @@ Review SKETCH-0001 against the command/feature inventory. Resolve navigation, de
 
 ### M1.5 — System prompt engine
 
-- gonja environment with the confined loader, section tag, helpers and limits (SPEC-0014 §3); `builtin/pig` ported with PR5 fixtures as golden cases.
-- `force` delivery, parity check, render-failure fallback and epochs (§4); `/workbench prompt` and `session://self/system-prompt`.
-- `session.date` frame through `beforePrompt` delivery (§5).
+- gonja environment with the confined loader, section tag, helpers and limits (SPEC-0014 §3); `builtin/workbench` with PiG's section structure (§7), PR5 fixtures as golden cases.
+- `force` delivery, structure check, render-failure fallback and epochs (§4); `/workbench prompt` and `session://self/system-prompt`.
+- `session.date` and `session.location` frames through `beforePrompt` delivery (§5).
 
-**Acceptance:** byte parity for every fixture; a seeded difference falls back to PiG's prompt; prompt bytes stable within an epoch; the date frame precedes each user input.
+**Acceptance:** golden renders for every fixture; an unknown host section is reported; prompt bytes stable within an epoch; frames precede each user input.
 
 **M1 exit:** integrated local vertical slice plus stable contracts. Do not label hashline, full instruction lifecycle or advanced readers complete yet.
 
