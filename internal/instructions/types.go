@@ -1,0 +1,137 @@
+// Package instructions discovers local ambient files and constructs bounded views.
+package instructions
+
+import (
+	"fmt"
+	"path/filepath"
+	"strings"
+)
+
+// Class defines filenames, placement, content role and per-file view limits.
+type Class struct {
+	ID        string
+	Filenames []string
+	Placement string
+	Select    string
+	Role      string
+	MaxLines  int
+	MaxBytes  int
+	MaxItems  int
+}
+
+// Options defines the project boundary, authorized user directories and scan budget.
+type Options struct {
+	ProjectRoot   string
+	UserRoots     []string
+	MaxTotalBytes int
+}
+
+// Selected is a canonical file and its delivered view.
+// Digest is SHA-256 over exactly the source bytes read, which may be a bounded prefix.
+// OmittedItems is -1 if the complete source was not scanned.
+type Selected struct {
+	Class        string
+	Path         string
+	DisplayPath  string
+	Role         string
+	Trust        string
+	Content      string
+	Digest       string
+	Truncated    bool
+	OmittedItems int
+	Continuation string
+}
+
+// Reason describes why a candidate was selected or excluded.
+type Reason struct {
+	Class       string
+	Path        string
+	DisplayPath string
+	Status      string
+	Detail      string
+}
+
+// Set contains selected views and their discovery reasons.
+type Set struct {
+	Files   []Selected
+	Reasons []Reason
+}
+
+// DefaultClasses returns independent default steering and backlog policies.
+func DefaultClasses() []Class {
+	return []Class{
+		{ID: "steering", Filenames: []string{"AGENTS.override.md", "AGENTS.md", "AGENTS.MD"}, Placement: "ancestors", Select: "first", Role: "instruction", MaxLines: 200, MaxBytes: 16384},
+		{ID: "backlog", Filenames: []string{"BACKLOG.md"}, Placement: "ancestors", Select: "first", Role: "context", MaxLines: 200, MaxBytes: 16384, MaxItems: 25},
+	}
+}
+
+func validatedClasses(classes []Class) ([]Class, error) {
+	if classes == nil {
+		return DefaultClasses(), nil
+	}
+	defaults := DefaultClasses()
+	result := make([]Class, 0, len(classes))
+	ids := make(map[string]bool)
+	for _, class := range classes {
+		if class.ID == "" || ids[class.ID] {
+			return nil, fmt.Errorf("class ID is empty or duplicated: %q", class.ID)
+		}
+		ids[class.ID] = true
+		if class.MaxLines < 0 || class.MaxBytes < 0 || class.MaxItems < 0 {
+			return nil, fmt.Errorf("class %q has a negative limit", class.ID)
+		}
+		base := Class{Placement: "ancestors", Select: "first", Role: "context", MaxLines: 200, MaxBytes: 16384}
+		for _, builtin := range defaults {
+			if builtin.ID == class.ID {
+				base = builtin
+				break
+			}
+		}
+		if len(class.Filenames) == 0 {
+			class.Filenames = append([]string(nil), base.Filenames...)
+		} else {
+			class.Filenames = append([]string(nil), class.Filenames...)
+		}
+		if class.Placement == "" {
+			class.Placement = base.Placement
+		}
+		if class.Select == "" {
+			class.Select = base.Select
+		}
+		if class.Role == "" {
+			class.Role = base.Role
+		}
+		if class.MaxLines == 0 {
+			class.MaxLines = base.MaxLines
+		}
+		if class.MaxBytes == 0 {
+			class.MaxBytes = base.MaxBytes
+		}
+		if class.MaxItems == 0 {
+			class.MaxItems = base.MaxItems
+		}
+		if len(class.Filenames) == 0 {
+			return nil, fmt.Errorf("class %q has no filenames", class.ID)
+		}
+		names := make(map[string]bool)
+		for _, name := range class.Filenames {
+			if name == "" || name == "." || name == ".." || filepath.Base(name) != name || strings.ContainsAny(name, "/\\") || names[name] {
+				return nil, fmt.Errorf("class %q has an invalid or repeated filename %q", class.ID, name)
+			}
+			names[name] = true
+		}
+		switch class.Placement {
+		case "ancestors", "root+nearest", "nearest", "root":
+		default:
+			return nil, fmt.Errorf("class %q has invalid placement %q", class.ID, class.Placement)
+		}
+		if class.Select != "first" && class.Select != "all" {
+			return nil, fmt.Errorf("class %q has invalid selection %q", class.ID, class.Select)
+		}
+		if class.Role != "instruction" && class.Role != "context" {
+			return nil, fmt.Errorf("class %q has invalid role %q", class.ID, class.Role)
+		}
+		result = append(result, class)
+	}
+	return result, nil
+}
