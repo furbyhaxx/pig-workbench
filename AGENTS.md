@@ -25,6 +25,7 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 - Scope, milestones and acceptance gates: `.project/plans/0001-pig-workbench.md`. UI layouts: `.project/sketches/workbench-ui/README.md`; new surfaces or layout changes need user review and captures.
 - Proposals in `.project/drafts/` are not approved implementation contracts.
 - Never stage or commit a package while its delegated subagent is still running: a green test at check time can be mid-edit a minute later. Stage explicit paths you own, and commit a delegated package only after its agent reports.
+- Subagents share this repository's git index. Never use a bare `git commit`; always `git commit -- <explicit paths>` (or `git commit --only`) so an agent's staged files cannot ride along in your commit.
 - Runtime dependencies have standing user approval after checking the latest available version and whether the project is maintained or superseded. Prefer its maintained replacement when applicable; record licenses in `THIRD_PARTY_NOTICES.md` and the check in the producing plan.
 - Code adapted from donors (pi-workbench, oh-my-pi, nugent) → keep its license notice and add an entry to `THIRD_PARTY_NOTICES.md` in the same change.
 - New tool, command, setting or scheme → update `README.md` in the same change.
