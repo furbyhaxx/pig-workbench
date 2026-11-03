@@ -1,0 +1,140 @@
+package host
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+)
+
+func (a *app) registerCommands(ext *sdk.Extension) {
+	ext.RegisterCommand("workbench", sdk.CommandOptions{
+		Description: "Inspect Workbench state, tools or working location.",
+		GetArgumentCompletions: func(prefix string) ([]sdk.AutocompleteItem, error) {
+			var items []sdk.AutocompleteItem
+			for _, name := range []string{"show", "tools", "cd"} {
+				if strings.HasPrefix(name, prefix) {
+					items = append(items, sdk.AutocompleteItem{Value: name, Label: name})
+				}
+			}
+			return items, nil
+		},
+		Handler: func(ctx sdk.Context, args string) error {
+			verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
+			switch verb {
+			case "", "show":
+				return a.show(ctx)
+			case "tools":
+				return a.toolsCommand(ctx, rest)
+			case "cd":
+				return a.cdCommand(ctx, rest)
+			default:
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset]")
+			}
+		}})
+	for _, name := range []string{"cd", "wb:cd"} {
+		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
+	}
+	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", Handler: a.toolsCommand})
+}
+
+func (a *app) show(ctx sdk.Context) error {
+	s, err := a.current()
+	if err != nil {
+		return err
+	}
+	info := s.location.Current()
+	notify(ctx, fmt.Sprintf("Workbench\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d", s.id, s.generation, info.Cwd, info.Revision))
+	return nil
+}
+
+func (a *app) cdCommand(ctx sdk.Context, args string) error {
+	args = strings.TrimSpace(args)
+	params := map[string]any{}
+	if args == "--reset" {
+		params["reset"] = true
+	} else if args != "" {
+		params["path"] = args
+	}
+	result, err := a.cd(ctx, params)
+	if err != nil {
+		return err
+	}
+	notify(ctx, result.(sdk.ToolResult).Content)
+	return nil
+}
+
+func (a *app) toolsCommand(ctx sdk.Context, args string) error {
+	tools, err := ctx.GetAllTools()
+	if err != nil {
+		return err
+	}
+	active, err := ctx.GetActiveTools()
+	if err != nil {
+		return err
+	}
+	enabled := make(map[string]bool, len(active))
+	for _, name := range active {
+		enabled[name] = true
+	}
+	var lines []string
+	filter := strings.TrimSpace(args)
+	for _, tool := range tools {
+		if filter != "" && tool.Name != filter {
+			continue
+		}
+		state := "inactive"
+		if enabled[tool.Name] {
+			state = "active"
+		}
+		line := tool.Name + " [" + state + "] " + tool.Description
+		if filter != "" {
+			schema, err := json.MarshalIndent(tool.Parameters, "", "  ")
+			if err != nil {
+				return err
+			}
+			line += "\n" + string(schema)
+		}
+		lines = append(lines, line)
+	}
+	if filter != "" && len(lines) == 0 {
+		return fmt.Errorf("tool %q not found; use /tools to list names", filter)
+	}
+	notify(ctx, strings.Join(lines, "\n"))
+	return nil
+}
+
+func notify(ctx sdk.Context, text string) {
+	width := 0
+	if ctx.Mode() == "tui" {
+		width = ctx.Width()
+	}
+	ctx.Notify(noticeText(text, width), "info")
+}
+
+func noticeText(text string, width int) string {
+	text = tui.StripTerminalSequences(text)
+	text = strings.Map(func(r rune) rune {
+		if r == '\n' {
+			return r
+		}
+		if r == '\t' {
+			return ' '
+		}
+		if r < 32 || r >= 127 && r <= 159 {
+			return -1
+		}
+		return r
+	}, text)
+	if width > 0 {
+		lines := strings.Split(text, "\n")
+		for i, line := range lines {
+			// The width helper adds ANSI resets even to plain text.
+			lines[i] = tui.StripTerminalSequences(tui.TruncateToWidth(line, width, "…", false))
+		}
+		text = strings.Join(lines, "\n")
+	}
+	return text
+}

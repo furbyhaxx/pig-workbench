@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T14:28:45+01:00"
+  updated_at: "2026-11-03T15:08:26+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "User approved pig-web M1 and M2 contract choices"
       changes: ["Recorded opt-in secrets.redact for trusted extension inference", "Recorded owner-scoped session.model fields", "Reconciled pig-web M3–M6 with explicit validation gaps", "Assigned both approvals to their owning Slice 1 phases; freeze remains pending"]
+    - revision: 6
+      reason: "Implementation resumed after the user rejected documentation-only progress"
+      changes: ["Recorded the wired local read/location runtime and live verification", "Kept every phase exit and the full slice explicitly incomplete", "Recorded the configuration dependency approval needed for strict TOML validation"]
 ---
 
 # 1. Outcome
@@ -45,7 +48,9 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 
 - **done:** M0.2 host probes (P1–P30, S1–S6, PR1–PR8), M0.3 backend matrix, M0.1 test-level audit, 14 draft specifications, bootstrap factory. D5.b adopted and D5.d rejected (SPEC-0005 rev 9). External plan review applied (rev 3).
 - **now:** Phase A (ledger and contract freeze), including the pig-web handoff [HO-pig-web-m0-4-inputs](../handoff/pig-web-m0-4-inputs.md). M1 and M2 choices approved by the user and recorded in SPEC-0001/0002/0010/0013/0014; these decisions are not runtime implementation or approval of the entire freeze.
-- **next:** Phases B–M.
+- **implementation checkpoint:** `extension.go` now wires `internal/host/`; `api/` contains v1 wire types. Owned shutdown draining, local location leases/transitions/replay, selector parsing, bounded UTF-8 source paging, `read`, `cd`, plain inspection commands and the `location` service are implemented. These are parts of B/C/D/E1/G, not completed phases. Discovery advertises only the wired `location` capability; no placeholder registration kinds or other services are advertised.
+- **verified:** `just check`, `just race`, `just integration`. `internal/host/live_test.go` drives the real PiG agent loop against a localhost scripted provider: direct raw selection, cd-relative reads, codemode success/error child captures and reset. `internal/host/live_services_test.go` co-loads the independent `service-client` factory in RPC: discovery, stale-generation rejection, location changes, session replacement and persisted-location resume. No billed inference. Width/control-character tests cover notices at 36/57/80/140 columns; these are not live TUI captures.
+- **next:** Finish B configuration after the dependency approval below; continue C–M on the same engines. Full hashline, syntax summaries, remaining tools/schemes, project identity/storage, registries, frames, instructions, jobs, secrets, prompts, skills, asks and messaging are still unimplemented. Phase A's freeze/ledger/handoff exit also remains open. No Slice 1 exit is claimed.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
 # 2. What is in Slice 1 and what is depth
@@ -75,6 +80,7 @@ Before freezing, reconcile every open decision, outstanding probe, dependency ap
 
 | Item | Kind | Blocks |
 |---|---|---|
+| Strict TOML validation alongside round-trip editing | new runtime dependency approval requested | B and its dependents: `github.com/creachadair/tomledit` v0.0.29 for round-trip edits, plus `github.com/BurntSushi/toml` v1.6.0 for semantic validation; both MIT. tomledit's package documentation explicitly excludes duplicate-key/table-order/redefinition validation, so parsing alone cannot satisfy malformed-file refusal. Neither dependency has been added. |
 | pig-web M1: extension-owned inference | decision resolved by user | C/I: opt-in `secrets.redact` for trusted owners; unprotected child sessions explicit; SPEC-0013 §4.5 |
 | pig-web M2: contributed model fields | decision resolved by user | C/F/J: owner-scoped `contextFields` on `frameProducer`, `context.fields.set`; SPEC-0014 §5.1 |
 | pig-web M3: descriptor summary | review text prepared | D/J: required one-line summary, ≤120 Unicode characters; SPEC-0004 §2 |

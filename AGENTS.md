@@ -4,7 +4,8 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 
 ## Layout
 - `extension.go` — `Extension()` factory, package `workbench`. Registration and wiring only; feature logic goes in `internal/<feature>/`.
-- `internal/` — feature packages; each gets its own AGENTS.md when created.
+- `internal/` — feature packages; each gets its own AGENTS.md when created. `internal/host/` owns SDK adapters and composition.
+- `api/` — public v1 protocol types; keep wire changes aligned with `.project/specs/0001-extension-services.md` and consumer fixtures.
 - `.project/` — development artifacts; never in `docs/`; committed. Load skill `dot-project` before writing one. Every Markdown artifact needs `document:` frontmatter (`.project/AGENTS.md`). Open work: `BACKLOG.md` pointers + `.project/backlog/`; live claims: project-scope `tasks`. Never put drift/TODOs in AGENTS.md.
 - `.tmp/` — generated modfile for direct `go` commands; git-ignored.
 
