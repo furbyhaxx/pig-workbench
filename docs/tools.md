@@ -10,7 +10,7 @@ Exactly one of `path` or `paths` (1–32 entries). Optional `selector` for a sin
 read {"path": "src/main.go:20-40"}
 read {"path": "src/main.go:raw"}
 read {"paths": ["a.go", "b.go:1-5"]}
-read {"path": "https://example.com/doc:10-20", "selector": ":10-20"}
+read {"path": "notes.md", "selector": ":10-20"}
 ```
 
 An exact (non-raw) read of a local file starts with a tagged header `[file:///path#A1B2]`. The four-hex tag is derived from the normalized content (LF view, BOM removed, per-line trailing blanks trimmed), so it identifies the content, not the path. Raw reads carry no tag, and a file above 4 MiB is read without one. The tag locates a retained snapshot; the full source digest proves its content. Workbench grants seen-line authority only after the emitted block survives the tool-result hook unchanged. Truncated blocks grant nothing; trailing annotations do not invalidate an intact block. Branch and compaction events invalidate prior visibility.
@@ -75,6 +75,29 @@ cd {"reset": true}
 ```
 
 Inspects or changes the Workbench working location. It never changes PiG's process or session `cwd`. A transition waits at most two seconds for active mutations, persists a revisioned record, and only then becomes active. Relative `cd` against an unavailable stored location is refused instead of silently falling back.
+
+## `bash` and `jobs`
+
+```text
+bash {"command":"make test"}
+bash {"command":"cat","background":true,"interactive":true}
+jobs {"action":"write","id":"<job id>","text":"input\n"}
+jobs {"action":"eof","id":"<job id>"}
+jobs {"action":"wait","id":"<job id>","timeout_seconds":30}
+jobs {"action":"output","id":"<job id>","cursor":0}
+```
+
+Commands capture the Workbench location, use Bash when installed (otherwise `/bin/sh`), and default to a 120-second hard deadline. `timeout_seconds: 0` disables that deadline. `yield_seconds` promotes a still-running foreground command after that delay. `background` returns immediately; request cancellation then does not cancel the owned job. Foreground cancellation and `jobs kill` terminate the process group. Stdin is closed unless `interactive` is true.
+
+The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `write` and `eof`. Output pages report their next byte cursor and any eviction gap. Completed jobs are retained up to the manager cap; retired IDs fail explicitly. Session shutdown owns cleanup. Linux requires pidfd process-group signalling and refuses unsupported kernels before starting commands. Windows group cleanup remains unsupported.
+
+Crash watchdogs, persistent `job://` logs, scheme-aware shell commands and job panels are still pending; these are not implied by the working local tool path.
+
+## `ask_user`
+
+Native TUI/RPC dialogs support single, multi, preview, freeform and secret questions, with custom answers and notes. Cancellation returns no partial answers. Headless print/JSON execution returns `interactionUnavailable`; it never invents choices. RPC questions use the configured dialog deadline.
+
+Secret values are collected before finalization, stored encrypted, and returned as placeholders only. Local typing need not be masked. Successful completed-record persistence is the submission commit point. If secret storage partially succeeds, the error reports retained placeholder IDs rather than claiming rollback or ordinary cancellation. The rich questionnaire panel and recovery commands remain pending.
 
 ## Locations
 

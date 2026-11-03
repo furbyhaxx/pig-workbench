@@ -18,4 +18,4 @@ Local process supervision for session-owned jobs; no SDK dependencies.
 - `Wait` that attached to a job answers that job's own terminal state, so retirement cannot turn it into a lookup failure. `Status`, `Wait`, `Cancel` and `Output` on a retired ID report `ErrJobRetired`, and its log answers `ErrLogNotFound`.
 - On natural leader exit, kill the remaining group before reaping; `JobState.Cancelled` records whether cancellation or shutdown won before observed exit. Windows reports group termination unsupported even on natural exit.
 - Group disappearance is checked once `Kill` finishes and reported as `ErrGroupNotGone`.
-- The package does not provide foreground promotion, stdin forwarding, the retention UI or cursor, or the jobs tool.
+- `control.go` forwards manager stdin, EOF and signals through retained job ownership. Host adapters own foreground waits/promotion and tool contracts; this package does not provide the retention UI.

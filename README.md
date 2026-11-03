@@ -12,6 +12,7 @@ A [PiG](https://github.com/MichaelKinsy/PiG) extension that upgrades the builtin
 - `session://` resources (read-only): `session://self/meta`, `title`, `transcript`, `entries`, each pageable with the same selectors. `cfg://` exposes effective settings with provenance (`cfg://workbench/status`, `cfg://<group>/<key>`).
 - `grep`: search file contents under the location with regex or literal OR-patterns, glob/exclusion filters and honest `complete` reporting.
 - `find`: walk for file-name globs; symlinked directories are not followed.
+- `bash` and `jobs`: local foreground/background execution, delayed promotion, deadlines, output cursors, stdin/EOF and process-group cancellation. Linux requires identity-bound pidfd group signalling; crash-watchdog, scheme shell commands and persistent job resources remain pending.
 - `ask_user`: native single/multi/preview/freeform/secret dialogs with notes and custom answers. Cancellation discards partial answers; headless modes report unavailable. Secret answers are encrypted in the vault and returned as placeholders. The rich TUI panel and replay command are still pending.
 - `cd`: `{}` reports status, `{"path":"…"}` changes the Workbench location, `{"reset":true}` returns to the origin. It never changes PiG’s cwd. Until the remaining overrides land, other builtin tools still use PiG’s cwd.
 - `/workbench show`, `/workbench cd`, `/cd`, `/wb:cd`: inspect or change that location. `/tools [name]` and `/workbench tools [name]` inspect the live host registry.

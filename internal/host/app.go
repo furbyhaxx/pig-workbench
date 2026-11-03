@@ -15,6 +15,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/jobs"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -27,6 +28,8 @@ type activeRequest struct {
 }
 
 type session struct {
+	jobs         *jobs.Manager
+	jobMeta      jobMetadataStore
 	snapshots    *hashline.Store
 	viewsMu      sync.Mutex
 	pendingViews map[string][]pendingView
@@ -65,6 +68,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnToolResult(a.confirmRead)
 	a.registerTools(ext)
 	a.registerAsk(ext)
+	a.registerJobs(ext)
 	a.registerWriteAndList(ext)
 	a.registerSearchTools(ext)
 	a.registerCommands(ext)
@@ -98,7 +102,11 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	s := &session{snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
+	jobManager, err := jobs.NewManager(jobs.ManagerOptions{})
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	s := &session{jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)
@@ -128,6 +136,11 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.mu.Unlock()
 	if old != nil {
 		old.supervisor.Stop()
+		if old.jobs != nil {
+			if err := old.jobs.Close(); err != nil {
+				ctx.Notify("Workbench job cleanup failed: "+err.Error(), "error")
+			}
+		}
 		if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: old.id, Generation: old.generation, EventID: old.generation + ":closing", Type: "closing", Data: map[string]any{}}); err != nil {
 			ctx.Notify("Workbench closing notification failed.", "warning")
 		}
