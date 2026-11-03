@@ -193,6 +193,23 @@ func TestStaleAndPruneThreshold(t *testing.T) {
 	}
 }
 
+func TestMalformedRegistrationIsNeverReplaced(t *testing.T) {
+	ctx := context.Background()
+	r, dir := registryForTest(t)
+	path := filepath.Join(dir, "invalid.json")
+	contents := []byte(`{"token":"private"`)
+	if err := os.WriteFile(path, contents, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Register(ctx, recordForTest("invalid", "new", os.Getpid())); err == nil || strings.Contains(err.Error(), "private") {
+		t.Fatalf("malformed record was overwritten or exposed: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil || string(got) != string(contents) {
+		t.Fatal("malformed record changed")
+	}
+}
+
 func TestStaleRegistrationCanBeReplaced(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("PID probing is unsupported on Windows")
@@ -220,6 +237,16 @@ func TestBoundsInvalidPathsAndCancellation(t *testing.T) {
 		record := recordForTest(id, "token", os.Getpid())
 		if err := r.Register(ctx, record); err == nil {
 			t.Errorf("invalid ID %q accepted", id)
+		}
+	}
+	invalidPID := recordForTest("invalid-pid", "token", 0)
+	if err := r.Register(ctx, invalidPID); err == nil {
+		t.Error("zero PID accepted")
+	}
+	if ^uint(0)>>32 != 0 {
+		invalidPID.PID = int(^uint(0) >> 1)
+		if err := r.Register(ctx, invalidPID); err == nil {
+			t.Error("PID exceeding the OS probe range accepted")
 		}
 	}
 	large := recordForTest("large", "token", os.Getpid())

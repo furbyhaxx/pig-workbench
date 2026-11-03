@@ -194,6 +194,15 @@ func TestConcurrentCrossProcessRegistration(t *testing.T) {
 	}
 	commands := make([]*exec.Cmd, 2)
 	outputs := make([]bytes.Buffer, 2)
+	waited := make([]bool, len(commands))
+	defer func() {
+		cancel()
+		for i, cmd := range commands {
+			if cmd != nil && !waited[i] {
+				cmd.Wait()
+			}
+		}
+	}()
 	for i := range commands {
 		id := strconv.Itoa(i)
 		cmd := exec.CommandContext(ctx, binary, "-test.run=^TestRegisterProcessHelper$")
@@ -223,7 +232,9 @@ func TestConcurrentCrossProcessRegistration(t *testing.T) {
 	}
 	registered, exists := 0, 0
 	for i, cmd := range commands {
-		if err := cmd.Wait(); err != nil {
+		err := cmd.Wait()
+		waited[i] = true
+		if err != nil {
 			t.Fatalf("child failed: %v: %s", err, outputs[i].String())
 		}
 		if strings.Contains(outputs[i].String(), "registered\n") {

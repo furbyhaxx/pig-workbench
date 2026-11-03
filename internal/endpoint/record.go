@@ -4,6 +4,7 @@ package endpoint
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -46,7 +47,10 @@ type Problem struct {
 	Err    error
 }
 
+// Error formats the problem without including record contents.
 func (p Problem) Error() string { return fmt.Sprintf("%q: %s", p.File, p.Reason) }
+
+// Unwrap returns the underlying inspection error.
 func (p Problem) Unwrap() error { return p.Err }
 
 // ListResult contains all valid records, diagnostics, and IDs whose PIDs are dead.
@@ -61,10 +65,12 @@ type ProblemsError struct {
 	Problems []Problem
 }
 
+// Error summarizes the number of records that could not be inspected.
 func (e *ProblemsError) Error() string {
 	return fmt.Sprintf("could not inspect %d endpoint record(s)", len(e.Problems))
 }
 
+// Unwrap returns the individual inspection problems.
 func (e *ProblemsError) Unwrap() []error {
 	errs := make([]error, len(e.Problems))
 	for i := range e.Problems {
@@ -80,6 +86,7 @@ type PermissionError struct {
 	Reason string
 }
 
+// Error describes the path and its unacceptable permissions or ownership.
 func (e *PermissionError) Error() string {
 	return fmt.Sprintf("endpoint path %q: %s (mode %04o)", e.Path, e.Reason, e.Mode.Perm())
 }
@@ -90,6 +97,7 @@ type PlatformUnsupportedError struct {
 	Missing string
 }
 
+// Error describes the unsupported feature and missing guarantee.
 func (e *PlatformUnsupportedError) Error() string {
 	return fmt.Sprintf("%s unsupported: %s", e.Feature, e.Missing)
 }
@@ -97,6 +105,7 @@ func (e *PlatformUnsupportedError) Error() string {
 // PIDProbeUnsupportedError reports the lack of a supported PID liveness probe.
 type PIDProbeUnsupportedError struct{}
 
+// Error describes the unavailable PID liveness probe.
 func (*PIDProbeUnsupportedError) Error() string { return "PID liveness probe unsupported" }
 
 func validSessionID(id string) bool {
@@ -112,7 +121,7 @@ func validSessionID(id string) bool {
 }
 
 func validateRecord(record Record) error {
-	if record.SchemaVersion != 1 || !validSessionID(record.SessionID) || record.Token == "" || record.PID <= 0 {
+	if record.SchemaVersion != 1 || !validSessionID(record.SessionID) || record.Token == "" || record.PID <= 0 || record.PID > math.MaxInt32 {
 		return errInvalidRecord
 	}
 	return nil
