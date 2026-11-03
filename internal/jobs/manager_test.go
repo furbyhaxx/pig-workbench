@@ -444,3 +444,205 @@ func TestManagerValidationAndUnknownID(t *testing.T) {
 		t.Fatalf("unknown output = %v", err)
 	}
 }
+
+func TestManagerRetiresOldestFinishedBeyondCap(t *testing.T) {
+	managerTestUnix(t)
+	manager := newTestManager(t, ManagerOptions{MaxFinished: 2, Grace: 100 * time.Millisecond})
+	active, err := manager.Start(context.Background(), Spec{Command: []string{"cat"}, Stdin: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	finished := make([]string, 0, 4)
+	for range 4 {
+		id, err := manager.Start(context.Background(), Spec{Command: []string{"printf", "x"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		managerWait(t, manager, id)
+		finished = append(finished, id)
+	}
+	listed := manager.List()
+	if len(listed) != 3 {
+		t.Fatalf("retained states = %+v", listed)
+	}
+	if listed[0].ID != active || !listed[0].Running {
+		t.Fatalf("running job not retained first: %+v", listed)
+	}
+	if listed[1].ID != finished[2] || listed[2].ID != finished[3] || listed[2].Exit == nil {
+		t.Fatalf("retained finished states = %+v", listed)
+	}
+	for _, id := range finished[:2] {
+		_, err := manager.Status(id)
+		if !errors.Is(err, ErrJobRetired) || !errors.Is(err, ErrJobNotFound) {
+			t.Fatalf("status of retired job = %v", err)
+		}
+		var retired *JobRetiredError
+		if !errors.As(err, &retired) {
+			t.Fatalf("retired status has wrong error type: %v", err)
+		}
+		if _, err := manager.Wait(context.Background(), id); !errors.Is(err, ErrJobRetired) {
+			t.Fatalf("wait of retired job = %v", err)
+		}
+		if err := manager.Cancel(id); !errors.Is(err, ErrJobRetired) {
+			t.Fatalf("cancel of retired job = %v", err)
+		}
+		if _, _, _, _, err := manager.Output(id, 0, 0); !errors.Is(err, ErrJobRetired) {
+			t.Fatalf("output of retired job = %v", err)
+		}
+		if _, _, _, err := manager.logs.Facts(id); !errors.Is(err, ErrLogNotFound) {
+			t.Fatalf("log metadata survived retirement: %v", err)
+		}
+	}
+	if written, _, _, err := manager.logs.Facts(finished[3]); err != nil || written != 1 {
+		t.Fatalf("retained log written=%d err=%v", written, err)
+	}
+	if _, err := manager.Status("missing"); !errors.Is(err, ErrJobNotFound) || errors.Is(err, ErrJobRetired) {
+		t.Fatalf("unknown job = %v", err)
+	}
+	if err := manager.Cancel(active); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestManagerFinishedRetentionDefaultsAndValidation(t *testing.T) {
+	manager := newTestManager(t, ManagerOptions{})
+	if manager.maxFinished != defaultMaxFinished {
+		t.Fatalf("default retention = %d", manager.maxFinished)
+	}
+	if _, err := NewManager(ManagerOptions{MaxFinished: -1}); err == nil {
+		t.Fatal("accepted a negative finished-job cap")
+	}
+}
+
+func TestManagerWaitKeepsTerminalStateThroughRetirement(t *testing.T) {
+	managerTestUnix(t)
+	manager, err := NewManager(ManagerOptions{MaxFinished: 1, Grace: 100 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = manager.Close() })
+	release := filepath.Join(t.TempDir(), "release")
+	id, err := manager.Start(context.Background(), Spec{Command: []string{"while [ ! -f \"$1\" ]; do sleep 0.01; done; printf waited", release}, Shell: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type outcome struct {
+		state JobState
+		err   error
+	}
+	waiter := make(chan outcome, 1)
+	go func() {
+		state, err := manager.Wait(context.Background(), id)
+		waiter <- outcome{state, err}
+	}()
+	time.Sleep(10 * time.Millisecond)
+	if err := os.WriteFile(release, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	managerWait(t, manager, id)
+	for range 2 {
+		next, err := manager.Start(context.Background(), Spec{Command: []string{"true"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		managerWait(t, manager, next)
+	}
+	if _, err := manager.Status(id); !errors.Is(err, ErrJobRetired) {
+		t.Fatalf("waited job was not retired: %v", err)
+	}
+	result := <-waiter
+	if result.err != nil || result.state.ID != id || result.state.Running || result.state.Exit == nil || result.state.Exit.Code != 0 {
+		t.Fatalf("attached wait lost its result: %+v %v", result.state, result.err)
+	}
+}
+
+func TestManagerRetentionConcurrentAccess(t *testing.T) {
+	managerTestUnix(t)
+	manager := newTestManager(t, ManagerOptions{MaxFinished: 2, MaxActive: 8, Grace: 50 * time.Millisecond})
+	stop := make(chan struct{})
+	var readers sync.WaitGroup
+	var churn sync.WaitGroup
+	stopped := false
+	stopAll := func() {
+		if stopped {
+			return
+		}
+		stopped = true
+		close(stop)
+		readers.Wait()
+		churn.Wait()
+	}
+	defer stopAll()
+	for range 4 {
+		readers.Go(func() {
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				states := manager.List()
+				if len(states) > 8+2 {
+					t.Errorf("retained states grew to %d", len(states))
+					return
+				}
+				for _, state := range states {
+					_, err := manager.Status(state.ID)
+					if err != nil && !errors.Is(err, ErrJobNotFound) && !errors.Is(err, ErrJobRetired) {
+						t.Errorf("status %s: %v", state.ID, err)
+						return
+					}
+					_, _, _, _, err = manager.Output(state.ID, 0, 0)
+					if err != nil && !errors.Is(err, ErrJobNotFound) && !errors.Is(err, ErrJobRetired) {
+						t.Errorf("output %s: %v", state.ID, err)
+						return
+					}
+				}
+			}
+		})
+	}
+	for range 2 {
+		churn.Go(func() {
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				id, err := manager.Start(context.Background(), Spec{Command: []string{"cat"}, Stdin: true})
+				if err != nil {
+					if errors.Is(err, ErrJobLimit) {
+						runtime.Gosched()
+						continue
+					}
+					t.Errorf("start: %v", err)
+					return
+				}
+				_ = manager.Cancel(id)
+			}
+		})
+	}
+	for range 30 {
+		id, err := manager.Start(context.Background(), Spec{Command: []string{"printf", "retained"}})
+		if err != nil {
+			t.Fatalf("start: %v", err)
+		}
+		managerWait(t, manager, id)
+	}
+	stopAll()
+	states := manager.List()
+	if len(states) == 0 || len(states) > 2 {
+		t.Fatalf("retained states after churn = %+v", states)
+	}
+	if entries := len(manager.logs.index.Load().entries); entries > 2 {
+		t.Fatalf("log metadata grew to %d entries", entries)
+	}
+	for _, state := range states {
+		if state.Running {
+			continue
+		}
+		if state.Exit == nil {
+			t.Fatalf("retained terminal state lost its exit: %+v", state)
+		}
+	}
+}

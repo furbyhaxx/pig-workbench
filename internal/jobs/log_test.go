@@ -397,3 +397,35 @@ complete:
 		}
 	}
 }
+
+func TestLogForgetRemovesMetadata(t *testing.T) {
+	store := newTestLog(t, 100, 100)
+	if err := store.Append("job", []byte("abc")); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Forget("job"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, _, err := store.Read("job", 0, 0); !errors.Is(err, ErrLogNotFound) {
+		t.Fatalf("read after forget = %v", err)
+	}
+	if _, _, _, err := store.Facts("job"); !errors.Is(err, ErrLogNotFound) {
+		t.Fatalf("facts after forget = %v", err)
+	}
+	if retained := store.SessionBytes(); retained != 0 {
+		t.Fatalf("forget retained %d bytes", retained)
+	}
+	if err := store.Forget("job"); !errors.Is(err, ErrLogNotFound) {
+		t.Fatalf("second forget = %v", err)
+	}
+	if err := store.Drop("job"); !errors.Is(err, ErrLogNotFound) {
+		t.Fatalf("drop after forget = %v", err)
+	}
+	if err := store.Append("job", []byte("de")); err != nil {
+		t.Fatal(err)
+	}
+	data, next, truncated, gap, err := store.Read("job", 0, 0)
+	if err != nil || string(data) != "de" || next != 2 || truncated || gap != 0 {
+		t.Fatalf("append after forget: %q next=%d truncated=%v gap=%d err=%v", data, next, truncated, gap, err)
+	}
+}

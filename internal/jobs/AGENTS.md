@@ -11,8 +11,11 @@ Local process supervision for session-owned jobs; no SDK dependencies.
 - Windows group termination is unsupported and reports `ErrGroupKillUnsupported` after terminating the direct child.
 - `LogStore` owns raw output bytes. Readers use immutable snapshots; they never hold the writer lock. Pages are at most 64 KiB, and cursor gaps identify the first retained byte.
 - Session quota evicts whole logs FIFO by the start of the current retention window, breaking ties by job ID; the appending job is protected and tail-capped to the smaller quota. `Facts` reports evicted logs. Appending after eviction or `Drop` resumes at the old offset with any loss recorded.
-- Dropped and evicted IDs retain offset metadata until the store closes; the byte quotas do not bound that metadata.
-- `Manager` owns background admission, processes and logs. Request contexts end at admission; `MaxActive` bounds in-flight and active jobs, not retained states or tombstones.
+- Dropped logs keep offset metadata so a later `Append` resumes at the old offset; `Forget` removes bytes and metadata permanently. Only `Forget` bounds that metadata.
+- `Manager` owns background admission, processes and logs. Request contexts end at admission; `MaxActive` bounds in-flight and active jobs.
+- `MaxFinished` (default 20) bounds retained terminal states: each completion retires the oldest terminal states beyond the cap and forgets their log metadata once no producer remains. Running and unresolved jobs are never retired.
+- Job IDs are `<16-hex manager prefix><16-hex sequence>`; sequences only grow, so IDs are never reused, and an issued-but-retired ID reports `ErrJobRetired` (which also matches `ErrJobNotFound`) instead of being confused with a foreign ID. The prefix carries the unguessability, so never shrink it to a counter alone.
+- `Wait` that attached to a job answers that job's own terminal state, so retirement cannot turn it into a lookup failure. `Status`, `Wait`, `Cancel` and `Output` on a retired ID report `ErrJobRetired`, and its log answers `ErrLogNotFound`.
 - On natural leader exit, kill the remaining group before reaping; `JobState.Cancelled` records whether cancellation or shutdown won before observed exit. Windows reports group termination unsupported even on natural exit.
 - Group disappearance is checked once `Kill` finishes and reported as `ErrGroupNotGone`.
-- The package does not provide foreground promotion, stdin forwarding, finished-job retention, or the jobs tool.
+- The package does not provide foreground promotion, stdin forwarding, the retention UI or cursor, or the jobs tool.

@@ -7,8 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -18,6 +21,9 @@ const (
 	defaultSessionLogBytes = 100 * 1024 * 1024
 	defaultGrace           = 2 * time.Second
 	defaultMaxActive       = 32
+	defaultMaxFinished     = 20
+	identityPrefixBytes    = 8
+	identitySequenceWidth  = 16
 )
 
 // JobNotFoundError means the manager has no job with the requested ID.
@@ -29,6 +35,18 @@ func (*JobNotFoundError) Error() string { return "job not found" }
 // ErrJobNotFound identifies a missing job.
 var ErrJobNotFound = &JobNotFoundError{}
 
+// JobRetiredError means the job was admitted but its retained terminal state expired.
+type JobRetiredError struct{}
+
+// Error describes the retired job.
+func (*JobRetiredError) Error() string { return "job state was retired" }
+
+// Unwrap reports the job as missing for callers that do not distinguish retention.
+func (*JobRetiredError) Unwrap() error { return ErrJobNotFound }
+
+// ErrJobRetired identifies a removed terminal state.
+var ErrJobRetired = &JobRetiredError{}
+
 // ErrManagerClosed means admission is closed.
 var ErrManagerClosed = errors.New("job manager is closed")
 
@@ -38,13 +56,15 @@ var ErrJobLimit = errors.New("active job limit reached")
 // ErrJobCleanupIncomplete means child termination could not be established.
 var ErrJobCleanupIncomplete = errors.New("job cleanup is incomplete; child or descendants may still be running")
 
-// ManagerOptions configures output limits and background process ownership.
-// Zero fields use the defaults: 10 MiB, 100 MiB, two seconds, and 32 jobs.
+// ManagerOptions configures output limits, background process ownership, and how many
+// terminal states stay readable. Zero fields use the defaults: 10 MiB, 100 MiB, two
+// seconds, 32 active jobs, and 20 finished jobs.
 type ManagerOptions struct {
 	LogBytes        int64
 	SessionLogBytes int64
 	Grace           time.Duration
 	MaxActive       int
+	MaxFinished     int
 }
 
 // JobState is a snapshot of a managed job and its terminal facts.
@@ -61,6 +81,7 @@ type JobState struct {
 
 type managedJob struct {
 	process       *Process
+	sequence      uint64
 	state         JobState
 	done          chan struct{}
 	stop          chan struct{}
@@ -91,10 +112,13 @@ type Manager struct {
 	logs            *LogStore
 	grace           time.Duration
 	maxActive       int
+	maxFinished     int
 	active          int
 	closed          bool
 	jobs            map[string]*managedJob
-	issued          map[string]struct{}
+	finished        []*managedJob
+	prefix          string
+	sequence        uint64
 	owned           sync.WaitGroup
 	admissionErrors []error
 	unresolved      []*Process
@@ -104,7 +128,7 @@ type Manager struct {
 
 // NewManager creates a background supervisor with independently owned logs.
 func NewManager(options ManagerOptions) (*Manager, error) {
-	if options.LogBytes < 0 || options.SessionLogBytes < 0 || options.Grace < 0 || options.MaxActive < 0 {
+	if options.LogBytes < 0 || options.SessionLogBytes < 0 || options.Grace < 0 || options.MaxActive < 0 || options.MaxFinished < 0 {
 		return nil, errors.New("job manager options must not be negative")
 	}
 	if options.LogBytes == 0 {
@@ -119,17 +143,25 @@ func NewManager(options ManagerOptions) (*Manager, error) {
 	if options.MaxActive == 0 {
 		options.MaxActive = defaultMaxActive
 	}
+	if options.MaxFinished == 0 {
+		options.MaxFinished = defaultMaxFinished
+	}
+	prefix, err := newIdentityPrefix()
+	if err != nil {
+		return nil, err
+	}
 	logs, err := NewLogStore(options.LogBytes, options.SessionLogBytes)
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{
-		logs:      logs,
-		grace:     options.Grace,
-		maxActive: options.MaxActive,
-		jobs:      make(map[string]*managedJob),
-		issued:    make(map[string]struct{}),
-		closeDone: make(chan struct{}),
+		logs:        logs,
+		grace:       options.Grace,
+		maxActive:   options.MaxActive,
+		maxFinished: options.MaxFinished,
+		prefix:      prefix,
+		jobs:        make(map[string]*managedJob),
+		closeDone:   make(chan struct{}),
 	}, nil
 }
 
@@ -143,6 +175,24 @@ func (w managerLogWriter) Write(data []byte) (int, error) {
 		return 0, err
 	}
 	return len(data), nil
+}
+
+func newIdentityPrefix() (string, error) {
+	var raw [identityPrefixBytes]byte
+	if _, err := io.ReadFull(rand.Reader, raw[:]); err != nil {
+		return "", fmt.Errorf("generate job identity prefix: %w", err)
+	}
+	return hex.EncodeToString(raw[:]), nil
+}
+
+// admitIdentityLocked reserves this manager's next identity. Sequences only grow, so an
+// ID is never handed out twice and a retired one stays identifiable as issued.
+func (m *Manager) admitIdentityLocked() (string, uint64, error) {
+	if m.sequence == math.MaxUint64 {
+		return "", 0, errors.New("job identity space is exhausted")
+	}
+	m.sequence++
+	return fmt.Sprintf("%s%0*x", m.prefix, identitySequenceWidth, m.sequence), m.sequence, nil
 }
 
 // Start admits a background job and returns its opaque ID after startup.
@@ -162,37 +212,14 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 		m.mu.Unlock()
 		return "", ErrJobLimit
 	}
-	m.mu.Unlock()
-	var id string
-	for {
-		var raw [16]byte
-		if _, err := io.ReadFull(rand.Reader, raw[:]); err != nil {
-			return "", fmt.Errorf("generate job ID: %w", err)
-		}
-		id = hex.EncodeToString(raw[:])
-		m.mu.Lock()
-		if m.closed {
-			m.mu.Unlock()
-			return "", ErrManagerClosed
-		}
-		if err := ctx.Err(); err != nil {
-			m.mu.Unlock()
-			return "", err
-		}
-		if m.active >= m.maxActive {
-			m.mu.Unlock()
-			return "", ErrJobLimit
-		}
-		if _, exists := m.issued[id]; exists {
-			m.mu.Unlock()
-			continue
-		}
-		m.issued[id] = struct{}{}
-		m.active++
-		m.owned.Add(1)
+	id, sequence, err := m.admitIdentityLocked()
+	if err != nil {
 		m.mu.Unlock()
-		break
+		return "", err
 	}
+	m.active++
+	m.owned.Add(1)
+	m.mu.Unlock()
 	admitted := false
 	unresolved := false
 	defer func() {
@@ -229,7 +256,7 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 		cleanupErr, unresolved = m.cleanupAdmission(process, id, admissionErr)
 		return "", cleanupErr
 	}
-	job := &managedJob{process: process, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
+	job := &managedJob{process: process, sequence: sequence, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
 	m.jobs[id] = job
 	admitted = true
 	go m.supervise(job)
@@ -240,7 +267,12 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 func (m *Manager) cleanupAdmission(process *Process, id string, cause error) (error, bool) {
 	exit, cleanupErr := m.finishProcess(process, 0)
 	unresolved := exit == nil
-	logErr := m.logs.Drop(id)
+	var logErr error
+	if unresolved {
+		logErr = m.logs.Drop(id)
+	} else {
+		logErr = m.logs.Forget(id)
+	}
 	if errors.Is(logErr, ErrLogNotFound) {
 		logErr = nil
 	}
@@ -286,8 +318,33 @@ func (m *Manager) supervise(job *managedJob) {
 	}
 	job.err = resultErr
 	m.active--
+	m.finished = append(m.finished, job)
+	retired := m.retireFinishedLocked()
 	close(job.done)
 	m.mu.Unlock()
+	m.forgetRetired(retired)
+}
+
+// retireFinishedLocked drops the oldest terminal states beyond the cap and returns them,
+// so their log metadata can be forgotten now that no producer remains.
+func (m *Manager) retireFinishedLocked() []*managedJob {
+	excess := len(m.finished) - m.maxFinished
+	if excess <= 0 {
+		return nil
+	}
+	retired := m.finished[:excess]
+	m.finished = append([]*managedJob(nil), m.finished[excess:]...)
+	for _, job := range retired {
+		delete(m.jobs, job.state.ID)
+	}
+	return retired
+}
+
+func (m *Manager) forgetRetired(retired []*managedJob) {
+	for _, job := range retired {
+		// Only a closed store at shutdown or an already-forgotten log fails here.
+		_ = m.logs.Forget(job.state.ID)
+	}
 }
 
 // finishProcess terminates the group and reaps the leader. A failed exit observation is
@@ -340,11 +397,30 @@ func (m *Manager) finishUnknown(job *managedJob, cancelled bool, err error) {
 func (m *Manager) job(id string) (*managedJob, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	job := m.jobs[id]
-	if job == nil {
-		return nil, fmt.Errorf("%w: %s", ErrJobNotFound, id)
+	return m.lookupLocked(id)
+}
+
+func (m *Manager) lookupLocked(id string) (*managedJob, error) {
+	if job := m.jobs[id]; job != nil {
+		return job, nil
 	}
-	return job, nil
+	if m.retiredLocked(id) {
+		return nil, fmt.Errorf("%w: %s", ErrJobRetired, id)
+	}
+	return nil, fmt.Errorf("%w: %s", ErrJobNotFound, id)
+}
+
+// retiredLocked reports whether the ID belongs to this manager and was already issued, so
+// an unknown ID stays distinguishable from a retired one without tracking every ID.
+func (m *Manager) retiredLocked(id string) bool {
+	if len(id) != len(m.prefix)+identitySequenceWidth || !strings.HasPrefix(id, m.prefix) {
+		return false
+	}
+	sequence, err := strconv.ParseUint(id[len(m.prefix):], 16, 64)
+	if err != nil {
+		return false
+	}
+	return sequence <= m.sequence
 }
 
 func cloneJobState(state JobState) JobState {
@@ -359,11 +435,28 @@ func cloneJobState(state JobState) JobState {
 func (m *Manager) Status(id string) (JobState, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	job := m.jobs[id]
-	if job == nil {
-		return JobState{}, fmt.Errorf("%w: %s", ErrJobNotFound, id)
+	job, err := m.lookupLocked(id)
+	if err != nil {
+		return JobState{}, err
 	}
 	return cloneJobState(job.state), nil
+}
+
+// List returns independent snapshots of every retained job, oldest admission first.
+// Running jobs are always retained; terminal states beyond MaxFinished are retired.
+func (m *Manager) List() []JobState {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	jobs := make([]*managedJob, 0, len(m.jobs))
+	for _, job := range m.jobs {
+		jobs = append(jobs, job)
+	}
+	sort.Slice(jobs, func(i, j int) bool { return jobs[i].sequence < jobs[j].sequence })
+	states := make([]JobState, len(jobs))
+	for i, job := range jobs {
+		states[i] = cloneJobState(job.state)
+	}
+	return states
 }
 
 // Wait returns the supervision result; cancelling ctx does not affect the job.
@@ -381,7 +474,11 @@ func (m *Manager) Wait(ctx context.Context, id string) (JobState, error) {
 	case <-ctx.Done():
 		return JobState{}, ctx.Err()
 	case <-job.done:
-		return m.Status(id)
+		// The job's own terminal state, so retirement cannot turn an attached wait
+		// into a missing-job error.
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		return cloneJobState(job.state), nil
 	}
 }
 
@@ -390,7 +487,13 @@ func (m *Manager) Output(id string, cursor int64, max int) ([]byte, int64, bool,
 	if _, err := m.job(id); err != nil {
 		return nil, 0, false, 0, err
 	}
-	return m.logs.Read(id, cursor, max)
+	data, next, truncated, gap, err := m.logs.Read(id, cursor, max)
+	if errors.Is(err, ErrLogNotFound) {
+		if _, lookupErr := m.job(id); lookupErr != nil {
+			return nil, 0, false, 0, lookupErr
+		}
+	}
+	return data, next, truncated, gap, err
 }
 
 // Cancel requests group termination and waits for the supervision result.

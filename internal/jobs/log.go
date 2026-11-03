@@ -324,6 +324,33 @@ func (l *LogStore) Drop(jobID string) error {
 	return nil
 }
 
+// Forget removes a log's bytes and metadata permanently, so the ID answers as unknown
+// afterwards. Unlike Drop nothing survives for a later Append or Facts.
+func (l *LogStore) Forget(jobID string) error {
+	if jobID == "" {
+		return ErrInvalidLogID
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	index := l.index.Load()
+	if index.closed {
+		return ErrLogClosed
+	}
+	view := index.entries[jobID]
+	if view == nil {
+		return ErrLogNotFound
+	}
+	used := index.used
+	if view.status == logLive {
+		used -= view.retained
+		delete(l.active, jobID)
+	}
+	entries := cloneLogIndex(index.entries)
+	delete(entries, jobID)
+	l.index.Store(&logIndex{entries: entries, used: used})
+	return nil
+}
+
 // SessionBytes returns the currently retained output byte count.
 func (l *LogStore) SessionBytes() int64 { return l.index.Load().used }
 
