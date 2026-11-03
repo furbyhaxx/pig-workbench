@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 11
+  revision: 12
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T12:29:31+01:00"
+  updated_at: "2026-11-03T13:33:03+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -44,6 +44,9 @@ document:
     - revision: 11
       reason: "System prompt templates (SPEC-0014)"
       changes: ["Template directories with trust", "prompt.*, context.*, skills.* settings"]
+    - revision: 12
+      reason: "Follow SPEC-0014: builtin/workbench default, no parity check, delivery auto"
+      changes: ["prompt.* defaults updated"]
 ---
 
 # 1. Scope and precedence
@@ -150,7 +153,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | secrets.enabled / env-injection | true / true | user/runtime (SPEC-0013 §8); detection policy lives in Secrets.toml |
 | activity.enabled / placement / shortcut | true / above-editor / alt+w | user/runtime (SPEC-0009 §9) |
 | activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
-| prompt.enabled / template / delivery / parity-check | true / builtin/pig / force / true | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |
+| prompt.enabled / template / delivery | true / builtin/workbench / auto | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |
 | prompt.families | builtin family table | user/runtime; user entries are matched first (SPEC-0014 §3.5) |
 | context.timezone / context.frames.<source> | system zone / date on, others per template | user/runtime (SPEC-0014 §5) |
 | skills.listing / listing-budget / conditions | prompt / 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |

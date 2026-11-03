@@ -5,9 +5,9 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T13:17:15+01:00"
+  updated_at: "2026-11-03T13:32:48+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "Probes PR1–PR6 ran; Q1–Q6 accepted by the user"
       changes: ["§11 results, PR7/PR8 open, fork candidates F-P2/F-P3", "§2 facts from the probes", "§4.2 detect later handlers in before_provider_request", "§3.4 model.api and mid-conversation support from ModelRegistry.Find", "§7 mcp_servers placement", "§13 decisions accepted"]
+    - revision: 5
+      reason: "User: mid-epoch changes as framed messages instead of system prompt rewrites, for models without mid-conversation system messages"
+      changes: ["§4.3: system text changes only at epoch boundaries; tools, thinking, other extensions' sections and host options become frames", "§4.1: delivery auto (sections only for flagged models on the fork)", "PR7 replaced (tools frame mid-run); F-P2 dropped; Q3 updated"]
 ---
 
 # 1. Purpose and scope
@@ -151,8 +154,9 @@ match = ["anthropic/*", "*/claude-*"]
 |---|---|---|---|
 | `force` | `before_agent_start` sets `forceSystemPrompt` to the full render | No: requests get the render; the transcript keeps PiG's base sections | works today (PR1) |
 | `sections` | `before_agent_start` sets the render as sections: preamble, deletions and section order need fork patch **F-P1** (§11) | Yes, patched by section name; mid-conversation system messages for supporting models | needs F-P1 |
+| `auto` | `sections` when the host has F-P1 and the model accepts mid-conversation system messages (`ModelRegistry().Find` compat, PR6); `force` otherwise | per mode | default |
 
-Default `prompt.delivery = "force"`. `sections` becomes the default once the PiG fork carries F-P1, because it keeps the transcript truthful (exports, forks, compaction `systemMessage`) and re-sends only changed sections.
+Default `prompt.delivery = "auto"`. On stock PiG it always resolves to `force`. With F-P1, flagged models get `sections`: the transcript is truthful and changes arrive as native system patches. Unflagged models stay on `force`, because PiG answers a section change for them by re-rendering the single system message, which breaks the cache. In both modes, mid-epoch changes follow §4.3.
 
 Without F-P1, stock PiG keeps its own preamble, keeps its section order, appends new sections after `<cwd>` and cannot delete a section, so `builtin/workbench` (adapted preamble, `<resources>` before `<docs>`) cannot be expressed. Workbench refuses `sections` on a host without F-P1 (detected by a capability flag in the fork) and says so in `/workbench prompt`.
 
@@ -167,12 +171,16 @@ Prompt-cache hits need an identical prefix. The served prompt is rendered at an 
 
 | Input change | Effect |
 |---|---|
-| Session start, resume, compaction, fork, branch switch | new epoch: re-render |
-| Model or thinking level | re-render (the cache is invalid anyway) |
-| Tool loadout, snippets, guidelines, host options | re-render, as PiG itself does |
-| Template or partial file edited | served prompt unchanged; a frame (SPEC-0002 kind `notice`, source `workbench.prompt`) carries a unified diff of the changed sections; the new text is served from the next epoch (nugent's served-section model) |
+| Session start, resume, compaction, fork, branch switch | new epoch: re-render; pending changes fold into the new text |
+| Model | new epoch (a different model has no cache to keep) |
+| Thinking level | served prompt unchanged; `session.model` frame. Templates must not vary text by thinking level inside an epoch |
+| Tool loadout, snippets, guidelines | served prompt unchanged; `tools` frame: added and removed tools with their snippets and guidelines. During a run it is delivered `nextBoundary` (after the current tool batch, before the next model call), so a tool activated mid-run is described before the model's next call |
+| Other extensions' sections (`host.sections`, including `<mcp_servers>`), append text, custom prompt, context files | served prompt unchanged; diff frame per changed section |
+| Template or partial file edited | served prompt unchanged; diff frame of the changed sections (nugent's served-section model) |
 | Instruction file of the stable set | the same, through SPEC-0007's diff frames |
-| Skill catalog | capabilities frame (§5) when `skills.listing = "frame"`; with `prompt`, next epoch |
+| Skill catalog | capabilities frame (§5) when `skills.listing = "frame"`; with `prompt`, diff frame of `<skills>` |
+
+Frames are SPEC-0002 frames (kind `notice`, source `workbench.prompt`, persisted nonce): user-role messages appended after the cached prefix. Nothing before them changes, so the cache holds for every model. `<rules>` states once that Workbench frames carry harness updates and that a section update replaces the served text of that section. Whether models follow user-role updates as well as system text is part of the A/B evaluation (§12).
 
 Reverting an edit sends a reverse diff. A diff that cannot be applied falls back to a full replacement frame.
 
@@ -307,7 +315,7 @@ Separate classes remain the tool when files need different placement, caps or ro
 
 - `/workbench prompt`: entry template and its chain, matched family, delivery mode, epoch, last error, rendered sections with byte counts, diff against the host-rendered prompt, structure check result. `/workbench prompt render --model <ref> [--tools …]` previews another model without sending anything.
 - `session://<id>/system-prompt`: the prompt served in the current epoch (read only). `docs://workbench/prompts`: template variables, helpers, gonja differences.
-- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/workbench`), `prompt.delivery` (`force`), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing` (`prompt`), `skills.listing-budget` (4096), `skills.conditions` (true).
+- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/workbench`), `prompt.delivery` (`auto`), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing` (`prompt`), `skills.listing-budget` (4096), `skills.conditions` (true).
 
 # 11. Host probes and requests
 
@@ -319,14 +327,13 @@ Separate classes remain the tool when files need different placement, caps or ro
 | PR4 | `steer` frame before the prompt in TUI, RPC, print; first prompt; after compaction | **Done:** yes in all cases |
 | PR5 | Host inputs for templates | **Done:** all present except PiG's docs paths and constant texts; `--append-system-prompt` replaces `APPEND_SYSTEM.md`; Windows cwd not tested |
 | PR6 | Model facts | **Done:** provider, id, limits, reasoning, thinking level; `api` and compat through `ModelRegistry().Find` |
-| PR7 | Re-rendering the forced prompt per turn in `context_with_system` keeps it current after a mid-run tool change without breaking the cache of earlier turns | open |
+| PR7 | Under `force`, a `tools` frame sent `nextBoundary` from a mid-run tool activation lands before the next model call, and the system text of that request is unchanged | open |
 | PR8 | With an MCP fixture: does `mcp_servers` reach Workbench's handler in `options.sections`, and in which order relative to the built-in MCP extension? | open |
 
 Evidence: [system prompt host probes](../analyses/2026-11-03-system-prompt-host-probes/README.md).
 
 Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - **F-P1:** in `before_agent_start`, accept a complete ordered section list (preamble included, base sections deletable and reorderable) and record it as the session's system sections. Exposes a capability flag that Workbench checks.
-- **F-P2:** re-render a forced prompt after a mid-run tool change, or tell the forcing extension (unless PR7 makes it unnecessary).
 - **F-P3:** record a forced prompt in the session, so exports, forks and compaction show what was sent.
 
 # 12. Acceptance
@@ -348,7 +355,7 @@ Accepted by the user on 2026-11-03 ("go ahead") as recommended:
 |---|---|---|
 | Q1 | Template engine | gonja v2 (pure Go). Alternative: pongo2 (Django dialect, less Jinja-compatible) |
 | Q2 | Takeover on by default | Yes, with `builtin/workbench`; `prompt.enabled = false` restores PiG's own prompt |
-| Q3 | Default delivery | `force` on stock PiG; `sections` on the fork with F-P1 |
+| Q3 | Default delivery | `auto`: `force` on stock PiG and for unflagged models; `sections` on the fork for flagged models; mid-epoch changes as frames (§4.3) |
 | Q4 | Skill condition keys | nukii's `when` / `auto_load` (shared skills), not kebab-case |
 | Q5 | Skill listing default | `prompt` (in `<skills>`, as PiG); `frame` once A/B runs show the cache gain |
 | Q6 | Template directory | `system-prompts/` in agent dir and `.pig/`; PiG's `prompts/` is taken by prompt templates |
