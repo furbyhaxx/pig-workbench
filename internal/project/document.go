@@ -1,4 +1,4 @@
-// Package project reads and creates shared project identity documents.
+// Package project manages shared project documents and their local registry.
 package project
 
 import (
@@ -111,18 +111,33 @@ func Parse(path string) (Project, error) {
 	return parseDocument(path, string(data))
 }
 
-func parseDocument(path, data string) (Project, error) {
-	if len(data) > maxDocumentBytes {
-		return Project{}, &Error{Path: path, Reason: "project document exceeds 1 MiB"}
-	}
-	doc := document{
+func defaultDocument() document {
+	return document{
 		Version: 1,
 		Project: Project{
 			Worktrees: Worktrees{ShareProjectTree: true},
 			Artifacts: Artifacts{Storage: "tree"},
 		},
 	}
-	meta, err := toml.Decode(data, &doc)
+}
+
+func parseDocument(path, data string) (Project, error) {
+	doc := defaultDocument()
+	meta, err := decodeDocument(path, data, &doc, nil)
+	if err != nil {
+		return Project{}, err
+	}
+	if err := validateDocument(path, doc, meta); err != nil {
+		return Project{}, err
+	}
+	return doc.Project, nil
+}
+
+func decodeDocument(path, data string, target any, extraKeys map[string]bool) (toml.MetaData, error) {
+	if len(data) > maxDocumentBytes {
+		return toml.MetaData{}, &Error{Path: path, Reason: "project document exceeds 1 MiB"}
+	}
+	meta, err := toml.Decode(data, target)
 	if err != nil {
 		problem := &Error{Path: path, Reason: "invalid TOML syntax or value type"}
 		var parse toml.ParseError
@@ -141,26 +156,27 @@ func parseDocument(path, data string) (Project, error) {
 				}
 			}
 		}
-		return Project{}, problem
+		return meta, problem
 	}
 	for _, key := range meta.Keys() {
-		if !documentKeys[key.String()] {
-			return Project{}, &Error{Path: path, Key: key.String(), Reason: "unknown key"}
+		if !documentKeys[key.String()] && !extraKeys[key.String()] {
+			return meta, &Error{Path: path, Key: key.String(), Reason: "unknown key"}
 		}
 	}
 	if keys := meta.Undecoded(); len(keys) > 0 {
-		return Project{}, &Error{Path: path, Key: keys[0].String(), Reason: "unknown key"}
+		return meta, &Error{Path: path, Key: keys[0].String(), Reason: "unknown key"}
 	}
+	return meta, nil
+}
+
+func validateDocument(path string, doc document, meta toml.MetaData) error {
 	if doc.Version != 1 {
-		return Project{}, &Error{Path: path, Key: "version", Reason: "expected supported integer version 1"}
+		return &Error{Path: path, Key: "version", Reason: "expected supported integer version 1"}
 	}
 	if !meta.IsDefined("component") {
-		return Project{}, &Error{Path: path, Key: "component", Reason: "component is required"}
+		return &Error{Path: path, Key: "component", Reason: "component is required"}
 	}
-	if err := validate(path, doc.Project); err != nil {
-		return Project{}, err
-	}
-	return doc.Project, nil
+	return validate(path, doc.Project)
 }
 
 func validate(path string, project Project) error {
