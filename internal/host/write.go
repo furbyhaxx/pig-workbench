@@ -85,7 +85,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	if input.ExpectedRevision != "" && input.ExpectedRevision != previous {
-		return nil, fmt.Errorf("staleRevision: %s changed since it was read (expected %s, found %s); read it again", target.Path, short(previous), short(input.ExpectedRevision))
+		return nil, fmt.Errorf("staleRevision: %s changed since it was read (expected %s, found %s); read it again", target.Path, short(input.ExpectedRevision), short(previous))
 	}
 	mode := os.FileMode(0600)
 	if existing != nil {
@@ -112,7 +112,7 @@ func readExisting(path string) (os.FileInfo, string, error) {
 	}
 	defer file.Close()
 	digest := sha256.New()
-	if _, err := io.Copy(digest, io.LimitReader(file, 4<<20)); err != nil {
+	if _, err := io.Copy(digest, file); err != nil {
 		return nil, "", fmt.Errorf("read existing file: %w", err)
 	}
 	return info, hex.EncodeToString(digest.Sum(nil)), nil
