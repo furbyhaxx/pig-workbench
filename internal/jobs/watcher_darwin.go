@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func startExitWatcher(process *os.Process) (*exitWatcher, error) {
+func startExitWatcher(_ *groupOwner, process *os.Process) (*exitWatcher, error) {
 	fd, err := syscall.Kqueue()
 	if err != nil {
 		return nil, err

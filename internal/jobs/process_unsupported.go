@@ -3,18 +3,37 @@
 package jobs
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"time"
 )
 
-func configureProcess(*exec.Cmd) {}
+// groupOwner refuses every group operation: startup already fails without an exit watcher.
+type groupOwner struct {
+	process *os.Process
+}
 
-func signalProcess(*os.Process, os.Signal) error { return ErrGroupKillUnsupported }
+func newGroupOwner() (*groupOwner, error) { return &groupOwner{}, nil }
 
-func terminateProcess(*os.Process, time.Duration) error { return ErrGroupKillUnsupported }
+func (o *groupOwner) configure(*exec.Cmd) {}
 
-func waitProcessGroupGone(*os.Process) error { return ErrGroupKillUnsupported }
+func (o *groupOwner) bind(process *os.Process) error {
+	o.process = process
+	return nil
+}
+
+func (o *groupOwner) signal(os.Signal) error { return ErrGroupKillUnsupported }
+
+func (o *groupOwner) terminate(time.Duration) error { return ErrGroupKillUnsupported }
+
+func (o *groupOwner) gone() error { return ErrGroupKillUnsupported }
+
+func (o *groupOwner) observeExit(context.Context) error { return ErrGroupKillUnsupported }
+
+func (o *groupOwner) abortStart() error { return ErrGroupKillUnsupported }
+
+func (o *groupOwner) release() error { return nil }
 
 func processExit(state *os.ProcessState, duration time.Duration) Exit {
 	exit := Exit{Code: -1, Duration: duration}

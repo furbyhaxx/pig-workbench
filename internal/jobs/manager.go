@@ -48,7 +48,8 @@ type ManagerOptions struct {
 }
 
 // JobState is a snapshot of a managed job and its terminal facts.
-// Running remains true on watcher failure because process termination is unknown.
+// Running remains true when termination could not be proven, because no leader status
+// was obtained and descendants may still run.
 // Cancelled records whether cancellation or shutdown won before observed exit.
 type JobState struct {
 	ID        string
@@ -289,33 +290,21 @@ func (m *Manager) supervise(job *managedJob) {
 	m.mu.Unlock()
 }
 
+// finishProcess terminates the group and reaps the leader. A failed exit observation is
+// reported next to the result instead of vetoing cleanup, which the group identity still
+// permits. Exit is nil, and termination stays unproven, unless this reap produced a real
+// leader status.
 func (m *Manager) finishProcess(process *Process, grace time.Duration) (*Exit, error) {
-	if _, err := process.watcher.exited(); err != nil {
-		return nil, m.closeUnobserved(process, err)
-	}
 	killErr := process.Kill(grace)
-	process.mu.Lock()
-	reaped := process.reaped
-	process.mu.Unlock()
-	if killErr != nil && !reaped {
-		return nil, m.closeUnobserved(process, killErr)
-	}
-	if _, err := process.watcher.exited(); err != nil {
-		return nil, errors.Join(killErr, m.closeUnobserved(process, err))
-	}
-	exit, waitErr := process.Wait(context.Background())
-	if _, err := process.watcher.exited(); err != nil {
-		return nil, errors.Join(killErr, waitErr, m.closeUnobserved(process, err))
-	}
 	closeErr := process.Close()
-	resultErr := errors.Join(killErr, waitErr, closeErr)
-	process.mu.Lock()
-	observed := process.reaped && process.cmd.ProcessState != nil
-	process.mu.Unlock()
-	if !observed {
+	// Read after Close, which joins the watcher when the leader was reaped here.
+	watchErr := process.watcher.failure()
+	resultErr := errors.Join(watchErr, killErr, closeErr)
+	exit, known := process.terminalExit()
+	if !known {
 		return nil, errors.Join(resultErr, m.closeUnobserved(process, ErrJobCleanupIncomplete))
 	}
-	return &exit, resultErr
+	return exit, resultErr
 }
 
 func (m *Manager) closeUnobserved(process *Process, cause error) error {
@@ -378,7 +367,8 @@ func (m *Manager) Status(id string) (JobState, error) {
 }
 
 // Wait returns the supervision result; cancelling ctx does not affect the job.
-// A watcher failure returns a state whose Running field remains true.
+// A process whose leader status stayed unavailable returns a state whose Running field
+// remains true.
 func (m *Manager) Wait(ctx context.Context, id string) (JobState, error) {
 	job, err := m.job(id)
 	if err != nil {

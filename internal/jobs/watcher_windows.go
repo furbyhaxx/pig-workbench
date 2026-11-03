@@ -6,7 +6,7 @@ import (
 	"syscall"
 )
 
-func startExitWatcher(process *os.Process) (*exitWatcher, error) {
+func startExitWatcher(_ *groupOwner, process *os.Process) (*exitWatcher, error) {
 	return watch(func() error {
 		var waitErr error
 		err := process.WithHandle(func(handle uintptr) {

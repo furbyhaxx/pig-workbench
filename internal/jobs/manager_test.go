@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -417,99 +416,6 @@ func TestManagerPreservesOutputFailure(t *testing.T) {
 	}
 	if err := manager.Close(); !errors.Is(err, ErrLogClosed) {
 		t.Fatalf("close hid output failure: %v", err)
-	}
-}
-
-func watcherFailureFixture(t *testing.T, watchErr error) *Process {
-	t.Helper()
-	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { writer.Close() })
-	watchDone := make(chan struct{})
-	close(watchDone)
-	process := &Process{
-		watcher:    &exitWatcher{signal: make(chan struct{}), done: watchDone, err: watchErr},
-		output:     reader,
-		outputDone: make(chan struct{}),
-		waitDone:   make(chan struct{}),
-		reaped:     true,
-	}
-	go func() {
-		_, process.outputErr = io.Copy(io.Discard, reader)
-		reader.Close()
-		close(process.outputDone)
-	}()
-	return process
-}
-
-func TestManagerWatcherFailureRemainsUnknown(t *testing.T) {
-	manager, err := NewManager(ManagerOptions{MaxActive: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = manager.Close() })
-	watchErr := errors.New("watcher fixture failed")
-	process := watcherFailureFixture(t, watchErr)
-	const id = "watcher-fixture"
-	job := &managedJob{process: process, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
-	manager.mu.Lock()
-	manager.active = 1
-	manager.jobs[id] = job
-	manager.owned.Add(1)
-	manager.mu.Unlock()
-	go manager.supervise(job)
-	state := managerWait(t, manager, id)
-	if !state.Running || state.Exit != nil || !strings.Contains(state.Error, watchErr.Error()) {
-		t.Fatalf("watcher failure state = %+v", state)
-	}
-	status, err := manager.Status(id)
-	if err != nil || !status.Running || status.Exit != nil || status.Error != state.Error {
-		t.Fatalf("watcher failure status = %+v, %v", status, err)
-	}
-	if _, err := manager.Start(context.Background(), Spec{Command: []string{"true"}}); !errors.Is(err, ErrJobLimit) {
-		t.Fatalf("watcher failure released capacity: %v", err)
-	}
-	if err := manager.Cancel(id); !errors.Is(err, watchErr) {
-		t.Fatalf("cancel did not preserve watcher error: %v", err)
-	}
-	if err := manager.Close(); !errors.Is(err, watchErr) || !errors.Is(err, ErrJobCleanupIncomplete) {
-		t.Fatalf("close hid watcher failure: %v", err)
-	}
-	select {
-	case <-process.outputDone:
-	default:
-		t.Fatal("output drain did not stop")
-	}
-}
-
-func TestManagerUnadmittedWatcherFailureRemainsOwned(t *testing.T) {
-	manager, err := NewManager(ManagerOptions{MaxActive: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = manager.Close() })
-	watchErr := errors.New("watcher fixture failed before admission")
-	process := watcherFailureFixture(t, watchErr)
-	manager.mu.Lock()
-	manager.active = 1
-	manager.mu.Unlock()
-	err, unresolved := manager.cleanupAdmission(process, "unadmitted", context.Canceled)
-	if !unresolved || !errors.Is(err, context.Canceled) || !errors.Is(err, watchErr) || !errors.Is(err, ErrJobCleanupIncomplete) {
-		t.Fatalf("unadmitted cleanup = %v, unresolved=%v", err, unresolved)
-	}
-	manager.mu.Lock()
-	retained := len(manager.unresolved) == 1 && manager.unresolved[0] == process && manager.active == 1
-	manager.mu.Unlock()
-	if !retained {
-		t.Fatal("unobserved process or active slot was forgotten")
-	}
-	if _, err := manager.Start(context.Background(), Spec{Command: []string{"true"}}); !errors.Is(err, ErrJobLimit) {
-		t.Fatalf("unobserved admission released capacity: %v", err)
-	}
-	if err := manager.Close(); !errors.Is(err, watchErr) || !errors.Is(err, ErrJobCleanupIncomplete) {
-		t.Fatalf("close hid unobserved process: %v", err)
 	}
 }
 

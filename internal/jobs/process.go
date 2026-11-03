@@ -16,6 +16,14 @@ import (
 // ErrReaped means the leader was reaped and its group identity can no longer be used.
 var ErrReaped = errors.New("process leader has been reaped")
 
+const (
+	// exitObservationTimeout bounds the identity observation that replaces a failed watcher
+	// during cleanup, so a survivor cannot hold the caller.
+	exitObservationTimeout = 5 * time.Second
+	// abandonTimeout bounds the reap of a child whose supervision failed to start.
+	abandonTimeout = 5 * time.Second
+)
+
 // StdinClosedError means process input is disabled or closed.
 type StdinClosedError struct{}
 
@@ -29,6 +37,13 @@ var ErrOutputIncomplete = errors.New("process output did not close after leader 
 
 // ErrGroupNotGone means group disappearance could not be observed after termination.
 var ErrGroupNotGone = errors.New("process group remains after termination")
+
+// ErrProcessIdentityUnsupported means group ownership could not be bound to the identity
+// created with the leader, so group cleanup cannot be verified.
+var ErrProcessIdentityUnsupported = errors.New("identity-bound process-group signalling is unavailable")
+
+// ErrExitUnavailable means the leader was reaped outside this package, so no exit status exists.
+var ErrExitUnavailable = errors.New("process leader exit status is unavailable")
 
 // GroupKillUnsupportedError means a platform cannot terminate a whole process group.
 type GroupKillUnsupportedError struct{}
@@ -71,9 +86,15 @@ type Exit struct {
 }
 
 // Process owns a child until it has been reaped and its output drain has stopped.
+// Ownership splits into the group identity in owner, the exit observation in watcher,
+// and the reap this process completed under mu. Losing the observation never loses the
+// identity, so cleanup and signalling outlive a broken watcher. A reap needs two things
+// that the watcher cannot provide: independent evidence that the leader terminated, and
+// the gate, which an admitted escalation holds until its signals are finished.
 type Process struct {
 	cmd         *exec.Cmd
 	started     time.Time
+	owner       *groupOwner
 	watcher     *exitWatcher
 	output      *os.File
 	outputDone  chan struct{}
@@ -81,15 +102,20 @@ type Process struct {
 	stdin       io.WriteCloser
 	stdinOnce   sync.Once
 	stdinClosed atomic.Bool
-	mu          sync.Mutex
-	killMu      sync.Mutex
+	mu          sync.Mutex // guards the reap transition and the status it produced
+	gate        sync.Mutex // holds signalling, escalation and our own reap apart
+	killMu      sync.Mutex // serializes Kill and Close
 	killErr     error
 	closed      bool
 	reaped      bool
+	exitKnown   bool
 	result      Exit
+	reapErr     error
 	waitErr     error
-	waitOnce    sync.Once
-	waitDone    chan struct{}
+	reapOnce    sync.Once // runs cmd.Wait once, under the gate
+	drainOnce   sync.Once // drains output once, without the gate
+	collectOnce sync.Once // admits the single background collector
+	reapDone    chan struct{}
 }
 
 type exitWatcher struct {
@@ -112,13 +138,35 @@ func watch(fn func() error) *exitWatcher {
 	return w
 }
 
-func (w *exitWatcher) exited() (<-chan struct{}, error) {
+// failure reports the observation diagnostic once the watcher has finished.
+// It never decides whether cleanup may proceed.
+func (w *exitWatcher) failure() error {
 	select {
 	case <-w.done:
-		return w.signal, w.err
+		return w.err
 	default:
-		return w.signal, nil
+		return nil
 	}
+}
+
+// observationTime reports when the watcher saw the exit, or the zero time while it is pending.
+func (w *exitWatcher) observationTime() time.Time {
+	select {
+	case <-w.done:
+		return w.observed
+	default:
+		return time.Time{}
+	}
+}
+
+// watchProcess observes leader exit without reaping it. Tests replace it to reach the
+// initialization failures the kernel does not produce here.
+var watchProcess = startExitWatcher
+
+// observeIdentityExit establishes leader exit through the group identity without reaping it.
+// Tests replace it to hold a passive observation open while cleanup runs.
+var observeIdentityExit = func(owner *groupOwner, ctx context.Context) error {
+	return owner.observeExit(ctx)
 }
 
 // StartProcess starts a process in a dedicated Unix process group.
@@ -138,6 +186,10 @@ func StartProcess(spec Spec) (*Process, error) {
 	if output == nil {
 		output = io.Discard
 	}
+	owner, err := newGroupOwner()
+	if err != nil {
+		return nil, err
+	}
 	reader, writer, err := os.Pipe()
 	if err != nil {
 		return nil, fmt.Errorf("create process output pipe: %w", err)
@@ -152,7 +204,7 @@ func StartProcess(spec Spec) (*Process, error) {
 			return nil, fmt.Errorf("create process stdin pipe: %w", err)
 		}
 	}
-	configureProcess(cmd)
+	owner.configure(cmd)
 	started := time.Now()
 	if err := cmd.Start(); err != nil {
 		reader.Close()
@@ -163,24 +215,54 @@ func StartProcess(spec Spec) (*Process, error) {
 		return nil, fmt.Errorf("start process: %w", err)
 	}
 	writer.Close()
-	watcher, err := startExitWatcher(cmd.Process)
-	if err != nil {
-		var stdinErr error
-		if stdin != nil {
-			stdinErr = stdin.Close()
-		}
-		killErr := terminateProcess(cmd.Process, 0)
-		waitErr := cmd.Wait()
-		reader.Close()
-		return nil, errors.Join(fmt.Errorf("observe process exit: %w", err), stdinErr, killErr, waitErr)
+	if err := owner.bind(cmd.Process); err != nil {
+		return nil, abandonStart(cmd, owner, reader, stdin, fmt.Errorf("bind process identity: %w", err))
 	}
-	p := &Process{cmd: cmd, started: started, watcher: watcher, output: reader, outputDone: make(chan struct{}), stdin: stdin, waitDone: make(chan struct{})}
+	watcher, err := watchProcess(owner, cmd.Process)
+	if err != nil {
+		return nil, abandonStart(cmd, owner, reader, stdin, fmt.Errorf("observe process exit: %w", err))
+	}
+	p := &Process{cmd: cmd, started: started, owner: owner, watcher: watcher, output: reader, outputDone: make(chan struct{}), stdin: stdin, reapDone: make(chan struct{})}
 	go func() {
 		_, p.outputErr = io.Copy(output, reader)
 		reader.Close()
 		close(p.outputDone)
 	}()
 	return p, nil
+}
+
+// abandonStart terminates a child whose supervision could not be established. Only stable
+// handles are used: a failed verification leaves the group unreclaimed and reports it, and a
+// child that outlives termination cannot hold the caller by the reap.
+func abandonStart(cmd *exec.Cmd, owner *groupOwner, reader *os.File, stdin io.WriteCloser, cause error) error {
+	var stdinErr error
+	if stdin != nil {
+		stdinErr = stdin.Close()
+	}
+	killErr := owner.abortStart()
+	waitErr := reapAbandoned(cmd)
+	releaseErr := owner.release()
+	reader.Close()
+	return errors.Join(cause, stdinErr, killErr, waitErr, releaseErr)
+}
+
+// reapAbandoned reaps a launched child after termination without waiting on a survivor:
+// cmd.Wait has no deadline of its own.
+func reapAbandoned(cmd *exec.Cmd) error {
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	timer := time.NewTimer(abandonTimeout)
+	defer timer.Stop()
+	select {
+	case err := <-done:
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return nil
+		}
+		return err
+	case <-timer.C:
+		return errors.New("abandoned child did not terminate before the reap deadline")
+	}
 }
 
 // PID returns the direct child's process ID.
@@ -232,70 +314,191 @@ func (p *Process) Exited() <-chan struct{} {
 }
 
 // Signal sends a signal to the owned process group, or to the child on Windows.
+// A broken exit observation does not block delivery: the group identity stays valid
+// until this process reaps the leader. The signal/reap gate is held across the refusal
+// check and the delivery, so nothing reaches the group after our reap and an admitted
+// escalation finishes signalling first.
 func (p *Process) Signal(sig os.Signal) error {
 	if sig == nil {
 		return errors.New("nil process signal")
 	}
+	p.gate.Lock()
+	defer p.gate.Unlock()
 	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.reaped {
+	reaped := p.reaped
+	p.mu.Unlock()
+	if reaped {
 		return ErrReaped
 	}
-	if _, err := p.watcher.exited(); err != nil {
-		return fmt.Errorf("observe process exit: %w", err)
-	}
-	return signalProcess(p.cmd.Process, sig)
+	return p.owner.signal(sig)
 }
 
-// Wait waits for and reaps the leader; cancelling ctx leaves the child running.
-// A nonzero exit is recorded in Exit rather than returned as an error.
+// Wait waits for and reaps the leader; cancelling ctx stops the wait without reaping a leader
+// that has not been shown to exit. Once exit evidence exists, the single collector completes
+// the reap on its own. A nonzero exit is recorded in Exit rather than returned as an error.
 // If inherited output descriptors remain open, Wait returns ErrOutputIncomplete.
+// Only a leader reaped here has a status: a leader reaped elsewhere yields
+// ErrExitUnavailable instead of an invented Exit. A broken exit observation is
+// reported next to the result rather than replacing it.
 func (p *Process) Wait(ctx context.Context) (Exit, error) {
+	// The record of a completed reap decides: observing afterwards could only probe an
+	// identity descriptor that Close already released.
+	if exit, resultErr, done := p.reapedResult(); done {
+		return exit, errors.Join(p.watcher.failure(), resultErr)
+	}
 	if err := ctx.Err(); err != nil {
 		return Exit{}, err
 	}
+	exited, observationErr := p.observedExit(ctx, p.observeIdentity)
+	if !exited {
+		if exit, resultErr, done := p.reapedResult(); done {
+			return exit, errors.Join(p.watcher.failure(), resultErr)
+		}
+		// No evidence that the leader terminated: reaping now could block on a live child,
+		// so the caller keeps ownership of it.
+		return Exit{}, observationErr
+	}
+	if err := ctx.Err(); err != nil {
+		return Exit{}, errors.Join(err, observationErr)
+	}
+	// The admitted collector finishes independently, so this wait answers its context even
+	// while an escalation owns the gate.
+	p.admitCollector()
 	select {
 	case <-ctx.Done():
-		return Exit{}, ctx.Err()
-	case <-p.watcher.done:
+		return Exit{}, errors.Join(ctx.Err(), observationErr)
+	case <-p.reapDone:
 	}
-	if _, err := p.watcher.exited(); err != nil {
-		return Exit{}, fmt.Errorf("observe process exit: %w", err)
-	}
-	p.waitOnce.Do(func() { go p.reap() })
-	select {
-	case <-ctx.Done():
-		return Exit{}, ctx.Err()
-	case <-p.waitDone:
-		return p.result, p.waitErr
-	}
+	exit, resultErr, _ := p.reapedResult()
+	return exit, errors.Join(observationErr, resultErr)
 }
 
-func (p *Process) reap() {
+// observedExit establishes that the leader terminated without reaping it. A working watcher
+// settles it; otherwise the group identity is observed directly through observe, bounded by
+// ctx. The error keeps the watcher diagnostic and any observation failure. Neither path holds
+// a lifecycle lock while it waits, so a pending wait never stands between cleanup and its reap.
+func (p *Process) observedExit(ctx context.Context, observe func(context.Context) error) (bool, error) {
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	case <-p.watcher.done:
+	}
+	watchErr := p.watcher.failure()
+	if watchErr == nil {
+		return true, nil
+	}
+	if err := observe(ctx); err != nil {
+		return false, errors.Join(watchErr, err)
+	}
+	return true, watchErr
+}
+
+// terminalExit reports the exit of a leader this process reaped, if any.
+func (p *Process) terminalExit() (*Exit, bool) {
 	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.exitKnown {
+		return nil, false
+	}
+	exit := p.result
+	return &exit, true
+}
+
+// reapedResult reports the record of our own reap once its drain finished, without touching the
+// identity. A caller that finds only the published leader status waits for the completion.
+func (p *Process) reapedResult() (Exit, error, bool) {
+	select {
+	case <-p.reapDone:
+	default:
+		return Exit{}, nil, false
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.exitKnown {
+		return Exit{}, errors.Join(ErrExitUnavailable, p.waitErr), true
+	}
+	return p.result, p.waitErr, true
+}
+
+// recordedErr reports the outcome of the reap this process completed.
+func (p *Process) recordedErr() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.waitErr
+}
+
+// admitCollector starts the single background collector that reaps an exited leader. It takes
+// the gate itself, so an admitted escalation reaps inline and the collector then finds nothing
+// to do: neither side waits for the other under the gate.
+func (p *Process) admitCollector() {
+	p.collectOnce.Do(func() {
+		go func() {
+			p.gate.Lock()
+			p.reap()
+			p.gate.Unlock()
+			p.drain()
+		}()
+	})
+}
+
+// reap runs cmd.Wait at most once and publishes the leader status. The caller holds the gate and
+// established exit evidence first, so the wait cannot stall and no escalation is still
+// signalling the group.
+func (p *Process) reap() {
+	p.reapOnce.Do(p.collect)
+}
+
+func (p *Process) collect() {
 	err := p.cmd.Wait()
 	stdinErr := p.CloseStdin()
-	p.reaped = true
-	result := processExit(p.cmd.ProcessState, p.watcher.observed.Sub(p.started))
-	p.mu.Unlock()
+	state := p.cmd.ProcessState
+	// Without an exit observation the duration can only end at the reap.
+	duration := time.Since(p.started)
+	if observed := p.watcher.observationTime(); !observed.IsZero() && observed.After(p.started) {
+		duration = observed.Sub(p.started)
+	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		err = nil
 	}
-	err = errors.Join(err, stdinErr)
-	// A descendant may retain the output pipe after its leader has exited.
+	if state == nil {
+		// The leader was reaped elsewhere: its status cannot be recovered, and saying so is
+		// the record for every later caller.
+		err = errors.Join(err, ErrExitUnavailable)
+	}
+	p.mu.Lock()
+	p.reaped = true
+	p.exitKnown = state != nil
+	p.result = processExit(state, duration)
+	p.reapErr = errors.Join(err, stdinErr)
+	p.mu.Unlock()
+}
+
+// drain joins the output drain once and records the reap outcome before reapDone closes. It runs
+// without the gate: a descendant that retains the pipe must not hold off signalling or cleanup.
+func (p *Process) drain() {
+	p.drainOnce.Do(func() {
+		err := p.drainOutput()
+		p.mu.Lock()
+		p.waitErr = errors.Join(p.reapErr, err)
+		p.mu.Unlock()
+		close(p.reapDone)
+	})
+}
+
+// drainOutput waits for the output drain; a descendant may retain the pipe after its leader
+// exited.
+func (p *Process) drainOutput() error {
 	timer := time.NewTimer(2 * time.Second)
+	defer timer.Stop()
 	select {
 	case <-p.outputDone:
-		err = errors.Join(err, p.outputErr)
+		return p.outputErr
 	case <-timer.C:
 		p.output.Close()
 		<-p.outputDone
-		err = errors.Join(err, ErrOutputIncomplete, p.outputErr)
+		return errors.Join(ErrOutputIncomplete, p.outputErr)
 	}
-	timer.Stop()
-	p.result, p.waitErr = result, err
-	close(p.waitDone)
 }
 
 // Kill terminates the group, escalates after grace, and reaps the child.
@@ -312,26 +515,36 @@ func (p *Process) Kill(grace time.Duration) error {
 }
 
 func (p *Process) kill(grace time.Duration) error {
+	// The gate is held from admission through the reap that publishes the status, so no reap
+	// can complete while the escalation still signals the group and no signal slips between
+	// the refusal check and our reap.
+	p.gate.Lock()
 	p.mu.Lock()
-	if p.reaped {
-		p.mu.Unlock()
+	reaped := p.reaped
+	p.mu.Unlock()
+	if reaped {
+		p.gate.Unlock()
 		return ErrReaped
 	}
-	if _, err := p.watcher.exited(); err != nil {
-		p.mu.Unlock()
-		return fmt.Errorf("observe process exit: %w", err)
+	termErr := p.owner.terminate(grace)
+	ctx, cancel := context.WithTimeout(context.Background(), exitObservationTimeout)
+	exited, exitErr := p.observedExit(ctx, p.owner.observeExit)
+	cancel()
+	if exited {
+		p.reap()
 	}
-	err := terminateProcess(p.cmd.Process, grace)
-	p.mu.Unlock()
-	if err != nil && !errors.Is(err, ErrGroupKillUnsupported) {
-		return err
+	p.gate.Unlock()
+	var waitErr error
+	if exited {
+		p.drain()
+		waitErr = errors.Join(exitErr, p.recordedErr())
+	} else {
+		// Termination could not be established, so the leader stays unreaped: reaping a
+		// survivor would block here, and claiming its exit would be inventing one.
+		waitErr = errors.Join(exitErr, ErrJobCleanupIncomplete)
 	}
-	_, waitErr := p.Wait(context.Background())
-	var groupErr error
-	if err == nil {
-		groupErr = waitProcessGroupGone(p.cmd.Process)
-	}
-	p.killErr = errors.Join(err, waitErr, groupErr)
+	groupErr := p.owner.gone()
+	p.killErr = errors.Join(termErr, waitErr, groupErr)
 	return p.killErr
 }
 
@@ -347,8 +560,30 @@ func (p *Process) Close() error {
 	stdinErr := p.CloseStdin()
 	err := p.kill(0)
 	if errors.Is(err, ErrReaped) {
-		<-p.waitDone
-		return errors.Join(stdinErr, p.waitErr, p.killErr)
+		<-p.reapDone
+		err = errors.Join(p.recordedErr(), p.killErr)
 	}
-	return errors.Join(stdinErr, err)
+	return errors.Join(stdinErr, err, p.watcher.failure(), p.releaseIdentity())
+}
+
+// releaseIdentity closes the identity handle exactly once, after the leader was reaped and no
+// observer is left. It holds the gate so observation cannot use a recycled descriptor, and a
+// reap always ends the watcher first, so the join cannot block on a live leader.
+func (p *Process) releaseIdentity() error {
+	p.gate.Lock()
+	defer p.gate.Unlock()
+	p.mu.Lock()
+	reaped := p.reaped
+	p.mu.Unlock()
+	if !reaped {
+		return nil
+	}
+	<-p.watcher.done
+	return p.owner.release()
+}
+
+// observeIdentity establishes leader termination through the group identity, bounded by ctx.
+// It holds no lifecycle lock: the owner observes through a private descriptor copy.
+func (p *Process) observeIdentity(ctx context.Context) error {
+	return observeIdentityExit(p.owner, ctx)
 }
