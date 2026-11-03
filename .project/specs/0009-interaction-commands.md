@@ -5,9 +5,9 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Answer history on by default with retention and purge (D9.c, provisional)", "Statusline segments/footer modes and external status segments (D9.d)", "Cancel returns cancelled (D9.b)"]
+    - revision: 5
+      reason: "SPEC-0012 project model and URI namespace"
+      changes: ["Inspection routes moved from harness:// (SPEC-0012 §5.3)"]
 ---
 
 # 1. Scope and sources
@@ -156,7 +159,7 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 
 Aliases list/ls, config/settings, rm/remove are canonicalized only where valid. Completion supplies argument-context choices from cached state; never blocks on remote enumeration. Entity actions revalidate IDs after selection. Commands do not inject model text except their explicitly stated frame/location/answer/checkpoint behaviors.
 
-Script-relevant state uses tools/resource APIs rather than interactive slash commands: jobs, cd, read harness://status/instructions/frames/integrations/schemes, settings and control routes. No UI toast is the sole headless output.
+Script-relevant state uses tools/resource APIs rather than interactive slash commands: jobs, cd, read `cfg://workbench/status`, `cfg://workbench/integrations/`, `session://self/instructions/`, `session://self/frames/`, `docs://workbench/schemes/`, write `cfg://ctl`, settings and control routes. No UI toast is the sole headless output.
 
 # 9. Inspector, codemode and status composition
 

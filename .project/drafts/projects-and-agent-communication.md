@@ -4,10 +4,10 @@ document:
   id: "DRAFT-0002"
   title: "Projects, the project artifact tree, pseudo-filesystem URIs, agent addressing and the coordinator"
   description: "Proposal for a stable Project entity with .project/Project.toml, the builtin .project convention shared across worktrees, all schemes as browsable pseudo-filesystems, agent:// communication and an opt-in coordinator"
-  status: "draft"
-  revision: 3
+  status: "archived"
+  revision: 4
   created_at: "2026-11-03T08:25:00+01:00"
-  updated_at: "2026-11-03T09:30:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -31,7 +31,12 @@ document:
         - "docs:// for PiG, Workbench and extension documentation and source; harness:// dissolved"
         - "Progressive scheme guides injected as frames on first touch"
         - "Analysed storing artifacts in git refs"
+    - revision: 4
+      reason: "Approved with Q1–Q3; superseded by SPEC-0012 and SPEC-0011 rev 2"
+      changes: ["Archived with successor pointers", "pig-web line corrected per HO-pig-web-r6-r7 traps"]
 ---
+
+> **Archived.** Successors: [SPEC-0012](../specs/0012-projects-uri-namespace.md) (projects, conventions, URI namespace) and [SPEC-0011](../specs/0011-inter-session-messaging.md) rev 2 (agent://, coordinator). Decisions Q1–Q3 took the recommendations of §9.
 
 # 1. Scope
 
@@ -443,7 +448,7 @@ Fixed, because they are not friction but correctness: enabling stays a user acti
 | SPEC-0011 | Addressing via `agent://` trees, project-scoped discovery, broadcast, coordinator requests |
 | PLAN-0001, sketches | Scheme names in WB-07…WB-10 and the UI captures |
 | New spec | Projects, conventions and URI namespace (§3–§5) |
-| pig-web | KB project scope keyed by project ID; `docs://pig-web/` registration (handoff `HO-workbench-answers`) |
+| pig-web | Provenance and private items key on the project ID; `docs://pig-web/` registration |
 
 # 9. Decisions
 

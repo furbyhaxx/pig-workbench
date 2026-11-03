@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "User decisions and pig-web harmonisation"
       changes: ["Added WB-20 (inter-session messaging and collaboration services) and WB-21 (deferred AST tools)", "D10 resolved for live sessions by SPEC-0011"]
+    - revision: 10
+      reason: "SPEC-0012 approved (DRAFT-0002 rev 3, Q1–Q3)"
+      changes: ["WB-07…WB-10 renamed to the SPEC-0012 scheme trees", "Added WB-22 projects, conventions, docs:// and guides; WB-20 gains agent:// and the coordinator", "D6 points to SPEC-0012"]
 ---
 
 # 1. Outcome and authority
@@ -89,10 +92,10 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-04 | Inline line/range/count/head/tail/raw selectors, multi-read, context boundaries, summaries, continuation, loop guard, supersede handling | M1–M3 | Source-coordinate/seen-line integrity, filename disambiguation and deterministic bounded batches |
 | WB-05 | Advanced read adapters: JSON queries, SQLite, archives, documents/PDF, images/SVG, notebooks, static web, binary inspection, video/profile views | M3 | Explicit format/operation matrix and representative end-to-end fixtures, not just adapter registration |
 | WB-06 | Shared capability-declared scheme router and extension integration contract | M1, M4 | One resolver/pager/policy path; handlers do not duplicate tool logic |
-| WB-07 | Project/global sessions, history, branches and search; `session://`, `history://`, `branch://` | M4 | Alternate session roots, active branch vs full history, project membership incl. nested worktrees, index correctness |
-| WB-08 | `skills://`/`skill://`, supporting files and enabled skill catalog | M4 | Trust-resolved catalog, safe containment, no disabled-skill rediscovery |
-| WB-09 | `jobs://` with logs/control backed by the same manager as one `jobs` tool | M5 | Tool and URI operations have identical ownership, cancellation and policy semantics |
-| WB-10 | `file://`, `ssh://`, `artifact://`, `local://`, `conflict://`, `cfg://`, `harness://`; aliases in proposal | M1–M5 | Capability-driven routing, mutation guards, scoped persistence and useful errors |
+| WB-07 | Sessions and agents as trees: `session://` (with `by-id/`, `by-project/`, `by-name/`), `agent://`, `project://` (SPEC-0012 §5.3) | M4 | Transcript/tree/entries projections, project membership by project ID incl. nested worktrees, links not walked twice |
+| WB-08 | `skill://`, supporting files and enabled skill catalog | M4 | Trust-resolved catalog, safe containment, no disabled-skill rediscovery |
+| WB-09 | `job://` with logs, `stdin` and `ctl` backed by the same manager as one `jobs` tool | M5 | Tool and URI operations have identical ownership, cancellation and policy semantics |
+| WB-10 | `file://`, `ssh://`, `artifact://`, `out://`, `local://`, `conflict://`, `cfg://`, `docs://`; no aliases, retired names answer with the replacement | M1–M5 | Capability-driven routing, mutation guards, scoped persistence and useful errors |
 | WB-11 | Frames, event bus, session replay and native role projection where supported | M1, M6 | Attributed delivery, no duplicate frames, no fabricated provider support |
 | WB-12 | Local/SSH cwd, explicit paths, `cd`, worktrees, `/remote` host management | M1, M5 | Captured location revisions, no host/process chdir, safe SSH and worktree transitions |
 | WB-13 | Full instruction lifecycle plus configurable additional file classes, root+nearest, ancestors, pinning and diff updates | M6 | Multi-directory, concurrent-touch, resume/compaction and watcher fixtures |
@@ -101,7 +104,8 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-16 | Codemode nested captures, call trees, output previews, config and replay | M1, M7 | Live nested execution plus historical rendering; failures/cancellation stay visible |
 | WB-17 | `/tools`, `--list-tools`, previews, settings, jobs/frames/instructions/trust commands and `/tldr` | M1, M7 | Command inventory, completions and usable non-TUI behavior |
 | WB-18 | Extensibility for external project notifications without implementing task tracking | M6 | Validated project/path-scoped frame inputs; explicit transport boundary |
-| WB-20 | Live session discovery across projects and inter-session messaging that can wake idle sessions (SPEC-0011); collaboration services for other extensions: location, secret sources, status segments, edit tracking, fetch backends (SPEC-0001 §8) | M5 (endpoint, tool), M7 (panel), services with their owning milestone | Two-session wake/steer/loop-guard tests; pig-web integration against the services |
+| WB-20 | Live session discovery across projects, messaging through `agent://` that can wake idle sessions, broadcast and the opt-in coordinator (SPEC-0011); collaboration services for other extensions: location, secret sources, status segments, edit tracking, fetch backends, docs (SPEC-0001 §8) | M5 (endpoint, `agent://`), M7 (panel, coordinator), services with their owning milestone | Two-session wake/steer/loop-guard tests; coordinator class and safeguard tests; pig-web integration against the services |
+| WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -129,7 +133,7 @@ These are engineering decisions, not scope cuts. M0 must produce evidence and a 
 | D3: host interception | Same-name overrides, instruction suppression, provider context projection and codemode observation are host-sensitive | Run isolated probes before relying on them. A host gap becomes a named blocker with proposed upstream change, not an omitted feature or invented SDK API |
 | D4: full hashline recovery | Parser tolerance, evidence-based relocation and model-assisted repair are different behaviors | Inventory all donor recovery paths and fixtures; preserve full functionality with explicit warnings/policy. Model-assisted repair must be opt-in, bounded and disclose inference. Reject ambiguous mutations |
 | D5: short snapshot tags | Four-hex normalized tags are not unique integrity identifiers | Keep the user-facing grammar, but bind tags to canonical paths, retained bytes and seen spans; detect collisions and raw-byte changes before mutation. Do not mark unseen bytes seen after a partial edit |
-| D6: session addressing | Agents need the current session, any session and project sessions | **Resolved:** `session://`, `session://{id}`, `session://project[/{id}]`, `session://all`; nested worktrees belong to the project; no consent gates (SPEC-0004 §9). Use host session listing, not hardcoded paths |
+| D6: session addressing | Agents need the current session, any session and project sessions | **Resolved:** `session://<id>` canonical, `self`, `by-id/`, `by-project/<slug>/`, `by-name/` link directories; nested worktrees belong to the project; no consent gates (SPEC-0012 §5.3). Use host session listing, not hardcoded paths |
 | D7: terminal job input | Sending a control byte through a pipe is not a terminal signal/EOF | Distinguish stdin bytes, close, signals and PTY input. Preserve key controls with defined backend semantics and a tested PTY backend where needed; unsupported terminal operations fail explicitly |
 | D8: instruction context semantics | Parallel touches can select several nearest files; capped views complicate diffs | Specify selection sets, context epochs, pin scope and delivered-view baselines in M0; implement the concrete rules in section 6 |
 | D9: UI ownership | A general extension must not silently replace the host footer/editor | Provide statusline segment contribution and editor UI through host-supported composition. Full footer ownership, if needed, requires an explicitly selected owner/Piglet arrangement, not competing setters |
@@ -285,7 +289,7 @@ Deliver specialized adapters as independent, testable slices: JSON/JSONL query a
 
 ## M4 — Catalog and control schemes (later)
 
-Depends on M1; integrates with M3. Implement session/history/branch project/global browsing, search and entry/full/active projections; skill(s) catalog/supporting files; cfg and harness controls; conflict resource registry.
+Depends on M1; integrates with M3. Implement the SPEC-0012 trees: `session://`, `agent://`, `project://`, `artifact://` browsing, search and transcript/tree/entry projections; `skill://` catalog/supporting files; `cfg://` controls and `cfg://workbench/`; `docs://`; conflict resource registry; walking rules and first-touch guides.
 
 Use host-owned catalogs or a documented indexed reader when no API exists. Account for configured session roots, partially appended JSONL, renamed/deleted sessions, compaction, branch selection and no-session mode. Bind pages to a stable revision/cursor rather than renumbering an actively growing log mid-read. Global authorization applies to search snippets as well as full reads.
 
@@ -295,7 +299,7 @@ Use host-owned catalogs or a documented indexed reader when no API exists. Accou
 
 Depends on M1 and integrates M2–M4. Deliver shared SSH transport, remote file/search/edit operations, location transitions/worktrees, host notes/config management and `/remote`. Preserve SSH config includes/comments and require appropriate confirmation for changes. Remote edits need snapshot validation and atomic commit semantics, not a download/edit/blind-upload shortcut.
 
-Implement bash foreground/background/promotion and one supervisor used by `jobs`, `jobs://` and command panels. Include stdin/EOF/signals/PTY keys, cursors, waits, notifications, log limits, secret-safe display and crash/shutdown cleanup. Jobs retain their launch location and ownership through branch navigation; navigating history does not rerun a process.
+Implement bash foreground/background/promotion and one supervisor used by `jobs`, `job://` and command panels. Worktree creation applies the shared artifact tree and worktree links (SPEC-0012 §4.3–4.5); session buckets become symlinks to the project directory (SPEC-0012 §3.5). Include stdin/EOF/signals/PTY keys, cursors, waits, notifications, log limits, secret-safe display and crash/shutdown cleanup. Jobs retain their launch location and ownership through branch navigation; navigating history does not rerun a process.
 
 **Exit:** controlled local/SSH integration tests cover quoted paths, auth failure, disconnect, changed remote files, cancellation, noisy pipes, process descendants, launch/adoption races, reload and crash. URI controls cannot bypass tool permission checks. No unverified guarantee that killing the SSH client killed every remote descendant.
 

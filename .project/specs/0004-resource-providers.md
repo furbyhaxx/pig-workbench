@@ -5,9 +5,9 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Per-authority provider scopes (pig-web R4)", "Added fetchBackend contributions for http(s)"]
+    - revision: 5
+      reason: "SPEC-0012 project model and URI namespace; pig-web R7 and R8"
+      changes: ["Reserved scheme list per SPEC-0012 §5.1", "Entry kinds link and ctl; walking rules for recursive tools", "Builtin routes replaced by SPEC-0012 §5.3", "project in provider requests (R8)", "Fetch answers: locate to provider URIs, retention disclosure, egress upper bound, re-registration, fallback (R7)", "Removed per-authority scopes (withdrawn by pig-web)"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -41,15 +44,16 @@ Register kind `resourceProvider` with:
 | capabilities | stat, read, list, search, locate, write, edit, remove, move, watch as supported |
 | selectorMode | lines, provider or none |
 | backing | file, virtual, remote or device |
-| scope | session, project, user or external; operation may narrow further. Alternatively `scopes: [{authority, scope}]` when authorities differ (e.g. `kb://public/` user, `kb://project/` project); an unlisted authority is rejected |
+| scope | session, project, user or external; operation may narrow further. |
 | contentKinds | text, binary, image, container |
 | mutations | Operation-specific side-effect class and required policy; immutable providers omit these |
 | snapshots | stableRevision, rangedRead, compareAndSwap and expiry capabilities |
+| guide, guideRevision | Optional first-touch usage guide (SPEC-0001 §8, SPEC-0012 §5.5) |
 | display | Default preset/view labels and URI completion hints |
 | limits | Provider maximum page bytes/lines, query time and concurrency, bounded by host |
 | querySchema | Optional closed query-parameter schema; unknown parameters rejected |
 
-Scheme grammar is `[a-z][a-z0-9+.-]*`, maximum 32 bytes. Registration reserves canonical name and aliases atomically. Builtin schemes including file, ssh, http, https, history, session, branch, skill, skills, jobs, proc, artifact, local, conflict, cfg, harness, self and workbench cannot be shadowed. An optional integration adapter can implement a reserved builtin only through a separately approved host configuration, never via normal register.
+Scheme grammar is `[a-z][a-z0-9+.-]*`, maximum 32 bytes. Registration reserves canonical name and aliases atomically. Builtin schemes file, ssh, http, https, local, out, conflict, artifact, project, session, agent, job, cfg, skill and docs cannot be shadowed, nor can the retired names history, branch, proc, skills, jobs, harness, self, workbench and projects (they answer "unknown scheme" with the replacement, SPEC-0012 §5.1). Path segments `self` and `by-*` are reserved in every scheme. An optional integration adapter can implement a reserved builtin only through a separately approved host configuration, never via normal register.
 
 ```json
 {"v":1,"id":"register-build","sessionId":"s-1","generation":"g-1","from":{"owner":"build-tools","instance":"i-1"},"method":"register","params":{"kind":"resourceProvider","key":"builds","descriptor":{"label":"Build results","description":"Inspect build status and logs","schemes":["build"],"capabilities":["stat","read","list"],"selectorMode":"lines","backing":"virtual","scope":"project","contentKinds":["text","container"],"snapshots":{"stableRevision":true,"rangedRead":true,"compareAndSwap":false},"limits":{"pageBytes":51200,"pageLines":2000,"concurrency":4}}}}
@@ -81,7 +85,8 @@ The resource service resolves provider, authorizes operation, captures context, 
 Request includes:
 - registrationId, operationId, request ID, target owner/instance, session/generation.
 - operation, requestedUri, normalizedUri, selector/query, cursor and limits.
-- captured location revision, project identity, branch/context binding where applicable.
+- captured location revision and branch/context binding where applicable.
+- `project`: `{id, slug, component}` of the calling session (SPEC-0012 §3.3) in every `resource.execute` and `fetch` request whenever the session has a project; absent in the builtin `global` project, so "no project" never matches project-bound data. A routing fact, not proof.
 - expectedRevision for mutations/consistent continuation; idempotencyKey for mutations.
 - authorization decision reference issued by the router; not a bearer token supplied by a model.
 - content/edit payload for mutations, bounded; no private host credentials.
@@ -100,7 +105,7 @@ Conceptual Go boundary: `Provider.Describe()`, `Provider.Execute(context, Resour
 |---|---|
 | stat | Canonical URI, content kind/media type, revision if stable, optional bytes/lines, operation capabilities |
 | read | Bounded content blocks or text page; source/derived view identity and coverage |
-| list | Typed entries (name, canonical URI, kind, optional size/revision), opaque nextCursor |
+| list | Typed entries (name, canonical URI, kind `file`/`dir`/`link`/`ctl`, optional size/revision, `link` target), provider-declared columns, opaque nextCursor |
 | search | Pattern/literal mode + declared options, exact matches/coordinates when known, incomplete/cursor facts |
 | locate | A constrained backing-resource reference, never a blanket permission grant |
 | write | Replace/create according to mode and expectedRevision; explicit receipt |
@@ -118,9 +123,11 @@ This example reaches EOF at line 21: the requested selection is complete, but ea
 
 Partial first lines caused by a huge line are marked incomplete; do not mark them fully seen. UTF-8 boundaries are preserved. Unknown totals stay absent. Batch output has one shared budget, deterministic input order and per-target errors; one failure does not discard successful reads. Search/find do not recursively enumerate an unbounded virtual catalog without provider support or explicit traversal bounds.
 
+Walking (SPEC-0012 §5.2): without provider `search`, `find` and `grep` walk with `list`+`read` under depth, entry, byte and time bounds and report incomplete results. They never follow `link` entries, skip `ctl` files and `noWalk` subtrees unless named directly, and treat `volatile` files as snapshots of the moment read. `immutable` files get no hashline anchors.
+
 # 6. Policy and mutation integrity
 
-Capabilities describe possible operations, not authorization. Workbench enforces tool permission, path containment, resource limits and canonical target before dispatch. Provider enforces its own backing-system rules. Controls such as `jobs://id/kill`, `cfg://key/save` and `harness://reload` require declared handler mutation capabilities; no implicit write-to-any-URI.
+Capabilities describe possible operations, not authorization. Workbench enforces tool permission, path containment, resource limits and canonical target before dispatch. Provider enforces its own backing-system rules. Controls such as writes to `job://<id>/ctl`, `cfg://<group>/<key>` and `cfg://ctl` require declared handler mutation capabilities; no implicit write-to-any-URI.
 
 locate results:
 - Canonical resource reference or approved backing file reference with revision and permitted operations.
@@ -155,35 +162,9 @@ Unregister stops admission, cancels/drains outstanding requests and closes watch
 
 Page bytes default 50 KiB, lines 2000; control envelope 64 KiB. Provider chunks including JSON overhead must fit control budget (escape expansion counts); lower text payload or chunk explicitly. Adapter may negotiate a separate bounded page envelope, never assume the host's large framing ceiling is an output budget. Query/converter time, archive expansion and binary/image sizes require separate caps, reported in provider descriptor. Progress updates coalesce; final replies cannot be dropped for progress.
 
-# 9. Builtin routes to preserve
+# 9. Builtin routes
 
-| Family | Contract surface |
-|---|---|
-| session/history/branch | Current session, any session by ID, project and all-session catalogs and search, active branch, full/entry projections (grammar below) |
-| skills/skill | Enabled trust-resolved skills and contained supporting assets; no hidden skill rediscovery |
-| jobs/proc | Owned status/log/cursors and explicit stdin/EOF/cancel handler mutations |
-| file/ssh | Explicit authority overrides active location; local/remote tool parity |
-| artifact/local | Session-scoped overflow/scratch, bounded retention and containment |
-| conflict | Registered source-version-bound conflict views and validated resolution writes |
-| cfg | Inspect and confirmed settings updates; no trust widening |
-| harness/self/workbench | Status, instruction inspection/pins and deferred safe reload |
-| http/https | Static content with network policy, safe redirects and format adapters |
-
-## session:// grammar
-
-| URI | Target |
-|---|---|
-| `session://` | Current session: overview and entry table |
-| `session://{id}` | Any of the user's sessions, any project; full ID or unique prefix |
-| `session://project` | Catalog of the current project's sessions, most recent first |
-| `session://project/{id}` | A session of the current project; `notInProject` if it belongs elsewhere |
-| `session://all` | Catalog of all sessions, grouped by project cwd |
-
-`project` and `all` are reserved segments. Suffixes `/full` and `/entry/{entryId}` select the transcript or one entry; `:N-M`/`:-N` page entries; `?q=` searches a catalog's names and message text. Every session of the user is readable; there is no consent step or scope gate.
-
-Project membership: the project root is the top level of the main worktree (parent of `git rev-parse --git-common-dir`) when the cwd is in a git repository, otherwise the session cwd. A session belongs to the project when its header cwd is the root or lies beneath it, so sessions started in subdirectories and in worktrees nested inside the project (for example `.worktrees/feat-x`) count as the same project. Catalogs come from `SessionManagerListAll` filtered by that rule; `allMessagesText` feeds search and is never returned whole, because one transcript can exceed the output budget.
-
-Catalog `read harness://schemes` and `/workbench resources` show active registrations, aliases, capabilities, owner, limits and availability. This adds an inspection route, not a second provider administration system. Completion uses descriptors/cached bounded list results, never synchronous network discovery on every keystroke.
+The builtin trees, link directories and project membership are specified in [SPEC-0012](0012-projects-uri-namespace.md) §3.3 and §5. They use this contract like any external provider. `ls docs://workbench/schemes/` and `/workbench resources` show active registrations, capabilities, owner, limits and availability. Completion uses descriptors and cached bounded list results, never synchronous network discovery on every keystroke.
 
 # 10. Acceptance matrix
 
@@ -191,7 +172,7 @@ Catalog `read harness://schemes` and `/workbench resources` show active registra
 - Duplicate/reserved/alias collision, invalid capability combinations and unsupported operations fail atomically.
 - SSH ports, encoded traversal, query punctuation, literal filenames, raw ranges, huge lines, tail and disjoint selections.
 - Paging consistency across append/mutation/reload; unknown totals and cursor expiry surfaced.
-- `session://`, `session://{id}`, `session://project/{id}` and `session://all?q=` resolve correctly, including a session started in a nested worktree counting as the project's.
+- The SPEC-0012 §5.3 trees resolve correctly, including `session://by-project/<slug>/` containing a session started in a nested worktree, and recursive tools visiting each session once.
 - Full hashline source seen-state vs derived view false anchors; read-only resource cannot be edited through aliases.
 - Mutation idempotency, stale revision, cancellation-before/after commit and provider disconnect preserve honest outcomes.
 - Slow/noisy provider bounded concurrency and progress; no render-loop provider calls.
@@ -209,16 +190,19 @@ Host blockers remain SPEC-0001's bus cancellation/lifecycle guarantees. Backend-
 | key, label, description | Stable identity and inspection text |
 | match | Ordered rules `{host, pathPrefix?}`; `host` is exact or `*.suffix`; `"*"` is a catch-all |
 | capabilities | `fetch`, optional `locate` (backing file of a stored snapshot), `offline` |
-| egress | Declares whether the backend may send the URL to third-party services (e.g. reader APIs) |
+| egress | Upper bound: `none` or `thirdParty` (the backend may send the URL to third-party services such as reader APIs). Each answer reports `usedThirdParty`; an answer with `usedThirdParty: true` from a backend registered with `none` is rejected and reported |
+| retention | Optional: `user` or `project` when the backend stores every fetched page beyond the request (e.g. a knowledge base). Shown in settings and on each result that it applies to |
 | limits | Body bytes and time, bounded by Workbench |
 
 Flow for `read https://…`:
 1. Workbench parses and authorises the URL.
 2. It picks the enabled backend with the most specific matching rule (host, then path prefix, then registration order). No match, or none enabled, uses the builtin static reader.
 3. It sends `fetch` `{url, refresh, offline, accept, timeoutMs, maxBytes}` as a provider request.
-4. The backend answers with either a body, or `locate` to a stored snapshot (preferred for large bodies, e.g. pig-web's `kb://…/sources/…`), plus `{finalUrl, redirects[], status, contentType, charset, revision, handler, usedThirdParty, notices[]}`.
+4. The backend answers with either a body, or `locate` to a stored snapshot (preferred for large bodies). `locate` may be a backing file reference or a URI of a resource provider registered by the same owner (e.g. pig-web's `kb://sources/7c/7c41…`); Workbench reads it through the router once, under the caller's authorization, with no further `locate` hop from there, plus `{finalUrl, redirects[], status, contentType, charset, revision, handler, usedThirdParty, notices[]}`.
 5. Workbench reauthorises `finalUrl` and every redirect hop, then applies its own pipeline to the content. The result names the backend and handler, and says when a third party saw the URL.
 
-Failure handling: unavailable, timeout or a backend error → builtin static reader, with a visible notice. A definitive answer from the origin (404, 410, auth required) is final and does not fall back. A backend never receives credentials from Workbench, and Workbench never sends the URL to a backend that declares third-party egress when the user disabled that backend's egress in its own settings; the backend reports its effective policy in the descriptor.
+Failure handling: unavailable, timeout or a backend error (including a host the backend reports as cooling down) → builtin static reader, with a visible notice. This holds for catch-all (`"*"`) backends too. A definitive answer from the origin (404, 410, auth required) is final and does not fall back. A backend never receives credentials from Workbench, and Workbench never sends the URL to a backend that declares third-party egress when the user disabled that backend's egress in its own settings; the backend reports its effective policy in the descriptor. When that policy changes (e.g. remote readers switched on), the backend replaces its registration with the previous `descriptorRevision` (SPEC-0001 §4); in-flight fetches finish under the old descriptor.
+
+Workbench's own HTTP cache applies to the builtin reader only. A backend that declares `retention` is its own cache; Workbench does not cache its answers again beyond the result page.
 
 Settings: `/workbench settings resources › fetch backends` lists backends with enable toggles and order. A newly registered backend is enabled by default. Disabling it changes only `read https://`; the producer's own tools (e.g. `web_fetch`) keep working.

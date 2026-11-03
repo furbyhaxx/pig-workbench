@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Added the message frame kind for inter-session messages"]
+    - revision: 5
+      reason: "SPEC-0012 project model and URI namespace"
+      changes: ["Scheme guide frames"]
 ---
 
 # 1. Purpose and dependency
@@ -51,6 +54,8 @@ Service methods:
 - `frames.cancel`: frameId → cancel only an undelivered frame owned by caller.
 - `frames.list`: branch scope + filters/cursor → bounded records.
 - `frames.get`: frameId → stored record, bounded body page and delivery state.
+
+Workbench's own source `workbench.guide.<scheme>` delivers first-touch scheme guides (SPEC-0012 §5.5) as kind `instruction`. A guide contributed by another extension keeps data authority unless the user trusts that provider.
 
 A producer cannot edit an already delivered frame. Updates, corrections and withdrawals are new records linked to the earlier subject/version.
 

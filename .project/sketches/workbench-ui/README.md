@@ -5,11 +5,11 @@ document:
   title: "Workbench UI and UX design"
   description: "Reviewable terminal wireframes, navigation, interaction states and responsive/headless behavior"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T15:31:51+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "User requested UI/UX designs and wireframes alongside implementation planning"
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Link detailed feature designs and finalize advisory questionnaire semantics"
       changes: ["Added API/workflow companions and clarified that required questions never block submission"]
+    - revision: 3
+      reason: "SPEC-0012 scheme names"
+      changes: ["jobs:// → job://, skills:// → skill://, session://project → session:// with canonical session URIs"]
 ---
 
 # Workbench UI/UX
@@ -129,7 +132,7 @@ Counts are omitted until known. The hub is not a second session dashboard. `/wor
    paths  string[]       explicit batch; excludes path
  Examples
    src/main.go:20-60
-   jobs://j12/log:-40
+   job://j12/log:-40
  Output: shown spans · completion · continuation
  [scroll] more · [back] tools
 ────────────────────────────────────────────────────────
@@ -366,17 +369,17 @@ Progress is stage-based, not a fabricated percentage. Regenerate previews the ch
 Resource inspection primarily uses enhanced read/list/search and their renderers; do not create an unrelated dashboard for every scheme.
 
 ```text
- ✓ read session://project · 12 sessions
+ ✓ ls session:// · 12 sessions
    ID       Name                   Last activity
    s-a12    parser investigation   4 m ago
    s-b34    storage review         2 h ago
-   More: session://s-a12/full
+   More: session://s-a12/transcript
 
- ✓ read skills:// · 8 enabled skills
+ ✓ ls skill:// · 8 enabled skills
    Name          Scope      Description
    review        user       Review changes
 
- ✓ read jobs://j12/log:-40 · 40 lines
+ ✓ read job://j12/log:-40 · 40 lines
    [job log view; current snapshot/cursor]
 ```
 

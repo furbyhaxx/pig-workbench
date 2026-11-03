@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:30:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "M0.1 donor parity audit"
       changes: ["Added donor parity rules for remote watching, watch modes, idle delivery and races"]
+    - revision: 4
+      reason: "SPEC-0012 project model and URI namespace"
+      changes: ["Class projectPrivate", "AGENTS.md reminder and BACKLOG.md pointer validation", "Pins through session://self/instructions", "Scheme guides follow the first-touch model"]
 ---
 
 # 1. Purpose and inputs
@@ -60,6 +63,15 @@ Configuration uses a keyed `instructions.classes` object; class IDs are stable. 
         "allowPin": true,
         "pinMode": "add"
       },
+      "projectPrivate": {
+        "include": ["{projectDir}/private/*.md"],
+        "placement": "root",
+        "contentRole": "instruction",
+        "maxBytes": 16384,
+        "updateMode": "auto",
+        "allowPin": true,
+        "pinMode": "add"
+      },
       "architecture": {
         "filenames": ["ARCHITECTURE.md", "DESIGN.md"],
         "placement": "root+nearest",
@@ -75,6 +87,8 @@ Configuration uses a keyed `instructions.classes` object; class IDs are stable. 
 }
 ```
 
+`projectPrivate` reads the personal notes of SPEC-0012 §3.6 from `{projectDir}` (the project's registry directory, outside any repository). It is user-owned, so it carries the user's authority, not the project's.
+
 Recognition of AGENTS.override.md preserves the existing proposal's precedence; Workbench authors steering in AGENTS.md only and creates no alternate harness-specific files. Users may explicitly configure additional names; never auto-discover CLAUDE.md/GEMINI.md as aliases.
 
 Class fields:
@@ -88,6 +102,8 @@ Class fields:
 | allowPin/pinMode | Policy, not automatic permission; add or replaceNearest |
 | afterCompaction | reinject or onTouch; root/global/pinned steering always rebuilt |
 | enabled | Disable class selection with explicit withdrawals |
+
+Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agentsMdReminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validatePointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `afterCompaction: onTouch`.
 
 Project classes can add bounded context within the trusted project; they cannot widen boundaries/trust, enable external paths or change authority to instruction without user policy. User config owns safety-affecting controls. A filename that matches several classes is deduplicated by canonical identity while preserving all applicability reasons; differing role/trust settings use the less-privileged effective interpretation and expose the conflict.
 
@@ -142,7 +158,7 @@ Bash cannot statically reveal every future touched path. Inject cwd ancestry bef
 
 # 6. Pins
 
-Pin request: classId + canonical URI + expected class/config revision; branch-scoped fact with origin user/agent and pinMode. Commands: `/workbench instructions pin <path> [--class <id>]`, unpin, ls, rules, reload. Ambiguous class matches require selection. Agent path: write harness://instructions/pin with typed JSON payload; same policy checks apply.
+Pin request: classId + canonical URI + expected class/config revision; branch-scoped fact with origin user/agent and pinMode. Commands: `/workbench instructions pin <path> [--class <id>]`, unpin, ls, rules, reload. Ambiguous class matches require selection. Agent path: write `session://self/instructions/ctl` (`pin <uri> [--class <id>]`, `unpin <uri>`); same policy checks apply.
 
 Pins persist on branch replay/fork and receive live changes across cd. They cannot expand trust, read permission or cross-project consent. replaceNearest can be selected only by an allowed class; ordinary steering disallows pins by default so an agent cannot pin a convenient steering file to suppress closer rules. A removed pinned file remains an unavailable pin record with a removal notice, not stale active content. Unpin recomputes automatic selection; no disappearance before replacement baseline is ready.
 

@@ -5,15 +5,18 @@ document:
   title: "Extension integration, frames and shared renderer design"
   description: "Wireframes and interaction models for external contributions, message delivery, renderer states and resource providers"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T16:00:47+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "coding-assistant"
+  updated_by: "orchestrator"
   changelog:
     - revision: 1
       reason: "Design extension-facing services and their user-visible surfaces"
       changes: ["Added API flows, frame styles, renderer state gallery, contribution settings and provider wireframes"]
+    - revision: 2
+      reason: "SPEC-0012 scheme names"
+      changes: ["jobs:// → job://, skills:// → skill://, artifact:// continuation → out://"]
 ---
 
 # Design scope
@@ -180,7 +183,7 @@ Success
 Success with incomplete output
  ▲ grep "serve" · succeeded · output incomplete
    200 matches shown · more available
-   Continue: artifact://search-1
+   Continue: out://search-1
 
 Failure
  ✗ build_run app · compile failed · 1.28 s
@@ -265,8 +268,8 @@ Custom display field example: process preset may expose an enum “output view: 
  Workbench › Resources
  Search scheme or owner…
  → build://     build-tools      read · list · stat
-   jobs://      pig-workbench    read · control
-   skills://    pig-workbench    read · list
+   job://       pig-workbench    read · control
+   skill://     pig-workbench    read · list
    review://    review-tools     unavailable
  [open] capabilities · [back] close
 ────────────────────────────────────────────────────────
@@ -332,7 +335,7 @@ Drop earlier breadcrumbs before contribution identity. State/effects cannot disa
 ─────────────────────────────────────────────────────────
  Workbench › Resources
  → build://    build-tools      read-only
-   jobs://     pig-workbench    control
+   job://      pig-workbench    control
    review://   review-tools     unavailable
  Selected: bounded build status and logs
  [open] inspect · [back] close

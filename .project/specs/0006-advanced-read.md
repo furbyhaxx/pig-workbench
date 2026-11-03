@@ -5,9 +5,9 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "pig-web harmonisation and user decisions"
       changes: ["Allowed SQLite row writes (D6.a)", "Recorded deferred AST tools (D6.b)", "Pointed http(s) reads at fetch backends"]
+    - revision: 6
+      reason: "SPEC-0012 project model and URI namespace"
+      changes: ["Spilled outputs are out://; docs:// is immutable"]
 ---
 
 # 1. Scope and evidence
@@ -182,7 +185,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
   - Pages of 20 files, with a per-file match cap and a notice naming the capped files.
   - Long lines are windowed around the match, UTF-8-safe.
   - Several paths fan out per path and never walk a shared ancestor such as `/`; overlapping targets are deduplicated.
-  - Virtual resources are searchable with line ranges. Immutable sources (`artifact://`, docs) get no hashline anchors.
+  - Virtual resources are searchable with line ranges. Immutable sources (`out://`, `docs://`) get no hashline anchors.
   - **One regex dialect everywhere:** RE2 syntax (Go `regexp`). Patterns using features rg supports but RE2 does not are rejected, not silently run with different semantics.
   - Snapshot tags come from content, so a same-length rewrite with its mtime restored still gets a new tag.
 - **G6.5 find/path lists.**

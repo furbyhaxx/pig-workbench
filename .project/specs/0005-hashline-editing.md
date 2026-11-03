@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Added the snapshots edit-tracking service for other extensions"]
+    - revision: 5
+      reason: "SPEC-0012 project model and URI namespace"
+      changes: ["artifact:// files carry hashline anchors through their backing file"]
 ---
 
 # 1. Authority and scope
@@ -49,7 +52,7 @@ Exact-text mode matches every oldText uniquely against the original file; ranges
 
 # 3. Snapshot model and line identity
 
-Snapshot identity: canonical URI + provider identity + exact source revision + full byte digest. Store raw bytes/line endings and a normalized parser view (LF, BOM removed). User tag is donor-compatible uppercase four-hex XXH32 low 16 bits over normalized content with trailing spaces/tabs/CR trimmed per line. The tag is a locator, **not uniqueness or integrity proof**.
+Snapshot identity: canonical URI + provider identity + exact source revision + full byte digest. Store raw bytes/line endings and a normalized parser view (LF, BOM removed). User tag is donor-compatible uppercase four-hex XXH32 low 16 bits over normalized content with trailing spaces/tabs/CR trimmed per line. The tag is a locator, **not uniqueness or integrity proof**. Resources backed by a real file (`artifact://`, SPEC-0012 §4.3) share the snapshot of that file, so an edit through either name is validated against the same revision.
 
 Retained snapshot stores normalized text, raw digest/revision, line-ending map, shown full-line intervals, branch/context epoch, tag and last-use counter. Defaults: 256 resources, 4 versions/resource, 64 MiB estimated retained bytes, 4 MiB snapshot source ceiling. These limits bound retention, not product format support. A file too large for retained hashline snapshots stays readable and gives an explicit edit prerequisite/limit error; do not emit a usable-looking tag and silently bypass validation.
 

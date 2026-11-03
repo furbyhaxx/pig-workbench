@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped JSON configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "pig-web harmonisation and user decisions"
       changes: ["Catalog entries for statusline mode, answer history, edit mode rules, bash routing, fetch backends and sessions", "Column cap default 512"]
+    - revision: 6
+      reason: "SPEC-0012 project model and URI namespace; pig-web R6"
+      changes: ["Settings for projects, artifacts, guides, docs, broadcast and coordinator", "Project registry and docs cache storage", "Removed history.globalAccess (session access has no consent gate, history:// retired)"]
 ---
 
 # 1. Scope and precedence
@@ -101,8 +104,8 @@ All defaults below are proposals subject to design review and measurements, not 
 | answer.timeoutMs/retries | 30000 / 1 | user/runtime; configured model/provider only |
 | tldr.timeoutMs/concurrency | 120000 / 2 | user/runtime; configured model/provider only |
 | tools.<owner>.<key> | contribution defaults | display fields from SPEC-0003 only |
-| trust.rules / history.globalAccess | no extra grants / ask | user/runtime only; never project |
-| storage.finishedRetentionDays/artifactRetentionDays | 7 / 7 | user/runtime; active references protected |
+| trust.rules | no extra grants | user/runtime only; never project |
+| storage.finishedRetentionDays/outRetentionDays | 7 / 7 | user/runtime; active references protected |
 | statusline.mode / statusline.layout | segments / donor default layout | user/runtime; `footer` only by explicit user choice (SPEC-0009 §9) |
 | ask.history.enabled / retentionDays | true / 90 | user/runtime (SPEC-0009 §5, provisional) |
 | edit.modeRules | donor model-family list → replace | user/runtime (SPEC-0005 G5.9) |
@@ -110,6 +113,15 @@ All defaults below are proposals subject to design review and measurements, not 
 | resources.fetchBackends.<key>.enabled / order | true / registration order | user/runtime (SPEC-0004 §11) |
 | sessions.enabled/discoverable/inbound/wake | true / true / all / always | user/runtime only (SPEC-0011 §6) |
 | sessions.wakeBudget/maxHops/rateLimit | 10 per peer-hour / 8 / 30 per peer-minute | user/runtime only |
+| sessions.broadcast | project | user/runtime only (SPEC-0011 §6) |
+| coordinator.classes / leaseHours / targetConsent | observe, message / 8 / firstAction | user/runtime only; enabling is a user command (SPEC-0011 §9.3) |
+| coordinator.single / confirmDestructive / markTargets / frames / audit / answerAttribution | true each | user/runtime only |
+| projects.offerRegistration / storageLinks | true / true | user/runtime; symlinked session buckets of SPEC-0012 §3.5 |
+| guides.enabled / maxBytes / disabled | true / 2048 / [] | user/project/runtime presentation (SPEC-0012 §5.5) |
+| docs.sourceVersionsKept / sourcePaths | 3 / docs, extensions/sdk, cmd, internal | user/runtime; fetch only on first access (SPEC-0012 §5.4) |
+| instructions.agentsMdReminder / backlog.validatePointers | true / true | user/project/runtime (SPEC-0007 §2) |
+
+`Project.toml` (`[component]`, `[[components]]`, `[worktrees]`, `[artifacts]`, `[conventions]`) is project data, not settings: it is committed, parsed strictly, and cannot carry any key of this catalog (SPEC-0012 §3.2).
 
 Additional adapter/backend size/pixel/decompression/grammar limits must be added to this catalog before those adapters register. This is an extensible catalog, not authorization to expose undocumented magic settings. Model selections use provider/id references resolved through current host catalog; no hardcoded stale “best model” default. Unset answer/tldr model explicitly uses current host model only if supported/authorized, otherwise asks for configuration.
 
@@ -156,7 +168,9 @@ Use host-resolved config/agent/state roots (or platform equivalent), not current
 | Location/pins/ask/checkpoints | Structured session entries with explicit source/branch identity |
 | Active jobs/watchers/services | Session supervisor memory, never revived by replay |
 | Job metadata/logs | Private state/session/job directory; retention policy |
-| Read artifacts | Private state/session/artifact, referenced by resource URI |
+| Spilled outputs (`out://`) | Private state/session/out, referenced by resource URI |
+| Project registry | `{agentDir}/projects/` (index, per-project registry copy, private notes, sessions, sidecars; SPEC-0012 §3.4) |
+| PiG source checkouts | `$XDG_DATA_HOME/pig-workbench/docs/source/<version>/`, symlinked from `~/.pig/docs/source` (SPEC-0012 §5.4) |
 | Scratch local:// | Private per-session directory under platform temporary root |
 | Syntax/suffix/index caches | Rebuildable bounded state/cache; no secrets by default |
 | Short-tag snapshots/registers | Branch-aware memory; named register facts persisted only under bounded explicit format |

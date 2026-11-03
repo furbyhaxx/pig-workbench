@@ -5,9 +5,9 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "pig-web harmonisation and user decisions"
       changes: ["Secret guard includes extension-registered secret sources"]
+    - revision: 5
+      reason: "SPEC-0012 project model and URI namespace; pig-web R6"
+      changes: ["Worktree creation applies SPEC-0012 §4.3–4.5", "job:// tree with stdin and ctl files", "Core inventory resolves every auth.json entry through the host"]
 ---
 
 # 1. Scope and references
@@ -66,6 +69,7 @@ Worktrees:
 - Discover repository via git argument arrays; parse porcelain -z output.
 - Reuse an existing worktree for the exact branch. Never force-checkout a branch already checked out elsewhere.
 - Otherwise create under `<repo>/.worktrees/<sanitized-branch>`, collision-resistant suffix when different branches sanitize alike; show branch→path mapping.
+- A new worktree gets the shared artifact tree and `[worktrees] links` of SPEC-0012 §4.3–4.5 in the order specified there; a failure in that step is reported and leaves the worktree usable as a plain checkout.
 - Validate branch with git check-ref-format, reject unsafe path components, never interpolate branch into shell syntax.
 - Existing directory not registered as intended worktree → conflict, not delete/reuse.
 - New branch base defaults to current HEAD, shown before user-driven creation; tool invocation explicitly authorizes only requested branch creation.
@@ -144,8 +148,8 @@ Input:
 
 # 7. Logs, URIs and notification policy
 
-One supervisor serves jobs tool, /workbench jobs, /wb:jobs and jobs:// (proc alias):
-- catalog; id status+tail; /log or /streams output; writes to id stdin, /eof close, /kill termination.
+One supervisor serves the jobs tool, /workbench jobs, /wb:jobs and the `job://` tree (SPEC-0012 §5.3):
+- `ls job://` catalog; `job://<id>/status`, `cmdline`, `cwd`; `log`, `stdout`, `stderr` paged and grep-able; write `stdin`; write `ctl` with `eof`, `kill` or `signal <name>`.
 - Same authorization and identity checks on every path; URIs cannot bypass approval.
 
 Log storage is private session-owned state. Default per-job 10 MiB retained output, per-session 100 MiB; bounded rolling segments with monotonic cursor (job ID, stream, segment/generation, offset). Rotation reports lost byte intervals. No quota-triggered process blocking/deadlock; continue draining and record loss. Order across stdout/stderr is observed ingestion order, not a guaranteed global write order. UTF-8 chunk boundaries and redaction across chunks require stateful decoding.
@@ -176,7 +180,7 @@ From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.m
 
 **Jobs and output**
 - **G8.1 Secret guard.**
-  - Inventory: PiG credential stores, credential-shaped environment variables, Workbench state, and secret sources other extensions register by reference (SPEC-0001 §8; a failing contributed source is reported but does not block launches). Placeholders are preserved. Overlapping or straddling values merge without cascading.
+  - Inventory: PiG credential stores (every `auth.json` entry, built-in and extension providers alike, resolved through the host with `ModelRuntime.ListCredentials` and `ModelRegistry.GetProviderAuth`, so `!command` keys are expanded by the host or the owning provider and Workbench never runs them itself; resolved lazily at the first launch and cached in memory for the session; a provider that still yields a raw `!…` value is reported as not covered; host probe pending: `GetProviderAuth` for a key-only extension provider whose stored key is `!command`), credential-shaped environment variables, Workbench state, and secret sources other extensions register by reference (SPEC-0001 §8; a failing contributed source is reported but does not block launches). Placeholders are preserved. Overlapping or straddling values merge without cascading.
   - Credential shapes such as private keys are withheld until complete, using a bounded buffer. Interleaved stdout/stderr is withheld, never reordered, at a buffer limit counted in UTF-8 bytes.
   - A malformed or oversized inventory **refuses the launch**.
   - A failing listener or redaction callback never writes raw output. A failed reload discards the previous snapshot. Redacting before the inventory is loaded is refused. Secrets are never written to any store.

@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-02T20:55:00+01:00"
+  updated_at: "2026-11-03T10:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "pig-web harmonisation and user decisions"
       changes: ["Added location, secrets, status, snapshots, fetch and sessions capabilities and answered pig-web R1–R5"]
+    - revision: 4
+      reason: "SPEC-0012 project model and URI namespace; pig-web R6 and R8"
+      changes: ["Registration kind docs and scheme guides", "Diagnostics moved from harness:// to cfg://workbench/ and session://self/", "location carries the project ID", "Secret reference kind dotenvFile; core inventory covers auth.json through host resolution (R6)", "Dropped per-authority scopes (pig-web no longer needs R4)"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -107,7 +110,7 @@ Methods:
 | Method | Parameters/result |
 |---|---|
 | discover | Version/capability negotiation |
-| register | `kind: frameProducer|toolPresentation|resourceProvider|fetchBackend|statusSegment`, stable contribution `key`, descriptor → registrationId + accepted descriptor revision |
+| register | `kind: frameProducer|toolPresentation|resourceProvider|fetchBackend|statusSegment|docs`, stable contribution `key`, descriptor → registrationId + accepted descriptor revision |
 | unregister | registrationId → removed (idempotent for same owner/generation) |
 | describe | optional kind/key, cursor → bounded registration descriptors and nextCursor |
 | settings.get | registrationId → effective presentation settings and sources |
@@ -134,7 +137,7 @@ Workbench emits ready after session initialization, closing before disposal when
 
 A bounded registration registry defaults to 128 contributions per owner, descriptor size 64 KiB and 8 in-flight provider operations per owner. Busy/limitExceeded errors name the limit. Settings can reduce limits; any increase requires supported configured capacity.
 
-Read-only diagnostics are exposed at `harness://integrations` (registrations), `harness://schemes` (provider catalog) and `harness://frames` (bounded frame receipt index; `/<frameId>` for detail). They mirror describe/list/status without exposing private session payloads beyond the caller's permissions. `/workbench integrations` and `/workbench resources` are their user-facing inspectors. Provider settings expose availability and configured limits only; capability declarations cannot be edited into new permissions.
+Read-only diagnostics are exposed at `cfg://workbench/integrations/<owner>` (registrations), `docs://workbench/schemes/<scheme>` (provider catalog and guides) and `session://self/frames` (bounded frame receipt index; `/<frameId>` for detail). They mirror describe/list/status without exposing private session payloads beyond the caller's permissions. `/workbench integrations` and `/workbench resources` are their user-facing inspectors. Provider settings expose availability and configured limits only; capability declarations cannot be edited into new permissions.
 
 # 5. Events, persistence and reliability
 
@@ -169,9 +172,14 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 
 Capabilities a client can request in `discover`, beyond `frames`, `presentation` and `resources`: `location`, `secrets`, `status`, `snapshots`, `fetch` and `sessions`. Each is optional; an unsupported capability fails explicitly.
 
-**Location (`location`).** The `discover` result includes `location` when requested: `{authority, cwd, displayCwd, projectRoot, projectKey, origin, revision}`. `projectKey` follows the SPEC-0004 §9 membership rule, so clients use the same project identity as Workbench. `location.get` returns the same object. `location.changed` events carry `{previous, current, origin, revision, reason}`. Config roots are still the host session cwd (SPEC-0010 §1); the location is for scoping, not for loading config.
+**Location (`location`).** The `discover` result includes `location` when requested: `{authority, cwd, displayCwd, projectRoot, project?, origin, revision}`. `project` is `{id, slug, component}` from SPEC-0012 §3.3, so clients use the same project identity as Workbench; it is absent in the builtin `global` project. `location.get` returns the same object. `location.changed` events carry `{previous, current, origin, revision, reason}`. Config roots are still the host session cwd (SPEC-0010 §1); the location is for scoping, not for loading config.
 
-**Secret sources (`secrets`).** `secrets.registerSources` registers *references*, never values, because every listener on the shared bus sees request payloads. Allowed references: `{kind:"env", names:[…]}`, and `{kind:"jsonFile", path, pointers:[…]}` for a file inside the agent directory or the owner's config root that is owned by the user and has mode 0600. A pointer may use `*` for one path segment. Workbench reads the values itself, refreshes them when the file fingerprint changes, and adds them to the SPEC-0008 secret guard. At most 32 references per owner. An unreadable contributed source is reported in `/workbench integrations` and does not block job launches; only the core inventory fails closed (SPEC-0008 G8.1). Unregister removes the values from the guard.
+**Secret sources (`secrets`).** `secrets.registerSources` registers *references*, never values, because every listener on the shared bus sees request payloads. Allowed references:
+- `{kind:"env", names:[…]}`;
+- `{kind:"jsonFile", path, pointers:[…]}` for a file inside the agent directory or the owner's config root that is owned by the user and has mode 0600. A pointer may use `*` for one path segment;
+- `{kind:"dotenvFile", names:[…]}` for `<host session cwd>/.env` only, and only while that project is trusted (SPEC-0010) and the file is owned by the user and not group- or world-writable. Workbench rechecks trust, owner and mode each time it reads; a failing check drops the values from the guard and reports it. Parsing follows the common dotenv subset (`KEY=value`, quotes, `export`, comments, no interpolation).
+
+Workbench never runs `!command` values of referenced files. `auth.json` needs no reference: the core inventory covers it (SPEC-0008 G8.1). Workbench reads the values itself, refreshes them when the file fingerprint changes, and adds them to the SPEC-0008 secret guard. At most 32 references per owner. An unreadable contributed source is reported in `/workbench integrations` and does not block job launches; only the core inventory fails closed (SPEC-0008 G8.1). Unregister removes the values from the guard.
 
 **Status segments (`status`).** See SPEC-0009 §9.
 
@@ -181,6 +189,10 @@ Capabilities a client can request in `discover`, beyond `frames`, `presentation`
 
 **Sessions (`sessions`).** See SPEC-0011 §8.
 
+**Documentation (`docs`).** Register kind `docs` with `{key, title, version, root, source?}`, where `root` is a directory inside the owner's package or data directory and `source` is `{repo, ref, paths}` (sparse checkout on first access) or `{dir}`. It appears read-only as `docs://<owner>/` and `docs://<owner>/source/` (SPEC-0012 §5.4).
+
+**Scheme guides.** A `resourceProvider` descriptor may carry `guide`: Markdown of at most 2 KiB plus optional per-sub-namespace guides `{path, markdown}`, and a `guideRevision`. Workbench injects it on first touch (SPEC-0012 §5.5).
+
 ## Answers to pig-web (its SPEC-0001 §3.7)
 
 | Request | Answer |
@@ -188,7 +200,10 @@ Capabilities a client can request in `discover`, beyond `frames`, `presentation`
 | R1 location at attach time | Accepted: `location` capability above |
 | R2 registry timing | Accepted: the resolver reads the live registry when the host first asks about a tool name, not a snapshot from Workbench's `session_start`; see SPEC-0003 §5 |
 | R3 `search` preset with URI rows | Accepted: table cells are typed and include `uri` (SPEC-0003 §3) |
-| R4 per-authority scope | Accepted: `scopes` by authority (SPEC-0004 §2) |
+| R4 per-authority scope | Withdrawn by pig-web (central KB); removed from SPEC-0004 |
 | R5 secret contribution | Accepted as references, not values: `secrets` capability above |
+| R6 unreadable secret sources | `.env`: reference kind `dotenvFile` (option A). `!command` keys: covered by the core inventory, which resolves every `auth.json` entry through the host (SPEC-0008 G8.1), so no Workbench-run commands (no option B) |
+| R7 fetch backend shape | SPEC-0004 §11 |
+| R8 project identity in requests | SPEC-0004 §4: `project` present when known, absent for `global` |
 | Edit tracking (dropped by pig-web) | Offered as the `snapshots` service (SPEC-0005 §10) |
 | `https://` reads (dropped by pig-web) | Offered as `fetchBackend` contributions: Workbench keeps routing, policy and paging; pig-web supplies content for the URLs it handles (SPEC-0004 §11) |
