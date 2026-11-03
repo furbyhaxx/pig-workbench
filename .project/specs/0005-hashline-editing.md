@@ -5,9 +5,9 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T14:10:00+01:00"
+  updated_at: "2026-11-03T14:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User decisions D5.b and D5.d (2026-11-03)"
       changes: ["Tag collisions recover from the newest snapshot of the same resource", "No separate apply_patch edit mode"]
+    - revision: 9
+      reason: "External plan review: §3 still rejected same-tag ambiguity"
+      changes: ["§3 aligned with D5.b and G5.2"]
 ---
 
 # 1. Authority and scope
@@ -75,7 +78,7 @@ Seen provenance:
 - Compaction/branch navigation invalidate visibility assumptions that are not retained in the active context. Snapshots can remain cached, but stale-epoch seen sets cannot authorize edits.
 - Raw reads retain exact source spans in Details; line/tag output is absent, so the model must obtain a tagged view before supplying hashline anchors.
 
-Multiple retained snapshots with the same short tag and different relevant bytes are ambiguous: reject and return current context, never pick “latest” arbitrarily. Raw-byte differences hidden by tag normalization still require revalidation; whitespace normalization does not authorize overwriting unrelated changes.
+Several retained snapshots of the same canonical resource with the same short tag resolve to the newest one (user decision D5.b), and the edit must then pass the full relocation validation of G5.2; if it does not, the edit is refused with current context. The same tag on different resources is refused. Raw-byte differences hidden by tag normalization still require revalidation; whitespace normalization does not authorize overwriting unrelated changes.
 
 # 4. Grammar
 

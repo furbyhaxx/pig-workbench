@@ -5,15 +5,18 @@ document:
   title: "Slice 3: UI/UX polish, enhancements and release completion"
   description: "Design review, kit panels and renderers, captures, fork-dependent features, performance, platforms, documentation and the integrated release gate"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T13:53:58+01:00"
+  updated_at: "2026-11-03T14:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User split delivery into three slices: foundation, feature-complete, completion"
       changes: ["Absorbed PLAN-0001 M0.5, the UI part of M7 and M8"]
+    - revision: 2
+      reason: "External plan review (2026-11-03)"
+      changes: ["C4 lists fork-host rows from PLAN-0002 §6", "C6 drops backend investigations already closed by the backend evaluation"]
 ---
 
 # 1. Outcome
@@ -40,7 +43,7 @@ Replace plain views with the approved designs: `/workbench` hub and all panels, 
 
 ## C4. Fork-dependent features (D13)
 
-On fork capability flags: widget view events (activity-line click), `sections` prompt delivery, transcript truth (F-P3), late-section hook (F-P4), H-S1/H-S2 secrets hooks, codemode child rendering, `--list-tools` output. Stock PiG keeps the documented fallbacks. **Exit:** both host variants tested.
+On fork capability flags: widget view events (activity-line click), `sections` prompt delivery, transcript truth (F-P3), late-section hook (F-P4), H-S1/H-S2 secrets hooks, codemode child rendering, print/JSON output for slash commands and `--list-tools` (P27). Stock PiG keeps the documented fallbacks of PLAN-0002 §6. **Exit:** every fork-host row of PLAN-0002 §6 and PLAN-0003 passes on the fork; the stock rows still pass.
 
 ## C5. Enhancements
 
@@ -48,7 +51,7 @@ Automatic session titles; other approved enhancements collected during Slices 1�
 
 ## C6. Performance and platforms
 
-Record baselines, then set and meet numeric targets (PLAN-0001 §7); remaining backend coverage checks (cpio and other archives, grammar budget, HTML quality); macOS and Windows coverage. **Exit:** measured budgets and a support matrix.
+Record baselines, then set and meet numeric targets (PLAN-0001 §7); macOS and Windows runtime evidence for the backends, watchers, jobs and messaging (backend evaluation §9 has compile-level evidence only). **Exit:** measured budgets and a support matrix.
 
 ## C7. Release gate (PLAN-0001 M8)
 

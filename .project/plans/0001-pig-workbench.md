@@ -5,9 +5,9 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 22
+  revision: 23
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-03T14:10:00+01:00"
+  updated_at: "2026-11-03T14:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -77,6 +77,9 @@ document:
     - revision: 22
       reason: "User defined the foundation slice and decided D5.b and D5.d"
       changes: ["Slice table: Slice 1 is everything fully working on final implementations, Slice 2 is depth only", "D5.b adopted, D5.d rejected"]
+    - revision: 23
+      reason: "External plan review (2026-11-03)"
+      changes: ["WB-25 row follows SPEC-0014 rev 3+: builtin/workbench, no builtin/pig parity", "§9 requirement ownership matrix: spec section → slice and phase → acceptance anchor"]
 ---
 
 # 1. Outcome and authority
@@ -120,7 +123,7 @@ Together these ten specifications and three design artifacts cover the planned f
 
 ## Delivery slices
 
-The milestones in section 5 define scope and exits; three slice plans own the order and the detail. No milestone requirement is dropped by the split.
+The milestones in section 5 define scope and exits; three slice plans own the order and the detail; §9 assigns every specification section to a slice and phase. No milestone requirement is dropped by the split.
 
 | Slice | Plan | Contains | Exit |
 |---|---|---|---|
@@ -156,7 +159,7 @@ A milestone can be implemented incrementally. Shipping the complete extension re
 | WB-22 | Projects (SPEC-0012): `Project.toml` identity, registry, symlinked session buckets, components, `.project/` and `AGENTS.md` conventions, shared artifact tree (`tree`/`branch`), worktree links, `docs://` with PiG source, first-touch scheme guides | M4 (identity, trees, docs), M5 (storage, worktrees), M6 (conventions, guides) | SPEC-0012 §6 |
 | WB-23 | Activity line above the editor with click-to-inspect and contributed items (SPEC-0009 §9) | M1 (line, shortcut), M7 (contributions, click once the host delivers widget events) | Captures at 36/57/80/140 in fullscreen; counts match registries; click and shortcut open the same targets |
 | WB-24 | Secrets (SPEC-0013): `red-sec-` placeholders at every provider-bound boundary, substitution before every tool call, encrypted vault, env injection, `secret://`, `ask_user` type `secret`, `/workbench secrets` | M0 (probes S1–S6), M1 (detection, vault, boundary hooks, substitution, prompt section), M4 (`secret://`), M5 (env injection, G8.20 scheme commands), M7 (`ask_user` secret, panel) | SPEC-0013 §11; captured provider payloads contain no known secret |
-| WB-25 | System prompt templates (SPEC-0014): gonja engine, `builtin/pig` byte-identical takeover with parity check, model families and conditionals, context frames, progressive skill disclosure, `select = "all"` instruction classes | M1 (engine, `builtin/pig`, date frame), M4 (skills), M6 (frames, `select`, `builtin/workbench`) | SPEC-0014 §12 |
+| WB-25 | System prompt templates (SPEC-0014): gonja engine, `builtin/workbench` default keeping PiG's sections with adapted content and a structure check, model families and conditionals, context frames, progressive skill disclosure, `select = "all"` instruction classes | Slice 1 (engine, `builtin/workbench`, frames, skills), Slice 2 (family adapters, `select`), Slice 3 (fork `sections` delivery); see §9 | SPEC-0014 §12 |
 | WB-21 | Structural search/rewrite tools (`ast_grep`/`ast_edit`) on the approved tree-sitter backend (user decision D6.b) | After v1 | Not yet designed |
 | WB-19 | Performance, security, packaging, documentation and live verification | Every milestone, M8 | Recorded acceptance evidence and measured budgets |
 
@@ -437,3 +440,50 @@ Each milestone updates this plan's progress and links its producing analysis/tes
 - Do not install dependencies, alter the host, modify shared systems, launch billed inference or publish without the required approval.
 - A blocker produces evidence, options and a concrete recommendation. Continue independent work, but retain the blocked requirement in scope.
 - Update plans/specs when decisions change. The proposal's “full port” wording never authorizes a silent weaker substitute.
+
+# 9. Requirement ownership
+
+Authoritative assignment of every specification section to a slice and phase. Slice plans may refine steps but not move a row without a revision here. S1 = [PLAN-0002](0002-slice-1-foundation.md), S2 = [PLAN-0003](0003-slice-2-feature-complete.md), S3 = [PLAN-0004](0004-slice-3-completion.md). Modes and host variants follow PLAN-0002 §6.
+
+| Spec § | Requirement | Owner | Acceptance anchor |
+|---|---|---|---|
+| 0001 §2–§7 | Discovery, request/reply, registrations, events, Go API | S1 C | SPEC-0001 §7 |
+| 0001 §8 | Collaboration services (location, status, snapshots, fetch, sessions, docs) | S1 C with the consuming phase | SPEC-0001 §8; pig-web gate |
+| 0002 all | Frames, ledger, delivery, projection, trust | S1 F | SPEC-0002 §8 |
+| 0003 §2–§6, §10 | Presentation data contract, resolver, settings, path display | S1 F, B | SPEC-0003 §8 data rows, §10.3 |
+| 0003 §7 | Density, codemode rows, accessibility | S3 C3 | SPEC-0003 §8 captures |
+| 0004 §1–§10 | Router, grammar, envelope, policy, provenance, builtin routes | S1 D | SPEC-0004 §10 |
+| 0004 §11 | Fetch backends and builtin web reader | S1 D | SPEC-0004 §11 |
+| 0005 §2–§8, §10, G5.2 | Hashline grammar, snapshots, recovery, commit, edit tracking | S1 G | SPEC-0005 §8, G5.2 fixtures |
+| 0005 §9 except G5.2 | Payload repair, leniency, per-model mode, streaming, repair, notebooks | S2 W1 | Donor fixture corpus |
+| 0006 §2–§4, §6–§7 | Read schema, pipeline, summaries, search tools, loop guard | S1 D | SPEC-0006 §8 |
+| 0006 §5 | Adapter matrix | S2 W2 | SPEC-0006 §5, §8 |
+| 0007 §2–§8 local | Classes, roots, touches, barrier, pins, caps, local watchers | S1 K | SPEC-0007 §10 |
+| 0007 §8 remote, §9 | Remote watching, external notifications, further classes | S2 W5 | SPEC-0007 §10 |
+| 0008 §2–§3 local | Location capture, `cd` | S1 E1 | SPEC-0008 §8 |
+| 0008 §3 worktrees, §4 | Worktrees, SSH, `/remote` | S2 W3 | SPEC-0008 §8 |
+| 0008 §5–§7, G8.20 | Bash, jobs, logs, `job://`, scheme commands | S1 H | SPEC-0008 §8; PLAN-0002 H |
+| 0008 PTY, remote jobs | PTY backend and keys, jobs over SSH | S2 W3 | SPEC-0008 §8 |
+| 0009 §2–§3, §5 | `ask_user`, state machine, modes | S1 L2 | SPEC-0009 §10; PLAN-0002 §6 |
+| 0009 §4, §6–§7 | Remote bridge, `/answer`, `/tldr` | S2 W6 | SPEC-0009 §10 |
+| 0009 §8 | Command routes | Split per PLAN-0002 §2 Commands row | SPEC-0009 §10 |
+| 0009 §9 | Activity line and capture (S1 M, F); call trees and replay (S2 W6); statusline modes and click (S3 C3, C4) | as listed | SPEC-0009 §10 |
+| 0010 all | Config, state, trust, storage, cleanup, lifecycle | S1 B | SPEC-0010 §9 |
+| 0011 §2–§8 | Endpoint, transport, envelope, delivery, guards, `agent://`, API | S1 L1 | SPEC-0011 §10 |
+| 0011 broadcast, §9 | Broadcast, coordinator, `/workbench coordinator` | S2 W6 | SPEC-0011 §10 |
+| 0012 §3.1–§3.4 | Project model, `Project.toml`, recognition, registry | S1 E1 | SPEC-0012 §6 |
+| 0012 §3.5 | Symlinked buckets, `projects unlink-storage` | S1 E2 | PLAN-0002 E2 gate |
+| 0012 §3.6 | Private notes class | S1 K | SPEC-0007 §10 |
+| 0012 §4.1–§4.2 | Bundled conventions, artifact and BACKLOG validation, module reminder | S2 W7 | PLAN-0003 W7 |
+| 0012 §4.3–§4.5 | Shared artifact tree, worktree links, artifact storage modes | S2 W3 | SPEC-0012 §6 |
+| 0012 §5.1–§5.2, §5.5 | Naming rule, tool semantics, first-touch guides | S1 D | SPEC-0012 §6 |
+| 0012 §5.3 core | `session://` self/`<id>`/`by-id/`, own and stored titles, `agent://`, `skill://`, `cfg://`, `job://`, `artifact://`, `out://`, `local://` | S1 D, H, J, L1 | SPEC-0012 §6 |
+| 0012 §5.3 rest | `project://`, `conflict://`, `by-project/`, `by-name/`, search | S2 W4 | SPEC-0012 §6 |
+| 0012 §5.3 titles of live sessions | Other live sessions under coordinator `lifecycle` | S2 W6 | SPEC-0012 §6 |
+| 0012 §5.4 | `docs://` registered docs (S1 C, D); PiG source (S2 W4) | as listed | SPEC-0012 §6 |
+| 0013 §2–§5, §7 | Detection, vault, boundary, env injection, ask secret | S1 I | SPEC-0013 §11 |
+| 0013 §6, §8 UI | `secret://`, `/workbench secrets` | S2 W4 | SPEC-0013 §11 |
+| 0014 §3–§5, §6.1–§6.2, §7, §8 | Engine, delivery, frames, conditionals, `builtin/workbench`, skills | S1 J | SPEC-0014 §12; PLAN-0002 exit 4 |
+| 0014 §6.3, §9 | Family adapters with A/B evidence, `select = "all"` | S2 W5 | SPEC-0014 §12 |
+| 0014 fork delivery | `sections` delivery, F-P3, F-P4 | S3 C4 | Fork-host rows |
+| All UI chrome | Hub, panels, renderers by density, captures | S3 C1–C3 | SPEC-0003 §8 captures |
