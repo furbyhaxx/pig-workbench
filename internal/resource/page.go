@@ -25,18 +25,19 @@ type Budget struct {
 
 // Page contains exact source coverage and honest completeness facts.
 type Page struct {
-	RequestedURI      string  `json:"requestedUri"`
-	CanonicalURI      string  `json:"canonicalUri"`
-	Revision          string  `json:"revision"`
-	CoordinateSpace   string  `json:"coordinateSpace"`
-	ShownRanges       []Range `json:"shownRanges"`
-	FullyShownRanges  []Range `json:"fullyShownRanges"`
-	TotalLines        int     `json:"totalLines"`
-	SelectionComplete bool    `json:"selectionComplete"`
-	ResourceComplete  bool    `json:"resourceComplete"`
-	Continuation      string  `json:"continuation,omitempty"`
-	Truncation        string  `json:"truncation,omitempty"`
-	Content           string  `json:"-"`
+	RequestedURI      string   `json:"requestedUri"`
+	CanonicalURI      string   `json:"canonicalUri"`
+	Revision          string   `json:"revision"`
+	CoordinateSpace   string   `json:"coordinateSpace"`
+	ShownRanges       []Range  `json:"shownRanges"`
+	FullyShownRanges  []Range  `json:"fullyShownRanges"`
+	TotalLines        int      `json:"totalLines"`
+	SelectionComplete bool     `json:"selectionComplete"`
+	ResourceComplete  bool     `json:"resourceComplete"`
+	Continuation      string   `json:"continuation,omitempty"`
+	Truncation        string   `json:"truncation,omitempty"`
+	OmittedRanges     [][2]int `json:"omittedRanges,omitempty"`
+	Content           string   `json:"-"`
 }
 
 // ReadFile pages a regular UTF-8 file with constant source-size-independent memory.

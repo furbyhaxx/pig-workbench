@@ -17,6 +17,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/syntax"
 )
 
 type activeRequest struct {
@@ -41,6 +42,7 @@ type app struct {
 	mu      sync.RWMutex
 	session *session
 	initErr error
+	syntax  *syntax.Service
 }
 
 type requestContext struct{ sdk.Context }
@@ -50,7 +52,7 @@ func (requestContext) Value(any) any               { return nil }
 
 // Register wires session lifecycle and the implemented tools and commands.
 func Register(ext *sdk.Extension) {
-	a := &app{}
+	a := &app{syntax: syntax.New()}
 	ext.OnSessionStart(a.start)
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)

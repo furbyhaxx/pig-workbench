@@ -157,6 +157,19 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			// Non-local providers already applied their own budget.
 			page.Facts.RequestedURI = target.Requested
 		}
+		if err == nil {
+			if summary, ok, summaryErr := a.summaryView(work, target, configuration); summaryErr != nil {
+				return nil, summaryErr
+			} else if ok {
+				facts = append(facts, summary.Facts)
+				text := summary.Content
+				content.WriteString(text)
+				budget.Bytes -= len(text)
+				budget.Lines -= strings.Count(text, "\n") + 1
+				complete = false
+				continue
+			}
+		}
 		text := ""
 		if err != nil {
 			if len(targets) == 1 {

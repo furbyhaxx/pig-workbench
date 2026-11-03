@@ -19,6 +19,8 @@ Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 li
 
 Supported schemes today: `file://`, `local://`, `out://`, `cfg://`, `session://`.
 
+A **bare** read of a code file with at least `read.summarize.min-total-lines` lines (default 200) returns a declaration skeleton instead of exact text: declaration lines with real line numbers, an explicit `⋯ lines A-B omitted` marker per folded body, and a continuation to the full text. A summary never marks folded lines seen, reports `truncation: "summary"` with `omittedRanges`, and is never used for an explicit selector, a `:raw` read, a prose file, or a file above 4 MiB. `read.summarize.enabled = false` disables it.
+
 ## `write`
 
 ```text
