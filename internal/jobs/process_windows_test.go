@@ -31,4 +31,7 @@ func TestWindowsProcessGroupUnsupported(t *testing.T) {
 	if err := p.Close(); !errors.Is(err, ErrGroupKillUnsupported) {
 		t.Fatalf("close error = %v", err)
 	}
+	if err := p.Close(); err != nil {
+		t.Fatalf("second close error = %v", err)
+	}
 }

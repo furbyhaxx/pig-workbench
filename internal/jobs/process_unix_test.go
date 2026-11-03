@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"runtime"
 	"strconv"
@@ -262,6 +263,9 @@ func TestOutputErrorIsReturnedForNonzeroExit(t *testing.T) {
 	if err := p.Close(); !errors.Is(err, errOutputWrite) {
 		t.Fatalf("close error = %v", err)
 	}
+	if err := p.Close(); err != nil {
+		t.Fatalf("second close error = %v", err)
+	}
 }
 
 type slowCounter struct{ size int64 }
@@ -281,6 +285,214 @@ func TestSlowOutputLargerThanPipe(t *testing.T) {
 	}
 	if output.size != size {
 		t.Fatalf("got %d bytes, want %d", output.size, size)
+	}
+}
+
+func TestStdinRoundTrip(t *testing.T) {
+	var output bytes.Buffer
+	p := startTestProcess(t, Spec{Command: []string{"cat"}, Stdin: true, Output: &output})
+	for _, data := range []string{"first line\n", "second line\n"} {
+		n, err := p.Write([]byte(data))
+		if err != nil || n != len(data) {
+			t.Fatalf("write = %d, %v", n, err)
+		}
+	}
+	if err := p.CloseStdin(); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.CloseStdin(); err != nil {
+		t.Fatal(err)
+	}
+	if exit := waitTestProcess(t, p); exit.Code != 0 || exit.Signaled {
+		t.Fatalf("exit = %+v", exit)
+	}
+	if got := output.String(); got != "first line\nsecond line\n" {
+		t.Fatalf("output = %q", got)
+	}
+	if err := p.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.Write([]byte("late")); !errors.Is(err, ErrStdinClosed) {
+		t.Fatalf("write after close = %v", err)
+	} else {
+		var closed *StdinClosedError
+		if !errors.As(err, &closed) {
+			t.Fatalf("write error has no StdinClosedError type: %v", err)
+		}
+	}
+}
+
+func TestStdinDisabledByDefault(t *testing.T) {
+	p := startTestProcess(t, Spec{Command: []string{"cat"}})
+	if exit := waitTestProcess(t, p); exit.Code != 0 {
+		t.Fatalf("exit = %+v", exit)
+	}
+	if _, err := p.Write([]byte("input")); !errors.Is(err, ErrStdinClosed) {
+		t.Fatalf("write without stdin = %v", err)
+	}
+}
+
+func TestWriteAfterLeaderExit(t *testing.T) {
+	p := startTestProcess(t, Spec{Command: []string{"true"}, Stdin: true})
+	select {
+	case <-p.Exited():
+	case <-time.After(5 * time.Second):
+		t.Fatal("child did not exit")
+	}
+	if _, err := p.Write([]byte("late")); !errors.Is(err, ErrStdinClosed) {
+		t.Fatalf("write after exit = %v", err)
+	}
+	if exit := waitTestProcess(t, p); exit.Code != 0 {
+		t.Fatalf("exit = %+v", exit)
+	}
+}
+
+func TestKillClosesBlockedStdinWrite(t *testing.T) {
+	p := startTestProcess(t, Spec{Command: []string{"sleep", "30"}, Stdin: true})
+	writeDone := make(chan error, 1)
+	go func() {
+		_, err := p.Write(bytes.Repeat([]byte{'x'}, 2*1024*1024))
+		writeDone <- err
+	}()
+	select {
+	case err := <-writeDone:
+		t.Fatalf("write did not block: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	killDone := make(chan error, 1)
+	go func() { killDone <- p.Kill(100 * time.Millisecond) }()
+	select {
+	case err := <-killDone:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		_ = syscall.Kill(-p.PID(), syscall.SIGKILL)
+		t.Fatal("kill blocked on stdin write")
+	}
+	select {
+	case err := <-writeDone:
+		if !errors.Is(err, ErrStdinClosed) {
+			t.Fatalf("blocked write error = %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("stdin writer did not stop")
+	}
+}
+
+func TestWriteAfterProcessClose(t *testing.T) {
+	p := startTestProcess(t, Spec{Command: []string{"cat"}, Stdin: true})
+	done := make(chan error, 1)
+	go func() { done <- p.Close() }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		_ = syscall.Kill(-p.PID(), syscall.SIGKILL)
+		t.Fatal("close blocked on child waiting for stdin")
+	}
+	if _, err := p.Write([]byte("late")); !errors.Is(err, ErrStdinClosed) {
+		t.Fatalf("write after process close = %v", err)
+	}
+}
+
+func TestKillClosesStdinWhileChildWaitsForInput(t *testing.T) {
+	p := startTestProcess(t, Spec{Command: []string{"cat"}, Stdin: true})
+	done := make(chan error, 1)
+	go func() { done <- p.Kill(100 * time.Millisecond) }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("kill blocked on child waiting for stdin")
+	}
+	if _, err := p.Write([]byte("late")); !errors.Is(err, ErrStdinClosed) {
+		t.Fatalf("write after kill = %v", err)
+	}
+}
+
+func TestConcurrentStdinAndOutput(t *testing.T) {
+	reader, writer := io.Pipe()
+	p := startTestProcess(t, Spec{Command: []string{"cat"}, Stdin: true, Output: writer})
+	t.Cleanup(func() { reader.Close(); writer.Close() })
+	input := bytes.Repeat([]byte("concurrent input\n"), 64*1024)
+	type readResult struct {
+		data []byte
+		err  error
+	}
+	readDone := make(chan readResult, 1)
+	go func() {
+		data, err := io.ReadAll(reader)
+		readDone <- readResult{data, err}
+	}()
+	writeDone := make(chan error, 1)
+	go func() {
+		n, err := p.Write(input)
+		if err == nil && n != len(input) {
+			err = io.ErrShortWrite
+		}
+		writeDone <- errors.Join(err, p.CloseStdin())
+	}()
+	select {
+	case err := <-writeDone:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("stdin write deadlocked against output")
+	}
+	if exit := waitTestProcess(t, p); exit.Code != 0 {
+		t.Fatalf("exit = %+v", exit)
+	}
+	writer.Close()
+	select {
+	case result := <-readDone:
+		if result.err != nil || !bytes.Equal(result.data, input) {
+			t.Fatalf("read = %d bytes, %v; want %d bytes", len(result.data), result.err, len(input))
+		}
+	case <-time.After(time.Second):
+		t.Fatal("output reader did not stop")
+	}
+}
+
+var errStdinClose = errors.New("stdin close failed")
+
+type closeErrorWriter struct{ io.WriteCloser }
+
+func (w closeErrorWriter) Close() error {
+	return errors.Join(w.WriteCloser.Close(), errStdinClose)
+}
+
+type notifiedFailWriter struct{ called chan struct{} }
+
+func (w notifiedFailWriter) Write([]byte) (int, error) {
+	close(w.called)
+	return 0, errOutputWrite
+}
+
+func TestCloseReportsJoinedFailuresOnlyOnce(t *testing.T) {
+	output := notifiedFailWriter{called: make(chan struct{})}
+	p, err := StartProcess(Spec{Command: []string{"printf hello; sleep 30"}, Shell: true, Stdin: true, Output: output})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = p.Close() })
+	p.stdin = closeErrorWriter{p.stdin}
+	select {
+	case <-output.called:
+	case <-time.After(5 * time.Second):
+		t.Fatal("child did not write output")
+	}
+	err = p.Close()
+	if !errors.Is(err, errStdinClose) || !errors.Is(err, errOutputWrite) {
+		t.Fatalf("first close = %v", err)
+	}
+	if err := p.Close(); err != nil {
+		t.Fatalf("second close = %v", err)
 	}
 }
 
