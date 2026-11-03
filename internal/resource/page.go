@@ -58,7 +58,7 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 	if err != nil {
 		return page, err
 	}
-	page.CanonicalURI = fileURI(canonical)
+	page.CanonicalURI = FileURI(canonical)
 	page.Revision = hex.EncodeToString(digest[:])
 	page.TotalLines = total
 	ranges, err := target.Selection.Resolve(total, true)

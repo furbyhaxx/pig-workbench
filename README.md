@@ -7,6 +7,8 @@ A [PiG](https://github.com/MichaelKinsy/PiG) extension that upgrades the builtin
 ## Available now
 
 - `read`: exactly one of `path` or `paths` (1–32 files). Select with `:N`, `:A-B`, `:A+C`, `:-N`, comma ranges or `:raw`. Literal filenames take precedence. Local files and `file://` only; no usable hashline tags yet. One 50 KiB/2000-line batch budget; Details retain actual coverage, exact-byte revision and continuation.
+- `write`: create or fully replace one local file with optional `expectedRevision` (a stale revision is refused, never overwritten), atomic replace and preserved mode. No directory creation, no non-local schemes yet.
+- `ls`: list one directory through the resource router (`path`, `file://`, `local://`, `out://`) with typed entries, directories first, a continuation cursor and honest completeness.
 - `cd`: `{}` reports status, `{"path":"…"}` changes the Workbench location, `{"reset":true}` returns to the origin. It never changes PiG’s cwd. Until the remaining overrides land, other builtin tools still use PiG’s cwd.
 - `/workbench show`, `/workbench cd`, `/cd`, `/wb:cd`: inspect or change that location. `/tools [name]` and `/workbench tools [name]` inspect the live host registry.
 - `/workbench settings show|catalog|set|reset|reload`: inspect scoped values and change user/project/runtime settings. Read byte/line ceilings apply live; other catalog entries are explicitly marked unavailable. See [configuration](docs/configuration.md) for paths, syntax, trust restrictions and save guarantees.

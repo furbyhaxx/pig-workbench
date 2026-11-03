@@ -20,7 +20,7 @@ func TestLiteralFilesAndURIPunctuation(t *testing.T) {
 		if got.Path != path || got.Selection.Explicit {
 			t.Fatalf("literal path split: %+v", got)
 		}
-		got, err = ParsePath(root, fileURI(path), "")
+		got, err = ParsePath(root, FileURI(path), "")
 		if err != nil {
 			t.Fatal(err)
 		}

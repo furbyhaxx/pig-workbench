@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 type activeRequest struct {
@@ -31,6 +33,8 @@ type session struct {
 	supervisor  *lifecycle.Supervisor
 	location    *location.Manager
 	settings    *config.Manager
+	router      *resource.Router
+	scratch     string
 }
 
 type app struct {
@@ -51,6 +55,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
 	a.registerTools(ext)
+	a.registerWriteAndList(ext)
 	a.registerCommands(ext)
 }
 
@@ -74,7 +79,11 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	s := &session{id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, requests: make(map[string]activeRequest)}
+	providers, scratch, err := buildRouter(ctx)
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	s := &session{id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)
@@ -106,6 +115,11 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 		old.supervisor.Stop()
 		if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: old.id, Generation: old.generation, EventID: old.generation + ":closing", Type: "closing", Data: map[string]any{}}); err != nil {
 			ctx.Notify("Workbench closing notification failed.", "warning")
+		}
+		if old.scratch != "" {
+			if err := os.RemoveAll(old.scratch); err != nil {
+				ctx.Notify("Workbench scratch cleanup failed: "+err.Error(), "warning")
+			}
 		}
 		old.unsubscribe()
 	}

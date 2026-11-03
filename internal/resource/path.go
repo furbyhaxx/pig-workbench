@@ -62,7 +62,7 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 			}
 			if exists(decoded) {
 				target.Path = decoded
-				target.URI = fileURI(decoded)
+				target.URI = FileURI(decoded)
 				return withExplicit(target, explicit, false)
 			}
 		}
@@ -84,7 +84,7 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 		target.URI = u.String()
 		if scheme == "file" {
 			target.Path = filepath.Clean(decoded)
-			target.URI = fileURI(target.Path)
+			target.URI = FileURI(target.Path)
 		} else {
 			target.Path = decoded
 		}
@@ -96,7 +96,7 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 	}
 	if exists(literal) {
 		target.Path = filepath.Clean(literal)
-		target.URI = fileURI(target.Path)
+		target.URI = FileURI(target.Path)
 		return withExplicit(target, explicit, false)
 	}
 	base, selection, has, err := splitSelector(input)
@@ -107,7 +107,7 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 		base = filepath.Join(cwd, base)
 	}
 	target.Path = filepath.Clean(base)
-	target.URI = fileURI(target.Path)
+	target.URI = FileURI(target.Path)
 	target.Selection = selection
 	return withExplicit(target, explicit, has)
 }
@@ -151,6 +151,6 @@ func splitSelector(path string) (string, Selection, bool, error) {
 }
 
 func exists(path string) bool { _, err := os.Lstat(path); return err == nil }
-func fileURI(path string) string {
+func FileURI(path string) string {
 	return (&url.URL{Scheme: "file", Path: filepath.ToSlash(path)}).String()
 }

@@ -10,4 +10,8 @@ require (
 	github.com/gofrs/flock v0.13.1
 )
 
-require golang.org/x/sys v0.49.0 // indirect
+require (
+	github.com/nikolalohinski/gonja/v2 v2.9.1
+	github.com/odvcencio/gotreesitter v0.56.0
+	golang.org/x/sys v0.49.0 // indirect
+)

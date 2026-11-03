@@ -3,9 +3,13 @@
 package host
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -22,4 +26,35 @@ func writeFixtureProvider(t *testing.T, agent, baseURL string) {
 	if err := os.WriteFile(filepath.Join(agent, "models.json"), data, 0600); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	repo, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return repo
+}
+
+func runPigJSON(t *testing.T, ctx context.Context, repo, root, dir string, args []string, prompt string) []byte {
+	t.Helper()
+	command := []string{"--offline", "--no-session", "-e", repo, "--mode", "json", "--model", "workbench-fixture/mock"}
+	command = append(command, args...)
+	command = append(command, prompt)
+	cmd := exec.CommandContext(ctx, "pig", command...)
+	cmd.Dir = dir
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "PIG_") && !strings.HasPrefix(value, "PI_") {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"))
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("live pig: %v\nstderr: %s\nstdout: %s", err, stderr.String(), output)
+	}
+	return output
 }

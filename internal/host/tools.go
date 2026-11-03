@@ -152,7 +152,11 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			continue
 		}
-		page, err := resource.ReadFile(work, target, budget)
+		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection})
+		if err == nil && target.Scheme != "file" {
+			// Non-local providers already applied their own budget.
+			page.Facts.RequestedURI = target.Requested
+		}
 		text := ""
 		if err != nil {
 			if len(targets) == 1 {
@@ -167,8 +171,8 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			failed = true
 		} else {
 			text = page.Content
-			facts = append(facts, page)
-			complete = complete && page.SelectionComplete
+			facts = append(facts, page.Facts)
+			complete = complete && page.Facts.SelectionComplete
 		}
 		content.WriteString(text)
 		budget.Bytes -= len(text)
