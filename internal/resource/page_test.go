@@ -116,3 +116,59 @@ func TestTaggedHeaderOnlyForExactNonRawReads(t *testing.T) {
 		t.Fatalf("tag is not stable across CRLF/LF: %q vs %q", stable.Tag, page.Tag)
 	}
 }
+
+func TestDirectoryReadIsAStableListing(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "sub"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "b.txt"), []byte("hello"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	target, err := ParsePath(filepath.Dir(root), root, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := (FileProvider{}).Read(context.Background(), ReadRequest{URI: target.URI, Requested: root, Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSuffix(page.Content, "\n"), "\n")
+	if len(lines) != 4 || lines[0] != "["+target.URI+"]" || lines[1] != "1:sub/" || lines[2] != "2:a.txt (1 bytes)" || lines[3] != "3:b.txt (5 bytes)" {
+		t.Fatalf("directory view is not a deterministic listing: %q", page.Content)
+	}
+	if page.Facts.CoordinateSpace != "directory-lines" || !page.Facts.ResourceComplete {
+		t.Fatalf("directory facts wrong: %+v", page.Facts)
+	}
+	raw, err := ParseSelector(":raw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (FileProvider{}).Read(context.Background(), ReadRequest{URI: target.URI, Requested: root, Selector: raw, Budget: Budget{Bytes: 4096, Lines: 100}}); err == nil {
+		t.Fatal("raw directory read accepted")
+	}
+	multi, err := ParseSelector(":1,3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (FileProvider{}).Read(context.Background(), ReadRequest{URI: target.URI, Requested: root, Selector: multi, Budget: Budget{Bytes: 4096, Lines: 100}}); err == nil {
+		t.Fatal("multi-range directory read accepted")
+	}
+	selected, err := ParseSelector(":-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	partial, err := (FileProvider{}).Read(context.Background(), ReadRequest{URI: target.URI, Requested: root, Selector: selected, Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(partial.Content, "sub/") || !strings.Contains(partial.Content, "b.txt") {
+		t.Fatalf("directory tail not honoured: %q", partial.Content)
+	}
+	if !partial.Facts.SelectionComplete || partial.Facts.ResourceComplete {
+		t.Fatalf("directory tail facts wrong: %+v", partial.Facts)
+	}
+}

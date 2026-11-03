@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -101,11 +102,14 @@ func (FileProvider) List(ctx context.Context, uri, cursor string, limit int) (Li
 	return page, nil
 }
 
-// Read pages a regular UTF-8 file.
+// Read pages a regular UTF-8 file, or lists a directory as a stable view.
 func (FileProvider) Read(ctx context.Context, request ReadRequest) (ReadResult, error) {
 	path, err := localPath(request.URI)
 	if err != nil {
 		return ReadResult{}, err
+	}
+	if info, statErr := os.Stat(path); statErr == nil && info.IsDir() {
+		return readDirectory(ctx, path, request)
 	}
 	page, err := ReadFile(ctx, Target{Requested: request.URI, Scheme: "file", Path: path, URI: request.URI, Selection: request.Selector}, request.Budget)
 	if err != nil {
@@ -126,4 +130,43 @@ func localPath(uri string) (string, error) {
 		return "", errors.New("file path contains NUL")
 	}
 	return filepath.Clean(trimmed), nil
+}
+
+// readDirectory renders a directory as a stable, pageable listing view.
+func readDirectory(ctx context.Context, path string, request ReadRequest) (ReadResult, error) {
+	if request.Selector.Raw {
+		return ReadResult{}, errors.New("raw is not available for a directory; use :N-M over the listing")
+	}
+	if len(request.Selector.Ranges)+len(request.Selector.Tails) > 1 {
+		return ReadResult{}, errors.New("a directory listing accepts one range or tail, not multiple ranges")
+	}
+	listing, err := (FileProvider{}).List(ctx, FileURI(path), "", 2000)
+	if err != nil {
+		return ReadResult{}, err
+	}
+	var body strings.Builder
+	for _, entry := range listing.Entries {
+		switch entry.Kind {
+		case EntryDir:
+			body.WriteString(entry.Name + "/\n")
+		case EntryLink:
+			body.WriteString(entry.Name + " -> " + entry.Target + "\n")
+		default:
+			if entry.Size > 0 {
+				body.WriteString(entry.Name + " (" + strconv.FormatInt(entry.Size, 10) + " bytes)\n")
+			} else {
+				body.WriteString(entry.Name + "\n")
+			}
+		}
+	}
+	if !listing.Complete {
+		body.WriteString("… more entries not listed\n")
+	}
+	page, err := RenderText(ctx, request.URI, request.Requested, []byte(body.String()), request.Selector, request.Budget)
+	if err != nil {
+		return ReadResult{}, err
+	}
+	page.CoordinateSpace = "directory-lines"
+	page.ResourceComplete = page.ResourceComplete && listing.Complete
+	return ReadResult{Content: page.Content, Facts: page}, nil
 }

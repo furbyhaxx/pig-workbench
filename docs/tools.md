@@ -21,6 +21,8 @@ Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 li
 
 Supported schemes today: `file://`, `local://`, `out://`, `cfg://`, `session://`.
 
+Reading a **directory** returns a stable listing view instead of an error: `dir/` for subdirectories, `name (N bytes)` for files, `name -> target` for links, directories first then lexical order. A single range or a tail pages the listing (`:10-20`, `:-5`); multiple ranges and `:raw` are refused because a listing is not source text.
+
 A **bare** read of a code file with at least `read.summarize.min-total-lines` lines (default 200) returns a declaration skeleton instead of exact text: declaration lines with real line numbers, an explicit `⋯ lines A-B omitted` marker per folded body, and a continuation to the full text. A summary never marks folded lines seen, reports `truncation: "summary"` with `omittedRanges`, and is never used for an explicit selector, a `:raw` read, a prose file, or a file above 4 MiB. `read.summarize.enabled = false` disables it.
 
 ## `write`
