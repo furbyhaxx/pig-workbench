@@ -41,6 +41,7 @@ validate:
 head-check:
     set -euo pipefail
     work="$(mktemp -d)"
+    trap 'git worktree remove --force "$work" 2>/dev/null || rm -rf "$work"' EXIT
     git worktree add -q --detach "$work" HEAD
     cp go.mod go.sum "$work/"
     mkdir -p "$work/.tmp"
@@ -48,6 +49,5 @@ head-check:
     cp go.sum "$work/.tmp/go.sum"
     printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$work/.tmp/go.mod"
     ( cd "$work" && go build -modfile=.tmp/go.mod ./... && go test -modfile=.tmp/go.mod ./... )
-    git worktree remove --force "$work"
 
 check: fmt-check vet test validate
