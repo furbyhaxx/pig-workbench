@@ -60,15 +60,25 @@ func TestGoBlockAnchors(t *testing.T) {
 }
 
 func TestBrokenBlockIsAmbiguousButOtherFunctionIsUsable(t *testing.T) {
-	source := "package sample\n\nfunc good() {\n\tprintln(1)\n}\n\nfunc broken() {\n\tif true {\n\t\tx :=\n\t}\n}\n"
-	summary, blocks := analyzeFixture(t, "broken.go", source)
-	if !summary.ParseErrors {
-		t.Fatal("missing parse error")
+	for _, expression := range []string{"x :=", "x := 1 + / 3"} {
+		t.Run(expression, func(t *testing.T) {
+			source := "package sample\n\nfunc good() {\n\tprintln(1)\n}\n\nfunc broken() {\n\tif true {\n\t\t" + expression + "\n\t}\n}\n"
+			summary, blocks := analyzeFixture(t, "broken.go", source)
+			if !summary.ParseErrors {
+				t.Fatal("missing parse error")
+			}
+			requireBlock(t, blocks, 3, 5, 1, "function_declaration", false)
+			requireBlock(t, blocks, 7, 11, 1, "function_declaration", true)
+			requireBlock(t, blocks, 8, 10, 2, "if_statement", true)
+		})
 	}
-	requireBlock(t, blocks, 3, 5, 1, "function_declaration", false)
-	broken, ok := blocks[7]
-	if !ok || !broken.Ambiguous {
-		t.Fatalf("recovered function must be ambiguous: %+v", blocks)
+}
+
+func TestContinuationIsNotAnAnchor(t *testing.T) {
+	source := "package sample\n\nfunc first() {\n\tprintln(\n\t\tcall(\n\t\t\t1,\n\t\t),\n\t)\n}\n"
+	_, blocks := analyzeFixture(t, "continuation.go", source)
+	if b, ok := blocks[5]; ok {
+		t.Fatalf("continuation became a block anchor: %+v", b)
 	}
 }
 
@@ -92,6 +102,13 @@ func TestMarkdownHeadingSectionsRespectFences(t *testing.T) {
 	if b, ok := blocks[4]; ok {
 		t.Fatalf("fenced code became a heading: %+v", b)
 	}
+}
+
+func TestMarkdownIndentedAndSetextHeadings(t *testing.T) {
+	source := "  # Indented\nbody\n\nOther\n=====\ntext\n"
+	_, blocks := analyzeFixture(t, "headings.md", source)
+	requireBlock(t, blocks, 1, 3, 3, "section", false)
+	requireBlock(t, blocks, 4, 6, 1, "section", false)
 }
 
 func TestSummaryPreservesHeaderCoordinatesAndOmissions(t *testing.T) {
@@ -122,6 +139,27 @@ func TestSummaryPreservesHeaderCoordinatesAndOmissions(t *testing.T) {
 	}
 }
 
+func TestFoldThresholds(t *testing.T) {
+	var source strings.Builder
+	source.WriteString("package sample\n")
+	for i := 0; i < 8; i++ {
+		fmt.Fprintf(&source, "// comment %d\n", i)
+	}
+	source.WriteString("func short() {\n")
+	for i := 0; i < 11; i++ {
+		source.WriteString("println(1)\n")
+	}
+	source.WriteString("}\nfunc long() {\n")
+	for i := 0; i < 12; i++ {
+		source.WriteString("println(2)\n")
+	}
+	source.WriteString("}\n")
+	summary, _ := analyzeFixture(t, "thresholds.go", source.String())
+	if !reflect.DeepEqual(summary.Omitted, [][2]int{{3, 8}, {24, 35}}) {
+		t.Fatalf("threshold folds = %v", summary.Omitted)
+	}
+}
+
 func TestRejectionsAndCancellation(t *testing.T) {
 	service := New()
 	path, source := fixture(t, "unknown.unregistered_extension_xyz", "plain text\n")
@@ -132,10 +170,48 @@ func TestRejectionsAndCancellation(t *testing.T) {
 	if _, _, err := service.Analyze(context.Background(), "r", path, source); !errors.Is(err, ErrTooLarge) {
 		t.Fatalf("oversized source: %v", err)
 	}
+	for _, bad := range []string{"package sample\n//\xff\n", "package sample\n//\x00\n"} {
+		path, source := fixture(t, "bad.go", bad)
+		if _, _, err := service.Analyze(context.Background(), "r", path, source); !errors.Is(err, ErrUnparseable) {
+			t.Fatalf("invalid source should use text fallback: %v", err)
+		}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if _, _, err := service.Analyze(ctx, "r", path, source); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled request: %v", err)
+	}
+}
+
+type admissionContext struct {
+	context.Context
+	entered chan struct{}
+	release chan struct{}
+	once    sync.Once
+}
+
+func (c *admissionContext) Done() <-chan struct{} {
+	c.once.Do(func() {
+		close(c.entered)
+		<-c.release
+	})
+	return c.Context.Done()
+}
+
+func TestCancellationDuringAnalysis(t *testing.T) {
+	path, source := fixture(t, "cancel.go", "package sample\nfunc f() {\n println(1)\n}\n")
+	base, cancel := context.WithCancel(context.Background())
+	ctx := &admissionContext{Context: base, entered: make(chan struct{}), release: make(chan struct{})}
+	result := make(chan error, 1)
+	go func() {
+		_, _, err := New().Analyze(ctx, "r", path, source)
+		result <- err
+	}()
+	<-ctx.entered
+	cancel()
+	close(ctx.release)
+	if err := <-result; !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancellation during analysis: %v", err)
 	}
 }
 
@@ -165,6 +241,37 @@ func TestCacheIsolationAndExactRevision(t *testing.T) {
 	}
 	if got := changedBlocks[2].EndLine; got != 5 {
 		t.Fatalf("reused stale content with same revision: end = %d", got)
+	}
+}
+
+func TestCacheEvictionAndCanonicalIdentity(t *testing.T) {
+	service := New()
+	path, source := fixture(t, "cache.go", "package sample\nfunc f() {\n println(1)\n}\n")
+	link := filepath.Join(filepath.Dir(path), "link.go")
+	if err := os.Symlink(path, link); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{path, link, "file://" + path} {
+		if _, _, err := service.Analyze(context.Background(), "hot", name, source); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := len(service.cache.entries); got != 1 {
+		t.Fatalf("equivalent identities created %d entries", got)
+	}
+	for i := 0; i < maxCacheEntries; i++ {
+		if _, _, err := service.Analyze(context.Background(), fmt.Sprint(i), path, source); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := len(service.cache.entries); got != maxCacheEntries || service.cache.bytes > maxCacheBytes {
+		t.Fatalf("unbounded cache: %d entries, %d bytes", got, service.cache.bytes)
+	}
+	if _, _, err := service.Analyze(context.Background(), "hot", path, source); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(service.cache.entries); got != maxCacheEntries {
+		t.Fatalf("cache did not evict an old revision: %d", got)
 	}
 }
 
