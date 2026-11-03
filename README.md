@@ -14,7 +14,7 @@ A [PiG](https://github.com/MichaelKinsy/PiG) extension that upgrades the builtin
 - `find`: walk for file-name globs; symlinked directories are not followed.
 - `cd`: `{}` reports status, `{"path":"…"}` changes the Workbench location, `{"reset":true}` returns to the origin. It never changes PiG’s cwd. Until the remaining overrides land, other builtin tools still use PiG’s cwd.
 - `/workbench show`, `/workbench cd`, `/cd`, `/wb:cd`: inspect or change that location. `/tools [name]` and `/workbench tools [name]` inspect the live host registry.
-- `/workbench settings show|catalog|set|reset|reload`: inspect scoped values and change user/project/runtime settings. Read byte/line ceilings apply live; other catalog entries are explicitly marked unavailable. See [configuration](docs/configuration.md) for paths, syntax, trust restrictions and save guarantees.
+- `/workbench settings show|catalog|set|reset|reload`: inspect scoped values and change user/project/runtime settings. Read byte/line ceilings apply live; other catalog entries are explicitly marked unavailable. See [configuration](docs/configuration.md) for paths, syntax, trust restrictions and save guarantees, and [tools](docs/tools.md) for every tool contract, selector and result fact.
 - Extension consumers can discover and call protocol v1 through `api.Client`; see [extension services](docs/extension-services.md). Discovery advertises only the wired `location` capability; other service capabilities are not available yet.
 
 ## Develop
