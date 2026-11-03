@@ -142,7 +142,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	var content strings.Builder
 	facts := make([]any, 0, len(targets))
 	complete := true
-	failed := false
+	failedCount := 0
 	for _, target := range targets {
 		if err := work.Err(); err != nil {
 			return nil, err
@@ -181,7 +181,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			}
 			facts = append(facts, map[string]any{"requestedUri": target.Requested, "error": err.Error()})
 			complete = false
-			failed = true
+			failedCount++
 		} else {
 			text = page.Content
 			facts = append(facts, page.Facts)
@@ -199,7 +199,20 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	if !complete && budget.Bytes >= 64 && budget.Lines > 0 {
 		content.WriteString("\nBatch incomplete; consult per-resource continuation in Details.")
 	}
-	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"resources": facts, "complete": complete, "locationRevision": captured.Revision, "configRevision": configuration.Revision()}, IsError: failed}, nil
+	// One failed target in a multi-read must not mark the whole result as an
+	// error: the successful content is still valid and useful to the model.
+	allFailed := failedCount == len(targets)
+	return sdk.ToolResult{
+		Content: content.String(),
+		Details: map[string]any{
+			"resources":        facts,
+			"complete":         complete,
+			"failedTargets":    failedCount,
+			"locationRevision": captured.Revision,
+			"configRevision":   configuration.Revision(),
+		},
+		IsError: allFailed,
+	}, nil
 }
 
 func decode(params map[string]any, dst any) error {

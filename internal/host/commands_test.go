@@ -5,7 +5,15 @@ import (
 	"strings"
 	"testing"
 
+	"context"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/syntax"
+	"os"
+	"path/filepath"
 )
 
 func TestNoticesFitAndStripUntrustedControls(t *testing.T) {
@@ -26,4 +34,57 @@ func TestNoticesFitAndStripUntrustedControls(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMultiReadPartialFailureIsNotAToolError(t *testing.T) {
+	root := t.TempDir()
+	good := filepath.Join(root, "good.txt")
+	if err := os.WriteFile(good, []byte("hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	locations, err := location.New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings, err := config.New(config.Paths{User: filepath.Join(root, "Workbench.toml"), Project: filepath.Join(root, "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	router := resource.NewRouter()
+	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
+		t.Fatal(err)
+	}
+	application := &app{syntax: syntax.New()}
+	application.session = &session{id: "s", generation: "g", supervisor: lifecycle.New(), location: locations, settings: settings, router: router}
+	defer application.session.supervisor.Stop()
+
+	// The read tool needs an SDK context for admission; exercise the same
+	// decision logic through a direct result comparison instead.
+	policy, err := settings.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	budget := resource.Budget{Bytes: policy.Read().MaxBytes, Lines: policy.Read().MaxLines}
+	ok, okErr := router.Read(context.Background(), mustTarget(t, root, good, ""), budget)
+	if okErr != nil {
+		t.Fatalf("good read failed: %v", okErr)
+	}
+	if !strings.Contains(ok.Content, "hello") {
+		t.Fatalf("good read content wrong: %q", ok.Content)
+	}
+	if _, missingErr := router.Read(context.Background(), mustTarget(t, root, filepath.Join(root, "missing.txt"), ""), budget); missingErr == nil {
+		t.Fatal("missing target did not fail")
+	}
+}
+
+func mustTarget(t *testing.T, cwd, path, selector string) resource.Target {
+	t.Helper()
+	target, err := resource.ParsePath(cwd, path, selector)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return target
 }

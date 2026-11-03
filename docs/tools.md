@@ -17,6 +17,8 @@ An exact (non-raw) read of a local file starts with a tagged header `[file:///pa
 
 Selectors: `:N` (onward), `:A-B`, `:A+C`, `:-N` (tail), comma lists, and `:raw` before or after a numeric part. A lone numeric part in a comma list means that single line. Ordinary ranges add one preceding and three trailing lines; raw is exact. A literal filename containing `:` wins over selector parsing.
 
+For a multi-read, one failing target does not turn the whole result into an error: the successful content stays valid, `Details.failedTargets` counts the failures, and the per-resource error is kept in `Details.resources[]`. The tool result is an error only when every target failed.
+
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, total lines, shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.
 
 Supported schemes today: `file://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`.
