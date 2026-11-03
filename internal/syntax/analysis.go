@@ -232,6 +232,7 @@ func collect(ctx context.Context, name string, language *ts.Language, root *ts.N
 	return summary, blocks, nil
 }
 
+// Container kinds are informed by oh-my-pi/pi-ast; see LICENSE.pi-ast.
 func eligibleBlock(kind string, node *ts.Node) bool {
 	switch kind {
 	case "block", "statement_block", "compound_statement", "suite", "class_body", "declaration_list", "statement_list", "statement_sequence", "body_statement", "statements", "body", "indented_block", "block_mapping", "block_sequence", "import_list", "hash_literal_body":
