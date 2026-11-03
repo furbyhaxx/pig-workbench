@@ -137,6 +137,10 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			return nil, fmt.Errorf("path %d: %w", i+1, err)
 		}
 	}
+	epoch := ""
+	if s.snapshots != nil {
+		epoch = s.snapshots.Epoch()
+	}
 	policy := configuration.Read()
 	budget := resource.Budget{Bytes: policy.MaxBytes, Lines: policy.MaxLines}
 	var content strings.Builder
@@ -162,6 +166,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 				return nil, summaryErr
 			} else if ok {
 				facts = append(facts, summary.Facts)
+				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)
 				text := summary.Content
 				content.WriteString(text)
 				budget.Bytes -= len(text)
@@ -184,6 +189,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			failedCount++
 		} else {
 			text = page.Content
+			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 			facts = append(facts, page.Facts)
 			complete = complete && page.Facts.SelectionComplete
 		}

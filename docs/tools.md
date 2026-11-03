@@ -13,7 +13,7 @@ read {"paths": ["a.go", "b.go:1-5"]}
 read {"path": "https://example.com/doc:10-20", "selector": ":10-20"}
 ```
 
-An exact (non-raw) read of a local file starts with a tagged header `[file:///path#A1B2]`. The four-hex tag is derived from the normalized content (LF view, BOM removed, per-line trailing blanks trimmed), so it identifies the content, not the path. Raw reads carry no tag, and a file above 4 MiB is read without one. The tag is the handle a later edit uses to prove which content it was written against.
+An exact (non-raw) read of a local file starts with a tagged header `[file:///path#A1B2]`. The four-hex tag is derived from the normalized content (LF view, BOM removed, per-line trailing blanks trimmed), so it identifies the content, not the path. Raw reads carry no tag, and a file above 4 MiB is read without one. The tag locates a retained snapshot; the full source digest proves its content. Workbench grants seen-line authority only after the emitted block survives the tool-result hook unchanged. Truncated blocks grant nothing; trailing annotations do not invalidate an intact block. Branch and compaction events invalidate prior visibility.
 
 Selectors: `:N` (onward), `:A-B`, `:A+C`, `:-N` (tail), comma lists, and `:raw` before or after a numeric part. A lone numeric part in a comma list means that single line. Ordinary ranges add one preceding and three trailing lines; raw is exact. A literal filename containing `:` wins over selector parsing.
 

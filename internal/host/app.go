@@ -14,6 +14,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -26,16 +27,19 @@ type activeRequest struct {
 }
 
 type session struct {
-	requestsMu  sync.Mutex
-	requests    map[string]activeRequest
-	unsubscribe func()
-	id          string
-	generation  string
-	supervisor  *lifecycle.Supervisor
-	location    *location.Manager
-	settings    *config.Manager
-	router      *resource.Router
-	scratch     string
+	snapshots    *hashline.Store
+	viewsMu      sync.Mutex
+	pendingViews map[string][]pendingView
+	requestsMu   sync.Mutex
+	requests     map[string]activeRequest
+	unsubscribe  func()
+	id           string
+	generation   string
+	supervisor   *lifecycle.Supervisor
+	location     *location.Manager
+	settings     *config.Manager
+	router       *resource.Router
+	scratch      string
 }
 
 type app struct {
@@ -56,6 +60,9 @@ func Register(ext *sdk.Extension) {
 	ext.OnSessionStart(a.start)
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
+	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
+	ext.OnEvent("session_compact", a.invalidateSeen)
+	ext.OnToolResult(a.confirmRead)
 	a.registerTools(ext)
 	a.registerWriteAndList(ext)
 	a.registerSearchTools(ext)
@@ -86,7 +93,11 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	s := &session{id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
+	snapshots, err := hashline.NewStore(hashline.StoreLimits{}, hex.EncodeToString(token[:]))
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	s := &session{snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)

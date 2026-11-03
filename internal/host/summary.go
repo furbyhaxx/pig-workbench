@@ -10,6 +10,7 @@ import (
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/syntax"
 )
@@ -72,7 +73,13 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 	if len(rendered) > 51200 {
 		return resource.ReadResult{}, false, nil
 	}
+	normalized, err := hashline.Normalize(source)
+	if err != nil {
+		return resource.ReadResult{}, false, err
+	}
 	facts := resource.Page{
+		Revision:          hashline.SourceRevision(source),
+		Tag:               normalized.Tag,
 		RequestedURI:      target.Requested,
 		CanonicalURI:      resource.FileURI(target.Path),
 		CoordinateSpace:   "source-lines",
@@ -86,7 +93,7 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 	}
 	facts.ShownRanges = mergeSpans(facts.ShownRanges)
 	facts.FullyShownRanges = mergeSpans(facts.FullyShownRanges)
-	content := "Summary of " + resource.FileURI(target.Path) + fmt.Sprintf(" (%s, %d declarations, %d lines).\n", summary.Language, len(summary.Declarations), lines)
+	content := hashline.Header(resource.FileURI(target.Path), normalized.Tag) + "\nSummary of " + resource.FileURI(target.Path) + fmt.Sprintf(" (%s, %d declarations, %d lines).\n", summary.Language, len(summary.Declarations), lines)
 	content += "Only declaration lines are shown; bodies are folded. This view never marks folded lines seen.\n"
 	content += "Read the full text with selector :1-" + fmt.Sprint(lines) + " or use a line range.\n\n"
 	content += rendered
