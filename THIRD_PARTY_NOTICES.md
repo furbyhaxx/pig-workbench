@@ -157,6 +157,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Source: https://github.com/nikolalohinski/gonja
 
+`internal/prompt/loop.go` and `range.go` adapt v2.9.1's `builtins/control_structures/for.go` and `builtins/global_functions.go` to propagate strict errors and own cancellable iteration. A license copy also lives in `internal/prompt/LICENSE.gonja`.
+
 ```text
 The MIT License (MIT)
 

@@ -13,6 +13,7 @@ import (
 	"github.com/nikolalohinski/gonja/v2/builtins"
 	"github.com/nikolalohinski/gonja/v2/config"
 	"github.com/nikolalohinski/gonja/v2/exec"
+	"github.com/nikolalohinski/gonja/v2/parser"
 )
 
 const (
@@ -39,6 +40,7 @@ type Options struct {
 type Engine struct {
 	loader          TemplateLoader
 	filters         *exec.FilterSet
+	structures      *exec.ControlStructureSet
 	deadline        time.Duration
 	maxOutputBytes  int
 	maxIncludeDepth int
@@ -84,9 +86,18 @@ func New(options Options) (*Engine, error) {
 	if err := filters.Replace("attr", strictAttributeFilter(attr)); err != nil {
 		return nil, fmt.Errorf("register strict attr filter: %w", err)
 	}
+	structures := exec.NewControlStructureSet(map[string]parser.ControlStructureParser{}).Update(builtins.ControlStructures)
+	forParser, ok := structures.Get("for")
+	if !ok {
+		return nil, errors.New("gonja for control structure is unavailable")
+	}
+	if err := structures.Replace("for", strictForParser(forParser)); err != nil {
+		return nil, fmt.Errorf("register cancellable for control structure: %w", err)
+	}
 	return &Engine{
 		loader:          options.Loader,
 		filters:         filters,
+		structures:      structures,
 		deadline:        options.Deadline,
 		maxOutputBytes:  options.MaxOutputBytes,
 		maxIncludeDepth: options.MaxIncludeDepth,
@@ -115,14 +126,16 @@ type result struct {
 func (e *Engine) Render(ctx context.Context, name string, data Data) (Render, error) {
 	ctx, cancel := context.WithTimeout(ctx, e.deadline)
 	defer cancel()
-	if err := ctx.Err(); err != nil {
-		return Render{}, fmt.Errorf("render template %q: %w", name, err)
-	}
+	return e.run(newRenderState(ctx), name, templateContext(data))
+}
 
-	input := templateContext(data)
-	if err := ctx.Err(); err != nil {
+// run evaluates one template and joins every range producer it started before
+// returning.
+func (e *Engine) run(state *renderState, name string, input *exec.Context) (Render, error) {
+	if err := state.err(); err != nil {
 		return Render{}, fmt.Errorf("render template %q: %w", name, err)
 	}
+	input.Set(renderStateKey, state)
 
 	finished := make(chan result, 1)
 	go func() {
@@ -133,15 +146,19 @@ func (e *Engine) Render(ctx context.Context, name string, data Data) (Render, er
 			}
 			finished <- outcome
 		}()
-		outcome.render, outcome.err = e.render(ctx, name, input)
+		outcome.render, outcome.err = e.evaluate(state, name, input)
 	}()
 
 	select {
-	case <-ctx.Done():
-		return Render{}, fmt.Errorf("render template %q: %w", name, ctx.Err())
+	case <-state.ctx.Done():
+		err := state.ctx.Err()
+		state.join()
+		return Render{}, fmt.Errorf("render template %q: %w", name, err)
 	case outcome := <-finished:
-		if err := ctx.Err(); err != nil {
-			return Render{}, fmt.Errorf("render template %q: %w", name, err)
+		expired := state.ctx.Err()
+		state.join()
+		if expired != nil {
+			return Render{}, fmt.Errorf("render template %q: %w", name, expired)
 		}
 		if outcome.err != nil {
 			return Render{}, fmt.Errorf("render template %q: %w", name, outcome.err)
@@ -150,7 +167,7 @@ func (e *Engine) Render(ctx context.Context, name string, data Data) (Render, er
 	}
 }
 
-func (e *Engine) render(ctx context.Context, name string, input *exec.Context) (Render, error) {
+func (e *Engine) evaluate(state *renderState, name string, input *exec.Context) (Render, error) {
 	attributes := &attributeState{}
 	input.Set(attributeStateKey, attributes)
 	cfg := config.New()
@@ -164,23 +181,24 @@ func (e *Engine) render(ctx context.Context, name string, input *exec.Context) (
 		Context:           exec.EmptyContext().Update(builtins.GlobalFunctions).Update(builtins.GlobalVariables),
 		Filters:           e.filters,
 		Tests:             builtins.Tests,
-		ControlStructures: builtins.ControlStructures,
+		ControlStructures: e.structures,
 		Methods:           builtins.Methods,
 	}
-	state := &loaderState{}
-	loader := &templateLoader{source: e.loader, ctx: ctx, maxDepth: e.maxIncludeDepth, state: state}
+	environment.Context.Set("range", rangeFunction)
+	loads := &loaderState{}
+	loader := &templateLoader{source: e.loader, ctx: state.ctx, maxDepth: e.maxIncludeDepth, state: loads}
 	template, err := exec.NewTemplate(name, cfg, loader, environment)
-	if state.err != nil {
-		return Render{}, state.err
+	if loads.err != nil {
+		return Render{}, loads.err
 	}
 	if err != nil {
 		return Render{}, err
 	}
 
-	output := &limitedWriter{ctx: ctx, limit: e.maxOutputBytes}
+	output := &limitedWriter{ctx: state.ctx, limit: e.maxOutputBytes}
 	err = template.Execute(output, input)
-	if state.err != nil {
-		return Render{}, state.err
+	if loads.err != nil {
+		return Render{}, loads.err
 	}
 	if attributes.err != nil {
 		return Render{}, attributes.err
@@ -192,7 +210,7 @@ func (e *Engine) render(ctx context.Context, name string, input *exec.Context) (
 		return Render{}, err
 	}
 	text := output.buf.String()
-	if state.rootNonEmpty && strings.TrimSpace(text) == "" {
+	if loads.rootNonEmpty && strings.TrimSpace(text) == "" {
 		return Render{}, &ErrEmptyRender{Template: name}
 	}
 	return Render{Text: text}, nil

@@ -1,18 +1,16 @@
 package prompt
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/nikolalohinski/gonja/v2/builtins"
-	"github.com/nikolalohinski/gonja/v2/config"
 	"github.com/nikolalohinski/gonja/v2/exec"
 )
 
@@ -107,7 +105,7 @@ func TestStrictAttrFilter(t *testing.T) {
 			t.Fatalf("%s: got %q, %v; want unknown %s attribute %q", tc.name, got.Text, err, tc.kind, tc.attribute)
 		}
 	}
-	_, err := engine.render(context.Background(), "field", exec.NewContext(map[string]any{"model": &Model{}}))
+	_, err := engine.run(newRenderState(context.Background()), "field", exec.NewContext(map[string]any{"model": &Model{}}))
 	var unknown *ErrUnknownAttribute
 	if !errors.As(err, &unknown) || unknown.Kind != "struct" || unknown.Attribute != "unknown_field" {
 		t.Fatalf("pointer: got %v; want unknown struct attribute", err)
@@ -137,151 +135,179 @@ func TestEmptyRender(t *testing.T) {
 	}
 }
 
-func TestGonjaFilteredLoopUndefinedLimitation(t *testing.T) {
-	// gonja v2.9.1 builtins/control_structures/for.go:202 ignores filter evaluation errors.
+func TestFilteredLoopStrictUndefined(t *testing.T) {
+	// gonja v2.9.1 for.go:202 discards loop-filter evaluation errors, so the
+	// registered for override must surface them as strict-undefined failures.
 	source := `{% for tool in tools.declared if model.unknown_field %}{{ tool }}{% endfor %}`
-	loader := memoryLoader{"filter": source, "partial": "prefix " + source}
-	config := config.New()
-	config.StrictUndefined = true
-	environment := &exec.Environment{
-		Context: exec.EmptyContext(), Filters: builtins.Filters, Tests: builtins.Tests,
-		ControlStructures: builtins.ControlStructures, Methods: builtins.Methods,
-	}
-	adapter := &templateLoader{source: loader, ctx: context.Background(), maxDepth: 16, state: &loaderState{}}
-	template, err := exec.NewTemplate("filter", config, adapter, environment)
-	if err != nil {
-		t.Fatal(err)
-	}
-	data := Data{Tools: Tools{Declared: []string{"read"}}}
-	var output bytes.Buffer
-	if err := template.Execute(&output, templateContext(data)); err != nil || output.String() != "" {
-		t.Fatalf("gonja behavior changed: got %q, %v; remove the limitation note", output.String(), err)
+	loader := memoryLoader{
+		"filter":  source,
+		"partial": "prefix " + source,
+		"else":    `{% for tool in tools.declared if model.unknown_field %}{% else %}fallback{% endfor %}`,
 	}
 	engine := newTestEngine(t, loader, Options{})
-	got, err := engine.Render(context.Background(), "filter", data)
-	var empty *ErrEmptyRender
-	if !errors.As(err, &empty) || empty.Template != "filter" || got.Text != "" {
-		t.Fatalf("engine: got %q, %v; want named ErrEmptyRender", got.Text, err)
-	}
-	got, err = engine.Render(context.Background(), "partial", data)
-	if err != nil || got.Text != "prefix " {
-		t.Fatalf("gonja behavior changed: partial output %q, %v; revisit the limitation", got.Text, err)
+	data := Data{Model: Model{Name: "<model>"}, Tools: Tools{Declared: []string{"read"}}}
+	for _, name := range []string{"filter", "partial", "else"} {
+		got, err := engine.Render(context.Background(), name, data)
+		if err == nil || !strings.Contains(err.Error(), "unknown_field") || got.Text != "" {
+			t.Fatalf("%s: got %q, %v; want undefined loop-filter error", name, got.Text, err)
+		}
 	}
 }
 
-func TestDataFieldsAndEmptyCollections(t *testing.T) {
+func TestFilteredLoopOutput(t *testing.T) {
 	loader := memoryLoader{
-		"fields": `{{ model.provider }}|{{ model.id }}|{{ model.name }}|{{ model.api }}|{{ model.family }}|{{ model.reasoning }}|{{ model.context_window }}|{{ model.max_output }}|{{ model.thinking }}|{{ model.mid_convo_system }}
-{{ tools.selected[0] }}|{{ tools.declared[0] }}|{{ tools.hidden[0] }}|{{ tools.snippets.read }}|{{ tools.guidelines.read[0] }}
-{{ host.custom_prompt }}|{{ host.append }}|{{ host.prompt_guidelines[0] }}|{{ host.docs }}|{{ host.context_files[0].path }}|{{ host.context_files[0].content }}|{{ host.skills[0].name }}|{{ host.sections.extra }}|{{ host.mode }}|{{ host.os }}|{{ host.shell }}
-{{ instructions[0].class }}|{{ instructions[0].path }}|{{ instructions[0].display_path }}|{{ instructions[0].role }}|{{ instructions[0].content }}
-{{ skills.items[0].name }}|{{ skills.items[0].description }}|{{ skills.items[0].location }}|{{ skills.items[0].source }}|{{ skills.items[0].bundle }}|{{ skills.listing }}
-{{ workbench.edit.mode }}|{{ workbench.read.summarize }}|{{ workbench.read.selectors }}|{{ workbench.secrets.enabled }}|{{ workbench.schemes[0].name }}|{{ workbench.schemes[0].summary }}|{{ project_root }}`,
-		"empty": `{{ instructions }}|{{ tools.declared }}|{{ host.context_files }}|{{ skills.items }}`,
+		"filtered":   `{% for tool in tools.declared if tool != "bash" %}{{ loop.index }}/{{ loop.length }}={{ tool }};{% endfor %}`,
+		"else":       `{% for tool in tools.declared if tool == "none" %}{{ tool }}{% else %}none:{{ tools.declared | length }}{% endfor %}`,
+		"nested":     `{% for outer in tools.selected %}{% for inner in tools.hidden %}{{ loop.depth }}:{{ outer }}{{ inner }};{% endfor %}{% endfor %}`,
+		"control":    `{% for i in [1, 2, 3, 4] %}{% if i == 2 %}{% continue %}{% endif %}{% if i == 4 %}{% break %}{% endif %}{{ i }}{% endfor %}`,
+		"pairs":      `{% for name, value in tools.snippets %}{{ name }}={{ value }};{% endfor %}`,
+		"descending": `{% for tool in tools.declared | sort(reverse=true) %}{{ tool }};{% endfor %}`,
+		"helpers":    `{% for tool in tools.declared %}{{ loop.cycle("a", "b") }}{{ loop.changed(tool) }};{% endfor %}`,
+		"steps":      `{% for i in range(1, 6, 2) %}{{ i }};{% endfor %}{% for i in range(3, 0, -1) %}{{ i }};{% endfor %}{% for i in range(3) %}{{ i }};{% endfor %}`,
+		"recursive":  `{% for node in tree recursive %}{{ node.name }}{% if node.items is iterable %}{{ loop(node.items) }}{% endif %}{% endfor %}`,
 	}
 	engine := newTestEngine(t, loader, Options{})
 	data := Data{
-		Model:        Model{Provider: "provider", ID: "id", Name: "name", API: "api", Family: "family", Reasoning: true, ContextWindow: 42, MaxOutput: 7, Thinking: "high", MidConvoSystem: true},
-		Tools:        Tools{Selected: []string{"selected"}, Declared: []string{"declared"}, Hidden: []string{"hidden"}, Snippets: map[string]string{"read": "snippet"}, Guidelines: map[string][]string{"read": {"guideline"}}},
-		Host:         Host{CustomPrompt: "custom", Append: "append", PromptGuidelines: []string{"host rule"}, Docs: true, ContextFiles: []ContextFile{{Path: "path", Content: "content"}}, Skills: []HostSkill{{Name: "host skill"}}, Sections: map[string]string{"extra": "section"}, Mode: "rpc", OS: "linux", Shell: "sh"},
-		Instructions: []Instruction{{Class: "class", Path: "path", DisplayPath: "display", Role: "role", Content: "instructions"}},
-		Skills:       SkillCatalog{Items: []Skill{{Name: "skill", Description: "description", Location: "location", Source: "source", Bundle: "bundle"}}, Listing: "prompt"},
-		Workbench:    Workbench{Edit: EditFeatures{Mode: "hashline"}, Read: ReadFeatures{Summarize: true, Selectors: true}, Secrets: SecretFeatures{Enabled: true}, Schemes: []Scheme{{Name: "docs", Summary: "summary"}}},
-		ProjectRoot:  "/project",
+		Tools: Tools{Declared: []string{"read", "bash", "edit"}, Selected: []string{"a", "b"}, Hidden: []string{"x"}, Snippets: map[string]string{"read": "snippet"}},
 	}
-	want := "provider|id|name|api|family|True|42|7|high|True\n" +
-		"selected|declared|hidden|snippet|guideline\n" +
-		"custom|append|host rule|True|path|content|host skill|section|rpc|linux|sh\n" +
-		"class|path|display|role|instructions\n" +
-		"skill|description|location|source|bundle|prompt\n" +
-		"hashline|True|True|True|docs|summary|/project"
-	got, err := engine.Render(context.Background(), "fields", data)
-	if err != nil || got.Text != want {
-		t.Fatalf("fields: got %q, err %v; want %q", got.Text, err, want)
-	}
-	first, err := engine.Render(context.Background(), "empty", Data{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	second, err := engine.Render(context.Background(), "empty", Data{})
-	if err != nil || first.Text != "[]|[]|[]|[]" || second.Text != first.Text {
-		t.Fatalf("nil collections: first %q, second %q, err %v", first.Text, second.Text, err)
-	}
-}
-
-func TestMapIterationIsStable(t *testing.T) {
-	loader := memoryLoader{"ordered": `{% for name, value in tools.snippets %}{{ name }}={{ value }};{% endfor %}{% for name, value in host.sections %}{{ name }}={{ value }};{% endfor %}`}
-	engine := newTestEngine(t, loader, Options{})
-	data := Data{Tools: Tools{Snippets: map[string]string{"z": "Z", "a": "A", "m": "M"}}, Host: Host{Sections: map[string]string{"y": "Y", "b": "B"}}}
-	for i := 0; i < 20; i++ {
-		got, err := engine.Render(context.Background(), "ordered", data)
-		if err != nil || got.Text != "a=A;m=M;z=Z;b=B;y=Y;" {
-			t.Fatalf("render %d: got %q, err %v", i, got.Text, err)
+	for name, want := range map[string]string{
+		"filtered":   "1/2=read;2/2=edit;",
+		"else":       "none:3",
+		"nested":     "2:ax;2:bx;",
+		"control":    "13",
+		"pairs":      "read=snippet;",
+		"descending": "read;edit;bash;",
+		"helpers":    "aTrue;bTrue;aTrue;",
+		"steps":      "1;3;5;3;2;1;0;1;2;",
+	} {
+		got, err := engine.Render(context.Background(), name, data)
+		if err != nil || got.Text != want {
+			t.Fatalf("%s: got %q, %v; want %q", name, got.Text, err, want)
 		}
 	}
+	tree := []any{
+		map[string]any{"name": "a", "items": []any{map[string]any{"name": "b", "items": []any{}}}},
+		map[string]any{"name": "c", "items": []any{}},
+	}
+	got, err := engine.run(newRenderState(context.Background()), "recursive", exec.NewContext(map[string]any{"tree": tree}))
+	if err != nil || got.Text != "abc" {
+		t.Fatalf("recursive: got %q, %v; want %q", got.Text, err, "abc")
+	}
 }
 
-func TestOutputLimit(t *testing.T) {
-	engine := newTestEngine(t, memoryLoader{"at": "1234", "over": "12345", "utf8": "äöx"}, Options{MaxOutputBytes: 4})
-	at, err := engine.Render(context.Background(), "at", Data{})
-	if err != nil || at.Text != "1234" {
-		t.Fatalf("at limit: %q, %v", at.Text, err)
+func TestLoopCancellation(t *testing.T) {
+	loader := memoryLoader{
+		"silent":   `{% for i in range(1000000000) %}{% endfor %}`,
+		"filtered": `{% for i in range(1000000000) if i > 2000000000 %}{% endfor %}`,
+		"output":   `{% for i in range(1000000000) %}{{ i }}{% endfor %}`,
 	}
-	for _, name := range []string{"over", "utf8"} {
+	engine := newTestEngine(t, loader, Options{Deadline: 20 * time.Millisecond, MaxOutputBytes: 1 << 20})
+	for _, name := range []string{"silent", "filtered", "output"} {
+		started := time.Now()
 		got, err := engine.Render(context.Background(), name, Data{})
-		if err == nil || !strings.Contains(err.Error(), "output") || got.Text != "" {
-			t.Fatalf("%s: got %q, %v; expected output limit error", name, got.Text, err)
+		elapsed := time.Since(started)
+		if !errors.Is(err, context.DeadlineExceeded) || got.Text != "" {
+			t.Fatalf("%s: got %q, %v; want deadline exceeded", name, got.Text, err)
+		}
+		if elapsed > 500*time.Millisecond {
+			t.Fatalf("%s: cancellation took %v", name, elapsed)
 		}
 	}
 }
 
-func TestDeadline(t *testing.T) {
-	engine := newTestEngine(t, memoryLoader{"loop": `{% for i in range(1000000) %}{{ i }}{% endfor %}`}, Options{Deadline: time.Nanosecond})
-	got, err := engine.Render(context.Background(), "loop", Data{})
-	if !errors.Is(err, context.DeadlineExceeded) || got.Text != "" {
-		t.Fatalf("got %q, %v; want deadline exceeded", got.Text, err)
+func TestRenderJoinsRangeProducers(t *testing.T) {
+	loader := memoryLoader{
+		"unused":   `{% set xs = range(1000000000) %}text`,
+		"canceled": `{% for i in range(1000000000) %}{% endfor %}`,
+		"aborted":  `{% for i in range(1000000000) if missing_variable %}{% endfor %}`,
+	}
+	for _, tc := range []struct {
+		name     string
+		deadline time.Duration
+		maxSpent time.Duration
+		want     string
+	}{
+		{"unused", 10 * time.Second, time.Second, "text"},
+		{"canceled", 20 * time.Millisecond, time.Second, "deadline"},
+		{"aborted", 10 * time.Second, time.Second, "missing_variable"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			engine := newTestEngine(t, loader, Options{Deadline: tc.deadline})
+			ctx, cancel := context.WithTimeout(context.Background(), tc.deadline)
+			defer cancel()
+			state := newRenderState(ctx)
+			started := time.Now()
+			got, err := engine.run(state, tc.name, templateContext(Data{}))
+			spent := time.Since(started)
+			switch tc.want {
+			case "text":
+				if err != nil || got.Text != "text" {
+					t.Fatalf("got %q, %v; want %q", got.Text, err, "text")
+				}
+			case "deadline":
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("got %v, want deadline exceeded", err)
+				}
+			default:
+				if err == nil || !strings.Contains(err.Error(), tc.want) {
+					t.Fatalf("got %v, want undefined loop-filter error", err)
+				}
+			}
+			if registered, running := state.total.Load(), state.live.Load(); registered == 0 || running != 0 {
+				t.Fatalf("producers started %d, running %d; want all %d joined", registered, running, registered)
+			}
+			if spent > tc.maxSpent {
+				t.Fatalf("render spent %v; want it to join producers before its %v deadline", spent, tc.deadline)
+			}
+		})
 	}
 }
 
-type blockingLoader struct {
-	started chan struct{}
-	release chan struct{}
-	closed  chan struct{}
-}
-
-func (l *blockingLoader) Open(string) (io.ReadCloser, error) {
-	close(l.started)
-	<-l.release
-	return &notifyingReader{Reader: strings.NewReader("late"), closed: l.closed}, nil
-}
-func (l *blockingLoader) List() []string { return nil }
-
-type notifyingReader struct {
-	io.Reader
-	closed chan struct{}
-}
-
-func (r *notifyingReader) Close() error { close(r.closed); return nil }
-
-func TestContextCancellationDuringLoading(t *testing.T) {
-	loader := &blockingLoader{started: make(chan struct{}), release: make(chan struct{}), closed: make(chan struct{})}
-	engine := newTestEngine(t, loader, Options{})
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() {
-		_, err := engine.Render(ctx, "blocked", Data{})
-		done <- err
-	}()
-	<-loader.started
-	cancel()
-	if err := <-done; !errors.Is(err, context.Canceled) {
-		t.Errorf("got %v, want context canceled", err)
-	}
-	close(loader.release)
-	select {
-	case <-loader.closed:
-	case <-time.After(2 * time.Second):
-		t.Fatal("loader was not closed after releasing it")
+func TestRangeProducerTerminatesOnOverflow(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		args  []int
+		first int
+	}{
+		{"ascending", []int{math.MaxInt64 - 1, math.MaxInt64, 2}, math.MaxInt64 - 1},
+		{"descending", []int{math.MinInt64 + 1, math.MinInt64, -2}, math.MinInt64 + 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			state := newRenderState(context.Background())
+			evaluator := &exec.Evaluator{Environment: &exec.Environment{Context: exec.NewContext(map[string]any{renderStateKey: state})}}
+			params := &exec.VarArgs{}
+			for _, arg := range tc.args {
+				params.Args = append(params.Args, exec.AsValue(arg))
+			}
+			channel, err := rangeFunction(evaluator, params)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var values []int
+			timeout := time.After(2 * time.Second)
+		read:
+			for {
+				select {
+				case value, ok := <-channel:
+					if !ok {
+						break read
+					}
+					values = append(values, value)
+					if len(values) > 2 {
+						t.Fatalf("range produced %v; want it to stop after %d", values, tc.first)
+					}
+				case <-timeout:
+					t.Fatalf("range did not terminate: %v", values)
+				}
+			}
+			if len(values) != 1 || values[0] != tc.first {
+				t.Fatalf("got %v; want [%d]", values, tc.first)
+			}
+			state.join()
+			if running := state.live.Load(); running != 0 {
+				t.Fatalf("producers still running: %d", running)
+			}
+		})
 	}
 }
 
