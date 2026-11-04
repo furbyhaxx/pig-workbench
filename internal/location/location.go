@@ -39,6 +39,10 @@ func (e *BusyError) Error() string {
 	return "locationBusy: mutations in progress: " + strings.Join(e.Operations, ", ")
 }
 
+// ProjectLookup resolves the project root containing a canonical directory.
+// An empty root means no project was identified and the directory is its own root.
+type ProjectLookup func(context.Context, string) (string, error)
+
 // Manager owns one session's local location and active mutation leases.
 type Manager struct {
 	mu        sync.Mutex
@@ -46,15 +50,21 @@ type Manager struct {
 	changing  bool
 	mutations map[string]struct{}
 	changed   chan struct{}
+	lookup    ProjectLookup // immutable after construction
 }
 
-// New resolves the host origin without changing process cwd.
-func New(origin string) (*Manager, error) {
+// New resolves the host origin and its project root without changing process cwd.
+// A nil lookup keeps the location's own directory as its project root.
+func New(ctx context.Context, origin string, lookup ProjectLookup) (*Manager, error) {
 	cwd, err := canonicalDir(origin)
 	if err != nil {
 		return nil, err
 	}
-	return &Manager{current: Snapshot{Authority: "local", Cwd: cwd, DisplayCwd: cwd, ProjectRoot: cwd, Origin: cwd, Revision: 1, Available: true}, mutations: make(map[string]struct{}), changed: make(chan struct{})}, nil
+	root, err := resolveProjectRoot(ctx, lookup, cwd)
+	if err != nil {
+		return nil, err
+	}
+	return &Manager{current: Snapshot{Authority: "local", Cwd: cwd, DisplayCwd: cwd, ProjectRoot: root, Origin: cwd, Revision: 1, Available: true}, mutations: make(map[string]struct{}), changed: make(chan struct{}), lookup: lookup}, nil
 }
 
 // Current returns a value copy of the active location.
@@ -105,7 +115,7 @@ func (m *Manager) Acquire(id string, mutation bool) (Snapshot, func(), error) {
 	return m.current, release, nil
 }
 
-// Transition validates, waits for mutating leases, persists and activates a location.
+// Transition validates, waits for mutating leases, binds the project root, persists and activates a location.
 // persist must atomically record the change or return an error without recording it.
 func (m *Manager) Transition(ctx context.Context, path string, reset bool, persist func(Change) error) (Change, error) {
 	m.mu.Lock()
@@ -155,12 +165,17 @@ func (m *Manager) Transition(ctx context.Context, path string, reset bool, persi
 			return Change{}, errors.Join(&BusyError{Operations: ids}, ctx.Err())
 		}
 	}
+	root, err := resolveProjectRoot(ctx, m.lookup, cwd)
+	if err != nil {
+		return Change{}, err
+	}
 	if previous.Revision >= 1<<53-1 {
 		return Change{}, errors.New("location revision exhausted")
 	}
 	current := previous
 	current.Cwd = cwd
 	current.DisplayCwd = cwd
+	current.ProjectRoot = root
 	current.Revision++
 	current.Available = true
 	change := Change{SchemaVersion: 1, Previous: previous, Current: current, Reason: "cd"}
@@ -179,17 +194,31 @@ func (m *Manager) Transition(ctx context.Context, path string, reset bool, persi
 	return change, nil
 }
 
-// Restore replays a persisted local snapshot without silently replacing an unavailable cwd.
-func (m *Manager) Restore(s Snapshot) error {
+// RestoreContext replays a persisted local snapshot without silently replacing an unavailable cwd.
+// A project lookup refreshes a stale stored root; a failed or cancelled lookup leaves the location unchanged.
+func (m *Manager) RestoreContext(ctx context.Context, s Snapshot) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if s.Authority != "local" || !filepath.IsAbs(s.Cwd) || !filepath.IsAbs(s.Origin) || s.Revision == 0 || s.Revision >= 1<<53 {
 		return errors.New("invalid stored location")
 	}
-	_, err := canonicalDir(s.Cwd)
+	cwd, err := canonicalDir(s.Cwd)
 	s.Available = err == nil
+	if s.Available {
+		root, err := resolveProjectRoot(ctx, m.lookup, cwd)
+		if err != nil {
+			return err
+		}
+		s.ProjectRoot = root
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.changing || len(m.mutations) != 0 {
 		return &BusyError{Operations: []string{"active operations"}}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if s == m.current {
 		return nil
@@ -206,6 +235,39 @@ func (m *Manager) Restore(s Snapshot) error {
 }
 
 func (m *Manager) signal() { close(m.changed); m.changed = make(chan struct{}) }
+
+func resolveProjectRoot(ctx context.Context, lookup ProjectLookup, cwd string) (string, error) {
+	if lookup == nil {
+		return cwd, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	root, err := lookup(ctx, cwd)
+	if err != nil {
+		return "", fmt.Errorf("resolve project root for %q: %w", cwd, err)
+	}
+	if root == "" {
+		return "", errors.New("project lookup returned no absolute root")
+	}
+	root, err = canonicalDir(root)
+	if err != nil {
+		return "", fmt.Errorf("project root for %q: %w", cwd, err)
+	}
+	if !containsDir(root, cwd) {
+		return "", fmt.Errorf("project root %q does not contain location %q", root, cwd)
+	}
+	return root, nil
+}
+
+// containsDir reports whether the canonical dir is root or lies below it.
+func containsDir(root, dir string) bool {
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return false
+	}
+	return rel == "." || rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
 
 func canonicalDir(path string) (string, error) {
 	if !filepath.IsAbs(path) {

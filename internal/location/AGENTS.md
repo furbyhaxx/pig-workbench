@@ -4,3 +4,4 @@ Local location engine for SPEC-0008 §2–§3. Backend expansion must keep captu
 - No process/host chdir. Validate directories before committing; symlink aliases use canonical paths.
 - Reads may finish against old revisions. Mutations hold leases; transitions block new mutations and report conflicting operation IDs on timeout.
 - Persist before activation. Notification failure must not undo a committed location.
+- Project roots come from the injected `ProjectLookup`; resolve them under the caller's context before persistence and on restore, never while holding the manager mutex. A stored root is not trusted. Without a lookup the location's own cwd is the root.
