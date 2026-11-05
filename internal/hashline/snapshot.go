@@ -144,8 +144,14 @@ func Restore(normalized Normalized, edited []byte) ([]byte, error) {
 	} else if err := alignEndings(original, lines, normalized.dominantEnding, endings); err != nil {
 		return nil, err
 	}
+	return restoreView(normalized, lines, endings)
+}
+
+// restoreView assembles the restored bytes from LF view lines and their resolved
+// endings, applying the retained BOM.
+func restoreView(normalized Normalized, lines []sourceLine, endings []string) ([]byte, error) {
 	var output bytes.Buffer
-	output.Grow(len(edited) + len(bom))
+	output.Grow(len(normalized.original) + len(bom))
 	if normalized.hasBOM {
 		output.WriteString(bom)
 	}

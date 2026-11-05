@@ -314,11 +314,11 @@ func stageBatchSection(input BatchInput, section *batchSection) (Effects, bool, 
 			return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 		}
 	}
-	result, err := StageLines(section.normalized, section.lineOps)
+	result, err := StageSource(section.normalized, section.lineOps)
 	if err != nil {
 		return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 	}
-	restored, err := Restore(section.normalized, result.Bytes)
+	restored, err := RestoreStaged(section.normalized, result)
 	if err != nil {
 		return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 	}

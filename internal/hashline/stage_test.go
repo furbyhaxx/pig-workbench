@@ -223,3 +223,111 @@ func TestStageLinesResultDoesNotAliasInputs(t *testing.T) {
 		t.Fatal("StageLines result or success mutated its inputs")
 	}
 }
+
+func TestStageSourceOriginsAlignWithStagedLines(t *testing.T) {
+	source := stageSnapshot(t, "a\r\nb\nc")
+	ops := []Op{
+		{Kind: PUT_RANGE, Line: 1, End: 1, Payload: []string{"A"}},
+		{Kind: PUT_INSERT_BEFORE, Line: 2, Payload: []string{"x"}},
+	}
+	staged, err := StageSource(source, ops)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(staged.Bytes), "A\nx\nb\nc"; got != want {
+		t.Fatalf("staged bytes = %q, want %q", got, want)
+	}
+	if want := []int{0, 0, 2, 3}; !reflect.DeepEqual(staged.Origins, want) {
+		t.Fatalf("origins = %#v, want %#v", staged.Origins, want)
+	}
+	if want := []LineSpan{{Start: 1, End: 1}}; !reflect.DeepEqual(staged.Touched, want) {
+		t.Fatalf("touched = %#v, want %#v", staged.Touched, want)
+	}
+	plain, err := StageLines(source, ops)
+	if err != nil || !reflect.DeepEqual(plain.Bytes, staged.Bytes) || !reflect.DeepEqual(plain.Touched, staged.Touched) {
+		t.Fatalf("StageLines = %#v, %v; want the StageSource bytes and spans", plain, err)
+	}
+	if restored, err := RestoreStaged(source, staged); err != nil || string(restored) != "A\nx\nb\nc" {
+		t.Fatalf("RestoreStaged = %q, %v; want %q", restored, err, "A\nx\nb\nc")
+	}
+}
+
+func TestRestoreStagedKeepsOriginOfDuplicateText(t *testing.T) {
+	const source = "same\r\nsame\n"
+	for _, test := range []struct {
+		name     string
+		op       Op
+		origins  []int
+		restored string
+	}{
+		{"cut first", Op{Kind: CUT_RANGE, Line: 1, End: 1}, []int{2}, "same\n"},
+		{"cut second", Op{Kind: CUT_RANGE, Line: 2, End: 2}, []int{1}, "same\r\n"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			snapshot := stageSnapshot(t, source)
+			staged, err := StageSource(snapshot, []Op{test.op})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := string(staged.Bytes); got != "same\n" || !reflect.DeepEqual(staged.Origins, test.origins) {
+				t.Fatalf("staged = %q, %#v; want %q with origins %#v", got, staged.Origins, "same\n", test.origins)
+			}
+			restored, err := RestoreStaged(snapshot, staged)
+			if err != nil || string(restored) != test.restored {
+				t.Fatalf("RestoreStaged = %q, %v; want %q", restored, err, test.restored)
+			}
+			var ambiguous *AmbiguousEndingError
+			if _, err := Restore(snapshot, staged.Bytes); !errors.As(err, &ambiguous) {
+				t.Fatalf("Restore on the same staged bytes = %v; want an ambiguity", err)
+			}
+		})
+	}
+}
+
+func TestRestoreStagedPreservesSourceContracts(t *testing.T) {
+	for _, test := range []struct {
+		name, source, want string
+		ops                []Op
+	}{
+		{"unchanged", "a\r\nb", "a\r\nb", nil},
+		{"BOM and dominant inserted line", "\ufeffa\r\nb", "\ufeffa\r\nx\r\nb", []Op{{Kind: PUT_INSERT_AFTER, Line: 1, Payload: []string{"x"}}}},
+		{"changed line uses dominant", "one\r\ntwo\r\nthree\n", "one\r\nTWO\r\nthree\n", []Op{{Kind: PUT_RANGE, Line: 2, End: 2, Payload: []string{"TWO"}}}},
+		{"changed line on ending tie uses LF", "same\r\nsame\n", "SAME\nsame\n", []Op{{Kind: PUT_RANGE, Line: 1, End: 1, Payload: []string{"SAME"}}}},
+		{"cut first keeps unterminated final", "a\r\nb", "b", []Op{{Kind: CUT_RANGE, Line: 1, End: 1}}},
+		{"cut final keeps terminator", "a\r\nb\n", "a\r\n", []Op{{Kind: CUT_RANGE, Line: 2, End: 2}}},
+		{"replace final terminates", "a\nb", "a\nx\n", []Op{{Kind: PUT_RANGE, Line: 2, End: 2, Payload: []string{"x"}}}},
+		{"empty source gap insertion", "", "x\n", []Op{{Kind: PUT_INSERT_AFTER, Payload: []string{"x"}}}},
+		{"EOF gap terminates unterminated final", "a\r\nb", "a\r\nb\r\nx\r\n", []Op{{Kind: PUT_INSERT_AFTER, Payload: []string{"x"}}}},
+		{"delete all", "a\r\nb\r\n", "", []Op{{Kind: PUT_RANGE, Line: 1, End: 2}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			snapshot := stageSnapshot(t, test.source)
+			staged, err := StageSource(snapshot, test.ops)
+			if err != nil {
+				t.Fatal(err)
+			}
+			restored, err := RestoreStaged(snapshot, staged)
+			if err != nil || string(restored) != test.want {
+				t.Fatalf("RestoreStaged = %q, %v; want %q", restored, err, test.want)
+			}
+		})
+	}
+}
+
+func TestRestoreStagedFallbacksAndRejectsInvalidProvenance(t *testing.T) {
+	snapshot := stageSnapshot(t, "aa\r\nbb\n")
+	fallback, err := RestoreStaged(snapshot, StagedSource{Bytes: []byte("bb\n")})
+	want, wantErr := Restore(snapshot, []byte("bb\n"))
+	if err != nil || wantErr != nil || string(fallback) != string(want) {
+		t.Fatalf("RestoreStaged without origins = %q, %v; want Restore's %q", fallback, err, want)
+	}
+	if _, err := RestoreStaged(Normalized{}, StagedSource{Bytes: []byte("a\n")}); err == nil {
+		t.Fatal("RestoreStaged accepted a snapshot that Normalize did not return")
+	}
+	if _, err := RestoreStaged(snapshot, StagedSource{Bytes: []byte("a\n"), Origins: []int{9}}); err == nil {
+		t.Fatal("RestoreStaged accepted an origin outside the source")
+	}
+	if _, err := RestoreStaged(snapshot, StagedSource{Bytes: []byte("a\nb\n"), Origins: []int{1}}); err == nil {
+		t.Fatal("RestoreStaged accepted origins that do not match the staged lines")
+	}
+}

@@ -643,3 +643,32 @@ func TestPlanBatchDoesNotAliasInputs(t *testing.T) {
 		t.Fatal("PlanBatch result aliased or mutated its inputs")
 	}
 }
+
+func TestPlanBatchKeepsEndingOfSurvivingDuplicateLine(t *testing.T) {
+	const epoch = "epoch-1"
+	source := batchSnapshot(t, "file:///src/a.go", epoch, "same\r\nsame\n")
+	for _, test := range []struct {
+		name, op, want string
+		touched        LineSpan
+	}{
+		{"cut first keeps LF", "CUT 1.=1", "same\n", LineSpan{1, 1}},
+		{"cut second keeps CRLF", "CUT 2.=2", "same\r\n", LineSpan{2, 2}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			plan, err := PlanBatch(BatchInput{
+				Document: batchDocument(t, batchSectionText(source, "src/a.go", test.op)),
+				Sources:  map[string]Snapshot{"src/a.go": source},
+				Epoch:    epoch,
+			})
+			if err != nil {
+				t.Fatalf("PlanBatch: %v", err)
+			}
+			if len(plan.Effects) != 1 || string(plan.Effects[0].Bytes) != test.want {
+				t.Fatalf("effects = %#v; want one source %q", plan.Effects, test.want)
+			}
+			if !reflect.DeepEqual(plan.Effects[0].Touched, []LineSpan{test.touched}) {
+				t.Fatalf("touched = %#v, want %#v", plan.Effects[0].Touched, []LineSpan{test.touched})
+			}
+		})
+	}
+}
