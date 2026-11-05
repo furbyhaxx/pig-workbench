@@ -5,11 +5,11 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-03T13:04:17+01:00"
+  updated_at: "2026-11-05T17:10:00+01:00"
   created_by: "orchestrator"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Approved DRAFT-0002 rev 3 with decisions N0–N6 and Q1–Q3"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
       changes: ["Session dedup by real path is a fork change"]
+    - revision: 7
+      reason: "Probes T1–T3 and the resumed-cwd question are answered (ANA-2026-11-05-slice-1-probes)"
+      changes: ["Titles: immediate visibility, empty name clears, persistence as session_info, branch-scoped precedence", "Resumed cwd through symlinked buckets follows the recorded session cwd"]
 ---
 
 # 1. Scope
@@ -121,7 +124,7 @@ Conflicts (two projects claim one directory, e.g. a fork sharing root commits) a
 Every location's PiG bucket `sessions/--<encoded path>--` becomes a symlink to `projects/<id>/sessions/`. Verified in the [probe](../analyses/2026-11-03-session-bucket-symlink-probe/README.md): PiG writes, lists and continues through the symlink, so `/resume` in any checkout shows all sessions of the project.
 
 - **Adoption.** PiG creates the bucket as a real directory before extensions start. Workbench converts it at session start: move existing files into the project directory (rename on the same filesystem), replace the directory with the symlink. If another live session uses the same bucket (SPEC-0011 registry) or the filesystems differ, conversion waits for the next start and the reason is shown.
-- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; the PiG fork deduplicates by real path, PLAN-0001 D13). `--continue` may pick a session recorded in another checkout of the same project (by design of B; the cwd used afterwards still needs a probe).
+- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; the PiG fork deduplicates by real path, PLAN-0001 D13). `--continue` may pick a session recorded in another checkout of the same project (by design of B). Probed 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)): the resumed session uses its **recorded** cwd, not the process cwd of the checkout that ran `--continue`, and reports its file through the current checkout's bucket symlink.
 - **Move and link.** A session has one home project and optional links. Moving rewrites nothing in the transcript; the file moves between project directories and links update.
 - **Undo.** `/workbench projects unlink-storage` replaces symlinks with real directories again.
 - **Windows.** Directory junctions instead of symlinks; untested.
@@ -346,5 +349,5 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - URIs: every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds; links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
 - Guides: injected once per session and revision on first touch, re-injected after compaction, untrusted provider guides stay data.
 - `docs://harness/` follows the running build; source fetch only on first access, offline shows cache; extension docs confined to their roots.
-- Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes: **T1** `SetSessionName` updates `GetSessionName` and the TUI header without reload, and whether an empty name clears the title; **T2** `AppendSessionInfo` on a stored file is what `SessionManagerList` and `/resume` show; **T3** which `session_info` wins when it is not on the active branch.
+- Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes answered 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)): **T1** `SetSessionName` is visible to `GetSessionName` and the replicated `SessionName()` without reload, and an empty name clears the title; **T2** the title is persisted as a `session_info` entry in the session file and survives `--continue`; **T3** `session_info` is branch-scoped — forking before a rename leaves the session unnamed, so `by-name/` resolves the active branch's latest entry and never an entry from an inactive branch.
 - Evidence for storage and worktree behaviour: [ANA-2026-11-03](../analyses/2026-11-03-session-bucket-symlink-probe/README.md).

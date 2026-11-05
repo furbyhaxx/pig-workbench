@@ -5,9 +5,9 @@ document:
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-03T11:50:07+01:00"
+  updated_at: "2026-11-05T17:10:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -210,8 +210,8 @@ Fixed, because they are not friction but correctness: enabling stays a user acti
 # 10. Verification and host probes
 
 Required before claiming the feature works:
-- **Wake from a background goroutine.** `SendMessage` with `DeliverAs:"followUp"` and `TriggerTurn:true` from a listener goroutine, using a Context retained from `session_start`, starts a turn in an idle TUI, RPC and print session. Busy sessions receive a steer.
-- **State tracking.** Idle/busy transitions from `agent_start`/`agent_end` match the TUI, including aborted turns and compaction.
+- **Wake from a background goroutine.** Verified 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)) in RPC: `SendMessage` with `DeliverAs:"followUp"` and `TriggerTurn:true` from a goroutine using a Context retained from `session_start` starts a turn in an idle session and the wake text reaches the model. A wake scheduled during a running turn arrives at the next boundary of that same turn (steer). TUI and print modes share the same host path but were not captured separately.
+- **State tracking.** Verified 05.11.2026: `ctx.IsIdle` is false while a turn streams and true after an aborted turn settles, so endpoint records can be written from `agent_start`/`agent_end` without a second source of truth. Compaction transitions were not probed separately.
 - **Reload.** The listener is released and rebound without losing the endpoint ID. No second listener survives (P13, P14).
 
 Acceptance:

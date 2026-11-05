@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 12
+  revision: 13
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-05T16:01:57+01:00"
+  updated_at: "2026-11-05T17:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -47,6 +47,9 @@ document:
     - revision: 12
       reason: "Resolved the reproduced reload hang inside Workbench instead of deferring it upstream"
       changes: ["Status updates use the active service-request context", "Restored live acceptance for two successive reloads and six unique registrations", "Recorded green repeated reload and full quality gates"]
+    - revision: 13
+      reason: "Phase A ledger reconciled with probe results and owners"
+      changes: ["Rewrote A0 with status, evidence and owner for every row", "Closed the messaging, title and resumed-cwd probe rows and left one native-resolver coverage gap", "Recorded the Slice 1 inventory and probe analyses"]
 ---
 
 # 1. Outcome
@@ -113,25 +116,27 @@ Summary by area; PLAN-0001 §9 is authoritative.
 
 Before freezing, reconcile every open decision, outstanding probe, dependency approval and known spec contradiction into one table in this section, each with the phase it blocks. Seed (to be completed by checking every spec's open items):
 
-| Item | Kind | Blocks |
+| Item | Kind | Status and owner |
 |---|---|---|
-| Dependency policy and TOML/locking selection | resolved by user standing approval, checks performed 03.11.2026 | `go list -m -json <module>@latest`: `creachadair/tomledit` v0.0.29 and `BurntSushi/toml` v1.6.0 (MIT), `gofrs/flock` v0.13.1 (BSD-3-Clause) and its `golang.org/x/sys` dependency updated to latest v0.49.0 (BSD-3-Clause). Upstream GitHub repository metadata and current READMEs show maintained/non-archived projects with no deprecation/replacement notice; flock is the successor to theckman/go-flock. Latest/maintenance checks are required for future additions, not repeated approval questions. Licenses: `THIRD_PARTY_NOTICES.md`. |
-| pig-web M1: extension-owned inference | decision resolved by user | C/I: opt-in `secrets.redact` for trusted owners; unprotected child sessions explicit; SPEC-0013 §4.5 |
-| pig-web M2: contributed model fields | decision resolved by user | C/F/J: owner-scoped `contextFields` on `frameProducer`, `context.fields.set`; SPEC-0014 §5.1 |
-| pig-web M3: descriptor summary | review text prepared | D/J: required one-line summary, ≤120 Unicode characters; SPEC-0004 §2 |
-| pig-web M4: native-provider credential expansion | probe pending, prior claim qualified | I acceptance: implementation owner probes native custom resolver and EnvAPIKeyAuth separately; SPEC-0013 §2/§9 |
-| pig-web M5: trailing annotations | review text prepared; both-order integration tests pending | F/G/I acceptance: intact snapshot block stays valid; annotation producer redacts appended text before returning; SPEC-0005 §10 and SPEC-0013 §4.2 |
-| pig-web M6: activity items and URI open | existing contract confirmed | M: SPEC-0009 §9 includes placement, glyph, command or URI open, count and severity; click remains PLAN-0004 C4 |
-| Messaging probes: wake from a goroutine, idle/busy state, reload rebind (SPEC-0011 §10) | probe | L1 acceptance |
-| Session title probes T1–T3 (SPEC-0012 §6) | probe | L1 titles |
-| Resumed-session cwd under `--continue` with symlinked buckets (SPEC-0012 §3.5) | probe | E2 |
-| G5.10 abort while arguments stream | probe | PLAN-0003 W1 |
-| Widget view events for activity-line click | probe + fork | PLAN-0004 C4 |
-| Archive additions, backend evaluation §10 item 6 | dependency approval | PLAN-0003 W2 archives |
-| D9.c answer history (provisional) | decision | PLAN-0003 W6 |
-| SPEC-0012 §4.1 `tasks` line in the bundled skill | decision | PLAN-0003 W7 |
-| SPEC-0005 §3 vs D5.b | contradiction | fixed in SPEC-0005 rev 9 |
-| PLAN-0001 WB-25 still naming `builtin/pig` | contradiction | fixed in PLAN-0001 rev 23 |
+| Dependency policy and TOML/locking selection | resolved by user standing approval, checks performed 03.11.2026 | **Done.** `go list -m -json <module>@latest`: `creachadair/tomledit` v0.0.29 and `BurntSushi/toml` v1.6.0 (MIT), `gofrs/flock` v0.13.1 (BSD-3-Clause) and its `golang.org/x/sys` dependency at v0.49.0 (BSD-3-Clause). Upstream metadata and current READMEs show maintained, non-archived projects with no deprecation notice; flock succeeds theckman/go-flock. Licenses: `THIRD_PARTY_NOTICES.md`. Latest/maintenance checks are required for future additions, not repeated approval questions. |
+| pig-web M1: extension-owned inference | decision resolved by user | **Done.** C/I: opt-in `secrets.redact` for trusted owners; unprotected child sessions explicit; SPEC-0013 §4.5 |
+| pig-web M2: contributed model fields | decision resolved by user | **Done.** C/F/J: owner-scoped `contextFields` on `frameProducer`, `context.fields.set`; SPEC-0014 §5.1 |
+| pig-web M3: descriptor summary | review text prepared | **Needs user review at the freeze.** D/J: required one-line summary, ≤120 Unicode characters; SPEC-0004 §2 |
+| pig-web M4: native-provider credential expansion | probed 05.11.2026 | **Probe done, one gap.** `models.json` literal, `$ENV` and leading `!command` all resolve to the wire value (`TestProbeNativeCredentialExpansion`). `RegisterNativeProvider` with a custom resolver is host-internal and unreachable from an extension: recorded as a detection coverage gap in SPEC-0013 §2, not as covered. Owner: Phase I (11.1). |
+| pig-web M5: trailing annotations | probed 05.11.2026 | **Probe done, no contract change.** An intact block grants seen with the annotation block before or after it; an altered block grants nothing (`TestAnnotationOrderCannotChangeSeenVisibility`). The annotation producer still redacts appended text before returning (Phase I). SPEC-0005 §10, SPEC-0013 §4.2. |
+| pig-web M6: activity items and URI open | existing contract confirmed | **Done.** M: SPEC-0009 §9 includes placement, glyph, command or URI open, count and severity; click remains PLAN-0004 C4 |
+| Messaging probes: wake from a goroutine, idle/busy state, reload rebind (SPEC-0011 §10) | probed 05.11.2026 | **Wake and state done; reload rebind done incidentally.** Idle `followUp`+`TriggerTurn` from a retained context starts a turn; a busy session receives it at the next boundary; `ctx.IsIdle` tracks a streaming and an aborted turn (`TestProbeIdleWakeStartsTurn`, `TestProbeBusyWakeSteers`, `TestProbeIdleStateTransitions`). Reload rebind is evidenced by the reference-producer reload acceptance (fresh clients, fresh subscriptions). Owner: L1. |
+| Session title probes T1–T3 (SPEC-0012 §6) | probed 05.11.2026 | **Done.** SetSessionName is visible immediately and an empty name clears; the title persists as a `session_info` entry and survives `--continue`; `session_info` is branch-scoped, so a fork before a rename leaves no title. Owner: L1 (write-back into SPEC-0012 §6 at the freeze). |
+| Resumed-session cwd under `--continue` with symlinked buckets (SPEC-0012 §3.5) | probed 05.11.2026 | **Done.** `ctx.Cwd()` after `--continue` in another checkout is the session's recorded cwd, not the process cwd (`TestProbeResumedCwdAcrossSymlinkedBuckets`). Owner: E2. |
+| G5.10 abort while arguments stream | probe | **Open**, owner PLAN-0003 W1 (not Slice 1). |
+| Widget view events for activity-line click | probe + fork | **Open**, owner PLAN-0004 C4. |
+| Archive additions, backend evaluation §10 item 6 | dependency approval | **Open**, owner PLAN-0003 W2. |
+| D9.c answer history (provisional) | decision | **Open**, owner PLAN-0003 W6. |
+| SPEC-0012 §4.1 `tasks` line in the bundled skill | decision | **Open**, owner PLAN-0003 W7. |
+| SPEC-0005 §3 vs D5.b | contradiction | **Fixed** in SPEC-0005 rev 9. |
+| PLAN-0001 WB-25 still naming `builtin/pig` | contradiction | **Fixed** in PLAN-0001 rev 23. |
+| Slice 1 inventory of every ownership row | analysis | **Done.** ANA-2026-11-05-slice-1-inventory classifies each PLAN-0001 §9 Slice 1 row; no row is counted done without observed evidence. |
+| Phase A probe evidence | analysis | **Done.** ANA-2026-11-05-slice-1-probes with runnable cases in `internal/host/live_probes_test.go`. |
 
 ## A1. Freeze
 
