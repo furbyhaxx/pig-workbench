@@ -105,10 +105,10 @@ func TestLiveBackgroundJobStdinAndCompletion(t *testing.T) {
 // TestLiveReloadTerminatesRunningJobs proves a reload does not leave an
 // unsupervised background process behind (SPEC-0008 §8 reload cleanup).
 //
-// Known defect, tracked by slice-1-completion 10.1.2: /reload never delivers
-// session_shutdown to the outgoing runtime (ANA-2026-11-05-slice-1-probes), so
-// the job manager is never closed and the process outlives the reload until its
-// own timeout. Remove the skip when the next-start reconciliation lands.
+// Known defect, tracked by slice-1-completion 10.1.2: a background job outlives
+// /reload until its own timeout, so shutdown-time cleanup does not take effect
+// across a reload (ANA-2026-11-05-slice-1-probes). Remove the skip when the
+// next-start reconciliation lands.
 func TestLiveReloadTerminatesRunningJobs(t *testing.T) {
 	t.Skip("known defect 10.1.2: /reload skips session_shutdown, background jobs outlive it")
 

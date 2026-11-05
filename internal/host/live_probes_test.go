@@ -397,10 +397,11 @@ func waitForState(t *testing.T, f *rpcFixture, wantIdle bool) {
 	}
 }
 
-// TestProbeReloadSkipsSessionShutdown pins the host behaviour Slice 1 must
-// design around: /reload constructs a fresh runtime but does not deliver
-// session_shutdown to the outgoing one, so shutdown-time cleanup never runs.
-// Workbench therefore reconciles leftover state on the next session_start.
+// TestProbeReloadSkipsSessionShutdown observes that /reload constructs a fresh
+// runtime without a session_shutdown notification the outgoing runtime can act
+// on. Either the event is not delivered or its handler cannot complete while the
+// runtime is torn down; both mean shutdown-time cleanup is unreliable, so
+// Workbench reconciles leftover state on the next session_start.
 func TestProbeReloadSkipsSessionShutdown(t *testing.T) {
 	f, _ := startProbeSession(t, func(index int, _ map[string]any) (map[string]any, any) {
 		return map[string]any{"role": "assistant", "content": "ok"}, "stop"

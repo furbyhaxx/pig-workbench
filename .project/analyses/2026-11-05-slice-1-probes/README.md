@@ -42,7 +42,7 @@ agent dir and XDG roots, and a localhost scripted inference provider. No billed 
 | Resumed cwd through symlinked buckets | **Session cwd wins.** With both buckets symlinked to one project directory, `--continue` in `clone` resumes the session recorded in `repo`, and `ctx.Cwd()` is `repo` — not the process cwd. `sessionFile` is reported through the current checkout's bucket path. | `TestProbeResumedCwdAcrossSymlinkedBuckets` |
 | `models.json` credential forms | **All expand.** A literal, `$ENV` and a leading `!command` each reach the wire as `Authorization: Bearer <resolved value>`; for `!command` the command's output is used. | `TestProbeNativeCredentialExpansion` |
 | Trailing annotation order | **Order-independent.** An intact block grants seen whether the annotation block is appended before or after it; a block altered in place grants nothing. | `internal/host/snapshots_test.go` `TestAnnotationOrderCannotChangeSeenVisibility` |
-| `/reload` and `session_shutdown` | **No shutdown event.** `/reload` builds a fresh runtime but never delivers `session_shutdown` to the outgoing one, so shutdown-time cleanup does not run on reload. An in-process `sleep 300` background job started before the reload was still running 10s after it. | `TestProbeReloadSkipsSessionShutdown`, live reload job probe |
+| `/reload` and `session_shutdown` | **Cleanup does not take effect.** `/reload` builds a fresh runtime, and a shutdown handler's cleanup does not run across it: an in-process `sleep 300` background job started before the reload was still running 10s after it, and no shutdown notification reached the outgoing runtime's transport. Whether the event is withheld or its handler cannot complete is not yet distinguished; both cases require the same remedy. | `TestProbeReloadSkipsSessionShutdown`, live reload job probe |
 | `RegisterNativeProvider` custom resolver | **Not probed — coverage gap.** The API is host-internal; no extension surface reaches it, so Workbench cannot observe whether a custom resolver returns a literal `!command`. Recorded as a gap, not as detection coverage. | — |
 
 # Consequences for the contracts
@@ -62,9 +62,9 @@ agent dir and XDG roots, and a localhost scripted inference provider. No billed 
    and must not execute the command itself. The native-resolver path stays an explicit gap (SPEC-0013 §2).
 6. **The trailing-annotation contract needs no ordering assumption.** A verbatim-block presence check is enough
    for both handler orders.
-7. **Reload cleanup cannot use `session_shutdown`.** Because the outgoing runtime never sees the event, job
-   termination, scratch removal and similar work must either be reconciled on the next `session_start` or be
-   tied to a host teardown hook that does not exist yet. The concrete defect: a background job survives
+7. **Reload cleanup cannot rely on `session_shutdown`.** Shutdown-time work does not take effect across
+   `/reload`, and no host teardown hook exists, so job termination, scratch removal and similar work must be
+   reconciled on the next `session_start` or made idempotent. The concrete defect: a background job survives
    `/reload` until its own timeout. Tracked as Phase H work with a persisted job-process registry
    (generation-tagged pid/pgid records, remnant killed on the next start), which also covers `kill -9`
    crash ownership.
