@@ -74,3 +74,9 @@ stop, err := client.Serve(ext, func(ctx sdk.Context, req api.ProviderRequest) (a
 - `status.update` is coalesced to 4 updates per second; the receipt says `composedByWorkbench: true`, so stop your own `SetStatus`.
 
 `location.get` and `describe` are safe to reconcile from any later request. Reconcile mutating calls through their status methods before retrying.
+
+## Reference producer
+
+`internal/host/testdata/reference-producer/` is a runnable consumer example for presentation, read-only resources, fetch, status, docs and frames. The live integration suite co-loads it with Workbench using a scripted inference provider; it performs no billed inference.
+
+The fixture's `/reference status` reports its registration receipts and generation. `/reference reload` calls the host's `ctx.Reload()` for diagnostics; this path exceeded the live harness's 45-second deadline, so clean reload re-registration is not yet verified. This fixture command is not a shipped Workbench command. Never hold application state locks across synchronous bus calls or unsubscribe calls.

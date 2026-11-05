@@ -15,6 +15,29 @@ import (
 	"testing"
 )
 
+func TestLiveReferenceProducerReentrantBus(t *testing.T) {
+	repo := repoRoot(t)
+	f := startRPC(t, t.TempDir(), "-e", filepath.Join(repo, "internal/host/testdata/reference-producer"))
+	status := func(id string) map[string]any {
+		f.send(id, "prompt", "/reference status")
+		record := f.wait(func(record map[string]any) bool {
+			return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"reference":"registered"`)
+		})
+		var result map[string]any
+		if err := json.Unmarshal([]byte(record["message"].(string)), &result); err != nil {
+			t.Fatal(err)
+		}
+		if result["lockHeld"] != false {
+			t.Fatal("producer state lock held during a synchronous service request")
+		}
+		if result["kinds"] != float64(5) {
+			t.Fatalf("unexpected registration count: %+v", result)
+		}
+		return result
+	}
+	status("registered")
+}
+
 // TestLiveReferenceProducerSeams co-loads a pig-web-shaped extension and drives every
 // contribution seam through the real agent loop with a scripted provider.
 func TestLiveReferenceProducerSeams(t *testing.T) {

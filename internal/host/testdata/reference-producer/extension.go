@@ -6,17 +6,20 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 )
 
 var (
-	mu        sync.Mutex
-	client    *api.Client
-	endpoint  api.Discovery
-	receipts  = map[string]api.Receipt{}
-	stopServe func()
+	mu              sync.Mutex
+	client          *api.Client
+	currentEndpoint api.Discovery
+	currentReceipts = map[string]api.Receipt{}
+	stopServe       func()
+	registering     bool
+	lockObserved    atomic.Bool
 )
 
 var documents = map[string]string{
@@ -107,24 +110,40 @@ func handle(_ sdk.Context, request api.ProviderRequest) (any, *api.Error) {
 
 func register(ctx sdk.Context, ext *sdk.Extension) error {
 	mu.Lock()
-	defer mu.Unlock()
-	if client == nil {
+	if registering {
+		mu.Unlock()
+		return fmt.Errorf("registration already in progress")
+	}
+	registering = true
+	active := client
+	mu.Unlock()
+	defer func() {
+		mu.Lock()
+		registering = false
+		mu.Unlock()
+	}()
+	if active == nil {
 		created, err := api.NewClient(ext)
 		if err != nil {
 			return err
 		}
-		client = created
-		stop, err := client.Serve(ext, handle)
+		stop, err := created.Serve(ext, handle)
 		if err != nil {
+			created.Close()
 			return err
 		}
+		active = created
+		mu.Lock()
+		client = active
 		stopServe = stop
+		mu.Unlock()
 	}
-	discovered, err := client.Discover(ctx, "presentation", "resources", "fetch", "status", "docs", "frames")
+	discovered, err := active.Discover(ctx, "presentation", "resources", "fetch", "status", "docs", "frames")
 	if err != nil {
 		return err
 	}
-	endpoint = discovered
+	endpoint := discovered
+	receipts := make(map[string]api.Receipt)
 	contributions := []struct {
 		kind, key  string
 		descriptor map[string]any
@@ -142,32 +161,49 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		}{"docs", "manual", map[string]any{"title": "Reference producer", "version": "1", "root": root}})
 	}
 	for _, c := range contributions {
-		receipt, err := client.Register(ctx, endpoint, c.kind, c.key, c.descriptor)
+		receipt, err := active.Register(ctx, endpoint, c.kind, c.key, c.descriptor)
 		if err != nil {
 			return fmt.Errorf("register %s/%s: %w", c.kind, c.key, err)
 		}
 		receipts[c.kind] = receipt
 	}
-	if err := client.Call(ctx, endpoint, "status.update", map[string]any{"text": "web ready", "style": "success"}, nil, &api.CallOptions{RegistrationID: receipts["statusSegment"].RegistrationID}); err != nil {
+	if err := active.Call(ctx, endpoint, "status.update", map[string]any{"text": "web ready", "style": "success"}, nil, &api.CallOptions{RegistrationID: receipts["statusSegment"].RegistrationID}); err != nil {
 		return fmt.Errorf("status.update: %w", err)
 	}
 	model, err := ctx.GetModelInfo()
 	if err == nil && model.ID != "" {
 		fields := map[string]any{"knowledge_cutoff": map[string]any{"date": "2025-06-01", "basis": "explicit", "source": "reference fixture"}}
-		if err := client.Call(ctx, endpoint, "context.fields.set", map[string]any{"source": "session.model", "model": map[string]any{"provider": model.Provider, "id": model.ID}, "fields": fields}, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
+		if err := active.Call(ctx, endpoint, "context.fields.set", map[string]any{"source": "session.model", "model": map[string]any{"provider": model.Provider, "id": model.ID}, "fields": fields}, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
 			return fmt.Errorf("context.fields.set: %w", err)
 		}
 	}
 	notice := map[string]any{"eventKey": "research-ready", "kind": "notice", "source": "reference.research", "title": "Research finished", "body": "REFERENCE-NOTICE: research run 7 finished; see kb://sources/a.md.", "resource": "kb://sources/a.md", "delivery": "nextPrompt"}
-	if err := client.Call(ctx, endpoint, "frames.publish", notice, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
+	if err := active.Call(ctx, endpoint, "frames.publish", notice, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
 		return fmt.Errorf("frames.publish: %w", err)
 	}
+	mu.Lock()
+	defer mu.Unlock()
+	if active != client {
+		return fmt.Errorf("producer closed during registration")
+	}
+	currentEndpoint = endpoint
+	currentReceipts = receipts
 	return nil
 }
 
 // Extension creates the pig-web-shaped reference producer.
 func Extension() *sdk.Extension {
 	ext := sdk.New("reference-producer")
+	ext.OnLoaded(func(sdk.Context) {
+		_, _ = ext.Events().On(api.RequestChannel, func(_ sdk.Context, _ any) error {
+			if mu.TryLock() {
+				mu.Unlock()
+			} else {
+				lockObserved.Store(true)
+			}
+			return nil
+		})
+	})
 	ext.OnSessionStart(func(ctx sdk.Context, _ map[string]any) (any, error) {
 		if err := register(ctx, ext); err != nil {
 			ctx.Notify("reference producer registration failed: "+err.Error(), "error")
@@ -176,14 +212,14 @@ func Extension() *sdk.Extension {
 	})
 	ext.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
 		mu.Lock()
-		defer mu.Unlock()
-		if stopServe != nil {
-			stopServe()
-			stopServe = nil
+		stop, active := stopServe, client
+		stopServe, client = nil, nil
+		mu.Unlock()
+		if stop != nil {
+			stop()
 		}
-		if client != nil {
-			client.Close()
-			client = nil
+		if active != nil {
+			active.Close()
 		}
 		return nil, nil
 	})
@@ -192,13 +228,17 @@ func Extension() *sdk.Extension {
 		details := map[string]any{"workbenchPresentation": map[string]any{"version": 1, "revision": 1, "phase": "settled", "outcome": "succeeded", "title": "Web search", "target": map[string]any{"kind": "label", "value": query}, "complete": true, "metrics": []any{map[string]any{"id": "results", "value": 1, "unit": "count"}}, "blocks": []any{map[string]any{"kind": "table", "table": map[string]any{"columns": []any{map[string]any{"id": "title", "label": "Title", "cell": "text"}, map[string]any{"id": "url", "label": "URL", "cell": "uri"}}, "rows": []any{[]any{map[string]any{"kind": "text", "value": "Fixture result"}, map[string]any{"kind": "uri", "value": "https://fixture.test/page"}}}}}}}}
 		return sdk.ToolResult{Content: "1 result: Fixture result https://fixture.test/page", Details: details}, nil
 	}})
-	ext.Command("reference", "Reference producer controls: status", func(ctx sdk.Context, args string) error {
+	ext.Command("reference", "Reference producer controls: status, reload", func(ctx sdk.Context, args string) error {
+		if strings.TrimSpace(args) == "reload" {
+			return ctx.Reload()
+		}
 		mu.Lock()
-		defer mu.Unlock()
 		if client == nil {
+			mu.Unlock()
 			return fmt.Errorf("not registered")
 		}
-		encoded, _ := json.Marshal(map[string]any{"reference": "registered", "kinds": len(receipts)})
+		encoded, _ := json.Marshal(map[string]any{"reference": "registered", "kinds": len(currentReceipts), "generation": currentEndpoint.Generation, "receipts": currentReceipts, "lockHeld": lockObserved.Load()})
+		mu.Unlock()
 		ctx.Notify(string(encoded), "info")
 		return nil
 	})
