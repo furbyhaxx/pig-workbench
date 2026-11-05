@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T14:25:25+01:00"
+  updated_at: "2026-11-05T17:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -29,6 +29,10 @@ document:
     - revision: 6
       reason: "User approved opt-in redaction for extension inference and owner-scoped context fields"
       changes: ["Added secrets.redact with explicit shared-bus confidentiality limits", "Added context.fields.set through frameProducer registrations", "Kept child sessions without Workbench outside automatic protection"]
+    - revision: 7
+      reason: "Authoring API frozen with runnable compile tests; migration notes added"
+      changes: ["Added §6.1 implemented surface and §6.2 revision migration notes", "Recorded the api package compile-contract tests"]
+
 ---
 
 # 1. Status, boundaries and terminology
@@ -161,6 +165,33 @@ A future public `api` package defines typed descriptor/envelope/result types, a 
 Bundled providers use typed direct interfaces with identical validation and policy. Other extensions use the bus adapter even if fused into the same process. Renderers are deterministic functions over retained presentation data; rendering never calls the bus.
 
 Public SDK wrappers must return typed errors, expose capability absence, document lifecycle, and include a working small producer example after implementation. Final Go signatures are frozen with runnable compile tests during M0/M1; this specification freezes wire semantics first.
+
+## 6.1 Implemented surface
+
+`api` (module `github.com/furbyhaxx/pig-workbench/api`) is the frozen authoring surface:
+
+| Symbol | Purpose |
+|---|---|
+| `NewClient(*sdk.Extension) (*Client, error)` | Subscribes to replies before any request can emit; the extension owns `Close`. |
+| `Client.Identity() Identity` | This client's `owner`/`instance`, the address Workbench uses for provider calls. |
+| `Client.Discover(ctx, capabilities...) (Discovery, error)` | Exactly one compatible responder, or `ErrUnavailable`/`ErrAmbiguous`/`*Error`. |
+| `Client.Call(ctx, endpoint, method, params, result, *CallOptions) error` | One synchronous, never-retried call; `*TransportError` carries the outcome. |
+| `Client.Register/Unregister` | Contribution admission and withdrawal with a `Receipt`. |
+| `Client.Serve(ext, ProviderHandler) (stop func(), error)` | Answers `resource.execute` and `fetch` requests addressed to this client. |
+| `Client.Close()` | Unsubscribes once; does not preempt an Emit already running elsewhere. |
+| Typed payloads | `Discovery`, `Limits`, `Receipt`, `ResourceRequest/Result`, `TextPage`, `ResourceEntry`, `Selector`, `LineRange`, `FetchRequest/Result`, `ProviderRequest`, `Error`. |
+
+`api/contract_test.go` compiles a full producer flow (client, serve, register, describe, unregister) against the staged SDK and pins every documented JSON name, so a rename cannot silently break a consumer.
+
+## 6.2 Migration notes by revision
+
+| Revision | Change | Consumer action |
+|---|---|---|
+| 1–2 | Contract and observed bus semantics; explicit `cancel`; fire-and-forget reload | Subscribe before discover; re-register from the new generation's `ready`. |
+| 3–4 | Versioned request/reply, generation binding, capability negotiation | Send `generation` on everything but `discover`; rediscover after `staleGeneration`. |
+| 5 | Resource providers became read-only for this version | Do not advertise `edit`/`write`/`remove`/`move`; they are refused at registration. |
+| 6 | Opt-in `secrets.redact` and owner-scoped context fields recorded as approved decisions | Nothing until the capability is advertised; requesting it fails today. |
+| 7 | Authoring API frozen; `snapshots`, `sessions` and `secrets` remain unadvertised | Request only advertised capabilities; absence fails explicitly and is not an empty success. |
 
 # 7. Acceptance and blockers
 
