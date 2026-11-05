@@ -4,10 +4,10 @@ document:
   id: "SPEC-0012"
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-05T17:10:00+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,10 @@ document:
     - revision: 7
       reason: "Probes T1–T3 and the resumed-cwd question are answered (ANA-2026-11-05-slice-1-probes)"
       changes: ["Titles: immediate visibility, empty name clears, persistence as session_info, branch-scoped precedence", "Resumed cwd through symlinked buckets follows the recorded session cwd"]
+    - revision: 8
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; project identity, storage adoption and the URI namespace frozen, with probe answers T1-T3 and the resumed-cwd result recorded"]
+
 ---
 
 # 1. Scope

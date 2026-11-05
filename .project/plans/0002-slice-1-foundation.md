@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 13
+  revision: 14
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-05T17:10:00+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -50,6 +50,9 @@ document:
     - revision: 13
       reason: "Phase A ledger reconciled with probe results and owners"
       changes: ["Rewrote A0 with status, evidence and owner for every row", "Closed the messaging, title and resumed-cwd probe rows and left one native-resolver coverage gap", "Recorded the Slice 1 inventory and probe analyses"]
+    - revision: 14
+      reason: "User approved nine specifications for Slice 1; five stay draft"
+      changes: ["Recorded the approval state and revision numbers in A1", "Named the five specifications still awaiting approval"]
 ---
 
 # 1. Outcome
@@ -148,6 +151,8 @@ Freeze everything that fixes data models, persisted records, wire formats, model
 - **Behavioral:** root+nearest, pin and cap semantics (PLAN-0001 §6), command routes, the mode and host matrix (§6).
 
 Each frozen specification gets a revision with `status: "approved"` after user review. Later changes need a new revision and a migration note.
+
+**Approval state (05.11.2026).** The user approved nine specifications for Slice 1 implementation: SPEC-0001 rev 8, SPEC-0002 rev 8, SPEC-0004 rev 7, SPEC-0005 rev 11, SPEC-0009 rev 11, SPEC-0010 rev 14, SPEC-0012 rev 8, SPEC-0013 rev 6 and SPEC-0014 rev 8, together with the required 1–120 character `resourceProvider.summary` (already enforced in `resource.ProviderDescriptor.Validate`). Five specifications remain `draft` and are **not** frozen: SPEC-0003 (presentation), SPEC-0006 (advanced read), SPEC-0007 (ambient context), SPEC-0008 (locations and jobs) and SPEC-0011 (messaging). They still gate implementation and need their own approval revision before a phase may claim their rows.
 
 ## A2. Answer pig-web's M0.4 inputs
 

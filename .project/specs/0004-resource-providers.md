@@ -4,10 +4,10 @@ document:
   id: "SPEC-0004"
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
-  status: "draft"
-  revision: 6
+  status: "approved"
+  revision: 7
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T14:28:45+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -29,6 +29,10 @@ document:
     - revision: 6
       reason: "Reconcile pig-web M3 for the contract-freeze review"
       changes: ["Defined required one-line resourceProvider summary for prompt and context catalogs"]
+    - revision: 7
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; router, selector, policy and fetch-backend contracts frozen, including the required 1-120 character resourceProvider summary"]
+
 ---
 
 # 1. Purpose and architectural boundary

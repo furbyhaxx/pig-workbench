@@ -4,10 +4,10 @@ document:
   id: "SPEC-0005"
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
-  status: "draft"
-  revision: 10
+  status: "approved"
+  revision: 11
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T14:28:45+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -41,6 +41,10 @@ document:
     - revision: 10
       reason: "Reconcile pig-web M5 for the contract-freeze review"
       changes: ["Clarified trailing annotations do not invalidate an intact snapshot block", "Required final-content verification with both annotation handler orders"]
+    - revision: 11
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; grammar, snapshots, commit and edit-tracking contracts frozen"]
+
 ---
 
 # 1. Authority and scope

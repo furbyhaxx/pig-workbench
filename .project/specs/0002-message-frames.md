@@ -4,10 +4,10 @@ document:
   id: "SPEC-0002"
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T14:25:25+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,10 @@ document:
     - revision: 7
       reason: "User approved owner-scoped fields on Workbench context frames"
       changes: ["Linked typed contextFields registration and update contract", "Kept internal source ownership distinct from external data contributions"]
+    - revision: 8
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; ledger, delivery and trust semantics frozen"]
+
 ---
 
 # 1. Purpose and dependency

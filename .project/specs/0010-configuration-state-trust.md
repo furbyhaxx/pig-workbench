@@ -4,10 +4,10 @@ document:
   id: "SPEC-0010"
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
-  status: "draft"
-  revision: 13
+  status: "approved"
+  revision: 14
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T14:25:25+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -50,6 +50,10 @@ document:
     - revision: 13
       reason: "User approved opt-in redaction for trusted extension inference"
       changes: ["Added user/runtime-only secrets.redact-owners grants; project settings cannot enable access"]
+    - revision: 14
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; Workbench.toml and Secrets.toml layering, trust and storage frozen"]
+
 ---
 
 # 1. Scope and precedence

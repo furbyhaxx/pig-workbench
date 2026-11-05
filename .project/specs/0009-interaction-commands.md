@@ -4,12 +4,12 @@ document:
   id: "SPEC-0009"
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
-  status: "draft"
-  revision: 10
+  status: "approved"
+  revision: 11
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T12:29:54+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -41,6 +41,10 @@ document:
     - revision: 10
       reason: "System prompt commands (SPEC-0014)"
       changes: ["/workbench prompt and /workbench skills"]
+    - revision: 11
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; ask_user state machine, modes and command routes frozen"]
+
 ---
 
 # 1. Scope and sources

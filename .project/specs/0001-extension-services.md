@@ -4,10 +4,10 @@ document:
   id: "SPEC-0001"
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-05T17:20:00+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "Authoring API frozen with runnable compile tests; migration notes added"
       changes: ["Added §6.1 implemented surface and §6.2 revision migration notes", "Recorded the api package compile-contract tests"]
+    - revision: 8
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; the authoring surface is frozen by api/contract_test.go"]
 
 ---
 

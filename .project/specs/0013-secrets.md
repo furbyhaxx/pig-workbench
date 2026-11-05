@@ -4,10 +4,10 @@ document:
   id: "SPEC-0013"
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
-  status: "draft"
-  revision: 5
+  status: "approved"
+  revision: 6
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-03T14:25:25+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
@@ -26,6 +26,10 @@ document:
     - revision: 5
       reason: "User approved explicit opt-in redaction for extension-owned inference"
       changes: ["Specified secrets.redact, failure behavior and shared-bus limits", "Clarified research child sessions without Workbench are not automatically protected", "Added user-only redaction-owner grants and acceptance cases", "Qualified auth command expansion by registration kind and trailing-annotation redaction responsibilities"]
+    - revision: 6
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; detection, vault, boundary and env-injection contracts frozen; the native custom-resolver path is a recorded coverage gap"]
+
 ---
 
 # 1. Purpose

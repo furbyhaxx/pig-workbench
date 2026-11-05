@@ -4,10 +4,10 @@ document:
   id: "SPEC-0014"
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-03T14:25:25+01:00"
+  updated_at: "2026-11-05T18:05:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,10 @@ document:
     - revision: 7
       reason: "User approved owner-scoped contributions to session.model"
       changes: ["Defined frameProducer contextFields and context.fields.set", "Specified knowledge_cutoff validation, model binding, collision and refresh behavior", "Preserved core ownership and data authority"]
+    - revision: 8
+      reason: "User approved the contract freeze on 05.11.2026"
+      changes: ["approved for Slice 1 implementation; engine, delivery, context frames, conditionals and skills frozen"]
+
 ---
 
 # 1. Purpose and scope
