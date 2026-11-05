@@ -10,6 +10,7 @@ import (
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
+	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
 const buildPresentationDescriptor = `{"toolNames":["build_run"],"label":"Build","presentationVersion":1,"preset":"process","defaultDisplay":{"density":"normal","previewLines":4},"metricDefinitions":[{"id":"durationMs","label":"duration","unit":"ms"}]}`
@@ -143,5 +144,21 @@ func TestDescribeContributionsIsFilteredAndPaged(t *testing.T) {
 	described := result.(map[string]any)
 	if len(described["registrations"].([]map[string]any)) != 1 || described["nextCursor"] != "" {
 		t.Fatalf("describe = %#v", described)
+	}
+}
+
+// TestPresentationHeaderShortensTargetsToWidth proves a long recorded target is
+// rendered through the path-display rules at every required width.
+func TestPresentationHeaderShortensTargetsToWidth(t *testing.T) {
+	snapshot := presentation.Snapshot{Title: "Read", Phase: presentation.PhaseSettled, Target: &presentation.Target{Kind: "path", Value: "/srv/projects/pi-workbench/internal/host/presentation_render.go"}}
+	descriptor := presentation.Descriptor{Label: "Read"}
+	for _, width := range []int{36, 57, 80, 140} {
+		header := presentationHeader(descriptor, snapshot, false, width)
+		if got := tui.VisibleWidth(header); got > width/2+24 {
+			t.Errorf("width %d: header %q is %d cells", width, header, got)
+		}
+		if !strings.Contains(header, "presentation_render.go") && width >= 57 {
+			t.Errorf("width %d: header dropped the basename: %q", width, header)
+		}
 	}
 }

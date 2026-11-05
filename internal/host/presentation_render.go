@@ -8,13 +8,14 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/pathdisplay"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
 func renderPresentationCall(descriptor presentation.Descriptor, args map[string]any, width int) []string {
 	parts := []string{descriptor.Label}
 	if target, ok := firstArgumentField(args, descriptor.CallFields); ok {
-		parts = append(parts, target)
+		parts = append(parts, pathdisplay.Display(pathdisplay.Target{Value: target}, width/2))
 	}
 	return fitPresentationLines([]string{strings.Join(parts, " · ")}, width, 1)
 }
@@ -29,7 +30,7 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 		lines = append(lines, contentPreview(result.Content, 6)...)
 		return fitPresentationLines(lines, width, 40)
 	}
-	lines := []string{presentationHeader(descriptor, snapshot, render.IsError)}
+	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width)}
 	if snapshot.Summary != "" {
 		lines = append(lines, snapshot.Summary)
 	}
@@ -69,14 +70,14 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 	return fitPresentationLines(lines, width, preview+8)
 }
 
-func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool) string {
+func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int) string {
 	title := snapshot.Title
 	if title == "" {
 		title = descriptor.Label
 	}
 	parts := []string{title}
 	if snapshot.Target != nil && snapshot.Target.Value != "" {
-		parts = append(parts, snapshot.Target.Value)
+		parts = append(parts, pathdisplay.Display(pathdisplay.Target{Value: snapshot.Target.Value}, width/2))
 	}
 	status := string(snapshot.Phase)
 	if snapshot.Outcome != nil {
