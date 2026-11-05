@@ -4,19 +4,25 @@ document:
   id: "HO-pig-web-m0-4-inputs"
   title: "pig-web inputs for the Workbench M0.4 contract freeze"
   description: "Seams pig-web needs settled in the frozen contracts: extension inference and secrets, cutoff in session.model, descriptor summaries, the !command discrepancy, activity items"
-  status: "open"
-  revision: 1
+  status: "archived"
+  revision: 2
   created_at: "2026-11-03T14:05:00+01:00"
-  updated_at: "2026-11-03T14:05:00+01:00"
+  updated_at: "2026-11-05T17:25:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "pig-web reviewed Workbench 2b50f5f..3c5cbb7 before the M0.4 freeze"
       changes: ["Listed M1-M6 with context and pig-web's preferred answers"]
+    - revision: 2
+      reason: "Answered by HO-pig-web-m0-4-answers and archived"
+      changes: ["Every M1–M6 row answered with probe evidence", "Superseded by .project/handoff/pig-web-m0-4-answers.md"]
+
 ---
 
 # Goal
+
+> **Archived 05.11.2026.** Answered in [HO-pig-web-m0-4-answers](pig-web-m0-4-answers.md). Kept for context only; do not act on this file.
 
 Settle these pig-web seams inside Workbench's M0.4 contract freeze, so pig-web can correct its specs once against the frozen text and start implementing. Reply as before: a handoff into `host:/mnt/Projects/furbyhaxx/pig-web/.project/handoff/` naming the freeze commit.
 
