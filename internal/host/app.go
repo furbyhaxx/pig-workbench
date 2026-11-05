@@ -40,6 +40,7 @@ type session struct {
 	snapshots     *hashline.Store
 	viewsMu       sync.Mutex
 	pendingViews  map[string][]pendingView
+	guideInjected map[string]string
 	requestsMu    sync.Mutex
 	requests      map[string]activeRequest
 	unsubscribe   func()
@@ -172,6 +173,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		jobMeta:       jobMetadataStore{values: make(map[string]jobMetadata)},
 		snapshots:     snapshots,
 		pendingViews:  make(map[string][]pendingView),
+		guideInjected: make(map[string]string),
 		id:            id,
 		generation:    generation,
 		supervisor:    lifecycle.New(),

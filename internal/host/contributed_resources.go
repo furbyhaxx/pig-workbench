@@ -233,6 +233,30 @@ func (s *session) contributedDescriptor(scheme string) (*contributedProvider, bo
 	return contributed, ok
 }
 
+// firstTouchGuide returns the guide for a contributed scheme once per session and
+// descriptor revision, so a later read does not repeat it (SPEC-0012 §5.5).
+func (s *session) firstTouchGuide(scheme string) (string, bool) {
+	provider, ok := s.contributedDescriptor(scheme)
+	if !ok {
+		return "", false
+	}
+	revision := provider.registrationID + ":" + provider.descriptor.Summary
+	s.viewsMu.Lock()
+	defer s.viewsMu.Unlock()
+	if s.guideInjected == nil {
+		s.guideInjected = make(map[string]string)
+	}
+	if s.guideInjected[provider.canonical] == revision {
+		return "", false
+	}
+	guide, ok := s.schemeGuide(scheme)
+	if !ok {
+		return "", false
+	}
+	s.guideInjected[provider.canonical] = revision
+	return guide, true
+}
+
 // schemeGuide renders the docs://workbench/schemes/<scheme> page for a contributed scheme.
 func (s *session) schemeGuide(scheme string) (string, bool) {
 	provider, ok := s.contributedDescriptor(scheme)

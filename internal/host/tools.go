@@ -190,6 +190,9 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 		} else {
 			text = page.Content
 			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
+			if guide, ok := s.firstTouchGuide(target.Scheme); ok {
+				text += "\n\n" + guide
+			}
 			facts = append(facts, page.Facts)
 			complete = complete && page.Facts.SelectionComplete
 		}

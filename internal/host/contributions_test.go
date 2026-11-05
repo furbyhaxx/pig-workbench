@@ -11,6 +11,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 const buildPresentationDescriptor = `{"toolNames":["build_run"],"label":"Build","presentationVersion":1,"preset":"process","defaultDisplay":{"density":"normal","previewLines":4},"metricDefinitions":[{"id":"durationMs","label":"duration","unit":"ms"}]}`
@@ -160,5 +161,36 @@ func TestPresentationHeaderShortensTargetsToWidth(t *testing.T) {
 		if !strings.Contains(header, "presentation_render.go") && width >= 57 {
 			t.Errorf("width %d: header dropped the basename: %q", width, header)
 		}
+	}
+}
+
+// TestFirstTouchGuideIsInjectedOncePerRevision proves a contributed scheme's
+// guide reaches the model on first touch only, and again after re-registration.
+func TestFirstTouchGuideIsInjectedOncePerRevision(t *testing.T) {
+	provider := &contributedProvider{
+		scheme:         "kb",
+		canonical:      "kb",
+		registrationID: "reg-1",
+		owner:          api.Identity{Owner: "kb-tools", Instance: "i-1"},
+		descriptor:     resource.ProviderDescriptor{Schemes: []string{"kb"}, Summary: "Knowledge base", Guide: "Use kb://<id>/"},
+	}
+	router := resource.NewRouter()
+	if err := router.RegisterContributed([]resource.Provider{provider}); err != nil {
+		t.Fatal(err)
+	}
+	s := &session{router: router, guideInjected: make(map[string]string)}
+	if _, ok := s.firstTouchGuide("file"); ok {
+		t.Fatal("a builtin scheme must not inject a contributed guide")
+	}
+	guide, ok := s.firstTouchGuide("kb")
+	if !ok || !strings.Contains(guide, "Use kb://<id>/") {
+		t.Fatalf("first touch did not inject the guide: %q %v", guide, ok)
+	}
+	if _, again := s.firstTouchGuide("kb"); again {
+		t.Fatal("the guide was injected twice in one session revision")
+	}
+	provider.registrationID = "reg-2"
+	if _, ok := s.firstTouchGuide("kb"); !ok {
+		t.Fatal("re-registration did not re-inject the guide")
 	}
 }
