@@ -19,13 +19,63 @@ func RenderText(ctx context.Context, canonical, requested string, data []byte, s
 	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
-	page := Page{RequestedURI: requested, CanonicalURI: canonical, CoordinateSpace: "source-lines", TotalLines: len(lines)}
 	ranges, err := selection.Resolve(len(lines), true)
 	if err != nil {
 		return Page{}, err
 	}
+	page, err := renderLines(ctx, canonical, requested, ranges, func(line int) (string, bool) {
+		if line < 1 || line > len(lines) {
+			return "", false
+		}
+		return lines[line-1], true
+	}, selection.Raw, budget)
+	if err != nil {
+		return Page{}, err
+	}
+	page.TotalLines = len(lines)
+	page.ResourceComplete = page.SelectionComplete && len(ranges) == 1 && ranges[0].Start == 1 && ranges[0].End == len(lines)
+	return page, nil
+}
+
+// RenderSpans pages provider-supplied lines that cover exactly the given spans.
+// totalLines is zero when the provider did not report a total.
+func RenderSpans(ctx context.Context, canonical, requested string, spans []Range, lines []string, totalLines int, raw bool, budget Budget) (Page, error) {
+	if budget.Bytes <= 0 || budget.Lines <= 0 {
+		return Page{}, errors.New("read budget must be positive")
+	}
+	count := 0
+	for i, span := range spans {
+		if span.Start < 1 || span.End < span.Start || i > 0 && span.Start <= spans[i-1].End {
+			return Page{}, errors.New("provider shown ranges must be ordered, disjoint and positive")
+		}
+		count += span.End - span.Start + 1
+	}
+	if count != len(lines) {
+		return Page{}, fmt.Errorf("provider returned %d lines for ranges covering %d", len(lines), count)
+	}
+	index := make(map[int]string, len(lines))
+	next := 0
+	for _, span := range spans {
+		for line := span.Start; line <= span.End; line++ {
+			index[line] = lines[next]
+			next++
+		}
+	}
+	page, err := renderLines(ctx, canonical, requested, spans, func(line int) (string, bool) {
+		content, ok := index[line]
+		return content, ok
+	}, raw, budget)
+	if err != nil {
+		return Page{}, err
+	}
+	page.TotalLines = totalLines
+	return page, nil
+}
+
+func renderLines(ctx context.Context, canonical, requested string, ranges []Range, lineAt func(int) (string, bool), raw bool, budget Budget) (Page, error) {
+	page := Page{RequestedURI: requested, CanonicalURI: canonical, CoordinateSpace: "source-lines"}
 	header := ""
-	if !selection.Raw {
+	if !raw {
 		header = "[" + displayText(canonical) + "]\n"
 	}
 	const reserve = 256
@@ -37,15 +87,18 @@ func RenderText(ctx context.Context, canonical, requested string, data []byte, s
 	var body strings.Builder
 	next := 0
 	for _, span := range ranges {
-		for line := span.Start; line <= span.End && line <= len(lines); line++ {
+		for line := span.Start; line <= span.End; line++ {
 			if err := ctx.Err(); err != nil {
 				return Page{}, err
 			}
 			prefix := ""
-			if !selection.Raw {
+			if !raw {
 				prefix = fmt.Sprintf("%d:", line)
 			}
-			content := lines[line-1]
+			content, ok := lineAt(line)
+			if !ok {
+				break
+			}
 			room := available - body.Len() - len(prefix) - 1
 			if lineBudget <= 0 || room <= 0 {
 				next = line
@@ -86,13 +139,12 @@ func RenderText(ctx context.Context, canonical, requested string, data []byte, s
 		shown += span.End - span.Start + 1
 	}
 	page.SelectionComplete = shown == selected
-	page.ResourceComplete = page.SelectionComplete && len(ranges) == 1 && ranges[0].Start == 1 && ranges[0].End == len(lines)
 	if next != 0 {
-		page.Continuation = canonical + continuationSelection(ranges, next, selection.Raw)
+		page.Continuation = canonical + continuationSelection(ranges, next, raw)
 	}
 	content := header + body.String()
 	if next != 0 {
-		content += "\n… incomplete; continue with selector " + continuationSelection(ranges, next, selection.Raw)
+		content += "\n… incomplete; continue with selector " + continuationSelection(ranges, next, raw)
 	}
 	if len(content) > budget.Bytes {
 		return Page{}, errors.New("internal read framing exceeded the byte budget")

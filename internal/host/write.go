@@ -107,7 +107,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, errors.New("write takes a whole path, not a line selector")
 	}
 	if target.Scheme != "file" {
-		return nil, fmt.Errorf("write does not support %s:// yet; use a local path", target.Scheme)
+		return nil, fmt.Errorf("write supports local files only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
 	}
 	if err := work.Err(); err != nil {
 		return nil, err

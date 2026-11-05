@@ -8,15 +8,18 @@ import (
 	"fmt"
 	"strconv"
 
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 type registrationParams struct {
-	Kind       string          `json:"kind"`
-	Key        string          `json:"key"`
-	Descriptor json.RawMessage `json:"descriptor"`
+	Kind             string          `json:"kind"`
+	Key              string          `json:"key"`
+	Descriptor       json.RawMessage `json:"descriptor"`
+	PreviousRevision string          `json:"previousRevision,omitempty"`
 }
 
 type describeParams struct {
@@ -27,15 +30,91 @@ type describeParams struct {
 
 const describePageSize = 50
 
+// errUnsupportedContribution reports a valid descriptor whose capability this version does not route.
+var errUnsupportedContribution = errors.New("contribution capability is unsupported")
+
+// errConsumerConflict reports a registration its subsystem cannot take beside a live one.
+var errConsumerConflict = errors.New("contribution conflicts with a live consumer")
+
+// contributionConsumer applies one admitted registration to its owning subsystem and
+// returns the cleanup that withdraws it. A failed install leaves nothing behind.
+type contributionConsumer func(s *session, registration contribution.Registration) (func(), error)
+
+var contributionConsumers = map[contribution.Kind]contributionConsumer{
+	contribution.KindToolPresentation: installPresentation,
+	contribution.KindResourceProvider: installResourceProvider,
+	contribution.KindFetchBackend:     installFetchBackend,
+	contribution.KindStatusSegment:    installStatusSegment,
+	contribution.KindDocs:             installDocs,
+	contribution.KindFrameProducer:    installFrameProducer,
+}
+
 func validateContributionDescriptor(kind contribution.Kind, _ string, descriptor json.RawMessage) (contribution.Claims, error) {
 	switch kind {
 	case contribution.KindToolPresentation:
-		if _, err := presentation.DecodeDescriptor(descriptor); err != nil {
-			return contribution.Claims{}, err
+		_, err := presentation.DecodeDescriptor(descriptor)
+		return contribution.Claims{}, err
+	case contribution.KindResourceProvider:
+		parsed, err := resource.ParseProviderDescriptor(descriptor)
+		return contribution.Claims{Schemes: parsed.Schemes}, err
+	case contribution.KindFetchBackend:
+		_, err := parseFetchBackend(descriptor)
+		return contribution.Claims{}, err
+	case contribution.KindStatusSegment:
+		_, err := parseStatusSegment(descriptor)
+		return contribution.Claims{}, err
+	case contribution.KindDocs:
+		_, err := parseDocsDescriptor(descriptor)
+		return contribution.Claims{}, err
+	case contribution.KindFrameProducer:
+		parsed, err := parseFrameProducer(descriptor)
+		claims := contribution.Claims{}
+		for _, field := range parsed.ContextFields {
+			claims.Sources = append(claims.Sources, contribution.SourceClaim{Source: field.Source, Field: field.Field})
 		}
-		return contribution.Claims{}, nil
+		return claims, err
 	default:
-		return contribution.Claims{}, fmt.Errorf("%w: contribution kind %q is not wired yet", contribution.ErrInvalidDescriptor, kind)
+		return contribution.Claims{}, fmt.Errorf("%w: unknown contribution kind %q", contribution.ErrInvalidDescriptor, kind)
+	}
+}
+
+func installPresentation(s *session, registration contribution.Registration) (func(), error) {
+	descriptor, err := presentation.DecodeDescriptor(registration.Descriptor)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.presentations.add(registration.RegistrationID, registration.Owner, descriptor); err != nil {
+		return nil, fmt.Errorf("%w: %v", errConsumerConflict, err)
+	}
+	return func() { s.presentations.remove(registration.RegistrationID) }, nil
+}
+
+func (s *session) setInstalled(registrationID string, cleanup func()) {
+	s.installedMu.Lock()
+	defer s.installedMu.Unlock()
+	if s.installed == nil {
+		s.installed = make(map[string]func())
+	}
+	s.installed[registrationID] = cleanup
+}
+
+func (s *session) withdrawInstalled(registrationID string) {
+	s.installedMu.Lock()
+	cleanup := s.installed[registrationID]
+	delete(s.installed, registrationID)
+	s.installedMu.Unlock()
+	if cleanup != nil {
+		cleanup()
+	}
+}
+
+func receiptResult(receipt contribution.Receipt) map[string]any {
+	return map[string]any{
+		"registrationId":     receipt.RegistrationID,
+		"descriptorRevision": receipt.DescriptorRevision,
+		"kind":               receipt.Kind,
+		"key":                receipt.Key,
+		"idempotent":         receipt.Idempotent,
 	}
 }
 
@@ -45,31 +124,69 @@ func (a *app) registerContribution(_ context.Context, s *session, request api.Re
 		return nil, &api.Error{Code: "invalidRequest", Field: "params", Message: "register requires kind, key and an object descriptor", Outcome: "notApplied"}
 	}
 	kind := contribution.Kind(params.Kind)
-	if kind != contribution.KindToolPresentation {
-		return nil, &api.Error{Code: "unsupported", Field: "params.kind", Message: "only toolPresentation registration is wired", Outcome: "notApplied"}
+	consumer, ok := contributionConsumers[kind]
+	if !ok {
+		return nil, &api.Error{Code: "invalidRequest", Field: "params.kind", Message: "unknown contribution kind", Outcome: "notApplied"}
+	}
+	if params.PreviousRevision != "" || request.RegistrationID != "" {
+		return a.replaceContribution(s, request, params, consumer)
 	}
 	receipt, err := s.contributions.Register(request.From, kind, params.Key, params.Descriptor)
 	if err != nil {
 		return nil, contributionProtocolError(err)
 	}
-	if kind == contribution.KindToolPresentation && !receipt.Idempotent {
-		descriptor, decodeErr := presentation.DecodeDescriptor(params.Descriptor)
-		if decodeErr != nil {
-			_ = s.contributions.Unregister(request.From, receipt.RegistrationID)
-			return nil, contributionProtocolError(decodeErr)
-		}
-		if addErr := s.presentations.add(receipt.RegistrationID, request.From.Owner, descriptor); addErr != nil {
-			_ = s.contributions.Unregister(request.From, receipt.RegistrationID)
-			return nil, &api.Error{Code: "conflict", Message: addErr.Error(), Outcome: "notApplied"}
+	if receipt.Idempotent {
+		return receiptResult(receipt), nil
+	}
+	registration, err := s.contributions.Get(request.From, receipt.RegistrationID)
+	if err != nil {
+		return nil, contributionProtocolError(err)
+	}
+	cleanup, err := consumer(s, registration)
+	if err != nil {
+		_ = s.contributions.Unregister(request.From, receipt.RegistrationID)
+		return nil, contributionProtocolError(err)
+	}
+	s.setInstalled(receipt.RegistrationID, cleanup)
+	a.emitRegistrationChanged(s, receipt.RegistrationID, "registered")
+	return receiptResult(receipt), nil
+}
+
+func (a *app) replaceContribution(s *session, request api.Request, params registrationParams, consumer contributionConsumer) (any, *api.Error) {
+	if request.RegistrationID == "" || params.PreviousRevision == "" {
+		return nil, &api.Error{Code: "invalidRequest", Field: "registrationId", Message: "replace requires registrationId and params.previousRevision", Outcome: "notApplied"}
+	}
+	current, err := s.contributions.Get(request.From, request.RegistrationID)
+	if err != nil {
+		return nil, contributionProtocolError(err)
+	}
+	if string(current.Kind) != params.Kind || current.Key != params.Key {
+		return nil, &api.Error{Code: "invalidRequest", Field: "params.kind", Message: "replace cannot change kind or key", Outcome: "notApplied"}
+	}
+	receipt, err := s.contributions.Replace(request.From, request.RegistrationID, params.PreviousRevision, params.Descriptor)
+	if err != nil {
+		return nil, contributionProtocolError(err)
+	}
+	if receipt.Idempotent {
+		return receiptResult(receipt), nil
+	}
+	s.withdrawInstalled(request.RegistrationID)
+	replaced, err := s.contributions.Get(request.From, request.RegistrationID)
+	if err == nil {
+		var cleanup func()
+		if cleanup, err = consumer(s, replaced); err == nil {
+			s.setInstalled(request.RegistrationID, cleanup)
+			a.emitRegistrationChanged(s, request.RegistrationID, "replaced")
+			return receiptResult(receipt), nil
 		}
 	}
-	return map[string]any{
-		"registrationId":     receipt.RegistrationID,
-		"descriptorRevision": receipt.DescriptorRevision,
-		"kind":               receipt.Kind,
-		"key":                receipt.Key,
-		"idempotent":         receipt.Idempotent,
-	}, nil
+	// Restore the previous descriptor so a failed install never leaves the owner unregistered.
+	if _, restoreErr := s.contributions.Replace(request.From, request.RegistrationID, receipt.DescriptorRevision, current.Descriptor); restoreErr == nil {
+		if cleanup, installErr := consumer(s, current); installErr == nil {
+			s.setInstalled(request.RegistrationID, cleanup)
+		}
+	}
+	return nil, contributionProtocolError(err)
 }
 
 func (a *app) unregisterContribution(_ context.Context, s *session, request api.Request) (any, *api.Error) {
@@ -83,7 +200,8 @@ func (a *app) unregisterContribution(_ context.Context, s *session, request api.
 	if err := s.contributions.Unregister(request.From, request.RegistrationID); err != nil {
 		return nil, contributionProtocolError(err)
 	}
-	s.presentations.remove(request.RegistrationID)
+	s.withdrawInstalled(request.RegistrationID)
+	a.emitRegistrationChanged(s, request.RegistrationID, "unregistered")
 	return map[string]any{"registrationId": request.RegistrationID, "removed": true}, nil
 }
 
@@ -141,8 +259,12 @@ func (a *app) describeContributions(_ context.Context, s *session, request api.R
 
 func contributionProtocolError(err error) *api.Error {
 	switch {
-	case errors.Is(err, contribution.ErrInvalidDescriptor), errors.Is(err, presentation.ErrInvalid):
-		return &api.Error{Code: "invalidRequest", Message: "contribution descriptor is invalid", Outcome: "notApplied"}
+	case errors.Is(err, errUnsupportedContribution):
+		return &api.Error{Code: "unsupported", Message: sanitizeProviderText(err.Error()), Outcome: "notApplied"}
+	case errors.Is(err, errConsumerConflict):
+		return &api.Error{Code: "conflict", Message: err.Error(), Outcome: "notApplied"}
+	case errors.Is(err, contribution.ErrInvalidDescriptor), errors.Is(err, presentation.ErrInvalid), errors.Is(err, resource.ErrInvalidDescriptor), errors.Is(err, errInvalidContribution):
+		return &api.Error{Code: "invalidRequest", Message: sanitizeProviderText(err.Error()), Outcome: "notApplied"}
 	case errors.Is(err, contribution.ErrInvalidRegistration):
 		return &api.Error{Code: "invalidRequest", Message: "contribution registration is invalid", Outcome: "notApplied"}
 	case errors.Is(err, contribution.ErrConflict):
@@ -162,4 +284,11 @@ func contributionProtocolError(err error) *api.Error {
 	default:
 		return &api.Error{Code: "internal", Message: "contribution registration failed", Outcome: "notApplied"}
 	}
+}
+
+func (a *app) emitRegistrationChanged(s *session, registrationID, change string) {
+	if s.host == (sdk.Context{}) {
+		return
+	}
+	_ = s.host.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":" + registrationID + ":" + change, Type: "registration.changed", RegistrationID: registrationID, Data: map[string]any{"change": change}})
 }

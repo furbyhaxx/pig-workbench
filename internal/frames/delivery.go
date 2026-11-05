@@ -6,6 +6,20 @@ import "time"
 type DeliveryScope struct {
 	BranchLeaf string `json:"branchLeaf"`
 	Epoch      string `json:"epoch"`
+	// Ancestors, when set, holds every entry ID on the current branch (and "" for the root).
+	// A frame then matches when its publish leaf lies on that branch instead of equalling BranchLeaf.
+	Ancestors map[string]bool `json:"-"`
+}
+
+// Matches reports whether a frame admitted at leaf and epoch belongs to this scope.
+func (s DeliveryScope) Matches(leaf, epoch string) bool {
+	if epoch != s.Epoch {
+		return false
+	}
+	if s.Ancestors != nil {
+		return s.Ancestors[leaf]
+	}
+	return leaf == s.BranchLeaf
 }
 
 // SelectPending returns the pending frames of one delivery mode in admission order.
@@ -20,8 +34,7 @@ func (s *Session) SelectPending(delivery string, scope DeliveryScope) ([]Frame, 
 	s.expireLocked(s.clock())
 	var frames []Frame
 	for _, record := range s.records {
-		if record.State == statePending && record.Frame.Delivery == delivery &&
-			record.Frame.BranchLeaf == scope.BranchLeaf && record.Frame.Epoch == scope.Epoch {
+		if record.State == statePending && record.Frame.Delivery == delivery && scope.Matches(record.Frame.BranchLeaf, record.Frame.Epoch) {
 			frames = append(frames, record.Frame)
 		}
 	}
@@ -39,7 +52,7 @@ func (s *Session) MarkDelivered(scope DeliveryScope, frameIDs []string) error {
 		if record == nil || record.State != statePending {
 			return ErrInvalidTransition
 		}
-		if record.Frame.BranchLeaf != scope.BranchLeaf || record.Frame.Epoch != scope.Epoch {
+		if !scope.Matches(record.Frame.BranchLeaf, record.Frame.Epoch) {
 			return ErrStaleContext
 		}
 	}

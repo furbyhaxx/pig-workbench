@@ -6,12 +6,14 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 )
@@ -24,7 +26,7 @@ func TestDiscoveryAndLocation(t *testing.T) {
 	s := &session{id: "session", generation: "generation", location: manager}
 	a := &app{}
 	params, _ := json.Marshal(api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"location"}})
-	result, failure := a.dispatchService(context.Background(), s, api.Request{Method: "discover", Params: params})
+	result, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "discover", Params: params})
 	if failure != nil {
 		t.Fatal(failure)
 	}
@@ -32,15 +34,15 @@ func TestDiscoveryAndLocation(t *testing.T) {
 	if discovery.Generation != "generation" || discovery.SessionID != "session" || discovery.Location.(location.Snapshot).Cwd != manager.Current().Cwd {
 		t.Fatalf("wrong binding: %+v", discovery)
 	}
-	if len(discovery.Capabilities) != 2 || discovery.Capabilities[0] != "location" || discovery.Capabilities[1] != "presentation" {
+	if !slices.Equal(discovery.Capabilities, advertisedCapabilities) {
 		t.Fatalf("unwired capability advertised: %+v", discovery)
 	}
-	result, failure = a.dispatchService(context.Background(), s, api.Request{Method: "location.get", Params: json.RawMessage(`{}`)})
+	result, failure = a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "location.get", Params: json.RawMessage(`{}`)})
 	if failure != nil || result.(location.Snapshot) != manager.Current() {
 		t.Fatalf("location service differs: %v %v", result, failure)
 	}
-	params, _ = json.Marshal(api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"resources"}})
-	_, failure = a.dispatchService(context.Background(), s, api.Request{Method: "discover", Params: params})
+	params, _ = json.Marshal(api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"secrets"}})
+	_, failure = a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "discover", Params: params})
 	if failure == nil || failure.Code != "unsupported" {
 		t.Fatal("unavailable capability succeeded")
 	}

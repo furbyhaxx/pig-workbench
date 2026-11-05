@@ -59,14 +59,17 @@ func (a *app) service(ctx sdk.Context, value any) error {
 		s.requestsMu.Unlock()
 		if reply.Error == nil {
 			defer func() { s.requestsMu.Lock(); delete(s.requests, key); s.requestsMu.Unlock() }()
-			reply.Result, reply.Error = a.dispatchService(bounded, s, request)
+			reply.Result, reply.Error = a.dispatchService(bounded, ctx, s, request)
 		}
 	}
 	reply.OK = reply.Error == nil
 	return ctx.Events().Emit(api.ReplyChannel, reply)
 }
 
-func (a *app) dispatchService(ctx context.Context, s *session, request api.Request) (any, *api.Error) {
+// advertisedCapabilities lists exactly the wired discover capabilities.
+var advertisedCapabilities = []string{"location", "presentation", "resources", "fetch", "status", "docs", "frames"}
+
+func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session, request api.Request) (any, *api.Error) {
 	if err := ctx.Err(); err != nil {
 		return nil, protocolError(err)
 	}
@@ -80,11 +83,11 @@ func (a *app) dispatchService(ctx context.Context, s *session, request api.Reque
 			return nil, &api.Error{Code: "incompatibleVersion", Message: "Workbench supports protocol major 1"}
 		}
 		for _, capability := range params.Capabilities {
-			if capability != "location" && capability != "presentation" {
+			if !slices.Contains(advertisedCapabilities, capability) {
 				return nil, &api.Error{Code: "unsupported", Field: "params.capabilities", Message: "one or more requested capabilities are unavailable"}
 			}
 		}
-		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: []string{"location", "presentation"}, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
+		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: slices.Clone(advertisedCapabilities), Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
 		if slices.Contains(params.Capabilities, "location") {
 			result.Location = s.location.Current()
 		}
@@ -95,6 +98,14 @@ func (a *app) dispatchService(ctx context.Context, s *session, request api.Reque
 		return a.unregisterContribution(ctx, s, request)
 	case "describe":
 		return a.describeContributions(ctx, s, request)
+	case "status.update":
+		return a.statusUpdate(ctx, s, request)
+	case "frames.publish":
+		return a.framesPublish(host, s, request)
+	case "frames.status", "frames.get", "frames.cancel", "frames.list":
+		return a.framesQuery(s, request)
+	case "context.fields.set":
+		return a.contextFieldsSet(host, s, request)
 	case "location.get":
 		var params struct{}
 		if err := api.Decode(request.Params, &params); err != nil {

@@ -11,15 +11,15 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.Manager) (*resource.Router, string, error) {
+func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.Manager, backends resource.FetchRouter) (*resource.Router, string, error) {
 	router := resource.NewRouter()
 	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
 		return nil, "", err
 	}
-	if err := router.RegisterBuiltin(resource.HTTPProvider{}); err != nil {
+	if err := router.RegisterBuiltin(resource.HTTPProvider{Backends: backends}); err != nil {
 		return nil, "", err
 	}
-	if err := router.RegisterBuiltin(resource.HTTPProvider{Secure: true}); err != nil {
+	if err := router.RegisterBuiltin(resource.HTTPProvider{Secure: true, Backends: backends}); err != nil {
 		return nil, "", err
 	}
 	if err := router.RegisterBuiltin(cfgProvider{source: func() (*config.Snapshot, config.Status) {

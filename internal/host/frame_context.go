@@ -120,6 +120,13 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	if model.MaxOutputTokens > 0 {
 		modelFacts["maxOutputTokens"] = model.MaxOutputTokens
 	}
+	if s.producers != nil {
+		for _, contributed := range s.producers.modelFields(modelBinding{Provider: model.Provider, ID: model.ID}) {
+			for name, value := range contributed.fields {
+				modelFacts[name] = value
+			}
+		}
+	}
 	facts := []contextFact{
 		{source: "session.date", value: map[string]any{"date": time.Now().Format("2006-01-02"), "timezone": time.Now().Format("MST -07:00")}},
 		{source: "session.environment", value: map[string]any{"os": runtime.GOOS, "architecture": runtime.GOARCH, "hostCwd": ctx.Cwd()}},
@@ -159,26 +166,24 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	state := s.contextFrames
 	state.mu.Lock()
 	defer state.mu.Unlock()
+	scope, err := branchScope(ctx, epoch)
+	if err != nil {
+		return nil, err
+	}
 	if state.scope.Epoch != epoch {
+		// Frames already bound to the current branch (published before this boundary) stay pending.
 		for _, raw := range state.ledger.Snapshot() {
 			var record struct {
 				State string       `json:"state"`
 				Frame frames.Frame `json:"frame"`
 			}
-			if json.Unmarshal(raw, &record) == nil && record.State == "pending" {
+			if json.Unmarshal(raw, &record) == nil && record.State == "pending" && !scope.Matches(record.Frame.BranchLeaf, record.Frame.Epoch) {
 				_ = state.ledger.Cancel(record.Frame.FrameID)
 			}
 		}
 		clear(state.last)
-		leaf, err := ctx.GetLeafID()
-		if err != nil {
-			return nil, err
-		}
-		state.scope = frames.DeliveryScope{Epoch: epoch}
-		if leaf != nil {
-			state.scope.BranchLeaf = *leaf
-		}
 	}
+	state.scope = scope
 	currentInstructionKeys := make(map[string]bool)
 	for _, fact := range facts {
 		if strings.HasPrefix(fact.source, "instructions.") {
@@ -234,6 +239,13 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	if delivery == "beforePrompt" {
+		prompt, err := state.ledger.SelectPending("nextPrompt", state.scope)
+		if err != nil {
+			return nil, err
+		}
+		pending = append(pending, prompt...)
+	}
 	result := map[string]any{}
 	if enabled.Value == true {
 		if options, ok := data["systemPromptOptions"].(map[string]any); ok {
@@ -288,6 +300,11 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	if state.scope.Epoch != s.snapshots.Epoch() {
 		return nil, nil
 	}
+	scope, err := branchScope(ctx, state.scope.Epoch)
+	if err != nil {
+		return nil, err
+	}
+	state.scope = scope
 	pending, err := state.ledger.SelectPending("beforePrompt", state.scope)
 	if err != nil {
 		return nil, err
@@ -297,6 +314,11 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		return nil, err
 	}
 	pending = append(pending, steer...)
+	prompt, err := state.ledger.SelectPending("nextPrompt", state.scope)
+	if err != nil {
+		return nil, err
+	}
+	pending = append(pending, prompt...)
 	messages, _ := data["messages"].([]any)
 	var delivered []string
 	for _, frame := range pending {
@@ -315,4 +337,27 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		return nil, err
 	}
 	return nil, persistFrames(ctx, state.ledger, delivered)
+}
+
+// branchScope binds delivery to the current context epoch and every entry on the active branch.
+func branchScope(ctx sdk.Context, epoch string) (frames.DeliveryScope, error) {
+	scope := frames.DeliveryScope{Epoch: epoch, Ancestors: map[string]bool{"": true}}
+	leaf, err := ctx.GetLeafID()
+	if err != nil {
+		return scope, err
+	}
+	if leaf != nil {
+		scope.BranchLeaf = *leaf
+		scope.Ancestors[*leaf] = true
+	}
+	branch, err := ctx.GetBranch()
+	if err != nil {
+		return scope, err
+	}
+	for _, entry := range branch {
+		if entry.ID != "" {
+			scope.Ancestors[entry.ID] = true
+		}
+	}
+	return scope, nil
 }

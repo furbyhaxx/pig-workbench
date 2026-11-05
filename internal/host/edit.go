@@ -326,7 +326,10 @@ func localEditTarget(cwd, path string) (resource.Target, error) {
 	if err != nil {
 		return target, err
 	}
-	if target.Scheme != "file" || target.Selection.Explicit {
+	if target.Scheme != "file" {
+		return target, fmt.Errorf("edit supports local files only; %s:// does not accept edits here and nothing was sent to its provider", target.Scheme)
+	}
+	if target.Selection.Explicit {
 		return target, errors.New("edit targets must be local files without selector suffixes")
 	}
 	canonical, err := filepath.EvalSymlinks(target.Path)

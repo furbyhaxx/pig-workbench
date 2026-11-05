@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -49,6 +50,17 @@ type session struct {
 	settings      *config.Manager
 	router        *resource.Router
 	scratch       string
+	projects      *project.Registry
+	host          sdk.Context
+	bus           *providerBus
+	fetch         *fetchRouter
+	status        *statusBoard
+	docs          *docsCatalog
+	producers     *producerRegistry
+	installedMu   sync.Mutex
+	installed     map[string]func()
+	projectMu     sync.Mutex
+	projectCache  projectIdentityCache
 }
 
 type app struct {
@@ -124,10 +136,20 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	providers, scratch, err := buildRouter(ctx, settings, manager)
+	host := ctx
+	hostContext := func() (sdk.Context, bool) { return host, true }
+	bus := newProviderBus(id, generation, hostContext)
+	fetch := &fetchRouter{bus: bus}
+	providers, scratch, err := buildRouter(ctx, settings, manager, fetch)
 	if err != nil {
 		return nil, a.fail(err)
 	}
+	fetch.router = func() *resource.Router { return providers }
+	docsCache := ""
+	if cache, cacheErr := os.UserCacheDir(); cacheErr == nil {
+		docsCache = filepath.Join(cache, "pig-workbench", "docs-sources")
+	}
+	docs := &docsCatalog{sets: make(map[string]*docsSet), cache: docsCache}
 	snapshots, err := hashline.NewStore(hashline.StoreLimits{}, generation)
 	if err != nil {
 		return nil, a.fail(err)
@@ -158,6 +180,18 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		router:        providers,
 		scratch:       scratch,
 		requests:      make(map[string]activeRequest),
+		projects:      projects,
+		host:          host,
+		bus:           bus,
+		fetch:         fetch,
+		status:        newStatusBoard(hostContext),
+		docs:          docs,
+		producers:     newProducerRegistry(),
+	}
+	fetch.project = s.projectIdentity
+	docs.guide = s.schemeGuide
+	if err := providers.RegisterBuiltin(docsProvider{catalog: docs, schemes: providers.Schemes}); err != nil {
+		return nil, a.fail(err)
 	}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
@@ -168,12 +202,18 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		s.supervisor.Stop()
 		return nil, a.fail(fmt.Errorf("subscribe Workbench services: %w", err))
 	}
-	s.unsubscribe = unsubscribe
+	unsubscribeReplies, err := ctx.Events().On(api.ProviderReplyChannel, bus.onReply)
+	if err != nil {
+		unsubscribe()
+		s.supervisor.Stop()
+		return nil, a.fail(fmt.Errorf("subscribe Workbench provider replies: %w", err))
+	}
+	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies() }
 	a.mu.Lock()
 	a.session = s
 	a.initErr = nil
 	a.mu.Unlock()
-	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": []string{"location", "presentation"}}}); err != nil {
+	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": advertisedCapabilities}}); err != nil {
 		ctx.Notify("Workbench ready event failed; clients can discover on demand.", "warning")
 	}
 	return nil, nil
@@ -187,6 +227,7 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.session = nil
 	a.mu.Unlock()
 	if old != nil {
+		old.status.close()
 		old.supervisor.Stop()
 		if old.jobs != nil {
 			if err := old.jobs.Close(); err != nil {

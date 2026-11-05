@@ -43,6 +43,31 @@ type HTTPProvider struct {
 	MaxBytes int
 	// Client overrides the bounded default client in tests.
 	Client *http.Client
+	// Backends routes URLs to contributed fetch backends before the builtin reader.
+	Backends FetchRouter
+}
+
+// BackendFetch is a contributed fetch backend's answer for one URL.
+type BackendFetch struct {
+	Body           []byte
+	ContentType    string
+	FinalURI       string
+	Redirects      []string
+	Revision       string
+	Handler        string
+	Notices        []string
+	Status         int
+	UsedThirdParty bool
+}
+
+// ErrBackendDefinitive marks a backend answer that must not fall back to the builtin reader.
+var ErrBackendDefinitive = errors.New("fetch backend reported a definitive origin answer")
+
+// FetchRouter selects and calls a contributed fetch backend for one URL.
+type FetchRouter interface {
+	// Fetch returns matched=false when no enabled backend matches the URL. An error
+	// wrapping ErrBackendDefinitive is final; any other error falls back with a notice.
+	Fetch(ctx context.Context, uri string, limit int) (result BackendFetch, matched bool, err error)
 }
 
 // Scheme reports the URL scheme this provider owns.
@@ -72,7 +97,7 @@ func (p HTTPProvider) Read(ctx context.Context, request ReadRequest) (ReadResult
 	if limit <= 0 {
 		limit = httpDefaultMaxBytes
 	}
-	fetched, err := p.fetch(ctx, request.URI, limit)
+	fetched, err := p.fetchRouted(ctx, request.URI, limit)
 	if err != nil {
 		return ReadResult{}, err
 	}
@@ -90,10 +115,14 @@ func (p HTTPProvider) Read(ctx context.Context, request ReadRequest) (ReadResult
 	}
 	target := Target{Requested: request.Requested, URI: fetched.finalURI, Scheme: p.Scheme()}
 	digest := sha256.Sum256(fetched.body)
+	revision := hex.EncodeToString(digest[:])
+	if fetched.revision != "" {
+		revision = fetched.revision
+	}
 	basePage := Page{
 		RequestedURI:    request.Requested,
 		CanonicalURI:    fetched.finalURI,
-		Revision:        hex.EncodeToString(digest[:]),
+		Revision:        revision,
 		ContentType:     fetched.contentType,
 		Notices:         fetched.notices,
 		CoordinateSpace: "rendered-lines",
@@ -102,14 +131,14 @@ func (p HTTPProvider) Read(ctx context.Context, request ReadRequest) (ReadResult
 	var header string
 	switch {
 	case isHTMLMediaType(mediaType) && request.Selector.Raw:
-		basePage.Handler = "builtin-html-raw"
+		basePage.Handler = fetched.handlerPrefix + "builtin-html-raw"
 		content = decoded
 	case isHTMLMediaType(mediaType):
 		document, err := htmlread.Convert(ctx, decoded, fetched.finalURI, htmlread.Options{MaxInputBytes: limit, MaxOutputBytes: limit})
 		if err != nil {
 			return ReadResult{}, fmt.Errorf("render HTML: %w", err)
 		}
-		basePage.Handler = "builtin-html-" + document.Method
+		basePage.Handler = fetched.handlerPrefix + "builtin-html-" + document.Method
 		if document.Redirect != "" {
 			basePage.Notices = append(basePage.Notices, "page reports a static redirect to "+displayText(document.Redirect))
 		}
@@ -119,7 +148,7 @@ func (p HTTPProvider) Read(ctx context.Context, request ReadRequest) (ReadResult
 		}
 		header = "[" + displayText(fetched.finalURI) + "]\nHTML " + document.Method + " view; no hashline anchors.\n"
 	case isTextMediaType(mediaType):
-		basePage.Handler = "builtin-text"
+		basePage.Handler = fetched.handlerPrefix + "builtin-text"
 		content = decoded
 		header = "[" + displayText(fetched.finalURI) + "]\nText resource; no hashline anchors.\n"
 	default:
@@ -165,10 +194,76 @@ func (p HTTPProvider) validateURI(raw string) error {
 }
 
 type httpResult struct {
-	body        []byte
-	contentType string
-	finalURI    string
-	notices     []string
+	body          []byte
+	contentType   string
+	finalURI      string
+	notices       []string
+	revision      string
+	handlerPrefix string
+}
+
+// fetchRouted asks a matching contributed backend first and falls back to the
+// builtin reader on unavailability or backend failure, never on a definitive answer.
+func (p HTTPProvider) fetchRouted(ctx context.Context, raw string, limit int) (httpResult, error) {
+	if p.Backends == nil {
+		return p.fetch(ctx, raw, limit)
+	}
+	answer, matched, err := p.Backends.Fetch(ctx, raw, limit)
+	if !matched {
+		return p.fetch(ctx, raw, limit)
+	}
+	if err == nil {
+		err = p.validateBackend(answer, limit)
+	}
+	if err != nil {
+		if errors.Is(err, ErrBackendDefinitive) {
+			return httpResult{}, err
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return httpResult{}, ctxErr
+		}
+		fallback, fetchErr := p.fetch(ctx, raw, limit)
+		if fetchErr != nil {
+			return httpResult{}, fetchErr
+		}
+		fallback.notices = append([]string{"fetch backend failed (" + displayText(err.Error()) + "); used the builtin reader"}, fallback.notices...)
+		return fallback, nil
+	}
+	notices := append([]string(nil), answer.Notices...)
+	if answer.UsedThirdParty {
+		notices = append(notices, "a third-party service saw this URL")
+	}
+	if answer.FinalURI != raw {
+		notices = append(notices, "backend followed redirects to "+displayText(answer.FinalURI))
+	}
+	return httpResult{body: answer.Body, contentType: answer.ContentType, finalURI: answer.FinalURI, notices: notices, revision: answer.Revision, handlerPrefix: answer.Handler + ":"}, nil
+}
+
+func (p HTTPProvider) validateBackend(answer BackendFetch, limit int) error {
+	if len(answer.Body) > limit {
+		return fmt.Errorf("%w: backend body exceeds %d bytes", ErrHTTPTooLarge, limit)
+	}
+	if len(answer.Redirects) > httpMaxRedirects {
+		return fmt.Errorf("backend reported more than %d redirects", httpMaxRedirects)
+	}
+	seen := map[string]bool{}
+	for _, hop := range append(append([]string(nil), answer.Redirects...), answer.FinalURI) {
+		parsed, err := url.Parse(hop)
+		if err != nil || parsed.Scheme != "http" && parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil {
+			return errors.New("backend reported a redirect outside http(s) or with credentials")
+		}
+		if seen[hop] && hop != answer.FinalURI {
+			return errors.New("backend reported a redirect cycle")
+		}
+		seen[hop] = true
+	}
+	if answer.Status >= 400 && answer.Status < 500 {
+		return fmt.Errorf("%w: http status %d %s", ErrBackendDefinitive, answer.Status, http.StatusText(answer.Status))
+	}
+	if answer.Status < 200 || answer.Status > 299 {
+		return fmt.Errorf("backend reported http status %d", answer.Status)
+	}
+	return nil
 }
 
 func (p HTTPProvider) fetch(ctx context.Context, raw string, limit int) (httpResult, error) {

@@ -119,6 +119,40 @@ func (r *Router) RegisterBuiltin(provider Provider) error {
 	return nil
 }
 
+// RegisterContributed installs one external provider under every scheme atomically.
+// A scheme already held by any provider is a conflict; nothing is installed then.
+func (r *Router) RegisterContributed(providers []Provider) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, provider := range providers {
+		scheme := provider.Scheme()
+		if reserved[scheme] {
+			return fmt.Errorf("builtin scheme %q is owned by Workbench and cannot be replaced", scheme)
+		}
+		if _, retired := retiredSchemes[scheme]; retired {
+			return fmt.Errorf("retired scheme %q must not be registered", scheme)
+		}
+		if _, held := r.providers[scheme]; held {
+			return fmt.Errorf("scheme %q is already registered", scheme)
+		}
+	}
+	for _, provider := range providers {
+		r.providers[provider.Scheme()] = provider
+	}
+	return nil
+}
+
+// UnregisterContributed removes external schemes; builtin schemes are never removed.
+func (r *Router) UnregisterContributed(schemes []string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, scheme := range schemes {
+		if !reserved[scheme] {
+			delete(r.providers, scheme)
+		}
+	}
+}
+
 // Schemes returns registered canonical schemes in lexical order.
 func (r *Router) Schemes() []string {
 	r.mu.RLock()

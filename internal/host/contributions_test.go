@@ -26,7 +26,7 @@ func presentationSession(t *testing.T) *session {
 func registerPresentation(t *testing.T, a *app, s *session, owner, instance, key, descriptor string) map[string]any {
 	t.Helper()
 	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": key, "descriptor": json.RawMessage(descriptor)})
-	result, failure := a.dispatchService(context.Background(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: owner, Instance: instance}, Params: params})
+	result, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: owner, Instance: instance}, Params: params})
 	if failure != nil {
 		t.Fatalf("register: %v", failure)
 	}
@@ -111,7 +111,7 @@ func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
 		t.Fatalf("idempotent register = %#v, then %#v", first, again)
 	}
 	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": "other", "descriptor": json.RawMessage(buildPresentationDescriptor)})
-	_, failure := a.dispatchService(context.Background(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: "other-tools", Instance: "i-2"}, Params: params})
+	_, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: "other-tools", Instance: "i-2"}, Params: params})
 	if failure == nil || failure.Code != "conflict" {
 		t.Fatalf("tool ownership conflict = %v", failure)
 	}
@@ -123,7 +123,7 @@ func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
 		t.Fatalf("conflicting registration leaked into the registry: %#v", all)
 	}
 	request := api.Request{Method: "unregister", Generation: "generation", RegistrationID: first["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
-	if _, failure := a.dispatchService(context.Background(), s, request); failure != nil {
+	if _, failure := a.dispatchService(context.Background(), sdk.Context{}, s, request); failure != nil {
 		t.Fatalf("unregister: %v", failure)
 	}
 	if _, ok := s.presentations.lookup("build_run"); ok || len(s.contributions.List()) != 0 {
@@ -136,7 +136,7 @@ func TestDescribeContributionsIsFilteredAndPaged(t *testing.T) {
 	s := presentationSession(t)
 	registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
 	params, _ := json.Marshal(describeParams{Kind: "toolPresentation"})
-	result, failure := a.dispatchService(context.Background(), s, api.Request{Method: "describe", Generation: "generation", Params: params})
+	result, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "describe", Generation: "generation", Params: params})
 	if failure != nil {
 		t.Fatal(failure)
 	}
