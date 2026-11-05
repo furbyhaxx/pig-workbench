@@ -75,9 +75,9 @@ agent dir and XDG roots, and a localhost scripted inference provider. No billed 
 
 # Open evidence gaps
 
-- **End-to-end crash reclamation.** `internal/jobs/registry_linux_test.go` proves reclamation against real
-  process groups (kill, liveness gating, idempotence, removal), and the host wires the sweep at session start.
-  A live run that SIGKILLs the agent and then starts a new session did not reach `agent_settled` in the
-  scripted-provider RPC harness within the test budget, so that link is inferred from the package tests plus the
-  wiring, not observed. Do not describe crash reclamation as live-verified until that run is green.
+- **End-to-end crash reclamation — closed 05.11.2026.** `TestLiveCrashReclaimsOrphanedJob` starts a background
+  job, SIGKILLs the agent, then starts a second session in the same state directory: the orphaned process group
+  is gone 110 ms after the second session starts, which is the next-start sweep rather than teardown.
+  `internal/jobs/registry_linux_test.go` covers the same mechanism at package level (real process-group
+  termination, liveness gating, cross-session safety, dead-record removal, idempotent removal).
 - **Reload cleanup.** Blocked on a TUI/pty harness that can issue `/reload`; the RPC protocol cannot.

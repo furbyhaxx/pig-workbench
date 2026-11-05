@@ -101,3 +101,101 @@ func TestLiveBackgroundJobStdinAndCompletion(t *testing.T) {
 		t.Fatalf("job workflow did not complete: requests=%d id=%q messages=%s", requests, jobID, latest)
 	}
 }
+
+// TestLiveCrashReclaimsOrphanedJob proves a killed agent leaves no unsupervised
+// process: the next session start terminates the job its predecessor owned
+// (SPEC-0008 §8 crash ownership).
+func TestLiveCrashReclaimsOrphanedJob(t *testing.T) {
+	root := t.TempDir()
+	markerFile := filepath.Join(root, "crash-job-started")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if strings.Contains(fmt.Sprint(body["messages"]), "start the job") {
+			args, _ := json.Marshal(map[string]any{"command": "sh -c 'touch " + markerFile + "; sleep 300; true'", "background": true})
+			delta := map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "call-0", "type": "function", "function": map[string]any{"name": "bash", "arguments": string(args)}}}}
+			writeScriptedTurn(w, delta, "tool_calls")
+			return
+		}
+		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "ok"}, "stop")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+
+	first := startRPCWithExtensions(t, root, true, []string{"probe-agent"}, "--model", "workbench-fixture/mock")
+	first.send("job", "prompt", "start the job")
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		if _, err := os.Stat(markerFile); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the background job never started")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !processMatches(t, markerFile) {
+		t.Skip("the job process is not observable on this platform")
+	}
+	if err := first.cmd.Process.Kill(); err != nil {
+		t.Fatal(err)
+	}
+	<-first.done
+	// The kill was deliberate; the fixture would otherwise report it as a failure
+	// and hold its deadline open during cleanup.
+	first.exitErr = nil
+	first.cancel()
+	if !processMatches(t, markerFile) {
+		t.Skip("the orphan did not survive the crash on this platform; nothing to reclaim")
+	}
+
+	started := time.Now()
+	second := startRPCWithExtensions(t, root, true, []string{"probe-agent"}, "--model", "workbench-fixture/mock")
+	second.send("hi", "prompt", "hi")
+	deadline = time.Now().Add(10 * time.Second)
+	for processMatches(t, markerFile) {
+		if time.Now().After(deadline) {
+			t.Fatal("a crashed agent left the job running after the next start")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if elapsed := time.Since(started); elapsed > 10*time.Second {
+		t.Fatalf("reclamation took %s, which is not a prompt next-start sweep", elapsed)
+	} else {
+		t.Logf("orphan reclaimed %s after the next session started", elapsed.Round(time.Millisecond))
+	}
+}
+
+// processMatches reports whether any process command line contains needle.
+func processMatches(t *testing.T, needle string) bool {
+	t.Helper()
+	entries, err := os.ReadDir("/proc")
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join("/proc", entry.Name(), "cmdline"))
+		if err != nil {
+			continue
+		}
+		if strings.Contains(string(data), needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func writeScriptedTurn(w http.ResponseWriter, delta map[string]any, finish string) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	data, _ := json.Marshal(map[string]any{"id": "r", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": nil}}})
+	end, _ := json.Marshal(map[string]any{"id": "r", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": map[string]any{}, "finish_reason": finish}}})
+	fmt.Fprintf(w, "data: %s\n\ndata: %s\n\ndata: [DONE]\n\n", data, end)
+}
