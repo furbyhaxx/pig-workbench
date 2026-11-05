@@ -14,7 +14,7 @@ import (
 
 const (
 	builtinNamespace    = "builtin/"
-	defaultMaxFileBytes = 1 << 20
+	defaultMaxFileBytes = 256 << 10
 )
 
 // FileSystemOptions configures a layered confined template loader.
@@ -27,7 +27,7 @@ type FileSystemOptions struct {
 	ProjectRoot string
 	// TrustProject admits project templates ahead of user templates.
 	TrustProject bool
-	// MaxFileBytes bounds one template file; zero selects 1 MiB.
+	// MaxFileBytes bounds one template file; zero selects 256 KiB.
 	MaxFileBytes int
 }
 

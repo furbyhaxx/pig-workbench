@@ -219,8 +219,8 @@ func TestFileSystemLoaderBoundsInput(t *testing.T) {
 
 	writeTemplate(t, user, "default.md", strings.Repeat("a", defaultMaxFileBytes+1))
 	fallback := newFilesystemLoader(t, FileSystemOptions{Builtin: builtinTemplates(), UserRoot: user})
-	if _, err := fallback.Open("default.md"); err == nil || !strings.Contains(err.Error(), "exceeds 1048576 bytes") {
-		t.Fatalf("default limit: got %v; want 1 MiB limit error", err)
+	if _, err := fallback.Open("default.md"); err == nil || !strings.Contains(err.Error(), "exceeds 262144 bytes") {
+		t.Fatalf("default limit: got %v; want 256 KiB limit error", err)
 	}
 }
 
