@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 9
+  revision: 10
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T16:51:32+01:00"
+  updated_at: "2026-11-05T15:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "Consolidated the committed engine inventory and remaining one-unit completions"
       changes: ["Recorded which engines are wired versus tested-but-unwired", "Recorded the exact unit that unblocks each remaining feature"]
+    - revision: 10
+      reason: "Resume checkpoint: integrated pending worktrees, current-source edit recovery, HTTP/HTML, presentation registration and full gates"
+      changes: ["Recorded green check/race/integration evidence at 14d7fb3 plus later commits", "Recorded the create-only write race fix, current-source relocation and presence of all ten tools", "Retained every open phase exit and the real pig-web co-load blocker explicitly"]
 ---
 
 # 1. Outcome
@@ -74,7 +77,8 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **engine inventory (committed):** `resource` (selectors, provider router, file/local/out/artifact providers, paging, tags), `config` (scoped TOML, provenance, safe saves), `search`, `syntax` (summaries + blocks), `hashline` (byte model, XXH32 tags, tagged headers, patch grammar), `jobs` (process supervision, group escalation, exit watcher), `secrets` (placeholders + fail-closed redaction), `frames` (session ledger), `instructions` (discovery + caps), `ask` (schema + records), `project` (document model), `endpoint` (session records), `prompt` (render core, strict `attr`, `ErrEmptyRender`), `api` (protocol + consumer client).
 - **wired to the model:** `read` (selectors, tags, code summaries, directory listings), `write`, `ls`, `grep`, `find`, `cd`; schemes `file`, `local`, `out`, `cfg`, `session`, `artifact`; location service and consumer client. Everything else is a tested engine awaiting its wiring unit and is not advertised.
 - **next completions, one unit each:** `edit` needs hashline staging/seen guards/exact-text; `bash`+`jobs`+`job://` need the jobs Manager; `ask_user` needs the vault plus dialogs; prompt takeover needs confinement, section tags and `builtin/workbench`; `session.project` needs the project registry detection unit.
-- **next:** Continue C–M on these engines and finish the remaining B storage/project/trust foundations. Full hashline, syntax summaries, remaining tools/schemes, project identity/storage, registries, frames, instructions, jobs, secrets, prompts, skills, asks and messaging are still unimplemented. Phase A's freeze/ledger/handoff exit also remains open. No Slice 1 exit is claimed.
+- **resume checkpoint 2026-11-05:** the retained completed worktrees for staged line endings, relocation, secret payload guards, HTML reading and presentation snapshots are integrated. The public edit path now re-reads exact current source, authorizes in the model's coordinates, relocates through unique anchors, refuses ambiguous/absent targets and carries authored/delivered seen spans forward. Create-only `write` uses atomic no-replace publication after a reproduced overwrite race. The prompt limit test, documentation and package guidance agree on 256 KiB. `http(s)://` is wired through bounded, redirect-reauthorized static fetching with readable Markdown/raw HTML and charset/media policy. The v1 bus now registers, unregisters and describes `toolPresentation` contributions and routes opted-in tools through a live semantic renderer; other contribution kinds fail `unsupported` rather than pretending to work. `just check`, `just race` and `just integration` pass on this checkpoint. No billed inference was used.
+- **next:** Continue C–M. The remaining contribution kinds and their consumers, trusted secret grants, Phase A ledger/freeze, full prompt/skills takeover, instruction lifecycle, session messaging, journaled session storage, ask panels/recovery, command/activity coverage and the complete acceptance table remain open. Full syntax blocks, donor recovery/leniency, persistent register replay and path-display goldens are still missing. The real `../pig-web` co-load gate rechecked on 05.11.2026 still has no extension implementation, so P2 is an external blocker and cooperative fixtures do not close it. No Slice 1 exit is claimed.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
 # 2. What is in Slice 1 and what is depth
