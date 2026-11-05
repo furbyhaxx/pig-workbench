@@ -101,3 +101,62 @@ func TestLiveBackgroundJobStdinAndCompletion(t *testing.T) {
 		t.Fatalf("job workflow did not complete: requests=%d id=%q messages=%s", requests, jobID, latest)
 	}
 }
+
+// TestLiveReloadTerminatesRunningJobs proves a reload does not leave an
+// unsupervised background process behind (SPEC-0008 §8 reload cleanup).
+//
+// Known defect, tracked by slice-1-completion 10.1.2: /reload never delivers
+// session_shutdown to the outgoing runtime (ANA-2026-11-05-slice-1-probes), so
+// the job manager is never closed and the process outlives the reload until its
+// own timeout. Remove the skip when the next-start reconciliation lands.
+func TestLiveReloadTerminatesRunningJobs(t *testing.T) {
+	t.Skip("known defect 10.1.2: /reload skips session_shutdown, background jobs outlive it")
+
+	markerFile := filepath.Join(t.TempDir(), fmt.Sprintf("reload-job-%d", time.Now().UnixNano()))
+	marker := markerFile
+	f, _ := startProbeSession(t, func(index int, _ map[string]any) (map[string]any, any) {
+		if index == 0 {
+			args, _ := json.Marshal(map[string]any{"command": "sh -c 'touch " + markerFile + "; sleep 300; true'", "background": true})
+			return map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "call-0", "type": "function", "function": map[string]any{"name": "bash", "arguments": string(args)}}}}, "tool_calls"
+		}
+		return map[string]any{"role": "assistant", "content": "started"}, "stop"
+	})
+	f.send("job", "prompt", "start the background job")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	if _, err := os.Stat(markerFile); err != nil {
+		t.Fatalf("the background job never started: %v", err)
+	}
+	if !processMatches(t, marker) {
+		t.Fatal("the running job is not observable before the reload")
+	}
+	f.send("reload", "prompt", "/reload")
+	deadline := time.Now().Add(10 * time.Second)
+	for processMatches(t, marker) {
+		if time.Now().After(deadline) {
+			t.Fatalf("reload left the background job running: %s", marker)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// processMatches reports whether any process command line contains needle.
+func processMatches(t *testing.T, needle string) bool {
+	t.Helper()
+	entries, err := os.ReadDir("/proc")
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join("/proc", entry.Name(), "cmdline"))
+		if err != nil {
+			continue
+		}
+		if strings.Contains(string(data), needle) {
+			return true
+		}
+	}
+	return false
+}

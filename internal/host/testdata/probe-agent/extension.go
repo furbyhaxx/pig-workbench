@@ -46,6 +46,10 @@ func Extension() *sdk.Extension {
 		mu.Unlock()
 		return nil, nil
 	})
+	ext.OnSessionShutdown(func(ctx sdk.Context, _ map[string]any) (any, error) {
+		report(ctx, map[string]any{"probe": "shutdown"})
+		return nil, nil
+	})
 	ext.Command("probe", "Probe host behaviour: wake, name, clear, title, entries", func(ctx sdk.Context, args string) error {
 		verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
 		switch verb {
