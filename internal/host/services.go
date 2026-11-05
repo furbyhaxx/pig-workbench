@@ -80,15 +80,21 @@ func (a *app) dispatchService(ctx context.Context, s *session, request api.Reque
 			return nil, &api.Error{Code: "incompatibleVersion", Message: "Workbench supports protocol major 1"}
 		}
 		for _, capability := range params.Capabilities {
-			if capability != "location" {
+			if capability != "location" && capability != "presentation" {
 				return nil, &api.Error{Code: "unsupported", Field: "params.capabilities", Message: "one or more requested capabilities are unavailable"}
 			}
 		}
-		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: []string{"location"}, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
+		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: []string{"location", "presentation"}, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
 		if slices.Contains(params.Capabilities, "location") {
 			result.Location = s.location.Current()
 		}
 		return result, nil
+	case "register":
+		return a.registerContribution(ctx, s, request)
+	case "unregister":
+		return a.unregisterContribution(ctx, s, request)
+	case "describe":
+		return a.describeContributions(ctx, s, request)
 	case "location.get":
 		var params struct{}
 		if err := api.Decode(request.Params, &params); err != nil {

@@ -1,0 +1,147 @@
+package host
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/contribution"
+)
+
+const buildPresentationDescriptor = `{"toolNames":["build_run"],"label":"Build","presentationVersion":1,"preset":"process","defaultDisplay":{"density":"normal","previewLines":4},"metricDefinitions":[{"id":"durationMs","label":"duration","unit":"ms"}]}`
+
+func presentationSession(t *testing.T) *session {
+	t.Helper()
+	registry, err := contribution.New("generation", contribution.Options{Validator: validateContributionDescriptor})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog()}
+}
+
+func registerPresentation(t *testing.T, a *app, s *session, owner, instance, key, descriptor string) map[string]any {
+	t.Helper()
+	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": key, "descriptor": json.RawMessage(descriptor)})
+	result, failure := a.dispatchService(context.Background(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: owner, Instance: instance}, Params: params})
+	if failure != nil {
+		t.Fatalf("register: %v", failure)
+	}
+	return result.(map[string]any)
+}
+
+func TestToolPresentationRegistrationDrivesTheResolver(t *testing.T) {
+	a := &app{}
+	s := presentationSession(t)
+	receipt := registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	if receipt["registrationId"] == "" || receipt["descriptorRevision"] == "" {
+		t.Fatalf("receipt = %#v", receipt)
+	}
+	entry, ok := s.presentations.lookup("build_run")
+	if !ok || entry.owner != "build-tools" || entry.descriptor.Label != "Build" {
+		t.Fatalf("catalog entry = %#v, present %v", entry, ok)
+	}
+	a.session = s
+	nextCalls := 0
+	next := func() *sdk.ToolRenderers {
+		nextCalls++
+		return &sdk.ToolRenderers{}
+	}
+	renderers := a.resolveToolRenderer("build_run", next)
+	if renderers == nil || renderers.Call == nil || renderers.Result == nil || nextCalls != 0 {
+		t.Fatalf("registered renderer not selected: %#v", renderers)
+	}
+	if other := a.resolveToolRenderer("web_search", next); other == nil || nextCalls != 1 {
+		t.Fatal("unregistered tool did not fall through to next")
+	}
+	call, err := renderers.Call(sdk.Context{}, map[string]any{"target": "packages/app"}, sdk.ToolRenderContext{}, 140)
+	if err != nil || len(call) != 1 || !strings.Contains(call[0], "Build") {
+		t.Fatalf("call render = %#v, %v", call, err)
+	}
+	details := map[string]any{"workbenchPresentation": map[string]any{
+		"version": 1, "revision": 2, "phase": "settled", "outcome": "failed",
+		"title": "Build app", "target": map[string]any{"kind": "path", "value": "packages/app"},
+		"summary": "Compiler rejected two files", "complete": false, "effects": "partial",
+		"metrics": []any{map[string]any{"id": "durationMs", "value": 1280, "unit": "ms"}},
+		"blocks":  []any{map[string]any{"kind": "text", "text": "src/main.go:42: undefined: serve", "role": "error"}},
+		"error":   map[string]any{"code": "compileFailed", "message": "Fix the compiler errors and retry."},
+	}}
+	result, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Details: details}, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}, 140)
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(result, "\n")
+	for _, want := range []string{"Build app", "packages/app", "failed", "incomplete", "partial effects", "duration 1.28s", "undefined: serve", "compileFailed"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("result render lacks %q:\n%s", want, joined)
+		}
+	}
+	for _, width := range []int{36, 57, 80, 140} {
+		lines, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Details: details}, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}, width)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, line := range lines {
+			if tui.VisibleWidth(line) > width {
+				t.Fatalf("width %d overflows: %q", width, line)
+			}
+		}
+	}
+	// A host error cannot be turned into producer success.
+	lines, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Details: details}, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{IsError: true}, 80)
+	if err != nil || strings.Contains(strings.Join(lines, "\n"), "· succeeded") {
+		t.Fatalf("host error was presented as success: %#v", lines)
+	}
+	// Missing or malformed details keeps a usable generic result.
+	fallback, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Content: []map[string]any{{"type": "text", "text": "raw output"}}}, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}, 80)
+	if err != nil || !strings.Contains(strings.Join(fallback, "\n"), "raw output") {
+		t.Fatalf("fallback = %#v, %v", fallback, err)
+	}
+}
+
+func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
+	a := &app{}
+	s := presentationSession(t)
+	first := registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	again := registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	if first["registrationId"] != again["registrationId"] || again["idempotent"] != true {
+		t.Fatalf("idempotent register = %#v, then %#v", first, again)
+	}
+	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": "other", "descriptor": json.RawMessage(buildPresentationDescriptor)})
+	_, failure := a.dispatchService(context.Background(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: "other-tools", Instance: "i-2"}, Params: params})
+	if failure == nil || failure.Code != "conflict" {
+		t.Fatalf("tool ownership conflict = %v", failure)
+	}
+	if _, ok := s.presentations.lookup("build_run"); !ok {
+		t.Fatal("conflicting registration rolled back the live owner")
+	}
+	all := s.contributions.List()
+	if len(all) != 1 {
+		t.Fatalf("conflicting registration leaked into the registry: %#v", all)
+	}
+	request := api.Request{Method: "unregister", Generation: "generation", RegistrationID: first["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
+	if _, failure := a.dispatchService(context.Background(), s, request); failure != nil {
+		t.Fatalf("unregister: %v", failure)
+	}
+	if _, ok := s.presentations.lookup("build_run"); ok || len(s.contributions.List()) != 0 {
+		t.Fatal("unregister left a live presentation")
+	}
+}
+
+func TestDescribeContributionsIsFilteredAndPaged(t *testing.T) {
+	a := &app{}
+	s := presentationSession(t)
+	registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	params, _ := json.Marshal(describeParams{Kind: "toolPresentation"})
+	result, failure := a.dispatchService(context.Background(), s, api.Request{Method: "describe", Generation: "generation", Params: params})
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	described := result.(map[string]any)
+	if len(described["registrations"].([]map[string]any)) != 1 || described["nextCursor"] != "" {
+		t.Fatalf("describe = %#v", described)
+	}
+}

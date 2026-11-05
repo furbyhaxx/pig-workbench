@@ -41,6 +41,8 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 
 ## Advertised capabilities today
 
-Only `location` is implemented: `location.get` returns the immutable local working location. Frame, resource, status, snapshot, fetch, session, docs and secrets methods are specified but not available, and are not advertised.
+`location` and `presentation` are implemented. `location.get` returns the immutable local working location. Presentation supports `register`, `unregister` and `describe` for the `toolPresentation` kind: the descriptor follows SPEC-0003 §2, registration returns `registrationId` and `descriptorRevision`, identical registration is idempotent, and a changed descriptor needs an explicit replace path rather than a silent overwrite. A registered tool is routed through Workbench's semantic renderer; unregistered tools fall through to the next resolver. Registration uses the live contribution registry, so duplicate tool ownership is a visible `conflict` and a failed catalog update rolls the registration back.
 
-`location.get` is safe to reconcile from any later request. When Workbench later ships mutating services, reconcile them through their status methods before retrying.
+Frame, resource, status, snapshot, fetch, session, docs and secrets methods are specified but not available, and are not advertised. `kind` values outside `toolPresentation` currently fail `unsupported` instead of pretending to register.
+
+`location.get` and `describe` are safe to reconcile from any later request. When Workbench later ships mutating services, reconcile them through their status methods before retrying.

@@ -1,6 +1,6 @@
 # presentation
 
-Strict decoder for SPEC-0003 §3 semantic presentation snapshots (`schema.go`). SDK-free, stdlib-only, no I/O, no state; renderers, resolvers and lifecycle tracking consume the decoded values.
+Strict decoder for SPEC-0003 §2–§3 presentation descriptors and semantic snapshots (`descriptor.go`, `schema.go`). SDK-free, stdlib-only, no I/O, no state; host renderers, resolvers and lifecycle tracking consume the decoded values.
 
 ## Contract
 
@@ -15,6 +15,7 @@ Strict decoder for SPEC-0003 §3 semantic presentation snapshots (`schema.go`). 
   - children — `{childCallIds, retained?:[{callId, snapshot}]}`; every retained `callId` must appear in `childCallIds`.
   - continuation — `{explanation, uri?, cursor?}` (explanation required); provenance — `{revision?, source?:{uri, line?, endLine?}, adapter?, view?}`.
 - Text permits newline and tab only; every other control character (raw or escaped, ESC/CSI included) is rejected. Error messages never echo offending text.
+- `DecodeDescriptor` validates a `toolPresentation` registration: 1–32 tool names, label, version 1, closed preset set, density, 0–100 preview lines, JSON-Pointer details path and call fields, bounded metric definitions with valid units, and boolean/integer/enum display settings. The host contribution service uses it before the registry admits the descriptor.
 
 ## Traps
 

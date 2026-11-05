@@ -14,6 +14,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/jobs"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
@@ -30,6 +31,8 @@ type activeRequest struct {
 
 type session struct {
 	editState     editState
+	presentations *presentationCatalog
+	contributions *contribution.Registry
 	contextFrames *contextFrameState
 	jobs          *jobs.Manager
 	jobMeta       jobMetadataStore
@@ -79,6 +82,7 @@ func Register(ext *sdk.Extension) {
 	a.registerWriteAndList(ext)
 	a.registerSearchTools(ext)
 	a.registerCommands(ext)
+	ext.ToolRenderer(a.resolveToolRenderer)
 }
 
 func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
@@ -93,12 +97,12 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	registry, err := project.Open(agentDirectory)
+	projects, err := project.Open(agentDirectory)
 	if err != nil {
 		return nil, a.fail(err)
 	}
 	manager, err := location.New(requestContext{ctx}, ctx.Cwd(), func(work context.Context, cwd string) (string, error) {
-		detected, err := registry.Detect(work, cwd)
+		detected, err := projects.Detect(work, cwd)
 		if err != nil {
 			return "", err
 		}
@@ -111,6 +115,11 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if _, err := rand.Read(token[:]); err != nil {
 		return nil, a.fail(fmt.Errorf("create session generation: %w", err))
 	}
+	generation := hex.EncodeToString(token[:])
+	contributions, err := contribution.New(generation, contribution.Options{Validator: validateContributionDescriptor})
+	if err != nil {
+		return nil, a.fail(fmt.Errorf("create contribution registry: %w", err))
+	}
 	settings, err := loadSettings(ctx)
 	if err != nil {
 		return nil, a.fail(err)
@@ -119,7 +128,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	snapshots, err := hashline.NewStore(hashline.StoreLimits{}, hex.EncodeToString(token[:]))
+	snapshots, err := hashline.NewStore(hashline.StoreLimits{}, generation)
 	if err != nil {
 		return nil, a.fail(err)
 	}
@@ -132,7 +141,24 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		_ = jobManager.Close()
 		return nil, a.fail(err)
 	}
-	s := &session{editState: editState{registers: make(map[string]hashline.Register), noops: make(map[string]int)}, contextFrames: contextState, jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
+	s := &session{
+		editState:     editState{mode: "", registers: make(map[string]hashline.Register), noops: make(map[string]int)},
+		presentations: newPresentationCatalog(),
+		contributions: contributions,
+		contextFrames: contextState,
+		jobs:          jobManager,
+		jobMeta:       jobMetadataStore{values: make(map[string]jobMetadata)},
+		snapshots:     snapshots,
+		pendingViews:  make(map[string][]pendingView),
+		id:            id,
+		generation:    generation,
+		supervisor:    lifecycle.New(),
+		location:      manager,
+		settings:      settings,
+		router:        providers,
+		scratch:       scratch,
+		requests:      make(map[string]activeRequest),
+	}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)
@@ -147,7 +173,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.session = s
 	a.initErr = nil
 	a.mu.Unlock()
-	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": []string{"location"}}}); err != nil {
+	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": []string{"location", "presentation"}}}); err != nil {
 		ctx.Notify("Workbench ready event failed; clients can discover on demand.", "warning")
 	}
 	return nil, nil

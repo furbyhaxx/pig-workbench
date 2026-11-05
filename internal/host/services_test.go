@@ -32,7 +32,7 @@ func TestDiscoveryAndLocation(t *testing.T) {
 	if discovery.Generation != "generation" || discovery.SessionID != "session" || discovery.Location.(location.Snapshot).Cwd != manager.Current().Cwd {
 		t.Fatalf("wrong binding: %+v", discovery)
 	}
-	if len(discovery.Capabilities) != 1 || discovery.Capabilities[0] != "location" {
+	if len(discovery.Capabilities) != 2 || discovery.Capabilities[0] != "location" || discovery.Capabilities[1] != "presentation" {
 		t.Fatalf("unwired capability advertised: %+v", discovery)
 	}
 	result, failure = a.dispatchService(context.Background(), s, api.Request{Method: "location.get", Params: json.RawMessage(`{}`)})

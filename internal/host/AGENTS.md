@@ -6,3 +6,4 @@ SDK adapter and feature composition. `Register` is called once by the root facto
 - Restore custom entries from the active parent chain; GetBranch's projection omits custom data.
 - Resolve config roots from SDK host helpers and the original ctx.Cwd; `cd` changes neither. Trust callbacks belong to one request and are never retained by config.
 - Expose only wired capabilities; diagnostics describe actual state. Commands and companion aliases share handlers.
+- `contributions.go` currently admits only `toolPresentation`; never advertise or accept another contribution kind until its descriptor validator and consumer exist. Register, catalog update and rollback are one unit. `presentation*.go` renders from retained Details only: sanitize, fit every line to the width, never infer success from a missing snapshot, and let the host error override producer success.
