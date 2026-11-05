@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 10
+  revision: 11
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-05T15:30:00+01:00"
+  updated_at: "2026-11-05T15:27:15+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -41,6 +41,9 @@ document:
     - revision: 10
       reason: "Resume checkpoint: integrated pending worktrees, current-source edit recovery, HTTP/HTML, presentation registration and full gates"
       changes: ["Recorded green check/race/integration evidence at 14d7fb3 plus later commits", "Recorded the create-only write race fix, current-source relocation and presence of all ten tools", "Retained every open phase exit and the real pig-web co-load blocker explicitly"]
+    - revision: 11
+      reason: "User clarified that pig-web builds on Slice 1 seams, not the reverse"
+      changes: ["Replaced the real co-load exit with a pig-web-shaped reference-extension seam gate", "Assigned real co-load verification to pig-web and retained the slice-exit commit handoff", "Recorded current service verification and the unresolved host reload probe"]
 ---
 
 # 1. Outcome
@@ -78,7 +81,8 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **wired to the model:** `read` (selectors, tags, code summaries, directory listings), `write`, `ls`, `grep`, `find`, `cd`; schemes `file`, `local`, `out`, `cfg`, `session`, `artifact`; location service and consumer client. Everything else is a tested engine awaiting its wiring unit and is not advertised.
 - **next completions, one unit each:** `edit` needs hashline staging/seen guards/exact-text; `bash`+`jobs`+`job://` need the jobs Manager; `ask_user` needs the vault plus dialogs; prompt takeover needs confinement, section tags and `builtin/workbench`; `session.project` needs the project registry detection unit.
 - **resume checkpoint 2026-11-05:** the retained completed worktrees for staged line endings, relocation, secret payload guards, HTML reading and presentation snapshots are integrated. The public edit path now re-reads exact current source, authorizes in the model's coordinates, relocates through unique anchors, refuses ambiguous/absent targets and carries authored/delivered seen spans forward. Create-only `write` uses atomic no-replace publication after a reproduced overwrite race. The prompt limit test, documentation and package guidance agree on 256 KiB. `http(s)://` is wired through bounded, redirect-reauthorized static fetching with readable Markdown/raw HTML and charset/media policy. The v1 bus now registers, unregisters and describes `toolPresentation` contributions and routes opted-in tools through a live semantic renderer; other contribution kinds fail `unsupported` rather than pretending to work. `just check`, `just race` and `just integration` pass on this checkpoint. No billed inference was used.
-- **next:** Continue C–M. The remaining contribution kinds and their consumers, trusted secret grants, Phase A ledger/freeze, full prompt/skills takeover, instruction lifecycle, session messaging, journaled session storage, ask panels/recovery, command/activity coverage and the complete acceptance table remain open. Full syntax blocks, donor recovery/leniency, persistent register replay and path-display goldens are still missing. The real `../pig-web` co-load gate rechecked on 05.11.2026 still has no extension implementation, so P2 is an external blocker and cooperative fixtures do not close it. No Slice 1 exit is claimed.
+- **next:** Continue C–M. The remaining contribution kinds and their consumers, trusted secret grants, Phase A ledger/freeze, full prompt/skills takeover, instruction lifecycle, session messaging, journaled session storage, ask panels/recovery, command/activity coverage and the complete acceptance table remain open. Full syntax blocks, donor recovery/leniency, persistent register replay and path-display goldens are still missing. The real `../pig-web` co-load run belongs to pig-web's own acceptance gate; it is not a Workbench Slice 1 dependency. Workbench must pass the complete reference-extension seam gate in §5 before handing off its slice-exit commit. No Slice 1 exit is claimed.
+- **service checkpoint 05.11.2026:** `eeb3e27` wires all six contribution kinds and their consumers. Further service tests now cover absent/incompatible/ambiguous responders, stale/late replies, owner-instance cancellation and unknown mutation receipts; `just check`, `just race` and `just integration` pass. The reference producer no longer holds its state mutex across bus calls. A live `ctx.Reload()` probe through `/reference reload` exceeded the RPC harness's 45 s deadline; reload re-registration remains unverified (task 4.3.1), separate from the passing reentrant-bus test. `secrets.redact` remains Phase I task 11.2.2.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
 # 2. What is in Slice 1 and what is depth
@@ -259,8 +263,8 @@ Every command from §2 with completions; activity line (SPEC-0009 §9) with buil
 2. Every PLAN-0001 §9 row assigned to Slice 1 passes its acceptance anchor, recorded in a progress table here with links to tests. A grep for unwired registrations, `unsupported` paths of advertised capabilities and TODO markers comes back empty.
 3. A live agent session (user-authorized inference) uses every tool, the core schemes and `ask_user` end to end; transcript kept as evidence.
 4. `builtin/workbench` is evaluated against PiG's own prompt on fixed tasks (golden transcripts, A/B, cache-hit rate) before it becomes the default (SPEC-0014 §12). Inference for this run approved by the user on 2026-11-03.
-5. **pig-web co-load gate** (its PLAN-0001 Slice 5, real Workbench): `pig -e ../pig-workbench -e ../pig-web` renders `web_*` through Workbench; `read git://…:120-180` uses Workbench selectors; `edit git://…` is refused; a research notice arrives as a frame; `/workbench integrations` lists pig-web; `read https://…` is served by pig-web's fetch backend; the `web` status segment appears once; a stored search key is redacted in a `jobs` log. `cd` into a worktree waits for PLAN-0003 and is named in the gate report.
-6. Handoff to pig-web naming the slice-exit commit and the depth still pending.
+5. **pig-web seam gate with a reference extension:** co-load Workbench with `internal/host/testdata/reference-producer/`, shaped like pig-web. It renders `web_*` through Workbench; `read git://…:120-180` uses Workbench selectors; `edit git://…` is refused before provider dispatch; a research notice arrives as a frame; `/workbench integrations` lists the reference producer; `read https://…` uses its fetch backend; its `web` status segment appears once; a stored search key is redacted in a `jobs` log. Each seam needs observed evidence; the current `kb://` fixture alone does not close the `git://`, integrations or job-log rows. `cd` into a worktree waits for PLAN-0003 and is named in the gate report. Actual pig-web availability is not this gate's prerequisite.
+6. Handoff to pig-web naming the slice-exit commit, reference-gate evidence and depth still pending. The real `pig -e ../pig-workbench -e ../pig-web` co-load run belongs to pig-web's own gate (its PLAN-0001 Slice 5), against that handed-off commit; Workbench does not claim that downstream run passed.
 
 Completion follows PLAN-0001 §7: observed checks only; failures and skipped gates reported with impact.
 

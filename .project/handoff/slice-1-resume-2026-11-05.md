@@ -5,16 +5,34 @@ document:
   title: "Resume full Slice 1 implementation"
   description: "Exact checkpoint, unfinished integration, retained worktrees, failing check and next actions"
   status: "published"
-  revision: 1
+  revision: 2
   created_at: "2026-11-05T12:04:45+01:00"
-  updated_at: "2026-11-05T12:04:45+01:00"
+  updated_at: "2026-11-05T15:27:15+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User requested a handover to continue implementation in a fresh session"
       changes: ["Recorded incomplete Slice 1 state, preserved worktrees and dirty integration", "Recorded reproduced failure and concrete continuation sequence"]
+    - revision: 2
+      reason: "Continue from eeb3e27 and correct the direction of the pig-web dependency"
+      changes: ["Assigned real co-load to pig-web's gate and required the complete reference seam gate here", "Recorded service tests, reference-producer lock fix and blocked reload verification"]
 ---
+
+# Current continuation checkpoint (05.11.2026)
+
+This section supersedes the historical checkpoint below where it differs. Repository/branch remain `/mnt/Projects/furbyhaxx/pig-workbench`, `dev`; implementation base is `eeb3e27`.
+
+- Active task list: `slice-1-completion`. Tasks 4.1 and 4.2 are complete; Phase C is not complete.
+- All six contribution kinds are wired. New tests cover absent/incompatible/ambiguous services, stale/late replies, cross-instance cancellation and unknown mutation receipts. Reference registration/shutdown no longer hold the state mutex across host/bus calls; a live reentrant-bus regression test verifies this.
+- `just check`, `just race` and `just integration` passed after these changes. These are not evidence of reload acceptance.
+- **Reload gap (4.3.1):** a real command returning `ctx.Reload()` (`/reference reload` in the reference producer) did not return within the 45 s RPC deadline. The attempted `TestLiveReferenceProducerReload` failed with `RPC deadline exceeded`; the passing `TestLiveReferenceProducerReentrantBus` only verifies lock availability. Obtain a working host reload path or diagnose the upstream interaction before claiming clean re-registration.
+- `secrets.redact` and explicit trusted-owner grants remain Phase I task 11.2.2; they are not advertised.
+- **Slice-exit dependency correction:** PLAN-0002 §5 requires the full pig-web-shaped reference-extension seam gate. Actual pig-web implementation is not a Workbench prerequisite. Hand pig-web the slice-exit commit and evidence; pig-web owns the real two-extension co-load run against that commit.
+- Reference coverage is still missing `git://` selectors/edit refusal, `/workbench integrations` and a stored-key-redacted `jobs` log (17.5.1). Existing `kb://` coverage does not substitute for those rows. All other Slice 1 acceptance remains intact.
+- Preserve unrelated untracked `.pi/`, `.pig/` and `.project/analyses/2026-11-04-pig-upstream-candidates/`.
+
+# Historical checkpoint
 
 # Goal and authority
 
@@ -166,9 +184,9 @@ Use PLAN-0002 for the complete acceptance denominator; the following is orientat
 - M: command/completion inventory, activity line and contributions; user-reviewed captures at required widths.
 - Final: all acceptance rows/tests/evidence/docs, full gates and real agent workflows. Do not silently replace requirements with unsupported stubs.
 
-# External blocker
+# Superseded external dependency
 
-`P2` blocks `P1g1`: the real `../pig-web` co-load gate. On 03.11.2026, `../pig-web` contained only `.env`, git files, `.project/` and AGENTS.md: no extension.go/go.mod/implementation. **Recheck** before asserting it remains blocked. Implementing pig-web is outside this repository's authorization. Cooperative fixtures help Workbench integration but do not satisfy the real co-load exit. Finish every independent Workbench requirement; report this dependency honestly if still absent.
+The historical `P2` → `P1g1` real pig-web co-load dependency is superseded by task 17.5. Workbench closes its own seam gate with the complete pig-web-shaped reference extension and hands off the slice-exit commit. pig-web then runs the actual two-extension gate in its own repository. Implementing pig-web remains outside this repository's scope; its absence does not block Slice 1.
 
 # Decisions and operating rules
 
