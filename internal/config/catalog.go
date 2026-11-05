@@ -49,6 +49,17 @@ const (
 	RequireTrueProject ProjectPolicy = "require-true"
 )
 
+// Origin restricts which configuration file may carry a setting.
+type Origin string
+
+const (
+	// OriginAny accepts the setting in Workbench.toml and in Secrets.toml.
+	OriginAny Origin = ""
+	// OriginSecrets accepts the setting only in Secrets.toml, which appends
+	// arrays across layers instead of replacing them.
+	OriginSecrets Origin = "secrets-only"
+)
+
 // Definition is the single source of default, validation and scope metadata.
 type Definition struct {
 	Key         string        `json:"key"`
@@ -60,6 +71,7 @@ type Definition struct {
 	Project     ProjectPolicy `json:"project"`
 	Application string        `json:"application"`
 	Description string        `json:"description"`
+	Origin      Origin        `json:"origin,omitempty"`
 }
 
 // Catalog returns independent metadata for the currently defined scalar settings.
@@ -148,6 +160,8 @@ func Catalog() []Definition {
 		boolean("secrets.enabled", true, DenyProject),
 		boolean("secrets.env-injection", true, DenyProject),
 		stringList("secrets.redact-owners", []string{}, DenyProject),
+		secretsList("secrets.patterns", AllowProject),
+		secretsList("secrets.exclusions", AllowProject),
 		boolean("activity.enabled", true, DenyProject),
 		choice("activity.placement", "above-editor", DenyProject, "above-editor", "below-editor"),
 		text("activity.shortcut", "alt+w", DenyProject),
@@ -193,6 +207,25 @@ func choice(key, value string, policy ProjectPolicy, choices ...string) Definiti
 }
 func stringList(key string, value []string, policy ProjectPolicy) Definition {
 	return Definition{Key: key, Kind: Strings, Default: value, Project: policy}
+}
+
+func secretsList(key string, policy ProjectPolicy) Definition {
+	def := stringList(key, []string{}, policy)
+	def.Origin = OriginSecrets
+	def.Application = "pending"
+	def.Description = "Secret detection policy; only Secrets.toml may set it, and layers append."
+	return def
+}
+
+// checkOrigin refuses a setting written in a file that must not carry it.
+func (d Definition) checkOrigin(path string, secrets bool) error {
+	if secrets && d.Origin != OriginSecrets {
+		return &Error{Path: path, Key: d.Key, Reason: "only Secret detection settings belong in Secrets.toml; move this setting to Workbench.toml"}
+	}
+	if !secrets && d.Origin == OriginSecrets {
+		return &Error{Path: path, Key: d.Key, Reason: "secret detection settings belong in Secrets.toml, not Workbench.toml"}
+	}
+	return nil
 }
 
 func (d Definition) validate(value any) (any, error) {

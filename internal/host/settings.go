@@ -59,7 +59,12 @@ func loadSettings(ctx sdk.Context) (*config.Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	manager, err := config.New(config.Paths{User: filepath.Join(agent, "Workbench.toml"), Project: filepath.Join(ctx.Cwd(), dirname, "Workbench.toml")}, nil)
+	manager, err := config.New(config.Paths{
+		User:           filepath.Join(agent, "Workbench.toml"),
+		Secrets:        filepath.Join(agent, "Secrets.toml"),
+		Project:        filepath.Join(ctx.Cwd(), dirname, "Workbench.toml"),
+		ProjectSecrets: filepath.Join(ctx.Cwd(), dirname, "Secrets.toml"),
+	}, nil)
 	if err != nil {
 		return nil, err
 	}

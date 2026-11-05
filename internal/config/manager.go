@@ -15,6 +15,10 @@ import (
 type Paths struct {
 	User    string
 	Project string
+	// Secrets and ProjectSecrets are the detection-policy files; empty means
+	// the corresponding layer has no Secrets.toml.
+	Secrets        string
+	ProjectSecrets string
 }
 
 // Reconcile applies live consumers before a candidate snapshot is published.
@@ -71,9 +75,9 @@ func (m *Manager) Load(ctx context.Context, trusted bool) error {
 		return err
 	}
 	defer release()
-	documents, err := m.readLayers(trusted)
+	documents, secrets, err := m.readLayers(trusted)
 	if err == nil {
-		_, err = m.publish(ctx, documents)
+		_, err = m.publish(ctx, documents, secrets)
 	}
 	if err != nil {
 		m.recordError(err)
@@ -110,23 +114,33 @@ func (m *Manager) Inspect() (*Snapshot, Status) {
 
 func (m *Manager) recordError(err error) { m.mu.Lock(); m.lastErr = err; m.mu.Unlock() }
 
-func (m *Manager) readLayers(trusted bool) (map[Scope]*document, error) {
+func (m *Manager) readLayers(trusted bool) (map[Scope]*document, map[Scope]*document, error) {
 	user, err := readDocument(m.paths.User, m.definitions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	userSecrets, err := readDocumentAs(m.paths.Secrets, m.definitions, true)
+	if err != nil {
+		return nil, nil, err
 	}
 	layers := map[Scope]*document{User: user, Runtime: {values: copyValues(m.runtime)}}
+	secrets := map[Scope]*document{User: userSecrets}
 	if trusted {
 		project, err := readDocument(m.paths.Project, m.definitions)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		projectSecrets, err := readDocumentAs(m.paths.ProjectSecrets, m.definitions, true)
+		if err != nil {
+			return nil, nil, err
 		}
 		layers[Project] = project
+		secrets[Project] = projectSecrets
 	}
-	return layers, nil
+	return layers, secrets, nil
 }
 
-func (m *Manager) publish(ctx context.Context, documents map[Scope]*document) (*Snapshot, error) {
+func (m *Manager) publish(ctx context.Context, documents, secrets map[Scope]*document) (*Snapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -140,7 +154,7 @@ func (m *Manager) publish(ctx context.Context, documents map[Scope]*document) (*
 	if revision >= 1<<53 {
 		return nil, errors.New("configuration revision exhausted")
 	}
-	candidate, err := compose(documents, revision)
+	candidate, err := compose(documents, secrets, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +237,7 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 		}
 		defer unlock()
 	}
-	layers, err := m.readLayers(projectTrusted)
+	layers, secrets, err := m.readLayers(projectTrusted)
 	if err != nil {
 		return result, err
 	}
@@ -267,7 +281,7 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 		candidate.canonical = current.canonical
 		layers[scope] = candidate
 	}
-	if _, err := compose(layers, base.revision); err != nil {
+	if _, err := compose(layers, secrets, base.revision); err != nil {
 		return result, err
 	}
 	stillTrusted, err := isTrusted()
@@ -305,6 +319,9 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 	}
 	result.Saved = true
 	for _, edit := range normalized {
+		if m.definitions[edit.Key].Origin == OriginSecrets {
+			return result, &Error{Key: edit.Key, Reason: "edit this setting in Secrets.toml; the settings command only writes Workbench.toml"}
+		}
 		result.Changed = append(result.Changed, edit.Key)
 		if m.definitions[edit.Key].Application != "live" {
 			result.Pending = append(result.Pending, edit.Key)
@@ -312,7 +329,7 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 	}
 	reconcileContext, reconcileCancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer reconcileCancel()
-	snapshot, err := m.publish(reconcileContext, layers)
+	snapshot, err := m.publish(reconcileContext, layers, secrets)
 	if err != nil {
 		m.recordError(err)
 		return result, err
