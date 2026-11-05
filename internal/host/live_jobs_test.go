@@ -199,3 +199,51 @@ func writeScriptedTurn(w http.ResponseWriter, delta map[string]any, finish strin
 	end, _ := json.Marshal(map[string]any{"id": "r", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": map[string]any{}, "finish_reason": finish}}})
 	fmt.Fprintf(w, "data: %s\n\ndata: %s\n\ndata: [DONE]\n\n", data, end)
 }
+
+// TestLiveConfiguredJobTimeoutApplies proves the bash tool's deadline comes from
+// configuration rather than a hardcoded value (SPEC-0008 shared job policy).
+func TestLiveConfiguredJobTimeoutApplies(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("version = 1\n\n[jobs]\ntimeout-seconds = 1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	var toolResult string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		messages := fmt.Sprint(body["messages"])
+		mu.Unlock()
+		if strings.Contains(messages, "run a slow command") && !strings.Contains(messages, "Job ") {
+			args, _ := json.Marshal(map[string]any{"command": "sleep 30"})
+			delta := map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "call-0", "type": "function", "function": map[string]any{"name": "bash", "arguments": string(args)}}}}
+			writeScriptedTurn(w, delta, "tool_calls")
+			return
+		}
+		mu.Lock()
+		toolResult = messages
+		mu.Unlock()
+		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "ok"}, "stop")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+
+	f := startRPCWithExtensions(t, root, true, []string{"probe-agent"}, "--model", "workbench-fixture/mock")
+	f.send("slow", "prompt", "run a slow command")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	mu.Lock()
+	result := toolResult
+	mu.Unlock()
+	if !strings.Contains(result, "timedOut") && !strings.Contains(result, "timedout") {
+		t.Fatalf("the configured 1s deadline did not end the command: %s", result)
+	}
+}
