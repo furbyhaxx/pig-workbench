@@ -12,23 +12,41 @@ import (
 )
 
 var (
-	initializeOnce sync.Once
-	initializeErr  error
-	client         *api.Client
+	clientMu sync.Mutex
+	client   *api.Client
 )
 
 // Extension creates a cooperative service consumer for the integration suite.
 func Extension() *sdk.Extension {
 	ext := sdk.New("service-client")
 	ext.OnLoaded(func(ctx sdk.Context) {
-		initializeOnce.Do(func() {
-			client, initializeErr = api.NewClient(ext)
-		})
-		if initializeErr != nil {
-			ctx.Notify("cannot initialize Workbench client: "+initializeErr.Error(), "error")
+		created, err := api.NewClient(ext)
+		if err != nil {
+			ctx.Notify("cannot initialize Workbench client: "+err.Error(), "error")
+			return
+		}
+		clientMu.Lock()
+		old := client
+		client = created
+		clientMu.Unlock()
+		if old != nil {
+			old.Close()
 		}
 	})
+	ext.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
+		clientMu.Lock()
+		old := client
+		client = nil
+		clientMu.Unlock()
+		if old != nil {
+			old.Close()
+		}
+		return nil, nil
+	})
 	ext.Command("fixture-errors", "Probe optional-service failures without Workbench.", func(ctx sdk.Context, _ string) error {
+		clientMu.Lock()
+		client := client
+		clientMu.Unlock()
 		if client == nil {
 			return errors.New("client not initialized")
 		}
@@ -95,6 +113,9 @@ func Extension() *sdk.Extension {
 		return nil
 	})
 	ext.Command("fixture", "Probe the real Workbench service bus.", func(ctx sdk.Context, _ string) error {
+		clientMu.Lock()
+		client := client
+		clientMu.Unlock()
 		if client == nil {
 			return errors.New("client not initialized")
 		}

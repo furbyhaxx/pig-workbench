@@ -1,7 +1,6 @@
 package host
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"strconv"
@@ -202,7 +201,7 @@ func renderStatus(segment statusSegment, width int) string {
 
 const statusMinInterval = 250 * time.Millisecond
 
-func (b *statusBoard) update(registrationID string, value statusValue) error {
+func (b *statusBoard) update(ctx sdk.Context, registrationID string, value statusValue) error {
 	b.mu.Lock()
 	segment := b.segments[registrationID]
 	if segment == nil || b.closed {
@@ -224,11 +223,18 @@ func (b *statusBoard) update(registrationID string, value statusValue) error {
 		return nil
 	}
 	b.mu.Unlock()
-	b.flush(registrationID)
+	// A nested startup request must not re-enter the session-start host call lane.
+	b.flushWithContext(ctx, registrationID)
 	return nil
 }
 
 func (b *statusBoard) flush(registrationID string) {
+	if ctx, ok := b.host(); ok {
+		b.flushWithContext(ctx, registrationID)
+	}
+}
+
+func (b *statusBoard) flushWithContext(ctx sdk.Context, registrationID string) {
 	b.mu.Lock()
 	segment := b.segments[registrationID]
 	if segment == nil || b.closed {
@@ -239,10 +245,6 @@ func (b *statusBoard) flush(registrationID string) {
 	segment.updated = time.Now()
 	snapshot := *segment
 	b.mu.Unlock()
-	ctx, ok := b.host()
-	if !ok {
-		return
-	}
 	ctx.SetStatus(statusKey(&snapshot), renderStatus(snapshot, ctx.Width()))
 }
 
@@ -255,7 +257,7 @@ func installStatusSegment(s *session, registration contribution.Registration) (f
 	return func() { s.status.remove(registration.RegistrationID) }, nil
 }
 
-func (a *app) statusUpdate(_ context.Context, s *session, request api.Request) (any, *api.Error) {
+func (a *app) statusUpdate(ctx sdk.Context, s *session, request api.Request) (any, *api.Error) {
 	registration, err := s.contributions.Get(request.From, request.RegistrationID)
 	if err != nil {
 		return nil, contributionProtocolError(err)
@@ -279,7 +281,7 @@ func (a *app) statusUpdate(_ context.Context, s *session, request api.Request) (
 	if value.Count != nil && *value.Count < 0 {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params.count", Message: "count must not be negative", Outcome: "notApplied"}
 	}
-	if err := s.status.update(request.RegistrationID, value); err != nil {
+	if err := s.status.update(ctx, request.RegistrationID, value); err != nil {
 		return nil, &api.Error{Code: "notFound", Message: err.Error(), Outcome: "notApplied"}
 	}
 	return map[string]any{"accepted": true, "composedByWorkbench": true}, nil

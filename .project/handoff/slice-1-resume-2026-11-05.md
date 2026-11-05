@@ -5,9 +5,9 @@ document:
   title: "Resume full Slice 1 implementation"
   description: "Exact checkpoint, unfinished integration, retained worktrees, failing check and next actions"
   status: "published"
-  revision: 2
+  revision: 3
   created_at: "2026-11-05T12:04:45+01:00"
-  updated_at: "2026-11-05T15:27:15+01:00"
+  updated_at: "2026-11-05T16:01:57+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -17,16 +17,19 @@ document:
     - revision: 2
       reason: "Continue from eeb3e27 and correct the direction of the pig-web dependency"
       changes: ["Assigned real co-load to pig-web's gate and required the complete reference seam gate here", "Recorded service tests, reference-producer lock fix and blocked reload verification"]
+    - revision: 3
+      reason: "Resolved the reload blocker and restored real reload acceptance"
+      changes: ["Corrected the initial upstream-blocker inference to a Workbench status-context defect", "Recorded two successive reloads with six unique registrations and repeated/full passing gates"]
 ---
 
 # Current continuation checkpoint (05.11.2026)
 
 This section supersedes the historical checkpoint below where it differs. Repository/branch remain `/mnt/Projects/furbyhaxx/pig-workbench`, `dev`; implementation base is `eeb3e27`.
 
-- Active task list: `slice-1-completion`. Tasks 4.1 and 4.2 are complete; Phase C is not complete.
+- Active task list: `slice-1-completion`. Tasks 4.1 and 4.2 are complete; the reload acceptance in 4.3.1 now passes. Later-phase services remain with their owning phases.
 - All six contribution kinds are wired. New tests cover absent/incompatible/ambiguous services, stale/late replies, cross-instance cancellation and unknown mutation receipts. Reference registration/shutdown no longer hold the state mutex across host/bus calls; a live reentrant-bus regression test verifies this.
-- `just check`, `just race` and `just integration` passed after these changes. These are not evidence of reload acceptance.
-- **Reload gap (4.3.1):** a real command returning `ctx.Reload()` (`/reference reload` in the reference producer) did not return within the 45 s RPC deadline. The attempted `TestLiveReferenceProducerReload` failed with `RPC deadline exceeded`; the passing `TestLiveReferenceProducerReentrantBus` only verifies lock availability. Obtain a working host reload path or diagnose the upstream interaction before claiming clean re-registration.
+- `just check`, `just race` and `just integration` passed after the reload fix. `TestLiveReferenceProducerReload` additionally passed five repeated runs, each exercising two successive real reloads, fresh generations/handles, exactly six live contributions reconciled by `describe` and independent consumer rediscovery.
+- **Reload resolved (4.3.1):** the 45 s timeout was not sufficient evidence of an upstream blocker. Parent/packed-runner goroutine traces showed reload waiting for session startup while Workbench's `status.update` called `SetStatus` through the retained session-start context. Synchronous status publication now uses the active service-request context. The restored live reload regression passes without extending deadlines or suppressing checks. The fixture's startup notice now has a per-generation event key, avoiding conflict with persisted notices. The independent `service-client` fixture also needed reload-safe lifecycle ownership: its package-level `sync.Once` retained a disconnected client after reload; it now closes old clients on shutdown and creates a fresh subscribed client in `OnLoaded`.
 - `secrets.redact` and explicit trusted-owner grants remain Phase I task 11.2.2; they are not advertised.
 - **Slice-exit dependency correction:** PLAN-0002 §5 requires the full pig-web-shaped reference-extension seam gate. Actual pig-web implementation is not a Workbench prerequisite. Hand pig-web the slice-exit commit and evidence; pig-web owns the real two-extension co-load run against that commit.
 - Reference coverage is still missing `git://` selectors/edit refusal, `/workbench integrations` and a stored-key-redacted `jobs` log (17.5.1). Existing `kb://` coverage does not substitute for those rows. All other Slice 1 acceptance remains intact.

@@ -177,7 +177,7 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 			return fmt.Errorf("context.fields.set: %w", err)
 		}
 	}
-	notice := map[string]any{"eventKey": "research-ready", "kind": "notice", "source": "reference.research", "title": "Research finished", "body": "REFERENCE-NOTICE: research run 7 finished; see kb://sources/a.md.", "resource": "kb://sources/a.md", "delivery": "nextPrompt"}
+	notice := map[string]any{"eventKey": "research-ready-" + endpoint.Generation, "kind": "notice", "source": "reference.research", "title": "Research finished", "body": "REFERENCE-NOTICE: research run 7 finished; see kb://sources/a.md.", "resource": "kb://sources/a.md", "delivery": "nextPrompt"}
 	if err := active.Call(ctx, endpoint, "frames.publish", notice, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
 		return fmt.Errorf("frames.publish: %w", err)
 	}
@@ -237,8 +237,35 @@ func Extension() *sdk.Extension {
 			mu.Unlock()
 			return fmt.Errorf("not registered")
 		}
-		encoded, _ := json.Marshal(map[string]any{"reference": "registered", "kinds": len(currentReceipts), "generation": currentEndpoint.Generation, "receipts": currentReceipts, "lockHeld": lockObserved.Load()})
+		active, binding, registered := client, currentEndpoint, currentReceipts
 		mu.Unlock()
+		var described struct {
+			Registrations []struct {
+				Owner          string `json:"owner"`
+				Kind           string `json:"kind"`
+				RegistrationID string `json:"registrationId"`
+			} `json:"registrations"`
+			NextCursor string `json:"nextCursor"`
+		}
+		if err := active.Call(ctx, binding, "describe", map[string]any{}, &described, nil); err != nil {
+			return err
+		}
+		if described.NextCursor != "" {
+			return fmt.Errorf("unexpected paginated fixture registry")
+		}
+		count := 0
+		for _, registration := range described.Registrations {
+			if registration.Owner == "reference-producer" {
+				if registered[registration.Kind].RegistrationID != registration.RegistrationID {
+					return fmt.Errorf("unexpected live %s registration", registration.Kind)
+				}
+				count++
+			}
+		}
+		if count != len(registered) {
+			return fmt.Errorf("registry has %d contributions; fixture has %d", count, len(registered))
+		}
+		encoded, _ := json.Marshal(map[string]any{"reference": "registered", "kinds": count, "generation": binding.Generation, "receipts": registered, "lockHeld": lockObserved.Load()})
 		ctx.Notify(string(encoded), "info")
 		return nil
 	})

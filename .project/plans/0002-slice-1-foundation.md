@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 11
+  revision: 12
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-05T15:27:15+01:00"
+  updated_at: "2026-11-05T16:01:57+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -44,6 +44,9 @@ document:
     - revision: 11
       reason: "User clarified that pig-web builds on Slice 1 seams, not the reverse"
       changes: ["Replaced the real co-load exit with a pig-web-shaped reference-extension seam gate", "Assigned real co-load verification to pig-web and retained the slice-exit commit handoff", "Recorded current service verification and the unresolved host reload probe"]
+    - revision: 12
+      reason: "Resolved the reproduced reload hang inside Workbench instead of deferring it upstream"
+      changes: ["Status updates use the active service-request context", "Restored live acceptance for two successive reloads and six unique registrations", "Recorded green repeated reload and full quality gates"]
 ---
 
 # 1. Outcome
@@ -82,7 +85,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **next completions, one unit each:** `edit` needs hashline staging/seen guards/exact-text; `bash`+`jobs`+`job://` need the jobs Manager; `ask_user` needs the vault plus dialogs; prompt takeover needs confinement, section tags and `builtin/workbench`; `session.project` needs the project registry detection unit.
 - **resume checkpoint 2026-11-05:** the retained completed worktrees for staged line endings, relocation, secret payload guards, HTML reading and presentation snapshots are integrated. The public edit path now re-reads exact current source, authorizes in the model's coordinates, relocates through unique anchors, refuses ambiguous/absent targets and carries authored/delivered seen spans forward. Create-only `write` uses atomic no-replace publication after a reproduced overwrite race. The prompt limit test, documentation and package guidance agree on 256 KiB. `http(s)://` is wired through bounded, redirect-reauthorized static fetching with readable Markdown/raw HTML and charset/media policy. The v1 bus now registers, unregisters and describes `toolPresentation` contributions and routes opted-in tools through a live semantic renderer; other contribution kinds fail `unsupported` rather than pretending to work. `just check`, `just race` and `just integration` pass on this checkpoint. No billed inference was used.
 - **next:** Continue C–M. The remaining contribution kinds and their consumers, trusted secret grants, Phase A ledger/freeze, full prompt/skills takeover, instruction lifecycle, session messaging, journaled session storage, ask panels/recovery, command/activity coverage and the complete acceptance table remain open. Full syntax blocks, donor recovery/leniency, persistent register replay and path-display goldens are still missing. The real `../pig-web` co-load run belongs to pig-web's own acceptance gate; it is not a Workbench Slice 1 dependency. Workbench must pass the complete reference-extension seam gate in §5 before handing off its slice-exit commit. No Slice 1 exit is claimed.
-- **service checkpoint 05.11.2026:** `eeb3e27` wires all six contribution kinds and their consumers. Further service tests now cover absent/incompatible/ambiguous responders, stale/late replies, owner-instance cancellation and unknown mutation receipts; `just check`, `just race` and `just integration` pass. The reference producer no longer holds its state mutex across bus calls. A live `ctx.Reload()` probe through `/reference reload` exceeded the RPC harness's 45 s deadline; reload re-registration remains unverified (task 4.3.1), separate from the passing reentrant-bus test. `secrets.redact` remains Phase I task 11.2.2.
+- **service checkpoint 05.11.2026:** `eeb3e27` wires all six contribution kinds and their consumers. Further service tests now cover absent/incompatible/ambiguous responders, stale/late replies, owner-instance cancellation and unknown mutation receipts; `just check`, `just race` and `just integration` pass. The reference producer no longer holds its state mutex across bus calls. The initially hung `/reference reload` probe was traced to Workbench's synchronous `status.update` using the retained session-start context. It now uses the active service-request context. `TestLiveReferenceProducerReload` verifies two successive real reloads, fresh generations/handles, all six contribution kinds reconciled against the live registry and no state lock held across Emit; an independent consumer recreates its subscribed client and rediscovers after each reload. Five repeated runs and the full check/race/integration gates pass. The fixture's per-generation startup notice uses a per-generation event key rather than colliding with persisted notices. `secrets.redact` remains Phase I task 11.2.2.
 - **parallel:** personal PiG fork (D13). Nothing in this slice depends on it; Workbench detects fork capabilities by flag.
 
 # 2. What is in Slice 1 and what is depth

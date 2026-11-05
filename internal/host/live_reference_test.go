@@ -15,8 +15,9 @@ import (
 	"testing"
 )
 
-func TestLiveReferenceProducerReentrantBus(t *testing.T) {
+func TestLiveReferenceProducerReload(t *testing.T) {
 	repo := repoRoot(t)
+	t.Setenv("WORKBENCH_REFERENCE_DOCS", filepath.Join(repo, "internal/host/testdata/reference-producer/docs"))
 	f := startRPC(t, t.TempDir(), "-e", filepath.Join(repo, "internal/host/testdata/reference-producer"))
 	status := func(id string) map[string]any {
 		f.send(id, "prompt", "/reference status")
@@ -30,12 +31,29 @@ func TestLiveReferenceProducerReentrantBus(t *testing.T) {
 		if result["lockHeld"] != false {
 			t.Fatal("producer state lock held during a synchronous service request")
 		}
-		if result["kinds"] != float64(5) {
+		if result["kinds"] != float64(6) {
 			t.Fatalf("unexpected registration count: %+v", result)
 		}
 		return result
 	}
-	status("registered")
+	first := status("before")
+	for i := range 2 {
+		f.command(fmt.Sprintf("reload-%d", i), "/reference reload")
+		second := status(fmt.Sprintf("after-%d", i))
+		if consumer := f.probe(fmt.Sprintf("consumer-%d", i)); consumer["generation"] != second["generation"] {
+			t.Fatal("independent consumer discovered a different generation after reload")
+		}
+		if first["generation"] == second["generation"] {
+			t.Fatal("reload reused a service generation")
+		}
+		oldReceipts := first["receipts"].(map[string]any)
+		for kind, value := range second["receipts"].(map[string]any) {
+			if value.(map[string]any)["registrationId"] == oldReceipts[kind].(map[string]any)["registrationId"] {
+				t.Errorf("reload retained %s registration handle", kind)
+			}
+		}
+		first = second
+	}
 }
 
 // TestLiveReferenceProducerSeams co-loads a pig-web-shaped extension and drives every

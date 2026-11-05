@@ -99,7 +99,7 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 	case "describe":
 		return a.describeContributions(ctx, s, request)
 	case "status.update":
-		return a.statusUpdate(ctx, s, request)
+		return a.statusUpdate(host, s, request)
 	case "frames.publish":
 		return a.framesPublish(host, s, request)
 	case "frames.status", "frames.get", "frames.cancel", "frames.list":
