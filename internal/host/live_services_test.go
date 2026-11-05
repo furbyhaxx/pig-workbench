@@ -35,12 +35,21 @@ type rpcFixture struct {
 
 func startRPC(t *testing.T, root string, args ...string) *rpcFixture {
 	t.Helper()
+	return startRPCWithWorkbench(t, root, true, args...)
+}
+
+func startRPCWithWorkbench(t *testing.T, root string, workbench bool, args ...string) *rpcFixture {
+	t.Helper()
 	repo, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-	options := []string{"--offline", "--session-dir", filepath.Join(root, "sessions"), "-e", repo, "-e", filepath.Join(repo, "internal/host/testdata/service-client"), "--mode", "rpc"}
+	options := []string{"--offline", "--session-dir", filepath.Join(root, "sessions")}
+	if workbench {
+		options = append(options, "-e", repo)
+	}
+	options = append(options, "-e", filepath.Join(repo, "internal/host/testdata/service-client"), "--mode", "rpc")
 	options = append(options, args...)
 	cmd := exec.CommandContext(ctx, "pig", options...)
 	cmd.Dir = root
@@ -177,6 +186,14 @@ func (f *rpcFixture) command(id, command string) {
 	f.t.Helper()
 	f.send(id, "prompt", command)
 	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == id })
+}
+
+func TestLiveServiceFailuresRPC(t *testing.T) {
+	f := startRPCWithWorkbench(t, t.TempDir(), false)
+	f.send("failures", "prompt", "/fixture-errors")
+	f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"fixtureErrors":"passed"`)
+	})
 }
 
 func TestLiveServiceDiscoveryRPC(t *testing.T) {

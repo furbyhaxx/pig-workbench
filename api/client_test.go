@@ -18,6 +18,8 @@ func TestClientIgnoresUnboundReplies(t *testing.T) {
 		func(r *Reply) { r.SessionID = "other" },
 		func(r *Reply) { r.To = Identity{Owner: "build", Instance: "two"} },
 		func(r *Reply) { r.Generation = "" },
+		func(r *Reply) { r.Generation = "old-generation" },
+		func(r *Reply) { r.ID = "expired-request" },
 		func(r *Reply) { r.Error = &Error{Code: "internal", Message: "both"} },
 		func(r *Reply) { r.Result = nil },
 		func(r *Reply) { r.Version = 2 },
@@ -39,6 +41,21 @@ func TestClientIgnoresUnboundReplies(t *testing.T) {
 	}
 	if len(client.pending["request"].replies) != 1 {
 		t.Fatal("correlated reply dropped")
+	}
+}
+
+func TestClientDiscardsLateReplies(t *testing.T) {
+	client := &Client{identity: Identity{Owner: "build", Instance: "one"}, pending: make(map[string]*pendingCall)}
+	reply := Reply{Version: 1, ID: "expired", SessionID: "session", Generation: "generation", To: client.identity, OK: true, Result: map[string]any{"applied": true}}
+	if err := client.onReply(sdk.Context{}, reply); err != nil {
+		t.Fatal(err)
+	}
+	client.pending["next"] = &pendingCall{session: "session", generation: "generation"}
+	if err := client.onReply(sdk.Context{}, reply); err != nil {
+		t.Fatal(err)
+	}
+	if len(client.pending["next"].replies) != 0 {
+		t.Fatal("late mutation reply completed a different request")
 	}
 }
 

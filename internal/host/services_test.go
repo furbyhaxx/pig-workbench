@@ -69,6 +69,14 @@ func TestCancellationIsOwnerScoped(t *testing.T) {
 		t.Fatal("stale generation cancel applied")
 	}
 	request.Generation = "generation"
+	request.From.Instance = "other-instance"
+	if err := a.cancelService(s, request); err != nil {
+		t.Fatal(err)
+	}
+	if ctx.Err() != nil {
+		t.Fatal("cross-instance cancel applied")
+	}
+	request.From.Instance = "instance"
 	if err := a.cancelService(s, request); err != nil {
 		t.Fatal(err)
 	}
