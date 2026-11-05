@@ -25,12 +25,17 @@ type Register struct {
 // visibility and whole-source awareness mandatory. ResolveBlock resolves a
 // syntax block anchored at line for path, and is required for any block operation.
 type BatchInput struct {
-	Document     Document
-	Sources      map[string]Snapshot
-	Registers    map[string]Register
-	Epoch        string
-	EnforceSeen  bool
-	ResolveBlock func(path string, source Normalized, line int) (LineSpan, error)
+	Document    Document
+	Sources     map[string]Snapshot
+	Registers   map[string]Register
+	Epoch       string
+	EnforceSeen bool
+	// CurrentSources holds the exact source observed immediately before staging.
+	// When it differs from Sources, resolved line operations relocate through the
+	// unique-anchor rules before any mutation; a missing entry means the tagged
+	// snapshot is still current.
+	CurrentSources map[string]Snapshot
+	ResolveBlock   func(path string, source Normalized, line int) (LineSpan, error)
 }
 
 // Effects is the staged outcome for one source. Bytes carries the full replacement
@@ -44,6 +49,7 @@ type Effects struct {
 	Delete         bool
 	MoveTo         string
 	Touched        []LineSpan
+	Seen           []LineSpan
 }
 
 // BatchPlan is the ordered result of one preflight. Effects follow first section
@@ -54,13 +60,16 @@ type BatchPlan struct {
 }
 
 type batchSection struct {
-	path       string
-	ops        []Op
-	snapshot   Snapshot
-	normalized Normalized
-	lineOps    []Op
-	delete     bool
-	moveTo     string
+	path              string
+	ops               []Op
+	snapshot          Snapshot
+	normalized        Normalized
+	current           Snapshot
+	currentNormalized Normalized
+	drifted           bool
+	lineOps           []Op
+	delete            bool
+	moveTo            string
 }
 
 type batchRegisters struct {
@@ -92,6 +101,9 @@ func PlanBatch(input BatchInput) (BatchPlan, error) {
 		if err := resolveBatchOp(input, item, registers); err != nil {
 			return BatchPlan{}, err
 		}
+	}
+	if err := prepareBatchCurrent(input, sections); err != nil {
+		return BatchPlan{}, err
 	}
 	if err := validateBatchMoves(sections); err != nil {
 		return BatchPlan{}, err
@@ -153,7 +165,22 @@ func batchSections(input BatchInput) ([]*batchSection, []batchWork, error) {
 			if err != nil {
 				return nil, nil, fmt.Errorf("section %q: %w", section.Path, err)
 			}
-			grouped = &batchSection{path: section.Path, snapshot: snapshot, normalized: normalized}
+			grouped = &batchSection{path: section.Path, snapshot: snapshot, normalized: normalized, current: snapshot, currentNormalized: normalized}
+			if observed, ok := input.CurrentSources[section.Path]; ok {
+				if observed.URI != "" && observed.URI != snapshot.URI {
+					return nil, nil, fmt.Errorf("section %q current source URI %s does not match %s", section.Path, observed.URI, snapshot.URI)
+				}
+				if observed.Revision == "" || SourceRevision(observed.Raw) != observed.Revision {
+					return nil, nil, fmt.Errorf("section %q current source requires its exact observed revision", section.Path)
+				}
+				currentNormalized, err := Normalize(observed.Raw)
+				if err != nil {
+					return nil, nil, fmt.Errorf("section %q current source: %w", section.Path, err)
+				}
+				grouped.current = observed
+				grouped.currentNormalized = currentNormalized
+				grouped.drifted = observed.Revision != snapshot.Revision
+			}
 			index[section.Path] = grouped
 			sections = append(sections, grouped)
 		}
@@ -275,6 +302,41 @@ func resolveBatchBlock(input BatchInput, section *batchSection, index int, op Op
 	return span, nil
 }
 
+// prepareBatchCurrent validates authorization in the coordinates the model saw,
+// then relocates resolved operations onto the observed current source. External
+// changes never widen what the model was allowed to modify.
+func prepareBatchCurrent(input BatchInput, sections []*batchSection) error {
+	for _, section := range sections {
+		if !section.drifted {
+			continue
+		}
+		if section.delete {
+			return fmt.Errorf("section %q changed since it was tagged; read the current source before deleting it", section.path)
+		}
+		if len(section.lineOps) == 0 {
+			continue
+		}
+		if input.EnforceSeen {
+			view := SeenView{Epoch: section.snapshot.Epoch, Ranges: section.snapshot.Seen}
+			if err := CheckSeen(section.normalized, view, input.Epoch, section.lineOps); err != nil {
+				return fmt.Errorf("section %q: %w", section.path, err)
+			}
+		}
+		relocated, err := RelocateOps(section.normalized, section.currentNormalized, section.lineOps)
+		if err != nil {
+			var relocation *RelocationError
+			if errors.As(err, &relocation) {
+				annotated := *relocation
+				annotated.Path = section.path
+				return &annotated
+			}
+			return fmt.Errorf("section %q could not be relocated onto the current source: %w", section.path, err)
+		}
+		section.lineOps = relocated
+	}
+	return nil
+}
+
 func validateBatchMoves(sections []*batchSection) error {
 	paths := make(map[string]bool, len(sections))
 	for _, section := range sections {
@@ -303,31 +365,36 @@ func stageBatchSection(input BatchInput, section *batchSection) (Effects, bool, 
 				return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 			}
 		}
-		return Effects{Path: section.path, BeforeRevision: section.snapshot.Revision, Delete: true}, true, nil
+		return Effects{Path: section.path, BeforeRevision: section.current.Revision, Delete: true}, true, nil
 	}
 	if len(section.lineOps) == 0 && section.moveTo == "" {
 		return Effects{}, false, nil
 	}
-	if input.EnforceSeen && len(section.lineOps) > 0 {
+	if input.EnforceSeen && len(section.lineOps) > 0 && !section.drifted {
 		view := SeenView{Epoch: section.snapshot.Epoch, Ranges: section.snapshot.Seen}
 		if err := CheckSeen(section.normalized, view, input.Epoch, section.lineOps); err != nil {
 			return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 		}
 	}
-	result, err := StageSource(section.normalized, section.lineOps)
+	result, err := StageSource(section.currentNormalized, section.lineOps)
 	if err != nil {
 		return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
 	}
-	restored, err := RestoreStaged(section.normalized, result)
+	restored, err := RestoreStaged(section.currentNormalized, result)
 	if err != nil {
 		return Effects{}, false, fmt.Errorf("section %q: %w", section.path, err)
+	}
+	seen := []LineSpan(nil)
+	if !section.drifted {
+		seen = section.snapshot.Seen
 	}
 	return Effects{
 		Path:           section.path,
-		BeforeRevision: section.snapshot.Revision,
+		BeforeRevision: section.current.Revision,
 		Bytes:          restored,
 		MoveTo:         section.moveTo,
 		Touched:        result.Touched,
+		Seen:           SeenAfterStaging(result, seen),
 	}, true, nil
 }
 

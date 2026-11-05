@@ -331,3 +331,22 @@ func TestRestoreStagedFallbacksAndRejectsInvalidProvenance(t *testing.T) {
 		t.Fatal("RestoreStaged accepted origins that do not match the staged lines")
 	}
 }
+
+func TestSeenAfterStagingMapsAuthoredAndDeliveredLines(t *testing.T) {
+	snapshot := stageSnapshot(t, "a\nb\nc\nd\n")
+	staged, err := StageSource(snapshot, []Op{
+		{Kind: PUT_RANGE, Line: 1, End: 1, Payload: []string{"A"}},
+		{Kind: PUT_INSERT_AFTER, Line: 2, Payload: []string{"inserted"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := SeenAfterStaging(staged, []LineSpan{{2, 2}, {4, 4}})
+	want := []LineSpan{{1, 3}, {5, 5}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("mapped seen = %#v, want %#v", got, want)
+	}
+	if got := SeenAfterStaging(StagedSource{Bytes: []byte("a\n")}, []LineSpan{{1, 1}}); got != nil {
+		t.Fatalf("staging without provenance produced seen intervals: %#v", got)
+	}
+}

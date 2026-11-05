@@ -14,6 +14,7 @@ const relocationContext = 3
 // in the current content. Candidates holds the ambiguous current spans and stays
 // empty when the target is absent. It never carries source text.
 type RelocationError struct {
+	Path       string
 	Index      int
 	Kind       OpKind
 	Target     LineSpan
@@ -21,10 +22,14 @@ type RelocationError struct {
 }
 
 func (e *RelocationError) Error() string {
-	if len(e.Candidates) == 0 {
-		return fmt.Sprintf("operation %d (%s): original lines %d..%d are absent from the current content; read the current lines and retry", e.Index+1, e.Kind, e.Target.Start, e.Target.End)
+	where := ""
+	if e.Path != "" {
+		where = fmt.Sprintf("section %q: ", e.Path)
 	}
-	return fmt.Sprintf("operation %d (%s): original lines %d..%d match %d current candidates; include more unchanged context", e.Index+1, e.Kind, e.Target.Start, e.Target.End, len(e.Candidates))
+	if len(e.Candidates) == 0 {
+		return fmt.Sprintf("%soperation %d (%s): original lines %d..%d are absent from the current content; read the current lines and retry", where, e.Index+1, e.Kind, e.Target.Start, e.Target.End)
+	}
+	return fmt.Sprintf("%soperation %d (%s): original lines %d..%d match %d current candidates; include more unchanged context", where, e.Index+1, e.Kind, e.Target.Start, e.Target.End, len(e.Candidates))
 }
 
 // lineContent resolves one-based line numbers of a normalized view to their

@@ -83,6 +83,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			return nil, errors.New("an edit batch accepts at most 32 sections")
 		}
 		sources := make(map[string]hashline.Snapshot)
+		currentSources := make(map[string]hashline.Snapshot)
 		destinations := make(map[string]string)
 		paths := make(map[string]string)
 		for _, section := range document.Sections {
@@ -94,7 +95,15 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			if err != nil {
 				return nil, err
 			}
+			currentRaw, err := readEditSource(work, target.Path)
+			if err != nil {
+				return nil, fmt.Errorf("read current source %s: %w", target.Path, err)
+			}
+			if len(currentRaw) > maxSnapshotSourceBytes {
+				return nil, fmt.Errorf("current source %s exceeds the %d-byte hashline snapshot limit; read a range and use exact-text edit", target.Path, maxSnapshotSourceBytes)
+			}
 			sources[section.Path] = snapshot
+			currentSources[section.Path] = hashline.Snapshot{URI: snapshot.URI, Revision: hashline.SourceRevision(currentRaw), Epoch: snapshot.Epoch, Raw: currentRaw}
 			paths[snapshot.URI] = target.Path
 			for _, op := range section.Ops {
 				if op.Kind == hashline.MV {
@@ -107,7 +116,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			}
 		}
 		enforce, _ := configuration.Get("edit.enforce-seen-lines")
-		plan, err = hashline.PlanBatch(hashline.BatchInput{Document: document, Sources: sources, Epoch: epoch, EnforceSeen: enforce.Value == true, Registers: s.editState.registers, ResolveBlock: func(path string, source hashline.Normalized, line int) (hashline.LineSpan, error) {
+		plan, err = hashline.PlanBatch(hashline.BatchInput{Document: document, Sources: sources, CurrentSources: currentSources, Epoch: epoch, EnforceSeen: enforce.Value == true, Registers: s.editState.registers, ResolveBlock: func(path string, source hashline.Normalized, line int) (hashline.LineSpan, error) {
 			snapshot := sources[path]
 			_, spans, err := a.syntax.Analyze(work, snapshot.Revision, paths[snapshot.URI], source.Bytes)
 			if err != nil {
@@ -129,6 +138,12 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			return *found, nil
 		}})
 		if err != nil {
+			var relocation *hashline.RelocationError
+			if errors.As(err, &relocation) {
+				if context := currentSourceContext(work, s, ctx.ToolCallID(), captured.Cwd, epoch, relocation, currentSources[relocation.Path].Raw); context != "" {
+					return nil, fmt.Errorf("%w\nCurrent tagged source around the affected anchor:\n%s\nRead the current source and retry with its coordinates.", err, context)
+				}
+			}
 			return nil, err
 		}
 		for _, effect := range plan.Effects {
@@ -243,6 +258,11 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		}
 		fmt.Fprintf(&content, "%q: %s\n", filepath.Base(outcome.Path), state)
 	}
+	if tagged && s.snapshots.Epoch() == epoch {
+		for index, outcome := range outcomes {
+			s.rememberCommitted(plan.Effects[index], outcome, epoch)
+		}
+	}
 	remainingBytes, remainingLines := 50000-content.Len(), 1900
 	for index, outcome := range outcomes {
 		if !outcome.Committed || effects[index].Delete || remainingBytes < 1024 || remainingLines < 6 {
@@ -272,6 +292,33 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 	}
 	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"changed": changed, "outcomes": outcomes, "partial": commitErr != nil, "locationRevision": captured.Revision}, IsError: commitErr != nil}, nil
+}
+
+const maxSnapshotSourceBytes = 4 << 20
+
+func currentSourceContext(work context.Context, s *session, callID, cwd, epoch string, relocation *hashline.RelocationError, raw []byte) string {
+	target, err := localEditTarget(cwd, relocation.Path)
+	if err != nil {
+		return ""
+	}
+	source, err := hashline.Normalize(raw)
+	if err != nil || len(source.Lines) == 0 {
+		return ""
+	}
+	line := relocation.Target.Start
+	if len(relocation.Candidates) > 0 {
+		line = relocation.Candidates[0].Start
+	}
+	line = max(1, min(line, len(source.Lines)))
+	start := max(1, line-2)
+	end := min(len(source.Lines), start+7)
+	target.Selection = resource.Selection{Explicit: true, Ranges: []resource.Range{{Start: start, End: end}}}
+	page, err := (resource.FileProvider{}).Read(work, resource.ReadRequest{URI: target.URI, Requested: target.Path, Selector: target.Selection, Budget: resource.Budget{Bytes: 8192, Lines: 12}})
+	if err != nil {
+		return ""
+	}
+	s.rememberRead(callID, epoch, target, page)
+	return page.Content
 }
 
 func localEditTarget(cwd, path string) (resource.Target, error) {

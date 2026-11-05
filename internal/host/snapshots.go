@@ -4,9 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"path/filepath"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -49,6 +51,26 @@ func (s *session) rememberRead(callID, epoch string, target resource.Target, pag
 		clear(s.pendingViews)
 	}
 	s.pendingViews[callID] = append(s.pendingViews[callID], view)
+}
+
+func (s *session) rememberCommitted(effect hashline.Effects, outcome fileedit.Outcome, epoch string) {
+	if s.snapshots == nil || effect.Delete || !outcome.Committed || effect.Bytes == nil {
+		return
+	}
+	path := outcome.Path
+	if outcome.Destination != "" {
+		path = outcome.Destination
+	}
+	canonical, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return
+	}
+	uri := resource.FileURI(canonical)
+	snapshot, err := s.snapshots.Retain(uri, effect.Bytes)
+	if err != nil {
+		return
+	}
+	_ = s.snapshots.Delivered(uri, snapshot.Revision, epoch, effect.Seen, false)
 }
 
 func (s *session) rememberWritten(callID, epoch string, target resource.Target, raw []byte, receipt string) {

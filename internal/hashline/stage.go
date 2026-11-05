@@ -108,6 +108,29 @@ func StageSource(source Normalized, ops []Op) (StagedSource, error) {
 	return StagedSource{Bytes: staged.bytes, Touched: staged.touched, Origins: staged.origins}, nil
 }
 
+// SeenAfterStaging maps delivered original intervals and authored payload lines
+// into the staged view. Unchanged lines that were not seen stay unseen.
+func SeenAfterStaging(staged StagedSource, seen []LineSpan) []LineSpan {
+	if len(staged.Origins) == 0 {
+		return nil
+	}
+	seen = mergeSeenSpans(append([]LineSpan(nil), seen...))
+	var mapped []LineSpan
+	for index, origin := range staged.Origins {
+		visible := origin == 0
+		for _, span := range seen {
+			if origin >= span.Start && origin <= span.End {
+				visible = true
+				break
+			}
+		}
+		if visible {
+			mapped = append(mapped, LineSpan{Start: index + 1, End: index + 1})
+		}
+	}
+	return mergeSeenSpans(mapped)
+}
+
 // RestoreStaged applies the BOM and line endings to a staging of the same source.
 // A surviving unchanged line keeps its exact original ending; authored lines and
 // surviving lines that ended the source without a terminator use the dominant ending.

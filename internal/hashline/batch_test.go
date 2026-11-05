@@ -62,11 +62,13 @@ func TestPlanBatchCrossFileBlockCutAndPaste(t *testing.T) {
 			BeforeRevision: first.Revision,
 			Bytes:          []byte("package a\n\n\nfunc other() {}\n"),
 			Touched:        []LineSpan{{3, 5}},
+			Seen:           []LineSpan{{1, 4}},
 		},
 		{
 			Path:           "src/b.go",
 			BeforeRevision: second.Revision,
 			Bytes:          []byte("package b\n\nfunc helper() {\n\tx()\n}\nfunc use() {}\n"),
+			Seen:           []LineSpan{{1, 6}},
 		},
 	}
 	if !reflect.DeepEqual(plan.Effects, want) {
@@ -334,6 +336,7 @@ func TestPlanBatchMoveDestinations(t *testing.T) {
 			Bytes:          []byte("\ufeffx\r\nb"),
 			MoveTo:         "new name.go",
 			Touched:        []LineSpan{{1, 1}},
+			Seen:           []LineSpan{{1, 1}},
 		}}
 		if !reflect.DeepEqual(plan.Effects, want) {
 			t.Fatalf("effects = %#v, want %#v", plan.Effects, want)
@@ -500,8 +503,8 @@ func TestPlanBatchRegisterOrderAcrossRepeatedSections(t *testing.T) {
 			t.Fatalf("PlanBatch: %v", err)
 		}
 		want := []Effects{
-			{Path: "src/a.go", BeforeRevision: first.Revision, Bytes: []byte("x\n"), Touched: []LineSpan{{1, 1}, {2, 2}}},
-			{Path: "src/b.go", BeforeRevision: second.Revision, Bytes: []byte("c\nb\n")},
+			{Path: "src/a.go", BeforeRevision: first.Revision, Bytes: []byte("x\n"), Touched: []LineSpan{{1, 1}, {2, 2}}, Seen: []LineSpan{{1, 1}}},
+			{Path: "src/b.go", BeforeRevision: second.Revision, Bytes: []byte("c\nb\n"), Seen: []LineSpan{{2, 2}}},
 		}
 		if !reflect.DeepEqual(plan.Effects, want) {
 			t.Fatalf("effects = %#v, want %#v", plan.Effects, want)
@@ -670,5 +673,87 @@ func TestPlanBatchKeepsEndingOfSurvivingDuplicateLine(t *testing.T) {
 				t.Fatalf("touched = %#v, want %#v", plan.Effects[0].Touched, []LineSpan{test.touched})
 			}
 		})
+	}
+}
+
+func TestPlanBatchRelocatesOntoObservedCurrentSource(t *testing.T) {
+	const epoch = "epoch-1"
+	original := batchSeen(batchSnapshot(t, "file:///src/a.go", epoch, "alpha\nbeta\ngamma\ndelta\nepsilon\n"), LineSpan{1, 5})
+	current := batchSnapshot(t, "file:///src/a.go", epoch, "new one\nnew two\nalpha\nbeta\ngamma\ndelta\nepsilon\n")
+	plan, err := PlanBatch(BatchInput{
+		Document:       batchDocument(t, batchSectionText(original, "src/a.go", "PUT 3.=3:", "+gamma-edited")),
+		Sources:        map[string]Snapshot{"src/a.go": original},
+		CurrentSources: map[string]Snapshot{"src/a.go": current},
+		Epoch:          epoch,
+		EnforceSeen:    true,
+	})
+	if err != nil {
+		t.Fatalf("PlanBatch: %v", err)
+	}
+	want := Effects{
+		Path:           "src/a.go",
+		BeforeRevision: current.Revision,
+		Bytes:          []byte("new one\nnew two\nalpha\nbeta\ngamma-edited\ndelta\nepsilon\n"),
+		Touched:        []LineSpan{{5, 5}},
+		Seen:           []LineSpan{{5, 5}},
+	}
+	if !reflect.DeepEqual(plan.Effects, []Effects{want}) {
+		t.Fatalf("effects = %#v, want %#v", plan.Effects, []Effects{want})
+	}
+}
+
+func TestPlanBatchRefusesUnsafeCurrentRelocation(t *testing.T) {
+	const epoch = "epoch-1"
+	original := batchSeen(batchSnapshot(t, "file:///src/a.go", epoch, "a\nunique-target\nb\nc\n"), LineSpan{1, 4})
+	current := batchSnapshot(t, "file:///src/a.go", epoch, "a\nunique-target\nb\nc\nx\na\nunique-target\nb\nc\n")
+	input := func(seen Snapshot, patch string) BatchInput {
+		return BatchInput{
+			Document:       batchDocument(t, batchSectionText(seen, "src/a.go", patch)),
+			Sources:        map[string]Snapshot{"src/a.go": seen},
+			CurrentSources: map[string]Snapshot{"src/a.go": current},
+			Epoch:          epoch,
+			EnforceSeen:    true,
+		}
+	}
+	t.Run("ambiguous current matches", func(t *testing.T) {
+		plan, err := PlanBatch(input(original, "PUT 2.=2:\n+edited"))
+		var relocation *RelocationError
+		if !errors.As(err, &relocation) || plan.Effects != nil {
+			t.Fatalf("PlanBatch = %#v, %v; want relocation refusal", plan, err)
+		}
+		if len(relocation.Candidates) != 2 {
+			t.Fatalf("candidates = %#v, want both current occurrences", relocation.Candidates)
+		}
+	})
+	t.Run("unseen original target", func(t *testing.T) {
+		seen := batchSeen(original, LineSpan{1, 1})
+		plan, err := PlanBatch(input(seen, "PUT 2.=2:\n+edited"))
+		var unseen *UnseenLinesError
+		if !errors.As(err, &unseen) || !reflect.DeepEqual(unseen.Missing, []LineSpan{{2, 2}}) || plan.Effects != nil {
+			t.Fatalf("PlanBatch = %#v, %v; want original seen-line refusal", plan, err)
+		}
+	})
+	t.Run("delete after external change", func(t *testing.T) {
+		seen := batchSeen(original, LineSpan{1, 4})
+		plan, err := PlanBatch(input(seen, "REM"))
+		if err == nil || !strings.Contains(err.Error(), "changed since it was tagged") || plan.Effects != nil {
+			t.Fatalf("PlanBatch = %#v, %v; want current-source deletion refusal", plan, err)
+		}
+	})
+}
+
+func TestPlanBatchRejectsInconsistentCurrentSource(t *testing.T) {
+	const epoch = "epoch-1"
+	original := batchSnapshot(t, "file:///src/a.go", epoch, "a\n")
+	current := batchSnapshot(t, "file:///src/a.go", epoch, "b\n")
+	current.Revision = "not-the-digest"
+	_, err := PlanBatch(BatchInput{
+		Document:       batchDocument(t, batchSectionText(original, "src/a.go", "PUT 1.=1:\n+b")),
+		Sources:        map[string]Snapshot{"src/a.go": original},
+		CurrentSources: map[string]Snapshot{"src/a.go": current},
+		Epoch:          epoch,
+	})
+	if err == nil || !strings.Contains(err.Error(), "exact observed revision") {
+		t.Fatalf("PlanBatch = %v; want current revision validation", err)
 	}
 }
