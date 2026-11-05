@@ -1,6 +1,6 @@
 # Third-party notices
 
-Runtime dependencies are version-matched through Go modules. Latest release and maintenance/supersession checks were performed against the Go module proxy and upstream repositories on 03.11.2026. No upstream deprecation or replacement notice was found for these selected projects; gofrs/flock is the maintained successor to theckman/go-flock.
+Runtime dependencies are version-matched through Go modules. Latest release and maintenance/supersession checks were performed against the Go module proxy and upstream repositories on 03.11.2026 and rechecked on 05.11.2026. No upstream deprecation or replacement notice was found for these selected projects; gofrs/flock is the maintained successor to theckman/go-flock.
 
 ## pi-secret-guard detection patterns
 
@@ -122,6 +122,108 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys v0.49.0
 
 Source: https://go.googlesource.com/sys
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## HTML reader dependencies
+
+Latest releases and upstream maintenance checked on 05.11.2026. `html-to-markdown/v2` v2.5.2 (published 2026-06-07) and `go-readability/v2` v2.1.3 (published 2026-09-30) are the current tagged releases; both repositories are active and neither carries a deprecation or replacement notice.
+
+| Module | Version | License | Copyright | Source |
+|---|---|---|---|---|
+| github.com/JohannesKaufmann/html-to-markdown/v2 | v2.5.2 | MIT | 2018 Johannes Kaufmann | https://github.com/JohannesKaufmann/html-to-markdown |
+| codeberg.org/readeck/go-readability/v2 | v2.1.3 | MIT | 2019 Radhi Fadlillah | https://codeberg.org/readeck/go-readability |
+| github.com/JohannesKaufmann/dom | v0.3.1 | MIT | 2024 Johannes Kaufmann | https://github.com/JohannesKaufmann/dom |
+| github.com/go-shiori/dom | v0.0.0-20230515143342-73569d674e1c | MIT | 2019-present Radhi Fadlillah | https://github.com/go-shiori/dom |
+| github.com/gogs/chardet | v0.0.0-20211120154057-b7413eaefb8f | MIT | 2012 chardet Authors | https://github.com/gogs/chardet |
+| github.com/itlightning/dateparse | v0.2.1 | MIT | 2015-2017 Aaron Raddon; 2023-2024 IT Lightning, LLC | https://github.com/itlightning/dateparse |
+
+The MIT license text below applies to every module in the table above, with the respective copyright notice:
+
+```text
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## github.com/andybalholm/cascadia v1.3.4
+
+Source: https://github.com/andybalholm/cascadia
+
+```text
+Copyright (c) 2011 Andy Balholm. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+library.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/net v0.62.0
+
+Source: https://go.googlesource.com/net
 
 ```text
 Copyright 2009 The Go Authors.

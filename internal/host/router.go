@@ -16,6 +16,12 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
 		return nil, "", err
 	}
+	if err := router.RegisterBuiltin(resource.HTTPProvider{}); err != nil {
+		return nil, "", err
+	}
+	if err := router.RegisterBuiltin(resource.HTTPProvider{Secure: true}); err != nil {
+		return nil, "", err
+	}
 	if err := router.RegisterBuiltin(cfgProvider{source: func() (*config.Snapshot, config.Status) {
 		return settings.Inspect()
 	}}); err != nil {

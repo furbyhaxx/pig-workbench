@@ -31,6 +31,9 @@ type Page struct {
 	CanonicalURI      string   `json:"canonicalUri"`
 	Revision          string   `json:"revision"`
 	Tag               string   `json:"tag,omitempty"`
+	Handler           string   `json:"handler,omitempty"`
+	ContentType       string   `json:"contentType,omitempty"`
+	Notices           []string `json:"notices,omitempty"`
 	CoordinateSpace   string   `json:"coordinateSpace"`
 	ShownRanges       []Range  `json:"shownRanges"`
 	FullyShownRanges  []Range  `json:"fullyShownRanges"`
