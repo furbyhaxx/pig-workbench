@@ -245,3 +245,31 @@ func TestRedactProtectsPlaceholdersAndFailsClosed(t *testing.T) {
 		t.Fatal("invalid mapping did not fail closed")
 	}
 }
+
+func TestRedactReplacesLargerSecretContainingPlaceholder(t *testing.T) {
+	key, err := DeriveHMACKey(bytes.Repeat([]byte{43}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical := "red-sec-abcdefghijklmnop"
+	secret := "prefix " + canonical + " suffix"
+	placeholder := Placeholder(key, []byte(secret))
+	known := map[string]string{secret: placeholder}
+	got, err := Redact("value "+secret+" standalone "+canonical, key, known)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "value " + placeholder + " standalone " + canonical; got != want {
+		t.Fatalf("redaction = %q, want %q", got, want)
+	}
+	// A value overlapping a placeholder must not leak; the larger occurrence wins.
+	partial := "prefix " + canonical[:12]
+	partialPlaceholder := Placeholder(key, []byte(partial))
+	got, err = Redact("value "+partial+canonical[12:], key, map[string]string{partial: partialPlaceholder})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "value "+partialPlaceholder {
+		t.Fatalf("overlapping placeholder secret = %q, want %q", got, partialPlaceholder)
+	}
+}

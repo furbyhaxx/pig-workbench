@@ -38,12 +38,13 @@ type redactionValue struct {
 	placeholder string
 }
 
-type redactionSegment struct {
-	text      string
-	protected bool
+type protectedSpan struct {
+	start, end int
 }
 
 // Redact replaces known values, protecting existing and newly generated placeholders.
+// A larger known value may contain a placeholder; replacing the whole value is
+// mandatory, while a value that would only cut into a placeholder is refused.
 // It returns no output on invalid keys or mappings.
 func Redact(text string, hmacKey []byte, known map[string]string) (string, error) {
 	if len(hmacKey) < keySize {
@@ -63,40 +64,91 @@ func Redact(text string, hmacKey []byte, known map[string]string) (string, error
 		return values[i].value < values[j].value
 	})
 
-	var segments []redactionSegment
-	start := 0
+	var protected []protectedSpan
 	for _, match := range placeholderPattern.FindAllStringIndex(text, -1) {
-		segments = append(segments, redactionSegment{text: text[start:match[0]]})
-		segments = append(segments, redactionSegment{text: text[match[0]:match[1]], protected: true})
-		start = match[1]
+		protected = append(protected, protectedSpan{start: match[0], end: match[1]})
 	}
-	segments = append(segments, redactionSegment{text: text[start:]})
 	for _, value := range values {
-		next := make([]redactionSegment, 0, len(segments))
-		for _, segment := range segments {
-			if segment.protected {
-				next = append(next, segment)
-				continue
-			}
-			remaining := segment.text
-			for {
-				before, after, found := strings.Cut(remaining, value.value)
-				if !found {
-					next = append(next, redactionSegment{text: remaining})
-					break
-				}
-				if before != "" {
-					next = append(next, redactionSegment{text: before})
-				}
-				next = append(next, redactionSegment{text: value.placeholder, protected: true})
-				remaining = after
-			}
+		text, protected = replaceKnown(text, protected, value)
+	}
+	return text, nil
+}
+
+// replaceKnown replaces one value longest-first across the current text. An
+// occurrence wholly inside a protected placeholder is skipped; one that
+// contains a complete placeholder replaces the whole larger value.
+func replaceKnown(text string, protected []protectedSpan, value redactionValue) (string, []protectedSpan) {
+	type replacement struct{ start, end int }
+	var replacements []replacement
+	for offset := 0; offset+len(value.value) <= len(text); {
+		index := strings.Index(text[offset:], value.value)
+		if index < 0 {
+			break
 		}
-		segments = next
+		start := offset + index
+		end := start + len(value.value)
+		if allowedReplacement(protected, start, end) {
+			start, end = extendOverPlaceholders(protected, start, end)
+			replacements = append(replacements, replacement{start: start, end: end})
+		}
+		offset = end
+	}
+	if len(replacements) == 0 {
+		return text, protected
 	}
 	var result strings.Builder
-	for _, segment := range segments {
-		result.WriteString(segment.text)
+	result.Grow(len(text))
+	spans := make([]protectedSpan, 0, len(protected)+len(replacements))
+	cursor, adjusted, delta := 0, 0, 0
+	for _, item := range replacements {
+		result.WriteString(text[cursor:item.start])
+		start := result.Len()
+		result.WriteString(value.placeholder)
+		spans = append(spans, protectedSpan{start: start, end: result.Len()})
+		for adjusted < len(protected) && protected[adjusted].end <= item.start {
+			span := protected[adjusted]
+			spans = append(spans, protectedSpan{start: span.start + delta, end: span.end + delta})
+			adjusted++
+		}
+		for adjusted < len(protected) && protected[adjusted].start < item.end {
+			adjusted++
+		}
+		delta += len(value.placeholder) - len(value.value)
+		cursor = item.end
 	}
-	return result.String(), nil
+	result.WriteString(text[cursor:])
+	for ; adjusted < len(protected); adjusted++ {
+		span := protected[adjusted]
+		spans = append(spans, protectedSpan{start: span.start + delta, end: span.end + delta})
+	}
+	sort.Slice(spans, func(i, j int) bool { return spans[i].start < spans[j].start })
+	return result.String(), spans
+}
+
+// extendOverPlaceholders consumes a whole intersecting placeholder so a partial
+// overlap cannot leave a marker fragment beside the replacement.
+func extendOverPlaceholders(protected []protectedSpan, start, end int) (int, int) {
+	for _, span := range protected {
+		if end <= span.start || start >= span.end {
+			continue
+		}
+		start = min(start, span.start)
+		end = max(end, span.end)
+	}
+	return start, end
+}
+
+func allowedReplacement(protected []protectedSpan, start, end int) bool {
+	for _, span := range protected {
+		if end <= span.start || start >= span.end {
+			continue
+		}
+		// Only a shorter value wholly inside an existing placeholder is shielded.
+		// Any overlap extending beyond it is part of the larger credential and
+		// must be replaced rather than leaked.
+		if span.start <= start && end <= span.end {
+			return false
+		}
+	}
+	return true
 }
