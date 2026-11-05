@@ -247,3 +247,60 @@ func TestLiveConfiguredJobTimeoutApplies(t *testing.T) {
 		t.Fatalf("the configured 1s deadline did not end the command: %s", result)
 	}
 }
+
+// TestLiveSessionEndTerminatesJobs proves the shutdown path still kills running
+// jobs; the next-start sweep covers the case where shutdown never runs.
+func TestLiveSessionEndTerminatesJobs(t *testing.T) {
+	root := t.TempDir()
+	markerFile := filepath.Join(root, "session-end-job")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if strings.Contains(fmt.Sprint(body["messages"]), "start the job") {
+			args, _ := json.Marshal(map[string]any{"command": "sh -c 'touch " + markerFile + "; sleep 300; true'", "background": true})
+			delta := map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "call-0", "type": "function", "function": map[string]any{"name": "bash", "arguments": string(args)}}}}
+			writeScriptedTurn(w, delta, "tool_calls")
+			return
+		}
+		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "ok"}, "stop")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+
+	f := startRPCWithExtensions(t, root, true, []string{"probe-agent"}, "--model", "workbench-fixture/mock")
+	f.send("job", "prompt", "start the job")
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		if _, err := os.Stat(markerFile); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the background job never started")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !processMatches(t, markerFile) {
+		t.Skip("the job process is not observable on this platform")
+	}
+	// The shutdown handler closes the job manager, so stdin close alone is enough;
+	// the fixture's own close waits on it and reports the wait as a failure.
+	if err := f.stdin.Close(); err != nil {
+		t.Fatal(err)
+	}
+	deadline = time.Now().Add(20 * time.Second)
+	for processMatches(t, markerFile) {
+		if time.Now().After(deadline) {
+			t.Fatal("ending the session left the job running")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	// The session was ended on purpose; release the fixture without reporting it.
+	f.cancel()
+	<-f.done
+	f.exitErr = nil
+}
