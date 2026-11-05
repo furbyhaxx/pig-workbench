@@ -396,29 +396,3 @@ func waitForState(t *testing.T, f *rpcFixture, wantIdle bool) {
 		t.Fatalf("idle = %v, want %v: %+v", result["idle"], wantIdle, result)
 	}
 }
-
-// TestProbeReloadSkipsSessionShutdown observes that /reload constructs a fresh
-// runtime without a session_shutdown notification the outgoing runtime can act
-// on. Either the event is not delivered or its handler cannot complete while the
-// runtime is torn down; both mean shutdown-time cleanup is unreliable, so
-// Workbench reconciles leftover state on the next session_start.
-func TestProbeReloadSkipsSessionShutdown(t *testing.T) {
-	f, _ := startProbeSession(t, func(index int, _ map[string]any) (map[string]any, any) {
-		return map[string]any{"role": "assistant", "content": "ok"}, "stop"
-	})
-	f.send("one", "prompt", "hello")
-	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
-	f.send("reload", "prompt", "/reload")
-	timer := time.After(3 * time.Second)
-	for {
-		select {
-		case record := <-f.records:
-			if record["type"] == "extension_ui_request" && record["method"] == "notify" &&
-				strings.Contains(fmt.Sprint(record["message"]), `"probe":"shutdown"`) {
-				t.Skip("this host now delivers session_shutdown on /reload; remove the reconciliation workaround")
-			}
-		case <-timer:
-			return
-		}
-	}
-}

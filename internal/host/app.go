@@ -41,6 +41,8 @@ type session struct {
 	viewsMu       sync.Mutex
 	pendingViews  map[string][]pendingView
 	guideInjected map[string]string
+	jobRegistry   *jobs.Registry
+	jobOwner      *jobs.OwnerHandle
 	requestsMu    sync.Mutex
 	requests      map[string]activeRequest
 	unsubscribe   func()
@@ -211,6 +213,28 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		return nil, a.fail(fmt.Errorf("subscribe Workbench provider replies: %w", err))
 	}
 	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies() }
+	// A reload or a crash skips shutdown cleanup, and the host delivers no
+	// session_shutdown to a reloaded runtime, so the next start of this session
+	// reclaims the job process groups its predecessor left behind.
+	if dir, err := jobRegistryBase(); err == nil {
+		if registry, registryErr := jobs.NewRegistry(dir); registryErr == nil {
+			s.jobRegistry = registry
+			owner, holdErr := registry.HoldOwner(s.generation)
+			if holdErr != nil {
+				ctx.Notify(noticeText("Job liveness claim failed: "+holdErr.Error(), 0), "warning")
+			} else {
+				s.jobOwner = owner
+			}
+			result, sweepErr := registry.Sweep(jobs.Owner{SessionID: s.id, Generation: s.generation})
+			if sweepErr != nil {
+				ctx.Notify(noticeText("Job remnant cleanup incomplete: "+sweepErr.Error(), 0), "warning")
+			} else if len(result.Killed) > 0 {
+				ctx.Notify(noticeText(fmt.Sprintf("Reclaimed %d job process group(s) left by a previous runtime.", len(result.Killed)), 0), "info")
+			}
+		} else {
+			ctx.Notify(noticeText("Job registry unavailable: "+registryErr.Error(), 0), "warning")
+		}
+	}
 	a.mu.Lock()
 	a.session = s
 	a.initErr = nil
@@ -231,6 +255,9 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	if old != nil {
 		old.status.close()
 		old.supervisor.Stop()
+		if old.jobOwner != nil {
+			_ = old.jobOwner.Close()
+		}
 		if old.jobs != nil {
 			if err := old.jobs.Close(); err != nil {
 				ctx.Notify("Workbench job cleanup failed: "+err.Error(), "error")

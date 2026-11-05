@@ -93,6 +93,8 @@ Commands capture the Workbench location, use Bash when installed (otherwise `/bi
 
 The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `write` and `eof`. Output pages report their next byte cursor and any eviction gap. Completed jobs are retained up to the manager cap; retired IDs fail explicitly. Session shutdown owns cleanup. Linux requires pidfd process-group signalling and refuses unsupported kernels before starting commands. Windows group cleanup remains unsupported.
 
+A job also outlives the runtime that started it when that runtime dies without shutting down. To keep such a job from becoming an unsupervised process, each runtime claims a liveness lock for its generation under `$XDG_STATE_HOME/pig-workbench/jobs/`, records the pid and kernel start time of every job it starts, and the next start terminates the process groups whose owner lock is free — after rechecking the recorded pid against its start time, so a recycled pid is never signalled. Records of a live runtime are left untouched, including another session's.
+
 Crash watchdogs, persistent `job://` logs, scheme-aware shell commands and job panels are still pending; these are not implied by the working local tool path.
 
 ## `ask_user`

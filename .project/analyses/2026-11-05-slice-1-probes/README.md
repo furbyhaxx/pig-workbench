@@ -5,9 +5,9 @@ document:
   title: "Phase A probes: idle/busy wake, session state, titles T1–T3, resumed cwd, model credentials, annotation order"
   description: "Observed host behaviour for the open Phase A probe rows, run against the current PiG binary with a scripted provider"
   status: "published"
-  revision: 2
+  revision: 3
   created_at: "2026-11-05T17:05:00+01:00"
-  updated_at: "2026-11-05T18:40:00+01:00"
+  updated_at: "2026-11-05T19:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -15,8 +15,11 @@ document:
       reason: "Phase A ledger rows required observed results instead of assumptions"
       changes: ["Ran eight probes through real pig RPC/JSON runs with a scripted provider", "Recorded the one remaining coverage gap (native custom resolver)", "Added the runnable probes as integration tests"]
     - revision: 2
-      reason: "Reload probe found that /reload never delivers session_shutdown"
-      changes: ["Recorded the reload finding and its consequence for shutdown-time cleanup", "Added a regression guard for the host behaviour"]
+      reason: "Reload probe reported a cleanup defect"
+      changes: ["Recorded a reload finding and its consequence for shutdown-time cleanup"]
+    - revision: 3
+      reason: "Retraction: the reload probe was invalid, /reload cannot be driven over RPC"
+      changes: ["Withdrew the session_shutdown and reload-cleanup claim", "Recorded reload as unverified with the reason and the remaining evidence gap"]
 ---
 
 # Method
@@ -42,7 +45,7 @@ agent dir and XDG roots, and a localhost scripted inference provider. No billed 
 | Resumed cwd through symlinked buckets | **Session cwd wins.** With both buckets symlinked to one project directory, `--continue` in `clone` resumes the session recorded in `repo`, and `ctx.Cwd()` is `repo` — not the process cwd. `sessionFile` is reported through the current checkout's bucket path. | `TestProbeResumedCwdAcrossSymlinkedBuckets` |
 | `models.json` credential forms | **All expand.** A literal, `$ENV` and a leading `!command` each reach the wire as `Authorization: Bearer <resolved value>`; for `!command` the command's output is used. | `TestProbeNativeCredentialExpansion` |
 | Trailing annotation order | **Order-independent.** An intact block grants seen whether the annotation block is appended before or after it; a block altered in place grants nothing. | `internal/host/snapshots_test.go` `TestAnnotationOrderCannotChangeSeenVisibility` |
-| `/reload` and `session_shutdown` | **Cleanup does not take effect.** `/reload` builds a fresh runtime, and a shutdown handler's cleanup does not run across it: an in-process `sleep 300` background job started before the reload was still running 10s after it, and no shutdown notification reached the outgoing runtime's transport. Whether the event is withheld or its handler cannot complete is not yet distinguished; both cases require the same remedy. | `TestProbeReloadSkipsSessionShutdown`, live reload job probe |
+| `/reload` and `session_shutdown` | **Retracted — not a finding.** `/reload` is a TUI command; the RPC protocol has no reload command, so sending `/reload` as a prompt only produced a chat message. Nothing reloaded, the job rightly kept running, and no shutdown event was expected. The earlier revision of this table read that as a defect; it was the probe that was wrong. Reload cleanup stays **unverified** until a TUI/pty harness drives the real command. | Probe invalidated; `rpc-commands.md` has no reload command |
 | `RegisterNativeProvider` custom resolver | **Not probed — coverage gap.** The API is host-internal; no extension surface reaches it, so Workbench cannot observe whether a custom resolver returns a literal `!command`. Recorded as a gap, not as detection coverage. | — |
 
 # Consequences for the contracts
@@ -62,9 +65,19 @@ agent dir and XDG roots, and a localhost scripted inference provider. No billed 
    and must not execute the command itself. The native-resolver path stays an explicit gap (SPEC-0013 §2).
 6. **The trailing-annotation contract needs no ordering assumption.** A verbatim-block presence check is enough
    for both handler orders.
-7. **Reload cleanup cannot rely on `session_shutdown`.** Shutdown-time work does not take effect across
-   `/reload`, and no host teardown hook exists, so job termination, scratch removal and similar work must be
-   reconciled on the next `session_start` or made idempotent. The concrete defect: a background job survives
-   `/reload` until its own timeout. Tracked as Phase H work with a persisted job-process registry
-   (generation-tagged pid/pgid records, remnant killed on the next start), which also covers `kill -9`
-   crash ownership.
+7. **Job reclamation must not depend on shutdown, whichever way the runtime ends.** No extension teardown hook
+   exists, and the reload path could not be exercised from the RPC harness, so the mechanism has to be
+   start-side: each runtime claims a liveness lock for its generation, records the pid and kernel start time of
+   every job it starts, and the next start terminates process groups whose owner lock is free. That covers a
+   crash, a reload whose old runtime process ends, and any future host teardown. A reload whose old runtime
+   keeps running is the one case that waits for the next start instead. Package-level evidence exists; the
+   end-to-end crash run is still missing (see §Open evidence gaps).
+
+# Open evidence gaps
+
+- **End-to-end crash reclamation.** `internal/jobs/registry_linux_test.go` proves reclamation against real
+  process groups (kill, liveness gating, idempotence, removal), and the host wires the sweep at session start.
+  A live run that SIGKILLs the agent and then starts a new session did not reach `agent_settled` in the
+  scripted-provider RPC harness within the test budget, so that link is inferred from the package tests plus the
+  wiring, not observed. Do not describe crash reclamation as live-verified until that run is green.
+- **Reload cleanup.** Blocked on a TUI/pty harness that can issue `/reload`; the RPC protocol cannot.

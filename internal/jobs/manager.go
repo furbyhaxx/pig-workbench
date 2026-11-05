@@ -444,6 +444,24 @@ func (m *Manager) Status(id string) (JobState, error) {
 
 // List returns independent snapshots of every retained job, oldest admission first.
 // Running jobs are always retained; terminal states beyond MaxFinished are retired.
+// ProcessID returns a job's process-group leader identity for the registry that
+// reclaims jobs whose runtime went away without shutting them down.
+func (m *Manager) ProcessID(id string) (int, string, bool) {
+	job, err := m.job(id)
+	if err != nil || job.process == nil {
+		return 0, "", false
+	}
+	pid := job.process.PID()
+	if pid <= 0 {
+		return 0, "", false
+	}
+	identity, err := processIdentity(pid)
+	if err != nil {
+		identity = ""
+	}
+	return pid, identity, true
+}
+
 func (m *Manager) List() []JobState {
 	m.mu.Lock()
 	defer m.mu.Unlock()

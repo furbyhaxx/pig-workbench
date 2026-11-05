@@ -73,6 +73,13 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	if s.jobRegistry != nil {
+		if pid, identity, ok := s.jobs.ProcessID(id); ok {
+			if err := s.jobRegistry.Add(jobs.Record{JobID: id, SessionID: s.id, Generation: s.generation, PID: pid, Identity: identity}); err != nil {
+				ctx.Notify(noticeText("Job registry record failed: "+err.Error(), 0), "warning")
+			}
+		}
+	}
 	retained := s.jobs.List()
 	keep := make(map[string]bool, len(retained))
 	for _, state := range retained {
@@ -119,8 +126,20 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		if waitErr != nil && !errors.Is(waitErr, context.DeadlineExceeded) {
 			return nil, waitErr
 		}
+		if waitErr == nil {
+			a.forgetJobRecord(s, id)
+		}
 	}
 	return s.jobResult(id, 0)
+}
+
+// forgetJobRecord drops a finished job's registry record; a job that outlives
+// this runtime is reclaimed by the next start's sweep instead.
+func (a *app) forgetJobRecord(s *session, id string) {
+	if s == nil || s.jobRegistry == nil || id == "" {
+		return
+	}
+	_ = s.jobRegistry.Remove(s.id, id)
 }
 
 type jobParams struct {
@@ -179,6 +198,7 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 		if err := s.jobs.Cancel(input.ID); err != nil {
 			return nil, err
 		}
+		a.forgetJobRecord(s, input.ID)
 	case "write":
 		if _, err := s.jobs.Write(input.ID, []byte(input.Text)); err != nil {
 			return nil, err

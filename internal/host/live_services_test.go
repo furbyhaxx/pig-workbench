@@ -30,6 +30,7 @@ type rpcFixture struct {
 	done      chan struct{}
 	stderr    bytes.Buffer
 	exitErr   error
+	root      string
 	closeOnce sync.Once
 }
 
@@ -68,7 +69,9 @@ func startRPCWithExtensions(t *testing.T, root string, workbench bool, fixtures 
 		}
 	}
 	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
-	return newRPCFixture(t, cmd, ctx, cancel)
+	fixture := newRPCFixture(t, cmd, ctx, cancel)
+	fixture.root = root
+	return fixture
 }
 
 // newRPCFixture starts an already configured pig command and reads its JSONL records.
