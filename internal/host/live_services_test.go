@@ -40,6 +40,12 @@ func startRPC(t *testing.T, root string, args ...string) *rpcFixture {
 
 func startRPCWithWorkbench(t *testing.T, root string, workbench bool, args ...string) *rpcFixture {
 	t.Helper()
+	return startRPCWithExtensions(t, root, workbench, []string{"service-client"}, args...)
+}
+
+// startRPCWithExtensions co-loads the named testdata fixtures beside Workbench.
+func startRPCWithExtensions(t *testing.T, root string, workbench bool, fixtures []string, args ...string) *rpcFixture {
+	t.Helper()
 	repo, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +55,10 @@ func startRPCWithWorkbench(t *testing.T, root string, workbench bool, args ...st
 	if workbench {
 		options = append(options, "-e", repo)
 	}
-	options = append(options, "-e", filepath.Join(repo, "internal/host/testdata/service-client"), "--mode", "rpc")
+	for _, fixture := range fixtures {
+		options = append(options, "-e", filepath.Join(repo, "internal/host/testdata", fixture))
+	}
+	options = append(options, "--mode", "rpc")
 	options = append(options, args...)
 	cmd := exec.CommandContext(ctx, "pig", options...)
 	cmd.Dir = root
@@ -59,6 +68,12 @@ func startRPCWithWorkbench(t *testing.T, root string, workbench bool, args ...st
 		}
 	}
 	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+	return newRPCFixture(t, cmd, ctx, cancel)
+}
+
+// newRPCFixture starts an already configured pig command and reads its JSONL records.
+func newRPCFixture(t *testing.T, cmd *exec.Cmd, ctx context.Context, cancel context.CancelFunc) *rpcFixture {
+	t.Helper()
 	fixture := &rpcFixture{t: t, ctx: ctx, cancel: cancel, cmd: cmd, records: make(chan map[string]any, 32), done: make(chan struct{})}
 	cmd.Stderr = &fixture.stderr
 	stdin, err := cmd.StdinPipe()
@@ -137,6 +152,22 @@ func (f *rpcFixture) send(id, kind, message string) {
 	request := map[string]any{"id": id, "type": kind}
 	if message != "" {
 		request["message"] = message
+	}
+	encoded, err := json.Marshal(request)
+	if err != nil {
+		f.t.Fatal(err)
+	}
+	if _, err := fmt.Fprintf(f.stdin, "%s\n", encoded); err != nil {
+		f.t.Fatal(err)
+	}
+}
+
+// sendRaw writes one RPC command object verbatim.
+func (f *rpcFixture) sendRaw(id, kind string, extra map[string]any) {
+	f.t.Helper()
+	request := map[string]any{"id": id, "type": kind}
+	for key, value := range extra {
+		request[key] = value
 	}
 	encoded, err := json.Marshal(request)
 	if err != nil {
