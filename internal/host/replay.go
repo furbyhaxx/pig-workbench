@@ -26,7 +26,7 @@ func restoreLocation(ctx sdk.Context, manager *location.Manager) error {
 		return err
 	}
 	if leaf == nil {
-		return resetLocation(manager)
+		return resetLocation(ctx, manager)
 	}
 	index := make(map[string]storedEntry, len(entries))
 	for _, raw := range entries {
@@ -59,17 +59,17 @@ func restoreLocation(ctx sdk.Context, manager *location.Manager) error {
 			if change.SchemaVersion != 1 {
 				return errors.New("unsupported stored location version")
 			}
-			return manager.Restore(change.Current)
+			return manager.RestoreContext(requestContext{ctx}, change.Current)
 		}
 		id = entry.ParentID
 	}
-	return resetLocation(manager)
+	return resetLocation(ctx, manager)
 }
 
-func resetLocation(manager *location.Manager) error {
+func resetLocation(ctx sdk.Context, manager *location.Manager) error {
 	current := manager.Current()
 	current.Cwd = current.Origin
 	current.DisplayCwd = current.Origin
 	current.Revision++
-	return manager.Restore(current)
+	return manager.RestoreContext(requestContext{ctx}, current)
 }

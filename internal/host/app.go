@@ -18,6 +18,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/jobs"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
+	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/syntax"
 )
@@ -28,6 +29,7 @@ type activeRequest struct {
 }
 
 type session struct {
+	editState     editState
 	contextFrames *contextFrameState
 	jobs          *jobs.Manager
 	jobMeta       jobMetadataStore
@@ -73,6 +75,7 @@ func Register(ext *sdk.Extension) {
 	a.registerTools(ext)
 	a.registerAsk(ext)
 	a.registerJobs(ext)
+	a.registerEdit(ext)
 	a.registerWriteAndList(ext)
 	a.registerSearchTools(ext)
 	a.registerCommands(ext)
@@ -86,7 +89,21 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if err != nil {
 		return nil, a.fail(err)
 	}
-	manager, err := location.New(ctx.Cwd())
+	agentDirectory, err := sdk.AgentDir()
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	registry, err := project.Open(agentDirectory)
+	if err != nil {
+		return nil, a.fail(err)
+	}
+	manager, err := location.New(requestContext{ctx}, ctx.Cwd(), func(work context.Context, cwd string) (string, error) {
+		detected, err := registry.Detect(work, cwd)
+		if err != nil {
+			return "", err
+		}
+		return detected.Root, nil
+	})
 	if err != nil {
 		return nil, a.fail(err)
 	}
@@ -115,7 +132,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		_ = jobManager.Close()
 		return nil, a.fail(err)
 	}
-	s := &session{contextFrames: contextState, jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
+	s := &session{editState: editState{registers: make(map[string]hashline.Register), noops: make(map[string]int)}, contextFrames: contextState, jobs: jobManager, jobMeta: jobMetadataStore{values: make(map[string]jobMetadata)}, snapshots: snapshots, pendingViews: make(map[string][]pendingView), id: id, generation: hex.EncodeToString(token[:]), supervisor: lifecycle.New(), location: manager, settings: settings, router: providers, scratch: scratch, requests: make(map[string]activeRequest)}
 	if err := restoreLocation(ctx, manager); err != nil {
 		s.supervisor.Stop()
 		return nil, a.fail(err)

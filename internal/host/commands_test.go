@@ -42,7 +42,7 @@ func TestMultiReadPartialFailureIsNotAToolError(t *testing.T) {
 	if err := os.WriteFile(good, []byte("hello\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	locations, err := location.New(root)
+	locations, err := location.New(context.Background(), root, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

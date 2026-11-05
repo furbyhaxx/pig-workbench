@@ -1,0 +1,322 @@
+package host
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
+	"sync"
+	"unicode/utf8"
+
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
+)
+
+type editState struct {
+	mode      string
+	mu        sync.Mutex
+	registers map[string]hashline.Register
+	noops     map[string]int
+}
+type editParams struct {
+	Hashline string              `json:"hashline"`
+	Path     string              `json:"path"`
+	Edits    []hashline.TextEdit `json:"edits"`
+}
+
+func (a *app) registerEdit(ext *sdk.Extension) {
+	ext.RegisterTool(sdk.ToolDefinition{Name: "edit", Label: "edit", Description: "Edit local UTF-8 files using either {hashline} tagged batches from read output, or {path, edits:[{oldText,newText}]} exact replacements. Tagged batches start with [path#TAG] copied from read. Use PUT 2.=2: (replace line 2), PUT 2.=5: (range), PUT >5: (insert after), PUT <1: (BOF), PUT >$: (EOF), or PUT 6*: (structural block); each literal payload row starts with +. edit.mode restricts the accepted branch: hashline, replace, or auto (both); there is never automatic fallback after a rejected patch. CUT, REM, MV and registers are supported. All coordinates refer to the original snapshot; block anchors require syntax evidence. Seen-line guards cover complete consumed ranges. Exact replacements must be unique and non-overlapping. Every resource is preflighted before writes, then locked and revision-checked immediately before atomic replacement. A partial I/O failure reports landed and unattempted effects; there is no rollback. Stale source snapshots currently require a fresh read.", PromptSnippet: "Apply tagged original-coordinate edits or unique exact-text replacements.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{"hashline": map[string]any{"type": "string", "minLength": 1}, "path": map[string]any{"type": "string", "minLength": 1}, "edits": map[string]any{"type": "array", "minItems": 1, "maxItems": 128, "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"oldText", "newText"}, "properties": map[string]any{"oldText": map[string]any{"type": "string", "minLength": 1}, "newText": map[string]any{"type": "string"}}}}}, "oneOf": []any{map[string]any{"required": []string{"hashline"}, "maxProperties": 1}, map[string]any{"required": []string{"path", "edits"}, "maxProperties": 2}}}, Execute: a.edit})
+}
+
+func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
+	var input editParams
+	if err := decode(params, &input); err != nil {
+		return nil, err
+	}
+	_, tagged := params["hashline"]
+	if tagged && (len(params) != 1 || input.Hashline == "") || !tagged && (len(params) != 2 || input.Path == "" || len(input.Edits) == 0 || len(input.Edits) > 128) {
+		return nil, errors.New("edit accepts either {hashline} or {path, edits:[{oldText,newText}]}")
+	}
+	s, work, release, err := a.admit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	captured, done, err := s.location.Acquire(ctx.ToolCallID(), true)
+	if err != nil {
+		return nil, err
+	}
+	defer done()
+	configuration, err := s.settings.Current()
+	if err != nil {
+		return nil, err
+	}
+	epoch := s.snapshots.Epoch()
+	s.editState.mu.Lock()
+	defer s.editState.mu.Unlock()
+	mode := s.editState.mode
+	if mode == "" {
+		entry, _ := configuration.Get("edit.mode")
+		mode = entry.Value.(string)
+	}
+	if mode == "hashline" && !tagged {
+		return nil, errors.New("edit.mode is hashline; use tagged syntax or explicitly select replace/auto for the next turn")
+	}
+	if mode == "replace" && tagged {
+		return nil, errors.New("edit.mode is replace; use exact-text edits or explicitly select hashline/auto for the next turn")
+	}
+	var effects []fileedit.Effect
+	var effectURIs []string
+	var plan hashline.BatchPlan
+	if tagged {
+		document, err := hashline.Parse(input.Hashline)
+		if err != nil {
+			return nil, err
+		}
+		if len(document.Sections) > 32 {
+			return nil, errors.New("an edit batch accepts at most 32 sections")
+		}
+		sources := make(map[string]hashline.Snapshot)
+		destinations := make(map[string]string)
+		paths := make(map[string]string)
+		for _, section := range document.Sections {
+			target, err := localEditTarget(captured.Cwd, section.Path)
+			if err != nil {
+				return nil, err
+			}
+			snapshot, err := s.snapshots.Resolve(target.URI, section.Tag)
+			if err != nil {
+				return nil, err
+			}
+			sources[section.Path] = snapshot
+			paths[snapshot.URI] = target.Path
+			for _, op := range section.Ops {
+				if op.Kind == hashline.MV {
+					destination, err := localEditTarget(captured.Cwd, op.Dest)
+					if err != nil {
+						return nil, err
+					}
+					destinations[op.Dest] = destination.Path
+				}
+			}
+		}
+		enforce, _ := configuration.Get("edit.enforce-seen-lines")
+		plan, err = hashline.PlanBatch(hashline.BatchInput{Document: document, Sources: sources, Epoch: epoch, EnforceSeen: enforce.Value == true, Registers: s.editState.registers, ResolveBlock: func(path string, source hashline.Normalized, line int) (hashline.LineSpan, error) {
+			snapshot := sources[path]
+			_, spans, err := a.syntax.Analyze(work, snapshot.Revision, paths[snapshot.URI], source.Bytes)
+			if err != nil {
+				return hashline.LineSpan{}, err
+			}
+			var found *hashline.LineSpan
+			for _, span := range spans {
+				if span.StartLine == line && span.EndLine > line {
+					if found != nil || span.Ambiguous {
+						return hashline.LineSpan{}, errors.New("block anchor is ambiguous; use an explicit range")
+					}
+					value := hashline.LineSpan{Start: span.StartLine, End: span.EndLine}
+					found = &value
+				}
+			}
+			if found == nil {
+				return hashline.LineSpan{}, errors.New("no structural multiline block starts at that anchor; use an explicit range")
+			}
+			return *found, nil
+		}})
+		if err != nil {
+			return nil, err
+		}
+		for _, effect := range plan.Effects {
+			sourceURI := sources[effect.Path].URI
+			staged := fileedit.Effect{Path: paths[sourceURI], Revision: effect.BeforeRevision, Bytes: effect.Bytes, Delete: effect.Delete}
+			effectURIs = append(effectURIs, sourceURI)
+			if effect.Delete {
+				staged.Bytes = nil
+			}
+			if effect.MoveTo != "" {
+				staged.MoveTo = destinations[effect.MoveTo]
+			}
+			effects = append(effects, staged)
+		}
+	} else {
+		target, err := localEditTarget(captured.Cwd, input.Path)
+		if err != nil {
+			return nil, err
+		}
+		source, err := readEditSource(work, target.Path)
+		if err != nil {
+			return nil, err
+		}
+		after, _, err := hashline.ReplaceExact(source, input.Edits)
+		if err != nil {
+			return nil, err
+		}
+		if after == nil {
+			after = []byte{}
+		}
+		effects = []fileedit.Effect{{Path: target.Path, Revision: hashline.SourceRevision(source), Bytes: after}}
+	}
+	registerBytes := 0
+	proposed := make(map[string]hashline.Register, len(s.editState.registers)+len(plan.Registers))
+	for name, value := range s.editState.registers {
+		proposed[name] = value
+	}
+	for name, value := range plan.Registers {
+		proposed[name] = value
+	}
+	for _, value := range proposed {
+		for _, row := range value.Lines {
+			registerBytes += len(row) + 1
+		}
+	}
+	if len(proposed) > 256 || registerBytes > 64<<20 {
+		return nil, errors.New("named register retention limit exceeded; reduce captures")
+	}
+	fingerprintBytes, _ := json.Marshal(struct {
+		Input   editParams
+		Effects []fileedit.Effect
+	}{input, effects})
+	fingerprint := hashline.SourceRevision(fingerprintBytes)
+	if s.editState.noops[fingerprint] > 0 {
+		return nil, errors.New("repeated no-op edit refused; change the intended operation or read the current source")
+	}
+	if s.snapshots.Epoch() != epoch {
+		return nil, errors.New("context changed while staging; read the active branch and retry")
+	}
+	agent, err := sdk.AgentDir()
+	if err != nil {
+		return nil, err
+	}
+	outcomes, commitErr := fileedit.Commit(work, filepath.Join(agent, "workbench", "locks", "edits"), effects)
+	changed := false
+	for _, outcome := range outcomes {
+		changed = changed || outcome.Committed
+	}
+	if !changed && commitErr == nil {
+		if len(s.editState.noops) >= 128 {
+			clear(s.editState.noops)
+		}
+		s.editState.noops[fingerprint]++
+	} else {
+		delete(s.editState.noops, fingerprint)
+	}
+	if s.snapshots.Epoch() == epoch {
+		for name, value := range plan.Registers {
+			for index, sourceURI := range effectURIs {
+				if sourceURI == value.SourceURI && index < len(outcomes) && (outcomes[index].Committed || outcomes[index].Error == "") {
+					s.editState.registers[name] = value
+				}
+			}
+		}
+	}
+	var content strings.Builder
+	if commitErr != nil {
+		content.WriteString("Edit batch incomplete. Landed changes were not rolled back.\n")
+		message := strings.ReplaceAll(noticeText(commitErr.Error(), 0), "\n", " ")
+		if len(message) > 4096 {
+			message = message[:4096]
+			for !utf8.ValidString(message) {
+				message = message[:len(message)-1]
+			}
+		}
+		content.WriteString(message + "\n")
+	} else if !changed {
+		content.WriteString("No content changed. Repeating the same edit without a source change is refused.\n")
+	} else {
+		content.WriteString("Edit batch committed.\n")
+	}
+	for _, outcome := range outcomes {
+		state := "unchanged"
+		if outcome.Committed {
+			state = "committed"
+		}
+		if outcome.Error != "" {
+			state = "failed or unattempted"
+			if outcome.Committed {
+				state = "committed with a follow-up error"
+			}
+		}
+		fmt.Fprintf(&content, "%q: %s\n", filepath.Base(outcome.Path), state)
+	}
+	remainingBytes, remainingLines := 50000-content.Len(), 1900
+	for index, outcome := range outcomes {
+		if !outcome.Committed || effects[index].Delete || remainingBytes < 1024 || remainingLines < 6 {
+			continue
+		}
+		path := outcome.Path
+		if outcome.Destination != "" {
+			path = outcome.Destination
+		}
+		target, err := localEditTarget(captured.Cwd, path)
+		if err != nil {
+			continue
+		}
+		line := 1
+		if tagged && len(plan.Effects[index].Touched) > 0 {
+			line = plan.Effects[index].Touched[0].Start
+		}
+		target.Selection = resource.Selection{Explicit: true, Ranges: []resource.Range{{Start: line, End: line + 8}}}
+		page, err := (resource.FileProvider{}).Read(work, resource.ReadRequest{URI: target.URI, Requested: path, Selector: target.Selection, Budget: resource.Budget{Bytes: remainingBytes, Lines: remainingLines}})
+		if err != nil {
+			continue
+		}
+		content.WriteByte('\n')
+		content.WriteString(page.Content)
+		remainingBytes -= len(page.Content) + 1
+		remainingLines -= strings.Count(page.Content, "\n") + 2
+		s.rememberRead(ctx.ToolCallID(), epoch, target, page)
+	}
+	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"changed": changed, "outcomes": outcomes, "partial": commitErr != nil, "locationRevision": captured.Revision}, IsError: commitErr != nil}, nil
+}
+
+func localEditTarget(cwd, path string) (resource.Target, error) {
+	target, err := resource.ParsePath(cwd, path, "")
+	if err != nil {
+		return target, err
+	}
+	if target.Scheme != "file" || target.Selection.Explicit {
+		return target, errors.New("edit targets must be local files without selector suffixes")
+	}
+	canonical, err := filepath.EvalSymlinks(target.Path)
+	if err == nil {
+		target.URI = resource.FileURI(canonical)
+	}
+	return target, nil
+}
+
+func readEditSource(ctx context.Context, path string) ([]byte, error) {
+	file, info, err := fileio.OpenRegular(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	if info.Size() > 64<<20 {
+		return nil, errors.New("exact editing is limited to 64 MiB per file")
+	}
+	var output strings.Builder
+	buffer := make([]byte, 64<<10)
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		n, err := file.Read(buffer)
+		if n > 0 {
+			if output.Len()+n > 64<<20 {
+				return nil, errors.New("source grew beyond the exact edit limit")
+			}
+			output.Write(buffer[:n])
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return []byte(output.String()), nil
+}

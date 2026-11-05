@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
@@ -24,6 +26,7 @@ func (a *app) registerWriteAndList(ext *sdk.Extension) {
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path", "content"}, "properties": map[string]any{
 			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file or file:// URI."},
 			"content":          map[string]any{"type": "string", "description": "Exact complete new content."},
+			"raw":              map[string]any{"type": "boolean", "description": "Write literal content without interpreting copied tagged-read formatting."},
 			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Revision reported by read; refused when the file changed."},
 		}},
 		Execute: a.write,
@@ -45,12 +48,23 @@ type writeParams struct {
 	Path             string `json:"path"`
 	Content          string `json:"content"`
 	ExpectedRevision string `json:"expectedRevision"`
+	Raw              bool   `json:"raw"`
 }
 
 func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	var input writeParams
 	if err := decode(params, &input); err != nil {
 		return nil, err
+	}
+	var copied hashline.ReadCopy
+	recognized := false
+	if !input.Raw {
+		var err error
+		copied, recognized, err = hashline.UnwrapRead(input.Content)
+		if err != nil {
+			return nil, err
+		}
+		input.Content = copied.Content
 	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
@@ -62,6 +76,29 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	if recognized {
+		sourceTarget, err := resource.ParsePath(captured.Cwd, copied.Path, "")
+		if err != nil {
+			return nil, err
+		}
+		if sourceTarget.Scheme == "file" {
+			if canonical, err := filepath.EvalSymlinks(sourceTarget.Path); err == nil {
+				sourceTarget.URI = resource.FileURI(canonical)
+			}
+		}
+		source, err := s.snapshots.Resolve(sourceTarget.URI, copied.Tag)
+		if err != nil {
+			return nil, errors.New("copied read snapshot unavailable; reread the complete source in raw mode before copying")
+		}
+		normalized, err := hashline.Normalize(source.Raw)
+		if err != nil {
+			return nil, err
+		}
+		if !bytes.Equal(normalized.Bytes, []byte(copied.Content)) {
+			return nil, errors.New("copied view differs from its retained source; provide complete unformatted content")
+		}
+		input.Content = string(source.Raw)
+	}
 	target, err := resource.ParsePath(captured.Cwd, input.Path, "")
 	if err != nil {
 		return nil, err
@@ -87,19 +124,42 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	if input.ExpectedRevision != "" && input.ExpectedRevision != previous {
 		return nil, fmt.Errorf("staleRevision: %s changed since it was read (expected %s, found %s); read it again", target.Path, short(input.ExpectedRevision), short(previous))
 	}
+	epoch := s.snapshots.Epoch()
 	mode := os.FileMode(0600)
 	if existing != nil {
 		mode = existing.Mode().Perm()
 	}
-	if err := atomicWriteFile(work, target.Path, []byte(input.Content), mode); err != nil {
-		return nil, err
+	if existing != nil {
+		agent, err := sdk.AgentDir()
+		if err != nil {
+			return nil, err
+		}
+		outcomes, err := fileedit.Commit(work, filepath.Join(agent, "workbench", "locks", "edits"), []fileedit.Effect{{Path: target.Path, Revision: previous, Bytes: []byte(input.Content)}})
+		if err != nil {
+			if len(outcomes) > 0 && outcomes[0].Committed {
+				return sdk.ToolResult{Content: "Replacement landed but its durability check failed. Read the file before retrying.", Details: outcomes, IsError: true}, nil
+			}
+			return nil, err
+		}
+	} else {
+		created, err := atomicWriteFile(work, target.Path, []byte(input.Content), mode)
+		if err != nil && !created {
+			return nil, err
+		}
+		if err != nil {
+			return sdk.ToolResult{Content: "Creation landed but its durability check failed. Read the file before retrying.", Details: map[string]any{"path": target.Path, "created": true}, IsError: true}, nil
+		}
 	}
 	digest := sha256.Sum256([]byte(input.Content))
 	revision := hex.EncodeToString(digest[:])
-	return sdk.ToolResult{
-		Content: fmt.Sprintf("Wrote %d bytes to %s\nrevision %s", len(input.Content), target.Path, revision),
-		Details: map[string]any{"uri": resource.FileURI(target.Path), "bytes": len(input.Content), "revision": revision, "previousRevision": previous, "created": existing == nil, "locationRevision": captured.Revision},
-	}, nil
+	canonical, err := filepath.EvalSymlinks(target.Path)
+	if err != nil {
+		return nil, err
+	}
+	target.URI = resource.FileURI(canonical)
+	receipt := fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(input.Content), target.URI, revision)
+	s.rememberWritten(ctx.ToolCallID(), epoch, target, []byte(input.Content), receipt)
+	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision}}, nil
 }
 
 func readExisting(path string) (os.FileInfo, string, error) {
@@ -118,42 +178,8 @@ func readExisting(path string) (os.FileInfo, string, error) {
 	return info, hex.EncodeToString(digest.Sum(nil)), nil
 }
 
-func atomicWriteFile(ctx context.Context, path string, data []byte, mode os.FileMode) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	temp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
-	if err != nil {
-		return fmt.Errorf("create temporary file: %w", err)
-	}
-	name := temp.Name()
-	defer os.Remove(name)
-	closed := false
-	defer func() {
-		if !closed {
-			temp.Close()
-		}
-	}()
-	if err := temp.Chmod(mode); err != nil {
-		return err
-	}
-	if _, err := temp.Write(data); err != nil {
-		return fmt.Errorf("write file: %w", err)
-	}
-	if err := temp.Sync(); err != nil {
-		return fmt.Errorf("flush file: %w", err)
-	}
-	if err := temp.Close(); err != nil {
-		return err
-	}
-	closed = true
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if err := os.Rename(name, path); err != nil {
-		return fmt.Errorf("replace file: %w", err)
-	}
-	return nil
+func atomicWriteFile(ctx context.Context, path string, data []byte, mode os.FileMode) (bool, error) {
+	return fileedit.Create(ctx, path, data, mode)
 }
 
 type lsParams struct {

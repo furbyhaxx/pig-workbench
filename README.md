@@ -7,7 +7,8 @@ A [PiG](https://github.com/MichaelKinsy/PiG) extension that upgrades the builtin
 ## Available now
 
 - `read`: exactly one of `path` or `paths` (1–32 files). Select with `:N`, `:A-B`, `:A+C`, `:-N`, comma ranges or `:raw`. Literal filenames take precedence. Local source reads carry hashline tags and epoch-bound delivered visibility; raw views preserve bytes. The resource router also exposes local scratch, configuration, session and artifact trees. One 50 KiB/2000-line batch budget; Details retain actual coverage, exact-byte revision and continuation.
-- `write`: create or fully replace one local file with optional `expectedRevision` (a stale revision is refused, never overwritten), atomic replace and preserved mode. No directory creation, no non-local schemes yet.
+- `edit`: tagged PUT/CUT/REM/MV batches, named registers and unique exact-text replacements, restricted by `edit.mode`. Complete seen ranges and whole-batch preflight are enforced; landed/unattempted outcomes remain explicit on I/O failure. Stale relocation and persistent register recovery are still pending.
+- `write`: create or fully replace a local file with optional `expectedRevision`, atomic replacement and preserved mode. Complete copied tagged views are unwrapped only when their tag identifies an unambiguous full view; `raw:true` writes presentation text literally. No directory creation or non-local schemes yet.
 - `ls`: list one directory through the resource router (`path`, `file://`, `local://`, `out://`) with typed entries, directories first, a continuation cursor and honest completeness.
 - `session://` resources (read-only): `session://self/meta`, `title`, `transcript`, `entries`, each pageable with the same selectors. `cfg://` exposes effective settings with provenance (`cfg://workbench/status`, `cfg://<group>/<key>`).
 - `grep`: search file contents under the location with regex or literal OR-patterns, glob/exclusion filters and honest `complete` reporting.

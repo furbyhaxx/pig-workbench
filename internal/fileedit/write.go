@@ -1,6 +1,7 @@
 package fileedit
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -55,6 +56,25 @@ func replaceFile(target string, data []byte, mode os.FileMode) (bool, error) {
 	}
 	if err := syncDir(dir); err != nil {
 		return true, fmt.Errorf("replaced %s but directory durability is uncertain: %w", target, err)
+	}
+	return true, nil
+}
+
+// Create publishes a new absolute path without replacing a racing destination.
+// The boolean reports that creation landed, including when only directory
+// durability failed afterwards.
+func Create(ctx context.Context, path string, data []byte, mode os.FileMode) (bool, error) {
+	if !filepath.IsAbs(path) {
+		return false, errors.New("create path must be absolute")
+	}
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	if err := publishFile(path, data, mode); err != nil {
+		return false, err
+	}
+	if err := syncDir(dirOf(path)); err != nil {
+		return true, fmt.Errorf("created %s but directory durability is uncertain: %w", path, err)
 	}
 	return true, nil
 }

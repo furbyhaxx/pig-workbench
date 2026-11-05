@@ -8,10 +8,11 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
+	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func instructionFacts(ctx sdk.Context, target, root string) ([]contextFact, error) {
+func instructionFacts(ctx sdk.Context, target, root, projectID string) ([]contextFact, error) {
 	trusted, err := ctx.IsProjectTrusted()
 	if err != nil {
 		return nil, err
@@ -19,6 +20,22 @@ func instructionFacts(ctx sdk.Context, target, root string) ([]contextFact, erro
 	agent, err := sdk.AgentDir()
 	if err != nil {
 		return nil, err
+	}
+	registry, err := project.Open(agent)
+	if err != nil {
+		return nil, err
+	}
+	origin, err := registry.Detect(requestContext{ctx}, ctx.Cwd())
+	if err != nil {
+		return nil, err
+	}
+	if root != origin.Root {
+		rel, relErr := filepath.Rel(origin.Root, target)
+		if projectID == "global" && origin.ProjectID == "global" && relErr == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+			root = origin.Root
+		} else {
+			trusted = false
+		}
 	}
 	relative, relErr := filepath.Rel(root, target)
 	if relErr != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {

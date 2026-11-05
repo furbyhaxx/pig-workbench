@@ -17,7 +17,7 @@ import (
 )
 
 func TestDiscoveryAndLocation(t *testing.T) {
-	manager, err := location.New(t.TempDir())
+	manager, err := location.New(context.Background(), t.TempDir(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestArtifactProviderResolvesProjectTree(t *testing.T) {
 	if err := os.MkdirAll(nested, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	locations, err := location.New(nested)
+	locations, err := location.New(context.Background(), nested, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestArtifactProviderResolvesProjectTree(t *testing.T) {
 		t.Fatal("path traversal accepted")
 	}
 	outside := t.TempDir()
-	detached, err := location.New(outside)
+	detached, err := location.New(context.Background(), outside, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

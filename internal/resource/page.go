@@ -82,10 +82,12 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 		header = ""
 	} else if page.Tag != "" {
 		header = "[" + displayText(page.CanonicalURI) + "#" + page.Tag + "]\n"
+	} else {
+		header = "[" + displayText(page.CanonicalURI) + "]\nHashline snapshot unavailable; use exact-text edit mode.\n"
 	}
 	const footerBytes = 256
 	available := budget.Bytes - len(header) - footerBytes
-	lineBudget := budget.Lines - 3
+	lineBudget := budget.Lines - strings.Count(header, "\n") - 2
 	if available < 1 || lineBudget < 1 {
 		return page, errors.New("read budget too small for source identity and continuation")
 	}
@@ -158,6 +160,9 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 							whole = false
 						}
 						if !target.Selection.Raw {
+							if line == 1 {
+								kept = bytes.TrimPrefix(kept, []byte{0xef, 0xbb, 0xbf})
+							}
 							kept = bytes.TrimSuffix(kept, []byte{'\n'})
 							kept = bytes.TrimSuffix(kept, []byte{'\r'})
 						}

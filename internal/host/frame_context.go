@@ -98,6 +98,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	sort.Strings(tools)
 	current := s.location.Current()
 	root := current.ProjectRoot
+	projectID := "global"
 	projectFacts := any(map[string]any{"id": "global", "root": current.ProjectRoot})
 	if agent, err := sdk.AgentDir(); err == nil {
 		registry, err := project.Open(agent)
@@ -110,6 +111,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		}
 		projectFacts = map[string]any{"id": detected.ProjectID, "slug": detected.Slug, "name": detected.Name, "root": detected.Root, "recognizedBy": detected.How}
 		root = detected.Root
+		projectID = detected.ProjectID
 	}
 	modelFacts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name, "reasoning": model.Reasoning}
 	if model.ContextWindow > 0 {
@@ -130,13 +132,25 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.editState.mu.Lock()
+	if data["workbenchToolContext"] != true || s.editState.mode == "" {
+		entry, _ := configuration.Get("edit.mode")
+		s.editState.mode = entry.Value.(string)
+	}
+	editMode := s.editState.mode
+	s.editState.mu.Unlock()
+	for _, fact := range facts {
+		if fact.source == "session.capabilities" {
+			fact.value.(map[string]any)["editMode"] = editMode
+		}
+	}
 	enabled, _ := configuration.Get("instructions.enabled")
 	if enabled.Value == true {
 		target := current.Cwd
 		if path, ok := data["workbenchInstructionTarget"].(string); ok {
 			target = path
 		}
-		selected, err := instructionFacts(ctx, target, root)
+		selected, err := instructionFacts(ctx, target, root, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -283,32 +297,18 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		return nil, err
 	}
 	pending = append(pending, steer...)
-	var text strings.Builder
 	messages, _ := data["messages"].([]any)
-	for _, raw := range messages {
-		if message, ok := raw.(map[string]any); ok {
-			switch content := message["content"].(type) {
-			case string:
-				text.WriteString(content)
-			case []any:
-				for _, raw := range content {
-					if block, ok := raw.(map[string]any); ok {
-						if body, ok := block["text"].(string); ok {
-							text.WriteString(body)
-						}
-					}
-				}
-			}
-		}
-	}
 	var delivered []string
 	for _, frame := range pending {
 		encoded, err := frames.EncodeEnvelope(frame)
 		if err != nil {
 			return nil, err
 		}
-		if strings.Contains(text.String(), encoded) {
-			delivered = append(delivered, frame.FrameID)
+		for _, raw := range messages {
+			if message, ok := raw.(map[string]any); ok && containsTextBlock(message["content"], encoded) {
+				delivered = append(delivered, frame.FrameID)
+				break
+			}
 		}
 	}
 	if err := state.ledger.MarkDelivered(state.scope, delivered); err != nil {

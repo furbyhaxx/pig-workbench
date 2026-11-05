@@ -41,8 +41,16 @@ func TestReadVisibilityRequiresIntactDeliveredBlock(t *testing.T) {
 	if _, err := store.Resolve(page.Facts.CanonicalURI, page.Facts.Tag); err == nil {
 		t.Fatal("truncated result marked seen")
 	}
+	s.rememberRead("split", "epoch", target, page)
+	midpoint := len(page.Content) / 2
+	if _, err := a.confirmRead(sdk.Context{}, map[string]any{"toolName": "read", "toolCallId": "split", "content": []any{map[string]any{"type": "text", "text": page.Content[:midpoint]}, map[string]any{"type": "text", "text": page.Content[midpoint:]}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Resolve(page.Facts.CanonicalURI, page.Facts.Tag); err == nil {
+		t.Fatal("separate modified blocks synthesized a complete seen view")
+	}
 	s.rememberRead("ok", "epoch", target, page)
-	if _, err := a.confirmRead(sdk.Context{}, map[string]any{"toolName": "read", "toolCallId": "ok", "content": []any{map[string]any{"type": "text", "text": page.Content}, map[string]any{"type": "text", "text": "annotation"}}}); err != nil {
+	if _, err := a.confirmRead(sdk.Context{}, map[string]any{"toolName": "read", "toolCallId": "ok", "isError": true, "content": []any{map[string]any{"type": "text", "text": page.Content}, map[string]any{"type": "text", "text": "annotation"}}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.Resolve(page.Facts.CanonicalURI, page.Facts.Tag); err != nil {

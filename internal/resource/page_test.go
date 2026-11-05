@@ -27,6 +27,18 @@ func readFixture(t *testing.T, source, selector string, budget Budget) Page {
 	return page
 }
 
+func TestTaggedReadHidesBOMWithoutChangingRawBytes(t *testing.T) {
+	source := "\ufeffone\r\ntwo\r\n"
+	tagged := readFixture(t, source, "", Budget{Bytes: 4096, Lines: 100})
+	if strings.Contains(tagged.Content, "\ufeff") || !strings.Contains(tagged.Content, "1:one") {
+		t.Fatalf("BOM leaked into logical source rows: %q", tagged.Content)
+	}
+	raw := readFixture(t, source, ":raw", Budget{Bytes: 4096, Lines: 100})
+	if raw.Content != source {
+		t.Fatal("raw source bytes changed")
+	}
+}
+
 func TestRawPreservesBytesAndLineConvention(t *testing.T) {
 	for _, source := range []string{"", "a", "a\r\nb\r\n", "é\n\n", "a\n"} {
 		p := readFixture(t, source, ":raw", Budget{Bytes: 4096, Lines: 100})

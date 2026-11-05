@@ -42,7 +42,7 @@ func (s *session) rememberRead(callID, epoch string, target resource.Target, pag
 	for i, span := range page.Facts.FullyShownRanges {
 		spans[i] = hashline.LineSpan{Start: span.Start, End: span.End}
 	}
-	view := pendingView{uri: snapshot.URI, revision: snapshot.Revision, epoch: epoch, block: page.Content, spans: spans, tagged: page.Facts.Tag != "" && page.Facts.Tag == snapshot.Tag}
+	view := pendingView{uri: snapshot.URI, revision: snapshot.Revision, epoch: epoch, block: page.Content, spans: spans, tagged: !target.Selection.Raw && page.Facts.Tag != "" && page.Facts.Tag == snapshot.Tag}
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
 	if len(s.pendingViews) >= 256 {
@@ -51,8 +51,32 @@ func (s *session) rememberRead(callID, epoch string, target resource.Target, pag
 	s.pendingViews[callID] = append(s.pendingViews[callID], view)
 }
 
+func (s *session) rememberWritten(callID, epoch string, target resource.Target, raw []byte, receipt string) {
+	if s.snapshots == nil || callID == "" || len(raw) > 4<<20 {
+		return
+	}
+	source, err := hashline.Normalize(raw)
+	if err != nil {
+		return
+	}
+	snapshot, err := s.snapshots.Retain(target.URI, raw)
+	if err != nil {
+		return
+	}
+	var spans []hashline.LineSpan
+	if len(source.Lines) > 0 {
+		spans = []hashline.LineSpan{{Start: 1, End: len(source.Lines)}}
+	}
+	s.viewsMu.Lock()
+	defer s.viewsMu.Unlock()
+	if len(s.pendingViews) >= 256 {
+		clear(s.pendingViews)
+	}
+	s.pendingViews[callID] = append(s.pendingViews[callID], pendingView{uri: target.URI, revision: snapshot.Revision, epoch: epoch, block: receipt, spans: spans})
+}
+
 func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
-	if data["toolName"] != "read" {
+	if data["toolName"] != "read" && data["toolName"] != "edit" && data["toolName"] != "write" {
 		return nil, nil
 	}
 	s, err := a.current()
@@ -64,28 +88,28 @@ func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
 	views := s.pendingViews[id]
 	delete(s.pendingViews, id)
 	s.viewsMu.Unlock()
-	if failed, _ := data["isError"].(bool); failed {
-		return nil, nil
-	}
-	var text strings.Builder
-	if blocks, ok := data["content"].([]any); ok {
-		for _, raw := range blocks {
-			if block, ok := raw.(map[string]any); ok && block["type"] == "text" {
-				if value, ok := block["text"].(string); ok {
-					text.WriteString(value)
-				}
-			}
-		}
-	}
-	if value, ok := data["content"].(string); ok {
-		text.WriteString(value)
-	}
 	for _, view := range views {
-		if view.block != "" && strings.Contains(text.String(), view.block) {
+		if view.block != "" && containsTextBlock(data["content"], view.block) {
 			_ = s.snapshots.Delivered(view.uri, view.revision, view.epoch, view.spans, view.tagged)
 		}
 	}
 	return nil, nil
+}
+
+func containsTextBlock(content any, needle string) bool {
+	if text, ok := content.(string); ok {
+		return strings.Contains(text, needle)
+	}
+	if blocks, ok := content.([]any); ok {
+		for _, raw := range blocks {
+			if block, ok := raw.(map[string]any); ok && block["type"] == "text" {
+				if text, ok := block["text"].(string); ok && strings.Contains(text, needle) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (a *app) invalidateSeen(_ sdk.Context, _ map[string]any) (any, error) {
