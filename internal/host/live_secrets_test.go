@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 // secretRecorder serves a scripted provider and keeps every raw request body.
@@ -213,5 +214,34 @@ func TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted(t *testing
 	}
 	if !strings.Contains(recorder.bodies[len(recorder.bodies)-1], placeholder) {
 		t.Fatal("the command output should reach the model as the placeholder")
+	}
+}
+
+func TestLiveBrokenSecretsPolicySendsNothingToTheProvider(t *testing.T) {
+	root := t.TempDir()
+	agent := filepath.Join(root, "agent")
+	if err := os.MkdirAll(agent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &secretRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, agent, server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	token := "ghp_" + strings.Repeat("Hj7kL3", 5)
+	fixture.send("script", "prompt", "Token "+token)
+	time.Sleep(3 * time.Second)
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, token) {
+			t.Fatalf("request %d carried the token although the boundary was broken", i)
+		}
+	}
+	if len(recorder.bodies) != 0 {
+		t.Fatalf("%d provider requests were sent while the secrets boundary was unavailable", len(recorder.bodies))
 	}
 }
