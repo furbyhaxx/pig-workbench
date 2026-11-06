@@ -37,6 +37,9 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	if err := router.RegisterBuiltin(jobProvider{source: jobsSource}); err != nil {
 		return nil, "", err
 	}
+	if err := router.RegisterBuiltin(skillProvider{source: jobsSource}); err != nil {
+		return nil, "", err
+	}
 	cache, err := os.UserCacheDir()
 	if err != nil {
 		ctx.Notify("Local scratch and spill storage are unavailable; local:// and out:// cannot be read this session.", "warning")

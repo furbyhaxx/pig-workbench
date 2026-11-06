@@ -106,6 +106,15 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	if target.Selection.Explicit {
 		return nil, errors.New("write takes a whole path, not a line selector")
 	}
+	if target.Scheme == "skill" {
+		if err := work.Err(); err != nil {
+			return nil, err
+		}
+		if err := (skillProvider{}).unload(s, target.URI, input.Content); err != nil {
+			return nil, err
+		}
+		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI}}, nil
+	}
 	if target.Scheme == "job" {
 		if err := work.Err(); err != nil {
 			return nil, err
@@ -116,7 +125,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
 	}
 	if target.Scheme != "file" {
-		return nil, fmt.Errorf("write supports local files and job:// actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+		return nil, fmt.Errorf("write supports local files, job:// and skill:// actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
 	}
 	if err := work.Err(); err != nil {
 		return nil, err

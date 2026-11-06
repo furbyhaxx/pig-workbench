@@ -52,6 +52,7 @@ type session struct {
 	location      *location.Manager
 	settings      *config.Manager
 	router        *resource.Router
+	skills        *skillState
 	scratch       string
 	projects      *project.Registry
 	host          sdk.Context
@@ -236,6 +237,10 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 			ctx.Notify(noticeText("Job registry unavailable: "+registryErr.Error(), 0), "warning")
 		}
 	}
+	s.skills = &skillState{loaded: map[string]bool{}, roots: func() []string {
+		cwd := s.location.Current().Cwd
+		return []string{cwd + "/.agents/skills", cwd + "/.pig/skills"}
+	}}
 	current = s
 	a.mu.Lock()
 	a.session = s

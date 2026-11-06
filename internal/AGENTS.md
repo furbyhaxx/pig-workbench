@@ -14,6 +14,7 @@ Feature packages keep domain logic independent of the SDK; `host/` adapts contex
 - `ask/` — questionnaire schema, validation and pending-record recovery.
 - `project/` — `Project.toml` document model and creation.
 - `secrets/` — deterministic placeholders, key handling, fail-closed redaction and the encrypted append-only vault (`vault.go`, `vault_io.go`).
+- `skills/` — SKILL.md catalog and when-file visibility. Host owns skill://.
 - `jobs/` — process supervision (see its AGENTS.md before touching process groups).
 - `endpoint/` — live-session endpoint records and liveness probing.
 - `host/` — SDK lifecycle, commands and tool wiring; no duplicated domain policy.

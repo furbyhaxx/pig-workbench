@@ -1,0 +1,59 @@
+package skills
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestScanReadsFrontmatterAndHidesNestedUntilLoad(t *testing.T) {
+	root := t.TempDir()
+	writeSkill(t, filepath.Join(root, "alpha", "SKILL.md"), "alpha", "the alpha skill", "")
+	writeSkill(t, filepath.Join(root, "alpha", "skills", "beta", "SKILL.md"), "beta", "nested", "")
+	catalog, err := Scan([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	visible := Visible(catalog, root, nil)
+	if len(visible) != 1 || visible[0].Name != "alpha" {
+		t.Fatalf("visible = %+v", visible)
+	}
+	loaded := map[string]bool{"alpha": true}
+	visible = Visible(catalog, root, loaded)
+	if len(visible) != 2 {
+		t.Fatalf("nested skill stayed hidden: %+v", visible)
+	}
+}
+
+func TestWhenFilesHidesUnmatchedSkill(t *testing.T) {
+	root := t.TempDir()
+	writeSkill(t, filepath.Join(root, "rust", "SKILL.md"), "rust", "rust only", "Cargo.toml")
+	catalog, err := Scan([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(Visible(catalog, root, nil)) != 0 {
+		t.Fatal("skill listed without its when file")
+	}
+	if err := os.WriteFile(filepath.Join(root, "Cargo.toml"), []byte("[package]\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if len(Visible(catalog, root, nil)) != 1 {
+		t.Fatal("skill hidden after its when file appeared")
+	}
+}
+
+func writeSkill(t *testing.T, path, name, description, whenFile string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	front := "---\nname: " + name + "\ndescription: " + description + "\n"
+	if whenFile != "" {
+		front += "when:\n  files: [\"" + whenFile + "\"]\n"
+	}
+	front += "---\nbody\n"
+	if err := os.WriteFile(path, []byte(front), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
