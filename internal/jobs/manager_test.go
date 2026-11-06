@@ -100,8 +100,15 @@ func TestManagerNormalExitAndPrivateOutput(t *testing.T) {
 		t.Fatalf("state = %+v", state)
 	}
 	data, next, truncated, gap, err := manager.Output(id, 0, 0)
-	if err != nil || string(data) != "helloworld" || next != 10 || truncated || gap != 0 {
+	// SPEC-0008 §6: order across stdout and stderr is observed ingestion order, so only each stream is exact.
+	if err != nil || (string(data) != "helloworld" && string(data) != "worldhello") || next != 10 || truncated || gap != 0 {
 		t.Fatalf("output=%q next=%d truncated=%v gap=%d err=%v", data, next, truncated, gap, err)
+	}
+	for stream, want := range map[Stream]string{StreamStdout: "hello", StreamStderr: "world"} {
+		got, _, _, _, err := manager.Stream(id, stream, 0, 0)
+		if err != nil || string(got) != want {
+			t.Fatalf("stream %d = %q, %v; want %q", stream, got, err, want)
+		}
 	}
 	if callerOutput.Len() != 0 {
 		t.Fatalf("caller output received %q", callerOutput.String())
