@@ -57,6 +57,10 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	if err := decode(params, &input); err != nil {
 		return nil, err
 	}
+	_, hasExpectedRevision := params["expectedRevision"]
+	if hasExpectedRevision && input.ExpectedRevision == "" {
+		return nil, errors.New("expectedRevision must not be empty")
+	}
 	var copied hashline.ReadCopy
 	recognized := false
 	if !input.Raw {
@@ -106,6 +110,9 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	if target.Selection.Explicit {
 		return nil, errors.New("write takes a whole path, not a line selector")
+	}
+	if hasExpectedRevision && target.Scheme != "file" {
+		return nil, errors.New("expectedRevision is supported only for local files; the control write was not performed")
 	}
 	if target.Scheme == "skill" {
 		if err := work.Err(); err != nil {

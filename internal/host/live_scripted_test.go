@@ -213,6 +213,30 @@ func TestLiveSummaryRespectsReadBudget(t *testing.T) {
 	}
 }
 
+func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
+	root := t.TempDir()
+	jobID := ""
+	results := runScripted(t, root, "bash,write,jobs",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "sleep 30", "background": true}}
+		},
+		func(prior []string) scriptedCall {
+			match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(prior[0])
+			if len(match) != 2 {
+				t.Fatalf("background job did not start: %s", prior[0])
+			}
+			jobID = match[1]
+			return scriptedCall{"write", map[string]any{"path": "job://" + jobID + "/ctl", "content": "kill", "expectedRevision": "stale"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"jobs", map[string]any{"action": "status", "id": jobID}}
+		},
+	)
+	if !strings.Contains(results[1], "expectedRevision") || !strings.Contains(results[2], ": running") {
+		t.Fatalf("precondition was ignored or the job was changed: %v", results)
+	}
+}
+
 func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("apple\npear\nplum\n"), 0600); err != nil {
