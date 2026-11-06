@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 3
+  revision: 4
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T00:22:20+01:00"
+  updated_at: "2026-11-07T00:29:58+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "Retain the current baseline quality and cleanup checks"
       changes: ["Recorded green check, race and integration gates", "Recorded repeated shutdown, crash-reclamation and reference-producer reload checks", "Kept final acceptance and live-provider evaluation open"]
+    - revision: 4
+      reason: "Verify activity failure counting against real jobs"
+      changes: ["Recorded a repeatable race-enabled test using successful and failed processes"]
 ---
 
 # Scope and evidence
@@ -43,7 +46,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. | SPEC-0008 is draft. `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths; redirects only route to `job://`. Provider approval parity is unproven. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice. | Multi/preview types are not live-tested; the rich TUI panel is deferred chrome. |
 | 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
-| 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. Real TUI placement has separate coverage; failed-job counting lacks a dedicated real-failure unit test. Click requires a fork host; configured shortcut is not applied. |
+| 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. `TestActivityCountsFailedJobsAfterRealExit` checks one successful and one failed real process ([activity-failed.log](evidence/activity-failed.log)); real TUI placement has separate coverage. Click requires a fork host; configured shortcut is not applied. |
 | 0010 all | S1 B | `TestLiveSettingsScopesAndReload` exercises settings scopes and reload. | Many validated settings remain unavailable; their catalog entries identify them. Full storage, trust and lifecycle matrix is not established by this one test. |
 | 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake. | SPEC-0011 is draft; real agent-reply hop increment is untested, and Windows messaging is compile-level only. |
 | 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |

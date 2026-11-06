@@ -1,10 +1,14 @@
 package host
 
 import (
+	"context"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/jobs"
 )
 
 func TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem(t *testing.T) {
@@ -39,6 +43,38 @@ func TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem(t *testing.T) {
 	}
 	if renderActivity(nil, 80) != "" {
 		t.Fatal("no items render nothing")
+	}
+}
+
+func TestActivityCountsFailedJobsAfterRealExit(t *testing.T) {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		t.Skip("process group supervision requires Unix")
+	}
+	manager, err := jobs.NewManager(jobs.ManagerOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := manager.Close(); err != nil {
+			t.Errorf("close jobs: %v", err)
+		}
+	})
+	for _, command := range []string{"exit 0", "exit 3"} {
+		id, err := manager.Start(context.Background(), jobs.Spec{Command: []string{"sh", "-c", command}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_, err = manager.Wait(ctx, id)
+		cancel()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := &session{jobs: manager, status: &statusBoard{}}
+	items := s.activityItems()
+	if len(items) != 1 || items[0].Key != "jobs.failed" || items[0].Count != 1 || renderActivity(items, 80) != "1 failed" {
+		t.Fatalf("activity after one successful and one failed job: %+v", items)
 	}
 }
 
