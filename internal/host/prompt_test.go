@@ -69,3 +69,20 @@ func renderEpoch(t *testing.T, tools []string) string {
 	}
 	return promptEpoch(rendered.Text)
 }
+
+func TestRenderErrorDoesNotReplaceTheHostPrompt(t *testing.T) {
+	text, force, recorded := applyPromptRender(true, "", errPrompt, "force")
+	if force || text != "" || recorded == "" {
+		t.Fatalf("error path = %q %v %q", text, force, recorded)
+	}
+	text, force, recorded = applyPromptRender(true, "rendered", nil, "force")
+	if !force || text != "rendered" || recorded != "" {
+		t.Fatalf("success path = %q %v %q", text, force, recorded)
+	}
+}
+
+var errPrompt = promptRenderError{}
+
+type promptRenderError struct{}
+
+func (promptRenderError) Error() string { return "render failed" }

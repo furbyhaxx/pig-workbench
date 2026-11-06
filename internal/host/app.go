@@ -55,6 +55,7 @@ type session struct {
 	skills        *skillState
 	promptText    string
 	promptEpoch   string
+	promptErr     string
 	scratch       string
 	projects      *project.Registry
 	host          sdk.Context

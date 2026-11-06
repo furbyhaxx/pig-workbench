@@ -229,6 +229,9 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 		return err
 	}
 	s.promptText = rendered
+	if s.promptErr != "" {
+		fmt.Fprintf(&b, "last error: %s\n", s.promptErr)
+	}
 	fmt.Fprintf(&b, "epoch: %s\n", promptEpoch(rendered))
 	b.WriteString("rendered builtin/workbench:\n")
 	b.WriteString(rendered)

@@ -88,3 +88,14 @@ func promptEpoch(rendered string) string {
 	sum := sha256.Sum256([]byte(rendered))
 	return hex.EncodeToString(sum[:8])
 }
+
+func applyPromptRender(enabled bool, rendered string, renderErr error, delivery string) (string, bool, string) {
+	if !enabled {
+		return "", false, ""
+	}
+	if renderErr != nil {
+		return "", false, renderErr.Error()
+	}
+	text, ok := promptOverride(true, delivery, rendered)
+	return text, ok, ""
+}

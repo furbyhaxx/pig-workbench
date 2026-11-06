@@ -261,12 +261,21 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 					}
 				}
 			}
-			if rendered, err := renderBuiltinPrompt(s); err == nil {
+			promptEnabled := false
+			if configuration, err := s.settings.Current(); err == nil {
+				if entry, ok := configuration.Get("prompt.enabled"); ok {
+					promptEnabled, _ = entry.Value.(bool)
+				}
+			}
+			rendered, renderErr := renderBuiltinPrompt(s)
+			text, force, recorded := applyPromptRender(promptEnabled, rendered, renderErr, deliveryMode)
+			s.promptErr = recorded
+			if renderErr == nil {
 				s.promptText = rendered
 				s.promptEpoch = promptEpoch(rendered)
-				if text, ok := promptOverride(true, deliveryMode, rendered); ok {
-					options["forceSystemPrompt"] = text
-				}
+			}
+			if force {
+				options["forceSystemPrompt"] = text
 			}
 			result["systemPromptOptions"] = options
 		}
