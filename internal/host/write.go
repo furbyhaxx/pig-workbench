@@ -22,19 +22,19 @@ import (
 func (a *app) registerWriteAndList(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "write", Label: "write",
-		Description:   "Create a file or replace it completely. Use edit for partial changes. Relative paths resolve against the Workbench location; local paths and file:// only. Pass expectedRevision (from a prior read) to require the file to be unchanged; the write is refused otherwise. Content is written atomically and an existing file keeps its mode. This tool does not create directories.",
+		Description:   "Create or fully replace a local file; use edit for partial changes. Relative paths resolve against the Workbench location. For local files, expectedRevision requires an unchanged file, content is written atomically, existing modes are preserved, and directories are not created. Control writes also support job:// stdin and ctl, skill:// unload, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl; their own policy and confirmation rules apply.",
 		PromptSnippet: "Create or fully replace one file, optionally guarded by the revision you read.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path", "content"}, "properties": map[string]any{
-			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file or file:// URI."},
+			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file, file:// URI or supported control URI."},
 			"content":          map[string]any{"type": "string", "description": "Exact complete new content."},
 			"raw":              map[string]any{"type": "boolean", "description": "Write literal content without interpreting copied tagged-read formatting."},
-			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Revision reported by read; refused when the file changed."},
+			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "For local files, require the revision reported by read; refused when the file changed."},
 		}},
 		Execute: a.write,
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "ls", Label: "ls",
-		Description:   "List one directory through the Workbench resource router. Works for local paths, file://, local:// and out://; entries are returned directories-first then lexically, with typed kinds and a continuation cursor. Nothing is summarised or truncated without saying so.",
+		Description:   "List one container through the Workbench resource router, including registered scheme URIs whose providers support listing. Entries have typed kinds and a continuation cursor; incomplete listings are reported.",
 		PromptSnippet: "List a directory with typed entries and a continuation cursor.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path"}, "properties": map[string]any{
 			"path":   map[string]any{"type": "string", "minLength": 1, "description": "Directory path or scheme URI."},
