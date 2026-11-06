@@ -33,10 +33,12 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.skillsCommand(ctx)
 			case "prompt":
 				return a.promptCommand(ctx)
+			case "frames":
+				return a.framesCommand(ctx)
 			case "instructions":
 				return a.instructionsCommand(ctx, rest)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | instructions [pin|unpin|ls] | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {

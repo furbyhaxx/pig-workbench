@@ -455,3 +455,43 @@ func TestRootNearestAndSymlinkDirectoryBoundaries(t *testing.T) {
 		t.Fatal("target traversal through a symlinked directory was accepted")
 	}
 }
+
+func TestAnnotatePointersShowsEveryLineAndMarksBadTargets(t *testing.T) {
+	root := t.TempDir()
+	write := func(name, text string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(root, name)), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("open.md", "---\ndocument:\n  status: \"open\"\n---\nbody\n")
+	write("done.md", "---\ndocument:\n  status: \"done\"\n---\n")
+	write("bare.md", "no frontmatter\n")
+	content := strings.Join([]string{
+		"# Backlog",
+		"- B-0001 task high — fine → open.md",
+		"- B-0002 task high — finished → done.md",
+		"- B-0003 task high — gone → missing.md",
+		"- B-0004 task high — bare → bare.md",
+		"- B-0005 task high — escape → ../outside.md",
+		"",
+	}, "\n")
+	got := AnnotatePointers(root, content)
+	for want, line := range map[string]string{
+		"→ open.md\n":                                  "an open target stays unmarked",
+		"→ done.md [target status: done]":              "a finished target is marked",
+		"→ missing.md [target missing]":                "a missing target is marked",
+		"→ bare.md [target has no status]":             "a target without status is marked",
+		"→ ../outside.md [target outside the project]": "an escaping target is refused",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("%s: %q not in\n%s", line, want, got)
+		}
+	}
+	if strings.Count(got, "\n") != strings.Count(content, "\n") {
+		t.Fatal("annotation must not add or drop lines")
+	}
+}

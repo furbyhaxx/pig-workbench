@@ -184,7 +184,7 @@ func (a *app) unpinInstruction(ctx sdk.Context, rawPath string) (string, error) 
 }
 
 // pinFacts delivers every pin. A vanished or no-longer-selected file becomes a notice, never stale content.
-func pinFacts(ctx sdk.Context, agent string, pins []instructionPin) []contextFact {
+func pinFacts(ctx sdk.Context, agent, pointers string, pins []instructionPin) []contextFact {
 	var facts []contextFact
 	for _, pin := range pins {
 		class, ok := classByID(pin.Class)
@@ -207,7 +207,7 @@ func pinFacts(ctx sdk.Context, agent string, pins []instructionPin) []contextFac
 		found := false
 		for _, file := range set.Files {
 			if file.Path == pin.Path {
-				facts = append(facts, selectedFact(agent, file))
+				facts = append(facts, selectedFact(agent, pointers, file))
 				found = true
 			}
 		}
@@ -244,8 +244,12 @@ func (a *app) instructionsCommand(ctx sdk.Context, args string) error {
 		result, err = a.unpinInstruction(ctx, rest)
 	case "ls", "":
 		result, err = a.listInstructionPins()
+	case "rules":
+		result, err = a.instructionRules(ctx)
+	case "reload":
+		result, err = a.reloadInstructions()
 	default:
-		return errors.New("usage: /workbench instructions pin <path> [--class <id>] | unpin <path> | ls")
+		return errors.New("usage: /workbench instructions pin <path> [--class <id>] | unpin <path> | ls | rules | reload")
 	}
 	if err != nil {
 		return err
@@ -290,4 +294,92 @@ func (a *app) instructionsControl(ctx sdk.Context, uri, content string) (string,
 		return a.unpinInstruction(ctx, rest)
 	}
 	return "", errors.New("instructions ctl accepts `pin <path> [--class <id>]` or `unpin <path>`")
+}
+
+// instructionRules reports the class policies and what discovery selects for the current location.
+func (a *app) instructionRules(ctx sdk.Context) (string, error) {
+	s, err := a.current()
+	if err != nil {
+		return "", err
+	}
+	var lines []string
+	for _, class := range instructions.DefaultClasses() {
+		lines = append(lines, fmt.Sprintf("class %s: %s, placement %s, select %s, role %s, pin %t", class.ID, strings.Join(class.Filenames, ", "), class.Placement, class.Select, class.Role, class.AllowPin))
+	}
+	current := s.location.Current()
+	agent, err := sdk.AgentDir()
+	if err != nil {
+		return "", err
+	}
+	set, err := instructions.Discover(requestContext{ctx}, current.Cwd, nil, instructions.Options{ProjectRoot: current.ProjectRoot, UserRoots: []string{agent}, AllowNested: false})
+	if err != nil {
+		return strings.Join(lines, "\n") + "\nDiscovery for " + current.Cwd + " failed: " + err.Error(), nil
+	}
+	lines = append(lines, "Selected for "+current.Cwd+":")
+	for _, file := range set.Files {
+		note := ""
+		if file.Truncated {
+			note = " (capped)"
+		}
+		lines = append(lines, "  "+file.Class+"  "+file.Path+note)
+	}
+	if len(set.Files) == 0 {
+		lines = append(lines, "  none")
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+// reloadInstructions forgets what was delivered so the next boundary sends every instruction view in full.
+func (a *app) reloadInstructions() (string, error) {
+	s, err := a.current()
+	if err != nil {
+		return "", err
+	}
+	state := s.contextFrames
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	for key := range state.last {
+		if strings.HasPrefix(key, "instructions.") {
+			delete(state.last, key)
+		}
+	}
+	clear(state.views)
+	return "Instruction views will be delivered again in full at the next boundary.", nil
+}
+
+// framesCommand lists the frames of this session's ledger.
+func (a *app) framesCommand(ctx sdk.Context) error {
+	s, err := a.current()
+	if err != nil {
+		return err
+	}
+	state := s.contextFrames
+	state.mu.Lock()
+	records := state.ledger.Snapshot()
+	state.mu.Unlock()
+	lines := make([]string, 0, len(records))
+	for _, raw := range records {
+		var record struct {
+			State string `json:"state"`
+			Frame struct {
+				Sequence uint64 `json:"sequence"`
+				Source   string `json:"source"`
+				Kind     string `json:"kind"`
+				Resource string `json:"resource"`
+			} `json:"frame"`
+		}
+		if json.Unmarshal(raw, &record) != nil {
+			continue
+		}
+		line := fmt.Sprintf("#%d %s %s [%s]", record.Frame.Sequence, record.Frame.Source, record.Frame.Kind, record.State)
+		if record.Frame.Resource != "" {
+			line += " " + record.Frame.Resource
+		}
+		lines = append(lines, line)
+	}
+	if len(lines) == 0 {
+		lines = append(lines, "No frames in this session.")
+	}
+	notify(ctx, strings.Join(lines, "\n"))
+	return nil
 }

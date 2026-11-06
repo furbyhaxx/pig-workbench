@@ -12,7 +12,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func instructionFacts(ctx sdk.Context, target, root, projectID string) ([]contextFact, error) {
+func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool) ([]contextFact, error) {
 	trusted, err := ctx.IsProjectTrusted()
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string) ([]contex
 		facts = append(facts, contextFact{source: "instructions.boundary", kind: "notice", authority: "data", resource: boundary, value: "Nested repository instructions were not loaded without a separate trust decision: " + boundary})
 	}
 	for _, file := range selected.Files {
-		facts = append(facts, selectedFact(agent, file))
+		facts = append(facts, selectedFact(agent, pointerRoot(validate, root), file))
 	}
 	return facts, nil
 }
@@ -100,13 +100,19 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 			if err := ctx.SendMessage("pig-workbench.context", text, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
 				return nil, err
 			}
+			if tool, _ := data["toolName"].(string); (tool == "edit" || tool == "write") && strings.Contains(text, `src="instructions.`) {
+				return map[string]any{"block": true, "reason": "instructionContextChanged: instructions applying to this target were just delivered to you and nothing was changed. Read them, then repeat the call if it still fits."}, nil
+			}
 		}
 	}
 	return nil, nil
 }
 
 // selectedFact turns a discovered file into the frame fact that delivers it.
-func selectedFact(agent string, file instructions.Selected) contextFact {
+func selectedFact(agent, pointerRoot string, file instructions.Selected) contextFact {
+	if pointerRoot != "" && file.Class == "backlog" {
+		file.Content = instructions.AnnotatePointers(pointerRoot, file.Content)
+	}
 	if rel, err := filepath.Rel(agent, file.Path); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 		file.Trust = "user"
 	}
@@ -117,4 +123,12 @@ func selectedFact(agent string, file instructions.Selected) contextFact {
 	}
 	body := "Instructions from: " + file.Path + "\n" + (instructions.Set{Files: []instructions.Selected{file}}).Render()
 	return contextFact{source: "instructions." + file.Class, value: body, resource: file.Path, kind: kind, authority: authority}
+}
+
+// pointerRoot is the directory backlog pointer targets resolve against, or "" when validation is off.
+func pointerRoot(validate bool, root string) string {
+	if !validate {
+		return ""
+	}
+	return root
 }

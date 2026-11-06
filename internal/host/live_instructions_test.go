@@ -222,3 +222,91 @@ func TestLiveInstructionChangedAcrossCompactionArrivesAsOneFullView(t *testing.T
 		t.Fatalf("the unchanged rules must arrive once as part of the full view, got %d", got)
 	}
 }
+
+func TestLiveBacklogShowsAMissingPointerTarget(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for name, text := range map[string]string{
+		"BACKLOG.md": "- B-0001 task high — POINTER-MARKER → gone.md\n",
+		"a.txt":      "a\n",
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) == 0 || !strings.Contains(recorder.bodies[0], "gone.md [target missing]") {
+		t.Fatal("a backlog line whose target does not exist must be shown with a marker, not dropped")
+	}
+}
+
+func TestLiveMutationIsBlockedOnceWhenNewInstructionsApply(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte("a\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	write := map[string]any{"path": "b.txt", "content": "made\n"}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": "a.txt"}},
+		{"bash", map[string]any{"command": "echo 'Never write before reading BARRIER-RULE.' > AGENTS.md"}},
+		{"write", write},
+		{"write", write},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash,write")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) < 4 || !strings.Contains(results[2], "instructionContextChanged") {
+		t.Fatalf("the first write must be blocked with instructionContextChanged: %q", results)
+	}
+	if strings.Contains(results[3], "instructionContextChanged") {
+		t.Fatalf("the retry must go through once the instructions were delivered: %q", results[3])
+	}
+	if data, err := os.ReadFile(filepath.Join(root, "b.txt")); err != nil || string(data) != "made\n" {
+		t.Fatalf("the retried write did not land: %v %q", err, data)
+	}
+}
+
+func TestLiveFramesAndInstructionRulesCommands(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("Rules.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	notified := func(want string) func(map[string]any) bool {
+		return func(record map[string]any) bool {
+			return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), want)
+		}
+	}
+	fixture.send("frames", "prompt", "/workbench frames")
+	fixture.wait(notified("session.capabilities"))
+	fixture.send("rules", "prompt", "/workbench instructions rules")
+	fixture.wait(notified("steering  " + filepath.Join(root, "AGENTS.md")))
+}

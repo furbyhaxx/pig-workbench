@@ -164,12 +164,14 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		}
 	}
 	enabled, _ := configuration.Get("instructions.enabled")
+	validate, _ := configuration.Get("instructions.backlog.validate-pointers")
+	validating, _ := validate.Value.(bool)
 	if enabled.Value == true {
 		target := current.Cwd
 		if path, ok := data["workbenchInstructionTarget"].(string); ok {
 			target = path
 		}
-		selected, err := instructionFacts(ctx, target, root, projectID)
+		selected, err := instructionFacts(ctx, target, root, projectID, validating)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +189,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		for _, fact := range facts {
 			have[fact.source+"/"+fact.resource] = true
 		}
-		for _, fact := range pinFacts(ctx, agent, state.pins) {
+		for _, fact := range pinFacts(ctx, agent, pointerRoot(validating, root), state.pins) {
 			if !have[fact.source+"/"+fact.resource] {
 				facts = append(facts, fact)
 			}
