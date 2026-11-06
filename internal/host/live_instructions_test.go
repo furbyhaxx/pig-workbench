@@ -29,6 +29,54 @@ func toolResults(t *testing.T, body string) []string {
 	return results
 }
 
+func TestLiveInstructionSettingsControlFramesAndPointerValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		enabled     bool
+		validate    bool
+		wantFrame   bool
+		wantMissing bool
+	}{
+		{"enabled-validate", true, true, true, true},
+		{"enabled-no-validation", true, false, true, false},
+		{"disabled", false, true, false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(root, "BACKLOG.md"), []byte("- B-0001 task high — missing → missing.md\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			recorder := &requestRecorder{}
+			server := recorder.serve(t)
+			defer server.Close()
+			agent := filepath.Join(root, "agent")
+			writeFixtureProvider(t, agent, server.URL)
+			settings := fmt.Sprintf("[instructions]\nenabled = %t\n[instructions.backlog]\nvalidate-pointers = %t\n", tc.enabled, tc.validate)
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
+				t.Fatal(err)
+			}
+			fixture := startRPCWithExtensions(t, root, true, nil, "--approve", "--model", "workbench-fixture/mock")
+			fixture.send("go", "prompt", "Test instruction delivery.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			if len(recorder.bodies) != 1 {
+				t.Fatalf("got %d provider requests", len(recorder.bodies))
+			}
+			body := recorder.bodies[0]
+			if got := strings.Contains(body, "instructions.backlog"); got != tc.wantFrame {
+				t.Fatalf("backlog frame present=%v, want %v", got, tc.wantFrame)
+			}
+			if got := strings.Contains(body, "target missing"); got != tc.wantMissing {
+				t.Fatalf("missing-target annotation present=%v, want %v", got, tc.wantMissing)
+			}
+		})
+	}
+}
+
 func TestLiveChangedInstructionsArriveAsADiffAgainstTheDeliveredView(t *testing.T) {
 	root := t.TempDir()
 	if err := os.Mkdir(filepath.Join(root, ".git"), 0o700); err != nil {
