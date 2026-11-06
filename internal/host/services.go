@@ -67,7 +67,7 @@ func (a *app) service(ctx sdk.Context, value any) error {
 }
 
 // advertisedCapabilities lists exactly the wired discover capabilities.
-var advertisedCapabilities = []string{"location", "presentation", "resources", "fetch", "status", "docs", "frames"}
+var advertisedCapabilities = []string{"location", "presentation", "resources", "fetch", "status", "docs", "frames", "snapshots"}
 
 func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session, request api.Request) (any, *api.Error) {
 	if err := ctx.Err(); err != nil {
@@ -106,6 +106,8 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		return a.framesQuery(s, request)
 	case "context.fields.set":
 		return a.contextFieldsSet(host, s, request)
+	case "snapshots.view", "snapshots.status", "snapshots.touched":
+		return a.snapshotsService(ctx, host, s, request)
 	case "location.get":
 		var params struct{}
 		if err := api.Decode(request.Params, &params); err != nil {

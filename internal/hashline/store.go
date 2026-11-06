@@ -152,6 +152,17 @@ func (s *Store) Resolve(uri, tag string) (Snapshot, error) {
 	return Snapshot{}, fmt.Errorf("no retained snapshot for this resource and tag; read %s again", uri)
 }
 
+// Latest returns the newest retained version of one canonical resource without changing its recency.
+func (s *Store) Latest(uri string) (Snapshot, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	versions := s.entries[uri]
+	if len(versions) == 0 {
+		return Snapshot{}, false
+	}
+	return cloneSnapshot(versions[len(versions)-1].Snapshot), true
+}
+
 // SetEpoch invalidates visibility while retaining source versions for diagnostics.
 func (s *Store) SetEpoch(epoch string) error {
 	if !validSeenEpoch(epoch) {

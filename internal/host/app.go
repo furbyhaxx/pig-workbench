@@ -40,6 +40,7 @@ type session struct {
 	snapshots     *hashline.Store
 	viewsMu       sync.Mutex
 	pendingViews  map[string][]pendingView
+	runningCalls  map[string]string
 	guideInjected map[string]string
 	jobRegistry   *jobs.Registry
 	jobOwner      *jobs.OwnerHandle
@@ -95,6 +96,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent("before_provider_request", a.spliceLatePrompt)
 	ext.OnEvent("context", a.confirmContextFrames)
 	ext.OnEvent("tool_call", a.toolInstructions)
+	ext.OnEvent("tool_call", a.trackCall)
 	a.registerTools(ext)
 	a.registerAsk(ext)
 	a.registerJobs(ext)
@@ -181,6 +183,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		jobMeta:       jobMetadataStore{values: make(map[string]jobMetadata)},
 		snapshots:     snapshots,
 		pendingViews:  make(map[string][]pendingView),
+		runningCalls:  make(map[string]string),
 		guideInjected: make(map[string]string),
 		id:            id,
 		generation:    generation,

@@ -56,11 +56,17 @@ func toolMessageText(message map[string]any) string {
 // runScripted drives the real agent loop against a scripted provider and returns every tool result.
 func runScripted(t *testing.T, root, tools string, steps ...scriptStep) []string {
 	t.Helper()
-	return runScriptedConfig(t, root, tools, "", steps...)
+	return runScriptedWith(t, root, tools, "", nil, steps...)
 }
 
 // runScriptedConfig is runScripted with extra Workbench.toml text appended.
 func runScriptedConfig(t *testing.T, root, tools, config string, steps ...scriptStep) []string {
+	t.Helper()
+	return runScriptedWith(t, root, tools, config, nil, steps...)
+}
+
+// runScriptedWith also co-loads the named testdata extensions.
+func runScriptedWith(t *testing.T, root, tools, config string, fixtures []string, steps ...scriptStep) []string {
 	t.Helper()
 	var mu sync.Mutex
 	var latest []string
@@ -102,7 +108,7 @@ func runScriptedConfig(t *testing.T, root, tools, config string, steps ...script
 	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = 'auto'\n"+config), 0600); err != nil {
 		t.Fatal(err)
 	}
-	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", tools)
+	fixture := startRPCWithExtensions(t, root, true, fixtures, "--model", "workbench-fixture/mock", "--tools", tools)
 	fixture.send("script", "prompt", "Run the scripted fixture.")
 	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 	mu.Lock()
@@ -268,5 +274,56 @@ func TestLiveBlockReplaceUsesSyntaxBoundariesAndRefusesAnUnanchoredLine(t *testi
 	}
 	if !strings.Contains(strings.ToLower(results[2]), "block") {
 		t.Fatalf("a non-block anchor was not refused with a block explanation: %s", results[2])
+	}
+}
+
+func TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "notes.txt")
+	if err := os.WriteFile(path, []byte("alpha\nbeta\ngamma\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	view := func(mode string) scriptStep {
+		return func([]string) scriptedCall {
+			return scriptedCall{"web_view", map[string]any{"uri": path, "mode": mode}}
+		}
+	}
+	edit := func(index int) scriptStep {
+		return func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[notes.txt#" + tagOf(t, prior[index]) + "]\nPUT 2.=2:\n+BETA\n"}}
+		}
+	}
+	results := runScriptedWith(t, root, "web_view,edit", "", []string{"reference-producer"},
+		view("verbatim"), edit(0),
+		view("foreign"),
+	)
+	if got := readFile(t, path); got != "alpha\nBETA\ngamma\n" {
+		t.Fatalf("anchors from a viewed block did not edit the file: %q\n%s", got, results[1])
+	}
+	if !strings.Contains(results[0], "retained=true") {
+		t.Fatalf("status did not report the retained snapshot: %s", results[0])
+	}
+	if !strings.Contains(results[2], "permissionDenied") {
+		t.Fatalf("a call the caller does not own was served: %s", results[2])
+	}
+}
+
+func TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "notes.txt")
+	original := "alpha\nbeta\ngamma\n"
+	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
+		t.Fatal(err)
+	}
+	runScriptedWith(t, root, "web_view,edit", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"web_view", map[string]any{"uri": path, "mode": "cut"}}
+		},
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[notes.txt#" + tagOf(t, prior[0]) + "]\nPUT 2.=2:\n+BETA\n"}}
+		},
+	)
+	if got := readFile(t, path); got != original {
+		t.Fatalf("a cut block granted edit authority: %q", got)
 	}
 }

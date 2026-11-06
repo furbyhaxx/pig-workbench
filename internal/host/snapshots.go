@@ -97,10 +97,27 @@ func (s *session) rememberWritten(callID, epoch string, target resource.Target, 
 	s.pendingViews[callID] = append(s.pendingViews[callID], pendingView{uri: target.URI, revision: snapshot.Revision, epoch: epoch, block: receipt, spans: spans})
 }
 
-func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
-	if data["toolName"] != "read" && data["toolName"] != "edit" && data["toolName"] != "write" {
+// trackCall records which tool runs a call so snapshots.view can verify its caller owns it.
+func (a *app) trackCall(_ sdk.Context, data map[string]any) (any, error) {
+	s, err := a.current()
+	if err != nil {
 		return nil, nil
 	}
+	id, _ := data["toolCallId"].(string)
+	name, _ := data["toolName"].(string)
+	if id == "" || name == "" {
+		return nil, nil
+	}
+	s.viewsMu.Lock()
+	defer s.viewsMu.Unlock()
+	if len(s.runningCalls) >= 256 {
+		clear(s.runningCalls)
+	}
+	s.runningCalls[id] = name
+	return nil, nil
+}
+
+func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
 	s, err := a.current()
 	if err != nil {
 		return nil, nil
@@ -109,6 +126,7 @@ func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
 	s.viewsMu.Lock()
 	views := s.pendingViews[id]
 	delete(s.pendingViews, id)
+	delete(s.runningCalls, id)
 	s.viewsMu.Unlock()
 	for _, view := range views {
 		if view.block != "" && containsTextBlock(data["content"], view.block) {

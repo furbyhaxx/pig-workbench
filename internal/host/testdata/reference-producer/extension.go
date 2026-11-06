@@ -139,7 +139,7 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		stopServe = stop
 		mu.Unlock()
 	}
-	discovered, err := active.Discover(ctx, "presentation", "resources", "fetch", "status", "docs", "frames")
+	discovered, err := active.Discover(ctx, "presentation", "resources", "fetch", "status", "docs", "frames", "snapshots")
 	if err != nil {
 		return err
 	}
@@ -232,6 +232,33 @@ func Extension() *sdk.Extension {
 		query, _ := params["query"].(string)
 		details := map[string]any{"workbenchPresentation": map[string]any{"version": 1, "revision": 1, "phase": "settled", "outcome": "succeeded", "title": "Web search", "target": map[string]any{"kind": "label", "value": query}, "complete": true, "metrics": []any{map[string]any{"id": "results", "value": 1, "unit": "count"}}, "blocks": []any{map[string]any{"kind": "table", "table": map[string]any{"columns": []any{map[string]any{"id": "title", "label": "Title", "cell": "text"}, map[string]any{"id": "url", "label": "URL", "cell": "uri"}}, "rows": []any{[]any{map[string]any{"kind": "text", "value": "Fixture result"}, map[string]any{"kind": "uri", "value": "https://fixture.test/page"}}}}}}}}
 		return sdk.ToolResult{Content: "1 result: Fixture result https://fixture.test/page", Details: details}, nil
+	}})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "web_view", Label: "web_view", Description: "Show a stored source with edit anchors.", Parameters: sdk.Schema{"type": "object", "properties": map[string]any{"uri": map[string]any{"type": "string"}, "mode": map[string]any{"type": "string"}}, "required": []string{"uri"}}, Execute: func(ctx sdk.Context, params map[string]any) (any, error) {
+		uri, _ := params["uri"].(string)
+		mode, _ := params["mode"].(string)
+		mu.Lock()
+		active, binding := client, currentEndpoint
+		mu.Unlock()
+		if active == nil {
+			return nil, fmt.Errorf("not registered")
+		}
+		callID := ctx.ToolCallID()
+		if mode == "foreign" {
+			callID = "not-a-running-call"
+		}
+		var view api.SnapshotView
+		if err := active.Call(ctx, binding, "snapshots.view", api.SnapshotViewParams{ToolCallID: callID, URI: uri}, &view, nil); err != nil {
+			return sdk.ToolResult{Content: "snapshots.view failed: " + err.Error(), IsError: true}, nil
+		}
+		block := view.Block
+		if mode == "cut" {
+			block = block[:len(block)-3]
+		}
+		var status api.SnapshotStatus
+		if err := active.Call(ctx, binding, "snapshots.status", api.SnapshotStatusParams{URI: uri}, &status, nil); err != nil {
+			return nil, err
+		}
+		return sdk.ToolResult{Content: block + "\nstatus: retained=" + fmt.Sprint(status.Retained) + " seen=" + fmt.Sprint(status.SeenLines)}, nil
 	}})
 	ext.Command("reference", "Reference producer controls: status, reload", func(ctx sdk.Context, args string) error {
 		if strings.TrimSpace(args) == "reload" {

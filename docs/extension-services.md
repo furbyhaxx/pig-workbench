@@ -52,8 +52,24 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `status` | `status.update` | `statusSegment` (SPEC-0009 §9) |
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
 | `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set` | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
+| `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
 
 `secrets` and `sessions` are specified but not advertised.
+
+## Make your tool output editable
+
+Inside a running call of one of your tools, `snapshots.view` makes Workbench read a local file through its own pipeline and return the tagged block (`[path#TAG]` plus `N:LINE` rows). Include `block` verbatim in your tool result and the model can `edit` those lines without a second `read`.
+
+```go
+var view api.SnapshotView
+err := client.Call(ctx, endpoint, "snapshots.view", api.SnapshotViewParams{ToolCallID: ctx.ToolCallID(), URI: path}, &view, nil)
+return sdk.ToolResult{Content: view.Block}, err
+```
+
+- `toolCallId` must be a running call of a tool registered by the calling owner, otherwise `permissionDenied`.
+- Seen-line authority is granted only when the exact block survives in the delivered result; a cut or altered block grants nothing. A trailing annotation does not invalidate it.
+- Only `file://` resources are anchored; other schemes answer `unsupported` because their edits are refused anyway.
+- `snapshots.status {uri}` returns the retained tag and revision, the count of lines seen in this context, and whether the file changed since. `snapshots.touched {uris}` (1–64) returns the same revalidated state for files you changed; it is a hint, edits still check revisions.
 
 ## Register contributions
 

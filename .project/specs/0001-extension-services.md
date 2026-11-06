@@ -195,6 +195,7 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 | 5 | Resource providers became read-only for this version | Do not advertise `edit`/`write`/`remove`/`move`; they are refused at registration. |
 | 6 | Opt-in `secrets.redact` and owner-scoped context fields recorded as approved decisions | Nothing until the capability is advertised; requesting it fails today. |
 | 7 | Authoring API frozen; `snapshots`, `sessions` and `secrets` remain unadvertised | Request only advertised capabilities; absence fails explicitly and is not an empty success. |
+| 7 (impl.) | `snapshots` advertised with `view`, `status`, `touched` per SPEC-0005 §10; `view` anchors local files only | Additive; no wire change. Caller ownership is the registering extension name of the running tool. |
 
 # 7. Acceptance and blockers
 
