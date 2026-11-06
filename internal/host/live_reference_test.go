@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -258,5 +259,76 @@ func TestLiveIntegrationsAndResourcesCommandsListTheContributions(t *testing.T) 
 	schemes := notice("schemes", "/workbench resources", "kb://")
 	if !strings.Contains(schemes, "kb://  contributed by reference-producer") || !strings.Contains(schemes, "file://  builtin") {
 		t.Errorf("/workbench resources must separate builtin and contributed schemes:\n%s", schemes)
+	}
+}
+
+// TestLiveStoredSearchKeyIsRedactedInJobLogs covers the pig-web seam row: a search key held in the
+// environment must not reach the provider through a job log, whichever tool reads it.
+func TestLiveStoredSearchKeyIsRedactedInJobLogs(t *testing.T) {
+	repo := repoRoot(t)
+	root := t.TempDir()
+	key := "sk-search-" + strings.Repeat("Qw4eR5tY", 4)
+	t.Setenv("SEARCH_API_KEY", key)
+	var id string
+	var mu sync.Mutex
+	var bodies []string
+	steps := func(index int) (string, map[string]any) {
+		switch index {
+		case 0:
+			return "bash", map[string]any{"command": "echo \"search key is $SEARCH_API_KEY\"; sleep 20", "background": true}
+		case 1:
+			return "jobs", map[string]any{"action": "output", "id": id}
+		case 2:
+			return "read", map[string]any{"path": "job://" + id + "/log"}
+		}
+		return "", nil
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		raw, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		index := len(bodies)
+		bodies = append(bodies, string(raw))
+		if match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(string(raw)); match != nil {
+			id = match[1]
+		}
+		name, args := steps(index)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": "r", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if name != "" {
+			encoded, _ := json.Marshal(args)
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("c%d", index), "type": "function", "function": map[string]any{"name": name, "arguments": string(encoded)}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "done"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	output := runPigJSON(t, ctx, repo, root, root, []string{"-e", filepath.Join(repo, "internal/host/testdata/reference-producer"), "--tools", "bash,jobs,read"}, "run the search job")
+	mu.Lock()
+	defer mu.Unlock()
+	if len(bodies) != 4 {
+		t.Fatalf("expected 4 provider requests, got %d\n%s", len(bodies), output[max(0, len(output)-2000):])
+	}
+	for i, body := range bodies {
+		if strings.Contains(body, key) {
+			t.Fatalf("request %d carries the stored search key", i)
+		}
+	}
+	if !regexp.MustCompile(`search key is red-sec-[a-z2-7]{16}`).MatchString(strings.ReplaceAll(bodies[3], `\"`, `"`)) {
+		t.Fatalf("the job log must show a placeholder where the key was:\n%.1500s", bodies[3])
 	}
 }
