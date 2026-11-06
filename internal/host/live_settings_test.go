@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
 
 func settingsNotice(t *testing.T, f *rpcFixture, id, args string) map[string]any {
@@ -23,6 +26,50 @@ func settingsNotice(t *testing.T, f *rpcFixture, id, args string) map[string]any
 	}
 	f.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == id })
 	return result
+}
+
+func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
+	checks := []struct {
+		name   string
+		keys   []string
+		verify func(*testing.T)
+	}{
+		{"read-budgets", []string{"read.max-bytes", "read.max-lines"}, TestLiveSummaryRespectsReadBudget},
+		{"summaries", []string{"read.summarize.enabled", "read.summarize.min-total-lines"}, TestSummaryViewHonoursSettings},
+		{"edit-mode", []string{"edit.mode"}, TestLiveEditModeRestrictsAcceptedSyntax},
+		{"edit-seen", []string{"edit.enforce-seen-lines"}, TestLiveEditSeenGuardCanBeDisabledByUser},
+		{"instructions", []string{"instructions.enabled", "instructions.backlog.validate-pointers"}, TestLiveInstructionSettingsControlFramesAndPointerValidation},
+		{"instruction-context", []string{"instructions.updates.context"}, TestInstructionUpdateContextSettingControlsDiff},
+		{"job-timeout", []string{"jobs.timeout-seconds"}, TestLiveConfiguredJobTimeoutApplies},
+		{"ask-timeout", []string{"ask.remote.timeout-ms"}, TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer},
+		{"endpoint", []string{"sessions.enabled", "sessions.discoverable"}, TestLiveSessionEndpointSettingsAtStartup},
+		{"messaging", []string{"sessions.inbound", "sessions.rate-limit", "sessions.wake", "sessions.wake-budget"}, TestSessionMessageSettingsAffectDelivery},
+		{"hops", []string{"sessions.max-hops"}, TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking},
+		{"secrets", []string{"secrets.enabled"}, TestSecretsBoundaryHonoursTheEnabledSetting},
+		{"secrets-grants", []string{"secrets.redact-owners"}, TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure},
+		{"trust", []string{"trust.rules"}, TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule},
+		{"storage", []string{"projects.session-storage"}, TestLiveSessionStorageCanBeDisabled},
+		{"activity", []string{"activity.enabled", "activity.placement"}, TestLiveActivitySettingsControlWidget},
+		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
+		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
+	}
+	var covered, live []string
+	for _, check := range checks {
+		covered = append(covered, check.keys...)
+	}
+	for _, definition := range config.Catalog() {
+		if definition.Application == "live" {
+			live = append(live, definition.Key)
+		}
+	}
+	slices.Sort(covered)
+	slices.Sort(live)
+	if !slices.Equal(covered, live) {
+		t.Fatalf("behavioral consumer checks do not match live catalog: checked=%v live=%v", covered, live)
+	}
+	for _, check := range checks {
+		t.Run(check.name, check.verify)
+	}
 }
 
 func TestLiveSkillsListingBudgetChangesTheCommandOutput(t *testing.T) {
