@@ -169,6 +169,9 @@ func (a *app) invalidateSeen(_ sdk.Context, _ map[string]any) (any, error) {
 
 // redactedView is the block as the model sees it after the secrets hook ran, so seen-state still matches.
 func (s *session) redactedView(block string) string {
+	if s.secrets == nil {
+		return block
+	}
 	if redacted, active, err := s.secrets.redactText(block); err == nil && active {
 		return redacted
 	}

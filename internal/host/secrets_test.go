@@ -1,6 +1,9 @@
 package host
 
 import (
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"os"
 	"path/filepath"
 	"strings"
@@ -229,5 +232,40 @@ func TestRedactResultWithholdsOutputWhenTheBoundaryFails(t *testing.T) {
 	text := patch["content"].([]any)[0].(map[string]any)["text"].(string)
 	if strings.Contains(text, raw) || patch["isError"] != true || !strings.Contains(text, "withheld") {
 		t.Fatalf("patch = %+v", patch)
+	}
+}
+
+func TestSeenStateSurvivesRedactionOfTheDeliveredBlock(t *testing.T) {
+	b, _ := testBoundary(t)
+	token := "ghp_" + strings.Repeat("t7Y8", 6)
+	path := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(path, []byte("one\n"+token+"\nthree\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	target, err := resource.ParsePath(filepath.Dir(path), path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := (resource.FileProvider{}).Read(t.Context(), resource.ReadRequest{URI: target.URI, Requested: path, Selector: target.Selection, Budget: resource.Budget{Bytes: 4096, Lines: 100}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := hashline.NewStore(hashline.StoreLimits{}, "epoch")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &session{snapshots: store, pendingViews: make(map[string][]pendingView), secrets: b}
+	a := &app{session: s}
+	s.rememberRead("call", "epoch", target, page)
+	patch, cause := b.resultPatch([]any{map[string]any{"type": "text", "text": page.Content}})
+	if cause != nil {
+		t.Fatal(cause)
+	}
+	redacted := patch.(map[string]any)["content"]
+	if _, err := a.confirmRead(sdk.Context{}, map[string]any{"toolName": "read", "toolCallId": "call", "content": redacted}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Resolve(page.Facts.CanonicalURI, page.Facts.Tag); err != nil {
+		t.Fatalf("a read whose block was redacted must still count as seen: %v", err)
 	}
 }
