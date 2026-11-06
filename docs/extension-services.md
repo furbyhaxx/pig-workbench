@@ -1,6 +1,6 @@
 # Extension services
 
-Workbench exposes an optional v1 service bus for cooperating PiG extensions. Stock PiG never requires this protocol, and Workbench does not mask or intercept other extensions' tools.
+Workbench exposes an optional v1 service bus for cooperating PiG extensions. Stock PiG never requires this protocol. Workbench does not replace other extensions' tools, but its secrets hooks can substitute tool inputs and redact tool results at the shared host boundary.
 
 ## Channels
 
@@ -8,7 +8,7 @@ Workbench exposes an optional v1 service bus for cooperating PiG extensions. Sto
 |---|---|---|
 | `workbench:v1:request` | consumer → Workbench | validated `api.Request` |
 | `workbench:v1:reply` | Workbench → consumer | addressed `api.Reply` |
-| `workbench:v1:event` | Workbench → listeners | `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed` |
+| `workbench:v1:event` | Workbench → listeners | `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed`, `resources.changed`, `sessions.message` |
 | `workbench:v1:provider-request` | Workbench → contribution owner | `api.ProviderRequest` addressed to your client identity |
 | `workbench:v1:provider-reply` | contribution owner → Workbench | `api.Reply` addressed to Workbench |
 
@@ -28,16 +28,16 @@ if err := client.Call(ctx, endpoint, "location.get", map[string]any{}, &location
 }
 ```
 
-`Discover` needs exactly one responder: duplicate Workbench instances are ambiguous rather than silently picked. A capability you request must be advertised, so absence fails instead of returning an empty success.
+`Discover` needs exactly one responder: duplicate Workbench instances are ambiguous rather than silently picked. A capability you request must be advertised, so absence fails instead of returning an empty success. The `ready` event lists the common capabilities only; use `discover` for endpoint availability and owner-specific secrets grants.
 
 Create the client while the extension factory runs or from `OnLoaded`, and share it read-only across handlers. Replies are matched by request ID, session, generation and this client's owner/instance. Discovery may precede a generation; every other method must carry the current one, and a stale generation fails with `staleGeneration`. After `ready` or session replacement, discover again.
 
 ## Semantics you can rely on
 
 - `client.Call` performs no retries. Mutations returning a `*TransportError` have outcome `unknown` once emitted; reconcile by request ID or query state instead of repeating blindly.
-- `timeoutMs` is a cooperative budget (except `discover`, which only negotiates). The shared bus cannot preempt a hung listener.
+- `timeoutMs` is a cooperative budget. The shared bus cannot preempt a hung listener.
 - `ErrUnavailable` means no Workbench answered within the call; use your own fallback rather than assuming its services ran.
-- Plaintext never appears in transport-error messages.
+- `TransportError.Error()` omits request payloads; its unwrapped cause is separate and must be handled carefully.
 - A request above 64 KiB fails `limitExceeded` locally before emitting.
 - `Close` unsubscribes; it does not preempt a call already running in another handler.
 
@@ -53,10 +53,10 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
 | `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set` | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
 | `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
-| `sessions` | `sessions.list`, `sessions.send` | — (advertised while session messaging is enabled) |
+| `sessions` | `sessions.list`, `sessions.send` | — (advertised when the session endpoint is available) |
 | `secrets` | `secrets.redact` | — (advertised only to granted owners) |
 
-`sessions.list` returns the discoverable live sessions of the same user (no tokens). `sessions.send` takes `{target, channel, subject, body, attachments, wake}`. Channel `ext:<your owner>` delivers a `sessions.message` event (`api.SessionsMessageEvent`) on the event channel of the target session; it never wakes the agent and never becomes a frame. Channel `agent` delivers to the model as an untrusted frame attributed to you. The answer is the synchronous receipt (`accepted` with `woken`, `steered`, `delivered` or `queued`, or `rejected` with a reason). Sending on another owner's channel is `permissionDenied`.
+`sessions.list` returns the discoverable live sessions of the same user (no tokens). `sessions.send` takes `{target, channel, subject, body, attachments, wake}`. Channel `ext:<your owner>` delivers a `sessions.message` event (`api.SessionsMessageEvent`) on the event channel of the target session; it never wakes the agent and never becomes a frame. Channel `agent` delivers to the model as a peer-attributed data frame, untrusted unless that peer has been trusted. The answer is the synchronous receipt (`accepted` with `woken`, `steered`, `delivered` or `queued`, or `rejected` with a reason). Sending on another owner's channel is `permissionDenied`.
 
 ## Redact your own inference requests
 
@@ -93,13 +93,13 @@ stop, err := client.Serve(ext, func(ctx sdk.Context, req api.ProviderRequest) (a
 
 - Identical registration is idempotent. A changed descriptor needs `register` with `registrationId` and `params.previousRevision`; a failed replacement restores the previous descriptor.
 - Registrations, scheme claims and context-field claims are exclusive per generation. Reserved and retired schemes, overlapping frame source prefixes and second presentation owners for one tool fail `conflict` or `invalidRequest`.
-- Resource providers are read-only in this version: descriptors advertising `write`, `edit`, `remove` or `move` are refused `unsupported`, and Workbench's `edit`/`write` never send anything to a provider. Reads go through Workbench's selector grammar and pager; your page reports `shownRanges`, optional `totalLines` and completeness, and Workbench checks the line count before rendering.
+- Resource providers are read-only in this version: descriptors advertising `write`, `edit`, `remove` or `move` are refused `unsupported`, and Workbench's `edit`/`write` never send anything to a contributed provider. Reads go through Workbench's selector grammar and pager; your page reports `shownRanges`, optional `totalLines` and completeness, and Workbench checks the line count before rendering. `grep` and `find` do not currently traverse contributed provider roots.
 - Fetch backends: the most specific rule wins (exact host, longer `*.suffix`, `*`, then longer `pathPrefix`, then registration order). Answer with `body` or `locate` (a URI of your own resource provider). A 4xx status is final; unavailability, errors or a third-party egress you did not declare fall back to the builtin static reader with a notice.
 - Frame producers publish under their registered dotted key as source prefix, always with data authority. `followUp` wake is not granted; `nextBoundary` is steered into the running turn, `nextPrompt`/`beforePrompt` arrive with the next prompt. Frames bind to the current branch and context epoch.
 - `context.fields.set` binds `knowledge_cutoff` to the current model; a mismatched model fails `staleRevision` and a model change hides the value until you set it again.
 - `status.update` is coalesced to 4 updates per second; the receipt says `composedByWorkbench: true`, so stop your own `SetStatus`.
 
-`location.get` and `describe` are safe to reconcile from any later request. Reconcile mutating calls through their status methods before retrying.
+`location.get` and `describe` are safe to query again. After an unknown mutation outcome, query an appropriate status method when available or reconcile the affected state before retrying; there is no general `operation.status` method.
 
 ## Reference producer
 
