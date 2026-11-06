@@ -16,43 +16,8 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 	ext.RegisterCommand("workbench", sdk.CommandOptions{
 		Description:            "Inspect Workbench state, settings, tools or working location.",
 		GetArgumentCompletions: a.workbenchCompletions,
-		Handler: func(ctx sdk.Context, args string) error {
-			verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
-			switch verb {
-			case "", "show":
-				return a.show(ctx)
-			case "tools":
-				return a.toolsCommand(ctx, rest)
-			case "cd":
-				return a.cdCommand(ctx, rest)
-			case "settings":
-				return a.settingsCommand(ctx, rest)
-			case "jobs":
-				return a.jobsCommand(ctx, rest)
-			case "skills":
-				return a.skillsCommand(ctx)
-			case "prompt":
-				return a.promptCommand(ctx)
-			case "frames":
-				return a.framesCommand(ctx)
-			case "instructions":
-				return a.instructionsCommand(ctx, rest)
-			case "ask":
-				return a.askCommand(ctx, rest)
-			case "projects":
-				return a.projectsCommand(ctx, rest)
-			case "sessions":
-				return a.sessionsCommand(ctx, rest)
-			case "integrations":
-				return a.integrationsCommand(ctx, rest)
-			case "resources":
-				return a.resourcesCommand(ctx, rest)
-			case "trust":
-				return a.trustCommand(ctx, rest)
-			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
-			}
-		}})
+		Handler:                a.workbench,
+	})
 	for _, name := range []string{"cd", "wb:cd"} {
 		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
 	}
@@ -275,4 +240,42 @@ func renderBuiltinPrompt(s *session) (string, error) {
 		return "", err
 	}
 	return rendered.Text, nil
+}
+
+func (a *app) workbench(ctx sdk.Context, args string) error {
+	verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
+	switch verb {
+	case "", "show":
+		return a.show(ctx)
+	case "tools":
+		return a.toolsCommand(ctx, rest)
+	case "cd":
+		return a.cdCommand(ctx, rest)
+	case "settings":
+		return a.settingsCommand(ctx, rest)
+	case "jobs":
+		return a.jobsCommand(ctx, rest)
+	case "skills":
+		return a.skillsCommand(ctx)
+	case "prompt":
+		return a.promptCommand(ctx)
+	case "frames":
+		return a.framesCommand(ctx)
+	case "instructions":
+		return a.instructionsCommand(ctx, rest)
+	case "ask":
+		return a.askCommand(ctx, rest)
+	case "projects":
+		return a.projectsCommand(ctx, rest)
+	case "sessions":
+		return a.sessionsCommand(ctx, rest)
+	case "integrations":
+		return a.integrationsCommand(ctx, rest)
+	case "resources":
+		return a.resourcesCommand(ctx, rest)
+	case "trust":
+		return a.trustCommand(ctx, rest)
+	default:
+		return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
+	}
 }

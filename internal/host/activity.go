@@ -209,7 +209,8 @@ func (a *activityLine) close(ctx sdk.Context) {
 	_ = ctx.SetWidgetRenderer(activityKey, nil)
 }
 
-// activityShortcut opens the inspector of the first non-zero item, or reports that nothing is active.
+// activityShortcut runs the inspector of the first non-zero item. Only Workbench's own commands run;
+// a contributed item's open target is named, never executed, because the shortcut is not a click on it.
 func (a *app) activityShortcut(ctx sdk.Context) error {
 	s, err := a.current()
 	if err != nil {
@@ -220,6 +221,12 @@ func (a *app) activityShortcut(ctx sdk.Context) error {
 		notify(ctx, "Workbench activity: idle.")
 		return nil
 	}
-	notify(ctx, "Workbench activity: "+activitySummary(items)+"\nOpen with "+items[0].Open)
+	notify(ctx, "Workbench activity: "+activitySummary(items))
+	if args, ok := strings.CutPrefix(items[0].Open, "/workbench "); ok {
+		return a.workbench(ctx, args)
+	}
+	if items[0].Open != "" {
+		notify(ctx, "Open with "+items[0].Open)
+	}
 	return nil
 }
