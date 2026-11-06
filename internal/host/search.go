@@ -14,7 +14,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 		Name: "grep", Label: "grep",
 		Description:   "Search file contents under one directory. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Paths resolve against the Workbench location. Binary and oversized files are skipped and listed in Details; hitting the match/file limit reports complete:false instead of pretending the results are exhaustive.",
 		PromptSnippet: "Search file contents with exact matches and honest limits.",
-		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"pattern"}, "properties": map[string]any{
+		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"pattern":    map[string]any{"type": "string", "minLength": 1, "description": "Regular expression, or one literal when literal is true."},
 			"patterns":   map[string]any{"type": "array", "minItems": 1, "maxItems": 16, "items": map[string]any{"type": "string", "minLength": 1}, "description": "Literal OR patterns; requires literal:true and cannot accompany pattern."},
 			"literal":    map[string]any{"type": "boolean", "description": "Treat patterns as literal text instead of a regex."},
@@ -25,6 +25,9 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"filesOnly":  map[string]any{"type": "boolean", "description": "Return only the first match per file."},
 			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Accepted for compatibility; surrounding lines are not emitted yet."},
 			"limit":      map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum matches (default 200)."},
+		}, "oneOf": []any{
+			map[string]any{"required": []string{"pattern"}, "not": map[string]any{"required": []string{"patterns"}}},
+			map[string]any{"required": []string{"patterns", "literal"}, "not": map[string]any{"required": []string{"pattern"}}, "properties": map[string]any{"literal": map[string]any{"const": true}}},
 		}},
 		Execute: a.grep,
 	})

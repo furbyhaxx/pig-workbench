@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -210,6 +211,64 @@ func TestLiveSummaryRespectsReadBudget(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("apple\npear\nplum\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"grep", map[string]any{"patterns": []any{"apple", "plum"}, "literal": true}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "grep")
+	fixture.send("go", "prompt", "Search for the terms.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 2 {
+		t.Fatalf("got %d provider requests, want 2", len(recorder.bodies))
+	}
+	results := toolResults(t, recorder.bodies[1])
+	if len(results) != 1 || !strings.Contains(results[0], "apple") || !strings.Contains(results[0], "plum") || strings.Contains(results[0], "pear") {
+		t.Fatalf("literal OR search returned wrong results: %v", results)
+	}
+	var request struct {
+		Tools []struct {
+			Function struct {
+				Name       string `json:"name"`
+				Parameters struct {
+					Required []string `json:"required"`
+					OneOf    []struct {
+						Required []string `json:"required"`
+						Not      struct {
+							Required []string `json:"required"`
+						} `json:"not"`
+						Properties struct {
+							Literal struct {
+								Const *bool `json:"const"`
+							} `json:"literal"`
+						} `json:"properties"`
+					} `json:"oneOf"`
+				} `json:"parameters"`
+			} `json:"function"`
+		} `json:"tools"`
+	}
+	if err := json.Unmarshal([]byte(recorder.bodies[0]), &request); err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range request.Tools {
+		if tool.Function.Name != "grep" {
+			continue
+		}
+		p := tool.Function.Parameters
+		if slices.Contains(p.Required, "pattern") || len(p.OneOf) != 2 || !slices.Contains(p.OneOf[0].Required, "pattern") || !slices.Contains(p.OneOf[0].Not.Required, "patterns") || !slices.Contains(p.OneOf[1].Required, "patterns") || !slices.Contains(p.OneOf[1].Required, "literal") || !slices.Contains(p.OneOf[1].Not.Required, "pattern") || p.OneOf[1].Properties.Literal.Const == nil || !*p.OneOf[1].Properties.Literal.Const {
+			t.Fatalf("the published schema does not offer both search forms: %+v", p)
+		}
+		return
+	}
+	t.Fatal("grep was not published to the provider")
 }
 
 func TestLiveEditRefusesLinesTheModelNeverSaw(t *testing.T) {
