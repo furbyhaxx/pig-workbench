@@ -246,3 +246,27 @@ func TestLiveEditRefusesALineTheReadBudgetCutInHalf(t *testing.T) {
 		t.Fatalf("refusal does not name the unseen line: %s", results[1])
 	}
 }
+
+func TestLiveBlockReplaceUsesSyntaxBoundariesAndRefusesAnUnanchoredLine(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "a.go")
+	original := "package a\n\nfunc helper() {\n\tx()\n}\n\nfunc other() {}\n"
+	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read,edit",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "a.go"}} },
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[a.go#" + tagOf(t, prior[0]) + "]\nPUT 3*:\n+func helper() { y() }\n"}}
+		},
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[a.go#" + tagOf(t, prior[0]) + "]\nPUT 1*:\n+package nope\n"}}
+		},
+	)
+	if got := readFile(t, path); got != "package a\n\nfunc helper() { y() }\n\nfunc other() {}\n" {
+		t.Fatalf("block replace did not cover exactly the function: %q\nfirst: %s\nsecond: %s", got, results[1], results[2])
+	}
+	if !strings.Contains(strings.ToLower(results[2]), "block") {
+		t.Fatalf("a non-block anchor was not refused with a block explanation: %s", results[2])
+	}
+}
