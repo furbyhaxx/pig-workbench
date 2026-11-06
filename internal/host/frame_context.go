@@ -135,6 +135,9 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		{source: "session.model", value: modelFacts},
 		{source: "session.capabilities", value: map[string]any{"activeTools": tools, "schemes": s.router.Schemes()}},
 	}
+	if missing := missingContextSources(facts); len(missing) > 0 {
+		return nil, fmt.Errorf("before-prompt delivery is missing %s", strings.Join(missing, ", "))
+	}
 	configuration, err := s.settings.Current()
 	if err != nil {
 		return nil, err
@@ -375,4 +378,27 @@ func branchScope(ctx sdk.Context, epoch string) (frames.DeliveryScope, error) {
 		}
 	}
 	return scope, nil
+}
+
+var requiredContextSources = []string{
+	"session.date",
+	"session.environment",
+	"session.project",
+	"session.location",
+	"session.model",
+	"session.capabilities",
+}
+
+func missingContextSources(facts []contextFact) []string {
+	have := map[string]bool{}
+	for _, fact := range facts {
+		have[fact.source] = true
+	}
+	var missing []string
+	for _, source := range requiredContextSources {
+		if !have[source] {
+			missing = append(missing, source)
+		}
+	}
+	return missing
 }
