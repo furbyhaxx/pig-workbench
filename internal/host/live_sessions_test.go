@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -173,5 +174,55 @@ func TestLiveBusyReceiverIsSteeredNotWoken(t *testing.T) {
 		t.Fatalf("a busy receiver must report steered: %.1200s", body)
 	}
 	waitForRequest(t, receiver, "STEER-TEXT-FROM-A")
+	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+}
+
+func TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, nil)
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	for id := range records {
+		receiverID = id
+	}
+	short := receiverID[:8]
+	secret := "ghp_" + strings.Repeat("Ab3dE9", 5)
+	sender := startLiveSession(t, runtime, []scriptedCall{{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "SECRET-CARRIER use " + secret + " for the deploy"}}})
+	waitForRecords(t, runtime, 2)
+	sender.fixture.send("go", "prompt", "My token is "+secret+". Tell the other session to deploy.")
+	sender.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	body := waitForRequest(t, receiver, "SECRET-CARRIER")
+	if strings.Contains(body, secret) {
+		t.Fatal("the raw secret reached the receiver's provider")
+	}
+	if !regexp.MustCompile(`red-sec-[a-z2-7]{16}`).MatchString(body) {
+		t.Fatal("the receiver must see a placeholder in place of the secret")
+	}
+}
+
+func TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, nil)
+	record := waitForRecords(t, runtime, 1)
+	var receiverID string
+	var data map[string]any
+	for id, r := range record {
+		receiverID, data = id, r
+	}
+	envelope := messagingEnvelope(receiverID, 8)
+	reply := callEndpoint(t, runtime, data, envelope)
+	if reply["status"] != "accepted" || reply["delivery"] != "queued" {
+		t.Fatalf("a message at hop 8 must be accepted but queued, got %v", reply)
+	}
+	time.Sleep(500 * time.Millisecond)
+	if len(receiver.requests()) != 0 {
+		t.Fatal("a message beyond maxHops woke the receiver")
+	}
+	envelope = messagingEnvelope(receiverID, 0)
+	envelope.ID = "m2"
+	if reply := callEndpoint(t, runtime, data, envelope); reply["delivery"] != "woken" {
+		t.Fatalf("hop 0 must wake an idle receiver, got %v", reply)
+	}
+	waitForRequest(t, receiver, "HOP-PROBE")
 	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 }
