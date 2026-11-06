@@ -19,6 +19,8 @@ type Class struct {
 	MaxLines  int
 	MaxBytes  int
 	MaxItems  int
+	// AllowPin permits explicit pinning of files of this class (SPEC-0007 §6).
+	AllowPin bool
 }
 
 // Options defines the project boundary, authorized user directories and scan budget.
@@ -78,7 +80,7 @@ type Set struct {
 func DefaultClasses() []Class {
 	return []Class{
 		{ID: "steering", Filenames: []string{"AGENTS.override.md", "AGENTS.md", "AGENTS.MD"}, Placement: "ancestors", Select: "first", Role: "instruction", MaxLines: 200, MaxBytes: 16384},
-		{ID: "backlog", Filenames: []string{"BACKLOG.md"}, Placement: "ancestors", Select: "first", Role: "context", MaxLines: 200, MaxBytes: 16384, MaxItems: 25},
+		{ID: "backlog", Filenames: []string{"BACKLOG.md"}, Placement: "ancestors", Select: "first", Role: "context", MaxLines: 200, MaxBytes: 16384, MaxItems: 25, AllowPin: true},
 	}
 }
 

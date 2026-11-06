@@ -63,16 +63,7 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string) ([]contex
 		facts = append(facts, contextFact{source: "instructions.boundary", kind: "notice", authority: "data", resource: boundary, value: "Nested repository instructions were not loaded without a separate trust decision: " + boundary})
 	}
 	for _, file := range selected.Files {
-		if rel, err := filepath.Rel(agent, file.Path); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-			file.Trust = "user"
-		}
-		kind, authority := "info", "data"
-		if file.Role == "instruction" {
-			kind = "instruction"
-			authority = "instruction"
-		}
-		body := "Instructions from: " + file.Path + "\n" + (instructions.Set{Files: []instructions.Selected{file}}).Render()
-		facts = append(facts, contextFact{source: "instructions." + file.Class, value: body, resource: file.Path, kind: kind, authority: authority})
+		facts = append(facts, selectedFact(agent, file))
 	}
 	return facts, nil
 }
@@ -112,4 +103,18 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 		}
 	}
 	return nil, nil
+}
+
+// selectedFact turns a discovered file into the frame fact that delivers it.
+func selectedFact(agent string, file instructions.Selected) contextFact {
+	if rel, err := filepath.Rel(agent, file.Path); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		file.Trust = "user"
+	}
+	kind, authority := "info", "data"
+	if file.Role == "instruction" {
+		kind = "instruction"
+		authority = "instruction"
+	}
+	body := "Instructions from: " + file.Path + "\n" + (instructions.Set{Files: []instructions.Selected{file}}).Render()
+	return contextFact{source: "instructions." + file.Class, value: body, resource: file.Path, kind: kind, authority: authority}
 }

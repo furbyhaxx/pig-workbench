@@ -164,6 +164,7 @@ func (p skillProvider) unload(s *session, uri, content string) error {
 	}
 	s.skills.mu.Lock()
 	if s.skills.loaded == nil || !s.skills.loaded[parts[0]] {
+		s.skills.mu.Unlock()
 		return resource.ErrNotFound
 	}
 	delete(s.skills.loaded, parts[0])

@@ -75,3 +75,58 @@ func TestLiveChangedInstructionsArriveAsADiffAgainstTheDeliveredView(t *testing.
 		t.Fatalf("the update repeated the view (%d rule mentions)", got)
 	}
 }
+
+func TestLivePinnedBacklogStaysDeliveredAndPoliciesHold(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"AGENTS.md":                         "Steering stays unpinnable.\n",
+		"a.txt":                             "a\n",
+		filepath.Join("docs", "BACKLOG.md"): "- B-0001 task high — PINNED-ITEM-MARKER → docs/item.md\n",
+	}
+	for name, text := range files {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctl := "session://self/instructions/ctl"
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"write", map[string]any{"path": ctl, "content": "pin AGENTS.md"}},
+		{"write", map[string]any{"path": ctl, "content": "pin docs/BACKLOG.md"}},
+		{"read", map[string]any{"path": "a.txt"}},
+		{"write", map[string]any{"path": ctl, "content": "unpin docs/BACKLOG.md"}},
+		{"read", map[string]any{"path": "a.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+	fixture.send("script", "prompt", "Pin things.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 6 {
+		t.Fatalf("got %d requests, want 6", len(recorder.bodies))
+	}
+	results := toolResults(t, recorder.bodies[5])
+	if !strings.Contains(results[0], "does not allow pins") {
+		t.Fatalf("pinning steering must be refused: %q", results[0])
+	}
+	if !strings.Contains(results[1], "pinned ") {
+		t.Fatalf("pinning a backlog must succeed: %q", results[1])
+	}
+	if strings.Contains(recorder.bodies[1], "PINNED-ITEM-MARKER") {
+		t.Fatal("the backlog was delivered before it was pinned")
+	}
+	if !strings.Contains(recorder.bodies[3], "PINNED-ITEM-MARKER") {
+		t.Fatal("the pinned backlog must reach the model at the next boundary even though the touched file is elsewhere")
+	}
+	if !strings.Contains(recorder.bodies[5], "no longer applies") {
+		t.Fatal("unpinning must withdraw the backlog explicitly")
+	}
+}

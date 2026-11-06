@@ -26,6 +26,7 @@ type contextFrameState struct {
 	// views holds the full instruction text the model has actually received, keyed like last; it is
 	// the only valid base for a diff. staged holds admitted full views until their frame is delivered.
 	views     map[string]string
+	pins      []instructionPin
 	staged    map[string]stagedView
 	scope     frames.DeliveryScope
 	nextEvent uint64
@@ -177,6 +178,21 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	state := s.contextFrames
 	state.mu.Lock()
 	defer state.mu.Unlock()
+	if enabled.Value == true {
+		agent, err := sdk.AgentDir()
+		if err != nil {
+			return nil, err
+		}
+		have := make(map[string]bool)
+		for _, fact := range facts {
+			have[fact.source+"/"+fact.resource] = true
+		}
+		for _, fact := range pinFacts(ctx, agent, state.pins) {
+			if !have[fact.source+"/"+fact.resource] {
+				facts = append(facts, fact)
+			}
+		}
+	}
 	scope, err := branchScope(ctx, epoch)
 	if err != nil {
 		return nil, err
@@ -205,6 +221,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			return nil, err
 		}
 		state.last = baseline
+		state.pins = pinsFromBranch(entries, branch)
 		state.views = make(map[string]string)
 		state.staged = make(map[string]stagedView)
 	}
