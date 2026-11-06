@@ -106,7 +106,10 @@ func runScriptedWith(t *testing.T, root, tools, config string, fixtures []string
 	}))
 	defer server.Close()
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
-	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = 'auto'\n"+config), 0600); err != nil {
+	if !strings.HasPrefix(config, "[edit]\n") {
+		config = "[edit]\nmode = 'auto'\n" + config
+	}
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte(config), 0600); err != nil {
 		t.Fatal(err)
 	}
 	fixture := startRPCWithExtensions(t, root, true, fixtures, "--model", "workbench-fixture/mock", "--tools", tools)
@@ -226,6 +229,30 @@ func TestLiveEditRefusesLinesTheModelNeverSaw(t *testing.T) {
 	}
 	if !strings.Contains(results[1], "not seen") || !strings.Contains(results[1], "read them before editing") {
 		t.Fatalf("refusal does not name the unseen lines and the next action: %s", results[1])
+	}
+}
+
+func TestLiveEditModeRestrictsAcceptedSyntax(t *testing.T) {
+	for _, tc := range []struct {
+		mode   string
+		params map[string]any
+	}{
+		{"hashline", map[string]any{"path": "src.txt", "edits": []any{map[string]any{"oldText": "old", "newText": "new"}}}},
+		{"replace", map[string]any{"hashline": "[src.txt#1234]\nPUT 1.=1:\n+new\n"}},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "src.txt")
+			if err := os.WriteFile(path, []byte("old\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			results := runScriptedConfig(t, root, "edit", "[edit]\nmode = '"+tc.mode+"'\n", func([]string) scriptedCall {
+				return scriptedCall{"edit", tc.params}
+			})
+			if !strings.Contains(results[0], "edit.mode is "+tc.mode) || readFile(t, path) != "old\n" {
+				t.Fatalf("mode restriction was not enforced: %s", results[0])
+			}
+		})
 	}
 }
 
