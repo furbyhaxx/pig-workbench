@@ -5,6 +5,7 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -326,4 +327,39 @@ func TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut(t *testing.T) {
 	if got := readFile(t, path); got != original {
 		t.Fatalf("a cut block granted edit authority: %q", got)
 	}
+}
+
+// requestRecorder serves a scripted provider and keeps every raw request body; calls are consumed
+// in order, then next (if set) chooses further calls until it returns nil.
+type requestRecorder struct {
+	mu     sync.Mutex
+	bodies []string
+	calls  []scriptedCall
+	next   func(index int) *scriptedCall
+}
+
+func (r *requestRecorder) serve(t *testing.T) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		r.mu.Lock()
+		index := len(r.bodies)
+		r.bodies = append(r.bodies, string(body))
+		r.mu.Unlock()
+		var call *scriptedCall
+		if index < len(r.calls) {
+			call = &r.calls[index]
+		} else if r.next != nil {
+			call = r.next(index)
+		}
+		if call != nil {
+			writeScriptedTurn(w, map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("secret-%d", index), "type": "function", "function": map[string]any{"name": call.tool, "arguments": mustJSON(call.args)}}}}, "tool_calls")
+			return
+		}
+		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "done"}, "stop")
+	}))
+}
+
+func mustJSON(value any) string {
+	data, _ := json.Marshal(value)
+	return string(data)
 }

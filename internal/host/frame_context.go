@@ -10,15 +10,23 @@ import (
 	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/instructions"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 )
 
+type stagedView struct{ key, full string }
+
 type contextFrameState struct {
-	mu        sync.Mutex
-	ledger    *frames.Session
-	last      map[string]string
+	mu     sync.Mutex
+	ledger *frames.Session
+	last   map[string]string
+	// views holds the full instruction text the model has actually received, keyed like last; it is
+	// the only valid base for a diff. staged holds admitted full views until their frame is delivered.
+	views     map[string]string
+	staged    map[string]stagedView
 	scope     frames.DeliveryScope
 	nextEvent uint64
 }
@@ -67,7 +75,7 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 	if err := ledger.Restore(records); err != nil {
 		return nil, err
 	}
-	return &contextFrameState{ledger: ledger, last: make(map[string]string)}, nil
+	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView)}, nil
 }
 
 type contextFact struct {
@@ -197,6 +205,8 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			return nil, err
 		}
 		state.last = baseline
+		state.views = make(map[string]string)
+		state.staged = make(map[string]stagedView)
 	}
 	state.scope = scope
 	currentInstructionKeys := make(map[string]bool)
@@ -238,6 +248,14 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		if authority == "" {
 			authority = "data"
 		}
+		fullBody := string(body)
+		if strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice" {
+			if previous, ok := state.views[key]; ok {
+				if diff := instructionDiff(fact, previous, fullBody, updateContext(configuration)); diff != "" {
+					body = []byte(diff)
+				}
+			}
+		}
 		ledger := state.ledger.Ledger(frames.Context{ProducerPrefix: prefix, BranchLeaf: state.scope.BranchLeaf, Epoch: epoch, Trusted: true, Authority: authority})
 		state.nextEvent++
 		receipt, err := ledger.Admit(frames.Publish{EventKey: fmt.Sprintf("%s/%s/%s/%d", epoch, fact.source, digest, state.nextEvent), Kind: kind, Source: fact.source, Resource: fact.resource, SubjectKey: fact.resource, Body: string(body), Delivery: delivery, DataTrust: "trusted", CoalesceKey: key})
@@ -245,6 +263,9 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			return nil, err
 		}
 		admitted = append(admitted, receipt.FrameID)
+		if strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice" {
+			state.staged[receipt.FrameID] = stagedView{key: key, full: fullBody}
+		}
 		state.last[key] = digest
 	}
 	if err := persistFrames(ctx, state.ledger, admitted); err != nil {
@@ -375,6 +396,12 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	if err := state.ledger.MarkDelivered(state.scope, delivered); err != nil {
 		return nil, err
 	}
+	for _, id := range delivered {
+		if view, ok := state.staged[id]; ok {
+			state.views[view.key] = view.full
+			delete(state.staged, id)
+		}
+	}
 	return nil, persistFrames(ctx, state.ledger, delivered)
 }
 
@@ -422,4 +449,29 @@ func missingContextSources(facts []contextFact) []string {
 		}
 	}
 	return missing
+}
+
+func updateContext(configuration *config.Snapshot) int {
+	entry, ok := configuration.Get("instructions.updates.context")
+	if value, isInt := entry.Value.(int64); ok && isInt {
+		return int(value)
+	}
+	return 3
+}
+
+// instructionDiff returns the update body for a changed instruction view, or "" to send the full view.
+// A diff is used only when it is smaller and applies to the view the model received.
+func instructionDiff(fact contextFact, previous, current string, context int) string {
+	diff := instructions.UnifiedDiff(previous, current, context)
+	if diff == "" {
+		return ""
+	}
+	if rebuilt, err := instructions.ApplyDiff(previous, diff); err != nil || rebuilt != current {
+		return ""
+	}
+	body := "Instruction update for " + fact.resource + ". Apply this diff to the view delivered earlier in this context; it replaces that view.\n" + diff
+	if len(body) >= len(current) {
+		return ""
+	}
+	return body
 }

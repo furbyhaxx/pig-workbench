@@ -4,54 +4,15 @@ package host
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 )
-
-// secretRecorder serves a scripted provider and keeps every raw request body.
-type secretRecorder struct {
-	mu     sync.Mutex
-	bodies []string
-	calls  []scriptedCall
-	next   func(index int) *scriptedCall
-}
-
-func (r *secretRecorder) serve(t *testing.T) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
-		r.mu.Lock()
-		index := len(r.bodies)
-		r.bodies = append(r.bodies, string(body))
-		r.mu.Unlock()
-		var call *scriptedCall
-		if index < len(r.calls) {
-			call = &r.calls[index]
-		} else if r.next != nil {
-			call = r.next(index)
-		}
-		if call != nil {
-			writeScriptedTurn(w, map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("secret-%d", index), "type": "function", "function": map[string]any{"name": call.tool, "arguments": mustJSON(call.args)}}}}, "tool_calls")
-			return
-		}
-		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "done"}, "stop")
-	}))
-}
-
-func mustJSON(value any) string {
-	data, _ := json.Marshal(value)
-	return string(data)
-}
 
 func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 	root := t.TempDir()
@@ -64,7 +25,7 @@ func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "emit.sh"), []byte("echo "+commandToken+"\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	recorder := &secretRecorder{calls: []scriptedCall{
+	recorder := &requestRecorder{calls: []scriptedCall{
 		{"read", map[string]any{"path": "notes.txt"}},
 		{"bash", map[string]any{"command": "sh emit.sh"}},
 		{"bash", map[string]any{"command": "sh emit.sh; sleep 30", "background": true}},
@@ -133,7 +94,7 @@ func TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder(t *te
 	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("key="+token+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	recorder := &secretRecorder{}
+	recorder := &requestRecorder{}
 	server := recorder.serve(t)
 	defer server.Close()
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
@@ -194,7 +155,7 @@ func TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted(t *testing
 	if err := boundary.vault.SetMetadata(secrets.Record{Placeholder: placeholder, Kind: "token", Source: "user", Scope: "global", Env: "SERVICE_TOKEN"}); err != nil {
 		t.Fatal(err)
 	}
-	recorder := &secretRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": `printf %s "$SERVICE_TOKEN" > got.txt; echo "token=$SERVICE_TOKEN"`}}}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": `printf %s "$SERVICE_TOKEN" > got.txt; echo "token=$SERVICE_TOKEN"`}}}}
 	server := recorder.serve(t)
 	defer server.Close()
 	writeFixtureProvider(t, agent, server.URL)
@@ -226,7 +187,7 @@ func TestLiveBrokenSecretsPolicySendsNothingToTheProvider(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	recorder := &secretRecorder{}
+	recorder := &requestRecorder{}
 	server := recorder.serve(t)
 	defer server.Close()
 	writeFixtureProvider(t, agent, server.URL)
