@@ -90,6 +90,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnToolResult(a.confirmRead)
 	ext.OnEvent("before_agent_start", a.contextFrames)
+	ext.OnEvent("before_provider_request", a.spliceLatePrompt)
 	ext.OnEvent("context", a.confirmContextFrames)
 	ext.OnEvent("tool_call", a.toolInstructions)
 	a.registerTools(ext)
