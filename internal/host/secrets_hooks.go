@@ -226,3 +226,36 @@ func (a *app) abortRequest(ctx sdk.Context, s *session, cause error) (any, error
 	ctx.Abort()
 	return nil, errors.New("request withheld: the secrets boundary is unavailable")
 }
+
+// substituteCall replaces placeholders in the arguments of every tool call, including other
+// extensions' tools. The model and transcript keep the placeholder; only the tool receives the value.
+// An unknown or deleted placeholder blocks the call, and so does an unavailable boundary.
+func (a *app) substituteCall(ctx sdk.Context, data map[string]any) (any, error) {
+	input, ok := data["input"].(map[string]any)
+	if !ok || len(input) == 0 {
+		return nil, nil
+	}
+	s, err := a.current()
+	if err != nil {
+		return nil, nil
+	}
+	guard, enabled, err := s.secrets.Guard()
+	if err != nil {
+		s.secrets.withhold(ctx, err)
+		return map[string]any{"block": true, "reason": "The secrets boundary is unavailable, so this call was not run."}, nil
+	}
+	if !enabled {
+		return nil, nil
+	}
+	substituted, err := secrets.SubstituteArguments(guard, input)
+	if err != nil {
+		return map[string]any{"block": true, "reason": "The call names a secret placeholder that does not exist or was deleted."}, nil
+	}
+	for key := range input {
+		delete(input, key)
+	}
+	for key, value := range substituted {
+		input[key] = value
+	}
+	return nil, nil
+}

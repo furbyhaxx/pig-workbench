@@ -21,6 +21,7 @@ type secretRecorder struct {
 	mu     sync.Mutex
 	bodies []string
 	calls  []scriptedCall
+	next   func(index int) *scriptedCall
 }
 
 func (r *secretRecorder) serve(t *testing.T) *httptest.Server {
@@ -30,8 +31,14 @@ func (r *secretRecorder) serve(t *testing.T) *httptest.Server {
 		index := len(r.bodies)
 		r.bodies = append(r.bodies, string(body))
 		r.mu.Unlock()
+		var call *scriptedCall
 		if index < len(r.calls) {
-			writeScriptedTurn(w, map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("secret-%d", index), "type": "function", "function": map[string]any{"name": r.calls[index].tool, "arguments": mustJSON(r.calls[index].args)}}}}, "tool_calls")
+			call = &r.calls[index]
+		} else if r.next != nil {
+			call = r.next(index)
+		}
+		if call != nil {
+			writeScriptedTurn(w, map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": fmt.Sprintf("secret-%d", index), "type": "function", "function": map[string]any{"name": call.tool, "arguments": mustJSON(call.args)}}}}, "tool_calls")
 			return
 		}
 		writeScriptedTurn(w, map[string]any{"role": "assistant", "content": "done"}, "stop")
@@ -80,5 +87,47 @@ func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 	last := recorder.bodies[len(recorder.bodies)-1]
 	if got := len(placeholder.FindAllString(last, -1)); got < 3 {
 		t.Fatalf("the final request should carry placeholders for all three secrets, found %d", got)
+	}
+}
+
+func TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Mn6pL2", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("key="+token+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &secretRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	placeholderOf := func() string {
+		recorder.mu.Lock()
+		defer recorder.mu.Unlock()
+		match := regexp.MustCompile(`red-sec-[a-z2-7]{16}`).FindString(recorder.bodies[len(recorder.bodies)-1])
+		return match
+	}
+	recorder.calls = []scriptedCall{{"read", map[string]any{"path": "notes.txt"}}}
+	recorder.next = func(index int) *scriptedCall {
+		if index == 1 {
+			return &scriptedCall{"bash", map[string]any{"command": "printf %s " + placeholderOf() + " > copied.txt"}}
+		}
+		return nil
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash")
+	fixture.send("script", "prompt", "Copy the key.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	copied, err := os.ReadFile(filepath.Join(root, "copied.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(copied) != token {
+		t.Fatalf("the shell received %q instead of the real value", copied)
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, token) {
+			t.Fatalf("request %d carries the real token", i)
+		}
 	}
 }
