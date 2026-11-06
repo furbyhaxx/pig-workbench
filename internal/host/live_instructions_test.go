@@ -130,3 +130,40 @@ func TestLivePinnedBacklogStaysDeliveredAndPoliciesHold(t *testing.T) {
 		t.Fatal("unpinning must withdraw the backlog explicitly")
 	}
 }
+
+func TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte("a\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": "a.txt"}},
+		{"bash", map[string]any{"command": "echo 'Late rule LATE-RULE-MARKER.' > AGENTS.md"}},
+		{"read", map[string]any{"path": "a.txt"}},
+		{"bash", map[string]any{"command": "rm AGENTS.md"}},
+		{"read", map[string]any{"path": "a.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash")
+	fixture.send("script", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 6 {
+		t.Fatalf("got %d requests, want 6", len(recorder.bodies))
+	}
+	if strings.Contains(recorder.bodies[1], "LATE-RULE-MARKER.") && strings.Contains(recorder.bodies[1], "Instructions from") {
+		t.Fatal("the file did not exist yet")
+	}
+	if !strings.Contains(recorder.bodies[3], "Instructions from: ") || !strings.Contains(recorder.bodies[3], "LATE-RULE-MARKER") {
+		t.Fatal("a steering file created mid-session must be admitted at the next tool boundary")
+	}
+	if !strings.Contains(recorder.bodies[5], "no longer applies") {
+		t.Fatal("a deleted steering file must be withdrawn explicitly")
+	}
+}
