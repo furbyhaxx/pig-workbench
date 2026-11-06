@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
@@ -126,7 +127,13 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		if err := work.Err(); err != nil {
 			return nil, err
 		}
-		message, err := a.instructionsControl(ctx, target.URI, input.Content)
+		var message string
+		var err error
+		if strings.HasSuffix(strings.TrimRight(target.URI, "/"), "/title") {
+			message, err = a.writeSessionTitle(ctx, s, target.URI, input.Content)
+		} else {
+			message, err = a.instructionsControl(ctx, target.URI, input.Content)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +149,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
 	}
 	if target.Scheme != "file" {
-		return nil, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+		return nil, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
 	}
 	if err := work.Err(); err != nil {
 		return nil, err

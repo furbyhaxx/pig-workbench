@@ -31,7 +31,7 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 		return nil, "", err
 	}
 	live := ctx
-	if err := router.RegisterBuiltin(sessionProvider{ctx: func() (sdk.Context, bool) { return live, true }}); err != nil {
+	if err := router.RegisterBuiltin(sessionProvider{ctx: func() (sdk.Context, bool) { return live, true }, source: jobsSource}); err != nil {
 		return nil, "", err
 	}
 	if err := router.RegisterBuiltin(jobProvider{source: jobsSource}); err != nil {

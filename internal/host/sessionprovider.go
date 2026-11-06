@@ -13,7 +13,10 @@ import (
 )
 
 // sessionProvider projects the running session as read-only resources.
-type sessionProvider struct{ ctx func() (sdk.Context, bool) }
+type sessionProvider struct {
+	ctx    func() (sdk.Context, bool)
+	source func() (*session, bool)
+}
 
 func (sessionProvider) Scheme() string { return "session" }
 
@@ -27,6 +30,10 @@ func (p sessionProvider) current() (sdk.Context, error) {
 
 func splitSession(uri string) ([]string, error) {
 	rest, ok := strings.CutPrefix(uri, "session://")
+	if !ok {
+		// url.URL prints an empty host and path as "session:".
+		rest, ok = strings.CutPrefix(uri, "session:")
+	}
 	if !ok {
 		return nil, errors.New("session provider requires a session:// URI")
 	}
@@ -44,27 +51,118 @@ func splitSession(uri string) ([]string, error) {
 }
 
 var sessionFiles = []string{"meta", "transcript", "entries", "title", "system-prompt"}
+var storedSessionFiles = []string{"meta", "transcript", "entries", "title"}
+
+// sessionTarget is a parsed session:// URI: the session it names and the file below it.
+type sessionTarget struct {
+	root  bool
+	byID  bool
+	id    string
+	file  string
+	depth int
+}
+
+func parseSessionTarget(parts []string) (sessionTarget, error) {
+	var t sessionTarget
+	if len(parts) == 0 {
+		t.root = true
+		return t, nil
+	}
+	if parts[0] == "by-id" {
+		t.byID = true
+		parts = parts[1:]
+		if len(parts) == 0 {
+			return t, nil
+		}
+	}
+	if len(parts) > 2 {
+		return t, resource.ErrNotFound
+	}
+	t.id, t.depth = parts[0], len(parts)
+	if len(parts) == 2 {
+		t.file = parts[1]
+	}
+	return t, nil
+}
+
+// resolveStored finds a stored session by full ID or an unambiguous prefix of at least 6 characters.
+func (p sessionProvider) resolveStored(host sdk.Context, id string) (sdk.SessionInfo, error) {
+	all, err := sdk.SessionManagerListAll(host, customSessionDir(host), nil)
+	if err != nil {
+		return sdk.SessionInfo{}, fmt.Errorf("list sessions: %w", err)
+	}
+	var matches []sdk.SessionInfo
+	for _, info := range all {
+		if info.ID == id {
+			return info, nil
+		}
+		if len(id) >= 6 && strings.HasPrefix(info.ID, id) {
+			matches = append(matches, info)
+		}
+	}
+	switch len(matches) {
+	case 1:
+		return matches[0], nil
+	case 0:
+		return sdk.SessionInfo{}, resource.ErrNotFound
+	}
+	return sdk.SessionInfo{}, fmt.Errorf("%q matches %d sessions; use a longer ID", id, len(matches))
+}
+
+func (p sessionProvider) isSelf(host sdk.Context, id string) bool {
+	if id == "self" {
+		return true
+	}
+	own, err := host.GetSessionID()
+	return err == nil && own == id
+}
+
+func containsName(names []string, name string) bool {
+	for _, candidate := range names {
+		if candidate == name {
+			return true
+		}
+	}
+	return false
+}
 
 func (p sessionProvider) Stat(ctx context.Context, uri string) (resource.StatResult, error) {
 	parts, err := splitSession(uri)
 	if err != nil {
 		return resource.StatResult{}, err
 	}
-	if _, err := p.current(); err != nil {
+	host, err := p.current()
+	if err != nil {
 		return resource.StatResult{}, err
 	}
-	switch {
-	case len(parts) == 0, len(parts) == 1 && parts[0] == "self":
+	t, err := parseSessionTarget(parts)
+	if err != nil {
+		return resource.StatResult{}, err
+	}
+	if t.root || (t.byID && t.id == "") {
 		return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
-	case len(parts) == 2 && (parts[0] == "self"):
-		for _, name := range sessionFiles {
-			if name == parts[1] {
-				return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
-			}
-		}
-		return resource.StatResult{}, resource.ErrNotFound
+	}
+	files := storedSessionFiles
+	if p.isSelf(host, t.id) {
+		files = sessionFiles
+	} else if _, err := p.resolveStored(host, t.id); err != nil {
+		return resource.StatResult{}, err
+	}
+	if t.depth == 1 {
+		return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
+	}
+	if containsName(files, t.file) {
+		return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
 	}
 	return resource.StatResult{}, resource.ErrNotFound
+}
+
+func sessionDetail(info sdk.SessionInfo) string {
+	title := "(untitled)"
+	if info.Name != nil && *info.Name != "" {
+		title = *info.Name
+	}
+	return fmt.Sprintf("%s  %d messages  %s  %s", title, info.MessageCount, info.Modified.Local().Format("2006-01-02 15:04"), info.Cwd)
 }
 
 func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int) (resource.Listing, error) {
@@ -72,15 +170,48 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 	if err != nil {
 		return resource.Listing{}, err
 	}
-	if _, err := p.current(); err != nil {
+	host, err := p.current()
+	if err != nil {
 		return resource.Listing{}, err
 	}
-	entries := make([]resource.Entry, 0, len(sessionFiles)+1)
-	if len(parts) == 0 {
-		return resource.Listing{Complete: true, Entries: []resource.Entry{{Name: "self", URI: "session://self/", Kind: resource.EntryDir}}}, nil
+	t, err := parseSessionTarget(parts)
+	if err != nil {
+		return resource.Listing{}, err
 	}
-	for _, name := range sessionFiles {
-		entries = append(entries, resource.Entry{Name: name, URI: "session://self/" + name, Kind: resource.EntryFile})
+	switch {
+	case t.root:
+		entries := []resource.Entry{{Name: "self", URI: "session://self/", Kind: resource.EntryDir}, {Name: "by-id", URI: "session://by-id/", Kind: resource.EntryDir}}
+		stored, err := sdk.SessionManagerList(host, host.Cwd(), customSessionDir(host), nil)
+		if err != nil {
+			return resource.Listing{}, fmt.Errorf("list sessions: %w", err)
+		}
+		for _, info := range stored {
+			entries = append(entries, resource.Entry{Name: info.ID, URI: "session://" + info.ID + "/", Kind: resource.EntryDir, Detail: sessionDetail(info)})
+		}
+		return resource.Listing{Complete: true, Entries: entries}, nil
+	case t.byID && t.id == "":
+		all, err := sdk.SessionManagerListAll(host, customSessionDir(host), nil)
+		if err != nil {
+			return resource.Listing{}, fmt.Errorf("list sessions: %w", err)
+		}
+		entries := make([]resource.Entry, 0, len(all))
+		for _, info := range all {
+			entries = append(entries, resource.Entry{Name: info.ID, URI: "session://by-id/" + info.ID, Kind: resource.EntryLink, Target: "session://" + info.ID + "/", Detail: sessionDetail(info)})
+		}
+		return resource.Listing{Complete: true, Entries: entries}, nil
+	}
+	if t.depth != 1 {
+		return resource.Listing{}, resource.ErrNotFound
+	}
+	files, base := storedSessionFiles, "session://"+t.id+"/"
+	if p.isSelf(host, t.id) {
+		files, base = sessionFiles, "session://self/"
+	} else if _, err := p.resolveStored(host, t.id); err != nil {
+		return resource.Listing{}, err
+	}
+	entries := make([]resource.Entry, 0, len(files))
+	for _, name := range files {
+		entries = append(entries, resource.Entry{Name: name, URI: base + name, Kind: resource.EntryFile})
 	}
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
 	return resource.Listing{Complete: true, Entries: entries}, nil
@@ -95,10 +226,22 @@ func (p sessionProvider) Read(ctx context.Context, request resource.ReadRequest)
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
-	if len(parts) != 2 || parts[0] != "self" {
+	t, err := parseSessionTarget(parts)
+	if err != nil {
+		return resource.ReadResult{}, err
+	}
+	if t.depth != 2 {
 		return resource.ReadResult{}, resource.ErrUnsupported
 	}
-	body, err := p.render(ctx, session, parts[1])
+	var body []byte
+	if p.isSelf(session, t.id) {
+		body, err = p.render(ctx, session, t.file)
+	} else {
+		var info sdk.SessionInfo
+		if info, err = p.resolveStored(session, t.id); err == nil {
+			body, err = renderStored(ctx, session, info, t.file)
+		}
+	}
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
