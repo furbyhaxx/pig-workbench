@@ -112,3 +112,60 @@ func TestLiveAnotherLiveSessionInTheDirectoryDefersConversion(t *testing.T) {
 		t.Fatalf("once the neighbour is gone the next start converts, got %v (%v)", info, err)
 	}
 }
+
+func TestLiveTwoCheckoutsShareSessionsAndTheCatalogListsEachOnce(t *testing.T) {
+	root, work := storageFixture(t)
+	clone := filepath.Join(root, "work", "clone")
+	if err := os.MkdirAll(filepath.Join(clone, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := project.Create(clone, "prj-storagetest", "storage-test"); err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range []string{work, clone, work} {
+		f := startDefaultBuckets(t, root, dir, shortRuntime(t))
+		f.send("a", "prompt", "a session in "+filepath.Base(dir))
+		f.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+		f.close()
+	}
+	target := filepath.Join(root, "agent", "projects", "prj-storagetest", "sessions")
+	if files, _ := filepath.Glob(filepath.Join(target, "*.jsonl")); len(files) != 3 {
+		t.Fatalf("both checkouts must share one directory with all 3 sessions, found %v", files)
+	}
+	for _, name := range []string{"app", "clone"} {
+		bucket := filepath.Join(root, "agent", "sessions", "--"+strings.ReplaceAll(strings.TrimLeft(filepath.Join(root, "work", name), "/"), "/", "-")+"--")
+		if info, err := os.Lstat(bucket); err != nil || info.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("%s bucket must be a symlink: %v (%v)", name, info, err)
+		}
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ls", map[string]any{"path": "session://by-id/"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	probe := startDefaultBuckets(t, root, work, shortRuntime(t), "--tools", "ls")
+	probe.send("p", "prompt", "list")
+	probe.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	probe.close()
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	results := toolResults(t, last)
+	if len(results) != 1 {
+		t.Fatalf("want one ls result, got %v", results)
+	}
+	// Three sessions from the fixtures plus this probe session once it has a file; none may repeat.
+	seen := map[string]int{}
+	for _, line := range strings.Split(results[0], "\n") {
+		if fields := strings.Fields(line); len(fields) >= 2 && fields[0] == "link" {
+			seen[fields[1]]++
+		}
+	}
+	if len(seen) < 3 {
+		t.Fatalf("the catalog must list the shared sessions: %q", results[0])
+	}
+	for id, count := range seen {
+		if count != 1 {
+			t.Fatalf("session %s is listed %d times; the catalog must deduplicate by ID", id, count)
+		}
+	}
+}

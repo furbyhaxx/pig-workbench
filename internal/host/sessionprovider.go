@@ -92,7 +92,7 @@ func (p sessionProvider) resolveStored(host sdk.Context, id string) (sdk.Session
 		return sdk.SessionInfo{}, fmt.Errorf("list sessions: %w", err)
 	}
 	var matches []sdk.SessionInfo
-	for _, info := range all {
+	for _, info := range dedupeByID(all) {
 		if info.ID == id {
 			return info, nil
 		}
@@ -195,7 +195,7 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 			return resource.Listing{}, fmt.Errorf("list sessions: %w", err)
 		}
 		entries := make([]resource.Entry, 0, len(all))
-		for _, info := range all {
+		for _, info := range dedupeByID(all) {
 			entries = append(entries, resource.Entry{Name: info.ID, URI: "session://by-id/" + info.ID, Kind: resource.EntryLink, Target: "session://" + info.ID + "/", Detail: sessionDetail(info)})
 		}
 		return resource.Listing{Complete: true, Entries: entries}, nil
@@ -345,4 +345,17 @@ func (p sessionProvider) render(ctx context.Context, session sdk.Context, name s
 		return []byte(out.String()), nil
 	}
 	return nil, resource.ErrNotFound
+}
+
+// dedupeByID keeps the first (most recent) entry of each session: a shared project directory is reachable through one bucket per checkout.
+func dedupeByID(all []sdk.SessionInfo) []sdk.SessionInfo {
+	seen := make(map[string]bool, len(all))
+	unique := make([]sdk.SessionInfo, 0, len(all))
+	for _, info := range all {
+		if !seen[info.ID] {
+			seen[info.ID] = true
+			unique = append(unique, info)
+		}
+	}
+	return unique
 }
