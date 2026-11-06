@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -424,6 +425,105 @@ func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
 				t.Errorf("/workbench %s is completed but its handler refuses it: %s", command, message)
 			}
 		}
+	}
+}
+
+func TestLiveActivitySettingsControlWidget(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		enabled   bool
+		placement string
+		want      string
+	}{
+		{"above", true, "above-editor", "aboveEditor"},
+		{"below", true, "below-editor", "belowEditor"},
+		{"disabled", false, "above-editor", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runtime := shortRuntime(t)
+			t.Setenv("XDG_RUNTIME_DIR", runtime)
+			root := t.TempDir()
+			recorder := &requestRecorder{calls: []scriptedCall{
+				{"bash", map[string]any{"command": "sleep 5", "background": true}},
+			}}
+			server := recorder.serve(t)
+			defer server.Close()
+			agent := filepath.Join(root, "agent")
+			writeFixtureProvider(t, agent, server.URL)
+			settings := fmt.Sprintf("[activity]\nenabled = %t\nplacement = '%s'\n", tc.enabled, tc.placement)
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
+				t.Fatal(err)
+			}
+			socket := filepath.Join(runtime, "tmux.sock")
+			tmux := func(args ...string) string {
+				t.Helper()
+				cmd := exec.Command("tmux", append([]string{"-S", socket}, args...)...)
+				cmd.Env = append(os.Environ(), "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("tmux %v: %v: %s", args, err, out)
+				}
+				return string(out)
+			}
+			tmux("new-session", "-d", "-s", "workbench", "-x", "80", "-y", "24", "-c", root, "pig", "--offline", "--no-session", "-e", repoRoot(t), "--model", "workbench-fixture/mock", "--tools", "bash")
+			t.Cleanup(func() { _ = exec.Command("tmux", "-S", socket, "kill-server").Run() })
+			boundaries := func(capture string) []int {
+				var lines []int
+				for i, line := range strings.Split(capture, "\n") {
+					if strings.HasPrefix(strings.TrimSpace(line), "────────") {
+						lines = append(lines, i)
+					}
+				}
+				return lines
+			}
+			deadline := time.Now().Add(15 * time.Second)
+			capture := ""
+			for time.Now().Before(deadline) {
+				capture = tmux("capture-pane", "-p", "-t", "workbench")
+				if len(boundaries(capture)) >= 2 {
+					break
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			if len(boundaries(capture)) < 2 {
+				t.Fatalf("editor did not start:\n%s", capture)
+			}
+			tmux("send-keys", "-t", "workbench", "Start a background job.", "Enter")
+			deadline = time.Now().Add(15 * time.Second)
+			finished := false
+			for time.Now().Before(deadline) {
+				capture = tmux("capture-pane", "-p", "-t", "workbench")
+				recorder.mu.Lock()
+				finished = len(recorder.bodies) >= 2
+				recorder.mu.Unlock()
+				if finished && (tc.want == "" || strings.Contains(capture, "1 jobs")) {
+					break
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			if !finished {
+				t.Fatalf("script did not finish:\n%s", capture)
+			}
+			if tc.want == "" {
+				time.Sleep(2 * activityPollInterval)
+				capture = tmux("capture-pane", "-p", "-t", "workbench")
+			}
+			line := -1
+			for i, text := range strings.Split(capture, "\n") {
+				if strings.Contains(text, "1 jobs") {
+					line = i
+				}
+			}
+			if tc.want == "" && line >= 0 {
+				t.Fatalf("disabled activity produced a line:\n%s", capture)
+			}
+			if tc.want != "" {
+				borders := boundaries(capture)
+				if line < 0 || len(borders) < 2 || tc.want == "aboveEditor" && line >= borders[len(borders)-2] || tc.want == "belowEditor" && line <= borders[len(borders)-1] {
+					t.Fatalf("wrong %s activity placement:\n%s", tc.want, capture)
+				}
+			}
+		})
 	}
 }
 

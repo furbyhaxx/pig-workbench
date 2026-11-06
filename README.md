@@ -34,6 +34,6 @@ Requires Go and a `pig` binary on `PATH`; the SDK is the staged copy that matche
 ```sh
 just check            # gofmt, vet, tests and PiG validation
 just race             # concurrent domain checks
-just integration      # real PiG + localhost scripted provider; no billed inference
+just integration      # real PiG + localhost scripted provider and tmux; no billed inference
 pig -e .              # load into a session; /reload after edits
 ```
