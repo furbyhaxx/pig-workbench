@@ -149,6 +149,9 @@ func (a *app) registerContribution(_ context.Context, s *session, request api.Re
 	}
 	s.setInstalled(receipt.RegistrationID, cleanup)
 	a.emitRegistrationChanged(s, receipt.RegistrationID, "registered")
+	if kind == contribution.KindResourceProvider {
+		a.emitResourcesChanged(s, receipt.RegistrationID, "registered")
+	}
 	return receiptResult(receipt), nil
 }
 
@@ -177,6 +180,9 @@ func (a *app) replaceContribution(s *session, request api.Request, params regist
 		if cleanup, err = consumer(s, replaced); err == nil {
 			s.setInstalled(request.RegistrationID, cleanup)
 			a.emitRegistrationChanged(s, request.RegistrationID, "replaced")
+			if contribution.Kind(params.Kind) == contribution.KindResourceProvider {
+				a.emitResourcesChanged(s, request.RegistrationID, "replaced")
+			}
 			return receiptResult(receipt), nil
 		}
 	}
@@ -197,11 +203,15 @@ func (a *app) unregisterContribution(_ context.Context, s *session, request api.
 	if err := api.Decode(request.Params, &params); err != nil {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params", Message: "unregister takes an empty object", Outcome: "notApplied"}
 	}
+	current, lookupErr := s.contributions.Get(request.From, request.RegistrationID)
 	if err := s.contributions.Unregister(request.From, request.RegistrationID); err != nil {
 		return nil, contributionProtocolError(err)
 	}
 	s.withdrawInstalled(request.RegistrationID)
 	a.emitRegistrationChanged(s, request.RegistrationID, "unregistered")
+	if lookupErr == nil && current.Kind == contribution.KindResourceProvider {
+		a.emitResourcesChanged(s, request.RegistrationID, "unregistered")
+	}
 	return map[string]any{"registrationId": request.RegistrationID, "removed": true}, nil
 }
 
@@ -284,6 +294,13 @@ func contributionProtocolError(err error) *api.Error {
 	default:
 		return &api.Error{Code: "internal", Message: "contribution registration failed", Outcome: "notApplied"}
 	}
+}
+
+func (a *app) emitResourcesChanged(s *session, registrationID, change string) {
+	if s.host == (sdk.Context{}) {
+		return
+	}
+	_ = s.host.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":resources:" + registrationID + ":" + change, Type: "resources.changed", RegistrationID: registrationID, Data: map[string]any{"change": change}})
 }
 
 func (a *app) emitRegistrationChanged(s *session, registrationID, change string) {
