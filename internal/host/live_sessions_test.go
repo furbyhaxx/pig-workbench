@@ -342,3 +342,44 @@ func TestLiveSessionsCommandSendsRedactsAndHonoursBlock(t *testing.T) {
 		}
 	}
 }
+
+// TestLiveEveryCompletedCommandIsAcceptedByItsHandler keeps completion and dispatch from drifting apart.
+func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
+	items, err := workbenchCompletions("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var commands []string
+	for _, item := range items {
+		value := item.Value
+		if strings.HasPrefix(value, "settings set") || strings.HasPrefix(value, "settings reset") {
+			continue
+		}
+		switch value {
+		case "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "trust add allow", "trust add deny", "trust rm", "instructions pin", "instructions unpin", "ask resume", "ask discard":
+			continue
+		}
+		commands = append(commands, value)
+	}
+	if len(commands) < 15 {
+		t.Fatalf("too few completions to check: %v", commands)
+	}
+	runtime := shortRuntime(t)
+	l := startLiveSession(t, runtime, nil)
+	for i, command := range commands {
+		id := fmt.Sprintf("c%d", i)
+		l.fixture.send(id, "prompt", "/workbench "+command)
+		var messages []string
+		l.fixture.wait(func(record map[string]any) bool {
+			if record["type"] == "extension_ui_request" && record["method"] == "notify" {
+				messages = append(messages, fmt.Sprint(record["message"]))
+			}
+			return record["type"] == "response" && record["id"] == id
+		})
+		for _, message := range messages {
+			if strings.Contains(message, "usage:") {
+				t.Errorf("/workbench %s is completed but its handler refuses it: %s", command, message)
+			}
+		}
+	}
+}
