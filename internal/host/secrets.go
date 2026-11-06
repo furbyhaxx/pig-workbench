@@ -20,6 +20,7 @@ type secretsBoundary struct {
 	mu       sync.Mutex
 	detector *secrets.Detector
 	vault    *secrets.Vault
+	noticed  string
 }
 
 func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool) *secretsBoundary {
@@ -51,8 +52,19 @@ func (b *secretsBoundary) Guard() (guard *secrets.Detector, enabled bool, err er
 	if err != nil {
 		return nil, true, err
 	}
-	b.detector, b.vault = detector, vault
+	b.detector, b.vault, b.noticed = detector, vault, ""
 	return detector, true, nil
+}
+
+// Withheld returns the user-facing reason output was withheld and whether this cause is new
+// since the last success, so a failing boundary notifies once instead of per request.
+func (b *secretsBoundary) Withheld(err error) (reason string, fresh bool) {
+	reason = "Secrets boundary unavailable, so output was withheld: " + err.Error() + ". Repair it, then continue; see /workbench secrets."
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	fresh = b.noticed != reason
+	b.noticed = reason
+	return reason, fresh
 }
 
 // Reload drops the detector so the next use rereads Secrets.toml.

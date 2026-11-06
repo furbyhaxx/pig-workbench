@@ -75,3 +75,32 @@ func TestSecretsBoundaryHonoursTheEnabledSetting(t *testing.T) {
 		t.Fatalf("disabled boundary = %v %v %v", guard, enabled, err)
 	}
 }
+
+func TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery(t *testing.T) {
+	b, agent := testBoundary(t)
+	policy := filepath.Join(agent, "Secrets.toml")
+	if err := os.WriteFile(policy, []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := b.Guard()
+	if _, fresh := b.Withheld(err); !fresh {
+		t.Fatal("the first failure must notify")
+	}
+	if _, fresh := b.Withheld(err); fresh {
+		t.Fatal("the same failure must not notify twice")
+	}
+	if err := os.WriteFile(policy, []byte("version = 2\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := b.Guard(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(policy, []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	b.Reload()
+	_, _, err = b.Guard()
+	if _, fresh := b.Withheld(err); !fresh {
+		t.Fatal("a failure after recovery must notify again")
+	}
+}
