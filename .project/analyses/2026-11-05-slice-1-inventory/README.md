@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 7
+  revision: 8
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T00:37:26+01:00"
+  updated_at: "2026-11-07T00:42:02+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "Exercise agent-reply hop limit in two real sessions"
       changes: ["Recorded a real reply retaining its conversation and being queued at the hop limit"]
+    - revision: 8
+      reason: "Rerun baseline gates after adding independent acceptance cases"
+      changes: ["Recorded successful check, race and integration on the updated tree"]
 ---
 
 # Scope and evidence
@@ -69,7 +72,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 
 # Baseline gates
 
-At commit `9da6882` on Linux, `just check` (including validation), `just race` and `just integration` passed. Their redacted output is [check.log](evidence/check.log), [race.log](evidence/race.log) and [integration.log](evidence/integration.log); `$REPO` replaces the local checkout path. These are baseline checks, not the final gate after the blocked implementation work.
+At commit `9da6882` on Linux, `just check` (including validation), `just race` and `just integration` passed. Their redacted output is [check.log](evidence/check.log), [race.log](evidence/race.log) and [integration.log](evidence/integration.log); `$REPO` replaces the local checkout path. The same gates passed again at `31ab95a` after the new behavioral cases: [check](evidence/check-updated.log), [race](evidence/race-updated.log), [integration](evidence/integration-updated.log). These are baseline checks, not the final gate after the blocked implementation work.
 
 Three repeated race-enabled runs passed for job manager cancellation, watcher joins and lifecycle shutdown ([leaks-unit.log](evidence/leaks-unit.log)), and for live crash reclamation, session-end job termination and reference-producer reload ([leaks-integration.log](evidence/leaks-integration.log)). These targeted checks are not a comprehensive heap or goroutine leak proof. The real TUI job/scratch reload path is not repeated by these three cases.
 
