@@ -56,6 +56,12 @@ func toolMessageText(message map[string]any) string {
 // runScripted drives the real agent loop against a scripted provider and returns every tool result.
 func runScripted(t *testing.T, root, tools string, steps ...scriptStep) []string {
 	t.Helper()
+	return runScriptedConfig(t, root, tools, "", steps...)
+}
+
+// runScriptedConfig is runScripted with extra Workbench.toml text appended.
+func runScriptedConfig(t *testing.T, root, tools, config string, steps ...scriptStep) []string {
+	t.Helper()
 	var mu sync.Mutex
 	var latest []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +99,7 @@ func runScripted(t *testing.T, root, tools string, steps ...scriptStep) []string
 	}))
 	defer server.Close()
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
-	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = 'auto'\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = 'auto'\n"+config), 0600); err != nil {
 		t.Fatal(err)
 	}
 	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", tools)
@@ -215,5 +221,28 @@ func TestLiveBlockCutPastesIntoAnotherFileThroughARegister(t *testing.T) {
 	}
 	if got := readFile(t, b); got != "package b\n\nfunc helper() {\n\tx()\n}\nfunc use() {}\n" {
 		t.Errorf("b.go = %q\nresult: %s", got, results[1])
+	}
+}
+
+func TestLiveEditRefusesALineTheReadBudgetCutInHalf(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src.txt")
+	original := "short\n" + strings.Repeat("x", 2000) + "\nlast\n"
+	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScriptedConfig(t, root, "read,edit", "\n[read]\nmax-bytes = 1024\n",
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "src.txt"}}
+		},
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[src.txt#" + tagOf(t, prior[0]) + "]\nPUT 2.=2:\n+replaced\n"}}
+		},
+	)
+	if got := readFile(t, path); got != original {
+		t.Fatalf("a partially delivered line was edited: %q\n%s", got[:40], results[1])
+	}
+	if !strings.Contains(results[1], "not seen") {
+		t.Fatalf("refusal does not name the unseen line: %s", results[1])
 	}
 }
