@@ -149,3 +149,30 @@ func TestSecretsBoundaryLearnsNamedEnvironmentAndEnvFilesUpToTheRepositoryRoot(t
 		}
 	}
 }
+
+func TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral(t *testing.T) {
+	b, _ := testBoundary(t)
+	b.auth = func() (map[string]map[string]any, []string) {
+		return map[string]map[string]any{
+			"acme":    {"auth": map[string]any{"apiKey": "acme-resolved-key-value-1", "headers": map[string]any{"Authorization": "Bearer acme-bearer-token-value-2", "X-Region": "eu-central-region-3"}}},
+			"cmdonly": {"auth": map[string]any{"apiKey": "!op read vault/item-secret-command"}},
+		}, []string{"credential list unavailable: probe"}
+	}
+	guard, _, err := b.Guard()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := guard.Redact("acme-resolved-key-value-1 acme-bearer-token-value-2 eu-central-region-3 !op read vault/item-secret-command")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(got, "acme-resolved-key-value-1") || strings.Contains(got, "acme-bearer-token-value-2") {
+		t.Fatalf("a credential survived redaction: %q", got)
+	}
+	if !strings.Contains(got, "eu-central-region-3") || !strings.Contains(got, "!op read vault/item-secret-command") {
+		t.Fatalf("a non-secret header or an unresolved command literal was learned as a secret: %q", got)
+	}
+	if gaps := b.Gaps(); len(gaps) != 1 {
+		t.Fatalf("an enumeration gap must be reported, got %v", gaps)
+	}
+}

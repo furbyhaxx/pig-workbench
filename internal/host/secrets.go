@@ -2,6 +2,8 @@ package host
 
 import (
 	"errors"
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"os"
 	"path/filepath"
 	"sync"
@@ -20,6 +22,7 @@ type secretsBoundary struct {
 	cwd         func() string
 	environ     func() []string
 	home        string
+	auth        authInventory
 
 	mu       sync.Mutex
 	detector *secrets.Detector
@@ -27,6 +30,7 @@ type secretsBoundary struct {
 	names    nameMatcher
 	learned  string
 	noticed  string
+	gaps     []string
 }
 
 func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool, cwd func() string) *secretsBoundary {
@@ -87,8 +91,22 @@ func (b *secretsBoundary) learnLocked() error {
 	if err := learnEnvironment(b.detector, b.names, b.environ(), b.home, cwd); err != nil {
 		return err
 	}
+	if b.auth != nil {
+		results, gaps := b.auth()
+		b.gaps = gaps
+		if err := learnAuth(b.detector, b.names, results); err != nil {
+			return err
+		}
+	}
 	b.learned = cwd
 	return nil
+}
+
+// Gaps lists credential sources the host could not enumerate; detection is incomplete for them.
+func (b *secretsBoundary) Gaps() []string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return append([]string(nil), b.gaps...)
 }
 
 // Refresh learns the environment secrets of the current cwd after a directory change.
@@ -147,4 +165,18 @@ func policyOf(detection config.Detection) secrets.DetectionPolicy {
 		policy.Patterns = append(policy.Patterns, secrets.Pattern{Name: pattern.Name, Regex: pattern.Regex, Prefix: pattern.Prefix, Suffix: pattern.Suffix, MinLength: pattern.MinLength})
 	}
 	return policy
+}
+
+func newHostSecretsBoundary(ctx sdk.Context, settings *config.Manager, agentDir string, locations *location.Manager) *secretsBoundary {
+	project := func() string {
+		dirname, err := sdk.ConfigDirName()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(ctx.Cwd(), dirname, "Secrets.toml")
+	}
+	trusted := func() bool { ok, err := ctx.IsProjectTrusted(); return err == nil && ok }
+	boundary := newSecretsBoundary(settings, agentDir, project, trusted, func() string { return locations.Current().Cwd })
+	boundary.auth = hostAuthInventory(ctx)
+	return boundary
 }
