@@ -25,6 +25,40 @@ func settingsNotice(t *testing.T, f *rpcFixture, id, args string) map[string]any
 	return result
 }
 
+func TestLiveSkillsListingBudgetChangesTheCommandOutput(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, ".agents", "skills", "alpha")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	description := strings.Repeat("descriptionword ", 12)
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: alpha\ndescription: "+description+"\n---\nbody\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil)
+	listing := func(id string) string {
+		t.Helper()
+		fixture.send(id, "prompt", "/workbench skills")
+		notice := fixture.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && event["method"] == "notify"
+		})
+		message := fmt.Sprint(notice["message"])
+		if !strings.Contains(message, "alpha") {
+			t.Fatalf("skill missing from listing: %s", message)
+		}
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == id })
+		return message
+	}
+	settingsNotice(t, fixture, "unlimited", "set runtime skills.listing-budget 0")
+	if got := listing("full"); !strings.Contains(got, strings.TrimSpace(description)) {
+		t.Fatalf("unlimited listing lost description: %s", got)
+	}
+	settingsNotice(t, fixture, "limited", "set runtime skills.listing-budget 10")
+	if got := listing("short"); strings.Contains(got, "descriptionword") {
+		t.Fatalf("limited listing retained description: %s", got)
+	}
+}
+
 func TestLiveSettingsScopesAndReload(t *testing.T) {
 	root := t.TempDir()
 	agent := filepath.Join(root, "agent")
