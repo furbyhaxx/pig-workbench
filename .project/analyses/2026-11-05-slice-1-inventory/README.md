@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 2
+  revision: 3
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T00:12:17+01:00"
+  updated_at: "2026-11-07T00:22:20+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Reconcile the current implementation and retain observed representative acceptance evidence"
       changes: ["Enumerated every Slice 1 ownership row", "Recorded passing real-host cases without equating them to complete row acceptance", "Exposed missing scheme commands, provider search and private instruction discovery"]
+    - revision: 3
+      reason: "Retain the current baseline quality and cleanup checks"
+      changes: ["Recorded green check, race and integration gates", "Recorded repeated shutdown, crash-reclamation and reference-producer reload checks", "Kept final acceptance and live-provider evaluation open"]
 ---
 
 # Scope and evidence
@@ -51,6 +54,12 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |
 | 0013 §2–§5, §7 | S1 I | `TestLiveStoredSearchKeyIsRedactedInJobLogs` verifies a stored key is redacted in a job log. | Native custom credential resolver coverage is unavailable; all redaction/substitution boundaries need individual acceptance evidence. |
 | 0014 §3–§5, §6.1–§6.2, §7, §8 | S1 J | `TestLivePromptSettingsControlTakeover` verifies forced, disabled and auto behavior. | Auto retains PiG's prompt until user-authorized A/B evaluation; prompt takeover also depends on `instructions.enabled`. Skills and every frame require separate evidence. |
+
+# Baseline gates
+
+At commit `9da6882` on Linux, `just check` (including validation), `just race` and `just integration` passed. Their redacted output is [check.log](evidence/check.log), [race.log](evidence/race.log) and [integration.log](evidence/integration.log); `$REPO` replaces the local checkout path. These are baseline checks, not the final gate after the blocked implementation work.
+
+Three repeated race-enabled runs passed for job manager cancellation, watcher joins and lifecycle shutdown ([leaks-unit.log](evidence/leaks-unit.log)), and for live crash reclamation, session-end job termination and reference-producer reload ([leaks-integration.log](evidence/leaks-integration.log)). These targeted checks are not a comprehensive heap or goroutine leak proof. The real TUI job/scratch reload path is not repeated by these three cases.
 
 # Acceptance blockers
 
