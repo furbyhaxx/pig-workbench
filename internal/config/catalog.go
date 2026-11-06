@@ -169,6 +169,75 @@ func Catalog() []Definition {
 		case "read.max-bytes":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result bytes, including framing; 1024–51200."
+		case "read.concurrency":
+			d.Description = "Validated but not applied; multi-read currently runs serially."
+		case "read.summarize.enabled":
+			d.Application = "live"
+			d.Description = "Enable declaration summaries for bare reads of large local code files."
+		case "read.summarize.min-total-lines":
+			d.Application = "live"
+			d.Description = "Minimum source lines for a declaration summary on a bare local code read."
+		case "edit.mode":
+			d.Application = "live"
+			d.Description = "Select hashline, exact-text replace, or auto edit input; captured at the next turn boundary."
+		case "edit.enforce-seen-lines":
+			d.Application = "live"
+			d.Description = "Require fully emitted source lines before hashline edits; projects may require but not disable the guard."
+		case "instructions.enabled":
+			d.Application = "live"
+			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."
+		case "instructions.backlog.validate-pointers":
+			d.Application = "live"
+			d.Description = "Validate BACKLOG pointer targets against the project root before instruction delivery."
+		case "instructions.updates.context":
+			d.Application = "live"
+			d.Description = "Context lines around instruction updates; full views are sent when a reconstructible diff is not smaller."
+		case "jobs.timeout-seconds":
+			d.Application = "live"
+			d.Description = "Default bash hard deadline in seconds; zero disables it. A tool-call timeout overrides this value."
+		case "ask.remote.timeout-ms":
+			d.Application = "live"
+			d.Description = "Timeout for native ask dialogs, including resumed pending asks."
+		case "sessions.enabled":
+			d.Application = "live"
+			d.Description = "Start authenticated inter-session messaging at session start."
+		case "sessions.discoverable":
+			d.Application = "live"
+			d.Description = "Advertise the messaging endpoint to discovery; captured at session start."
+		case "sessions.inbound":
+			d.Application = "live"
+			d.Description = "Accept all, same-project, explicitly trusted allowlist, or no inbound peers."
+		case "sessions.wake":
+			d.Application = "live"
+			d.Description = "Wake the receiver for accepted messages always, only for trusted peers, or never."
+		case "sessions.wake-budget":
+			d.Application = "live"
+			d.Description = "Maximum message-triggered wakes per peer per hour."
+		case "sessions.max-hops":
+			d.Application = "live"
+			d.Description = "Stop automatic wake when a message reaches the hop limit; busy sessions may still receive a steer."
+		case "sessions.rate-limit":
+			d.Application = "live"
+			d.Description = "Maximum accepted messages per peer per minute."
+		case "secrets.enabled":
+			d.Application = "live"
+			d.Description = "Enable the session secrets boundary; enabled but unavailable protection withholds model requests."
+		case "secrets.redact-owners":
+			d.Application = "live"
+			d.Description = "Explicit trusted extension owners permitted to call secrets.redact."
+		case "prompt.enabled":
+			d.Application = "live"
+			d.Description = "Enable builtin prompt takeover when delivery is force and instructions are enabled; rendering failure retains PiG's prompt."
+		case "prompt.delivery":
+			d.Application = "live"
+			d.Description = "Only force replaces PiG's prompt; auto and sections retain PiG pending authorized A/B evaluation."
+		case "prompt.template":
+			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
+		case "skills.listing-budget":
+			d.Application = "live"
+			d.Description = "Byte budget for the /workbench skills listing; does not change PiG's prompt skill listing."
+		case "activity.shortcut":
+			d.Description = "Not applied: alt+w is registered statically before settings load."
 		case "read.max-lines":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result lines, including framing; 5–2000."
@@ -182,7 +251,7 @@ func Catalog() []Definition {
 			d.Application = "live"
 			d.Description = "Workbench source trust rules, each `allow <absolute dir>` or `deny <absolute dir>`; the nearest rule decides whether instructions from a nested repository load. Manage with /workbench trust."
 		default:
-			d.Description = "Validated setting for its owning subsystem; inspect application status before relying on it."
+			d.Description = "Validated and retained only; no runtime consumer is wired for this setting."
 		}
 	}
 	return definitions

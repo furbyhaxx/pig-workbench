@@ -23,11 +23,13 @@ max-lines = 400
 
 `version` may be omitted for version 1; saves add it. Unknown versions are refused. Documents use TOML 1.0 syntax and are limited to 1 MiB. Unknown keys are reported, retained and inactive.
 
-Currently, `read.max-bytes` (1024–51200) and `read.max-lines` (5–2000) are live consumers. Each read captures one immutable configuration revision and reports it in Details. The complete result, including framing, must fit the selected budget.
+`read.max-bytes` (1024–51200) and `read.max-lines` (5–2000) bound each complete read result, including framing. Each read captures one immutable configuration revision and reports it in Details. `read.summarize.enabled` and `read.summarize.min-total-lines` control declaration summaries for eligible local code reads.
 
 `trust.rules` (user/runtime only; entries `allow <absolute dir>` or `deny <absolute dir>`, managed with `/workbench trust`) and `projects.session-storage` (`link`, the default, or `off`) are live too. With `link`, a session start in a directory that belongs to a recognised project converts PiG's per-directory session bucket into a symlink to `<agent>/projects/<id>/sessions/`, so `/resume` lists every checkout's sessions. The conversion is journaled and resumes after a crash, never moves a file a running session has open, and waits (with a notice) while another live session uses the same directory or the bucket is on another filesystem. `/workbench projects unlink-storage` restores real directories. A custom `--session-dir` is never touched.
 
-Other scalar settings from the specifications are retained and validated, but catalog entries marked `unavailable` have no wired consumer yet. Saving one does not activate its feature. Complex instruction classes, producer-specific settings and trust-rule editing are not implemented yet.
+The catalog identifies the other live consumers, including edit policy, instruction delivery, the default job timeout, ask dialog timeout, session messaging policy, secret protection, prompt delivery, the skills command budget and activity placement. Inspect each description for its scope and timing. Prompt takeover currently also requires `instructions.enabled`; `prompt.delivery = "auto"` retains PiG's prompt pending the authorized A/B evaluation.
+
+Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `prompt.template` is displayed but rendering always uses `builtin/workbench`, and `activity.shortcut` is not applied: `alt+w` is registered statically before settings load. Complex instruction classes and producer-specific settings are not implemented.
 
 ## Inspect and change
 
