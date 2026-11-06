@@ -60,7 +60,7 @@ func TestLiveStoredSessionsAreListedReadAndTitled(t *testing.T) {
 
 	second, recorder := startInRoot(t, root, []scriptedCall{
 		{"ls", map[string]any{"path": "session://"}},
-		{"read", map[string]any{"path": "session://" + id[:8] + "/title"}},
+		{"read", map[string]any{"path": "session://" + shortID(id) + "/title"}},
 		{"read", map[string]any{"path": "session://by-id/" + id + "/transcript"}},
 		{"ls", map[string]any{"path": "session://by-id/"}},
 	})

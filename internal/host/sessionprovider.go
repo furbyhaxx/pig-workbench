@@ -96,7 +96,7 @@ func (p sessionProvider) resolveStored(host sdk.Context, id string) (sdk.Session
 		if info.ID == id {
 			return info, nil
 		}
-		if len(id) >= 6 && strings.HasPrefix(info.ID, id) {
+		if idMatches(info.ID, id) {
 			matches = append(matches, info)
 		}
 	}

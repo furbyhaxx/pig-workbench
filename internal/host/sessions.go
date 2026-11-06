@@ -105,11 +105,17 @@ func endpointID(sessionID string) string {
 	return strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(sum[:]))[:10]
 }
 
+// shortID is the last 8 characters: session IDs are UUIDv7, whose first 8 characters only change every ~65 seconds.
 func shortID(sessionID string) string {
 	if len(sessionID) > 8 {
-		return sessionID[:8]
+		return sessionID[len(sessionID)-8:]
 	}
 	return sessionID
+}
+
+// idMatches reports whether query names id: the shown short form, or an ID prefix of at least 6 characters.
+func idMatches(id, query string) bool {
+	return id == query || (len(query) >= 6 && (strings.HasSuffix(id, query) || strings.HasPrefix(id, query)))
 }
 
 func (s *session) settingBool(key string, fallback bool) bool {
@@ -508,7 +514,7 @@ func (e *sessionEndpoint) resolve(ctx context.Context, name string) (endpoint.Re
 	}
 	var matches []endpoint.Record
 	for _, record := range records {
-		if strings.HasPrefix(record.SessionID, name) || (record.SessionName != "" && record.SessionName == name) {
+		if idMatches(record.SessionID, name) || (record.SessionName != "" && record.SessionName == name) {
 			matches = append(matches, record)
 		}
 	}

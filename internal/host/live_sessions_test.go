@@ -106,7 +106,7 @@ func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 	for id, record := range records {
 		receiverID, receiverRecord = id, record
 	}
-	short := receiverID[:8]
+	short := shortID(receiverID)
 	sender := startLiveSession(t, runtime, []scriptedCall{
 		{"ls", map[string]any{"path": "agent://"}},
 		{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "WAKE-TEXT-FROM-A: please look at the parser."}},
@@ -155,7 +155,7 @@ func TestLiveBusyReceiverIsSteeredNotWoken(t *testing.T) {
 	for id := range records {
 		receiverID = id
 	}
-	short := receiverID[:8]
+	short := shortID(receiverID)
 	receiver.fixture.send("busy", "prompt", "Run the slow command.")
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
@@ -186,7 +186,7 @@ func TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider(t *testing.T
 	for id := range records {
 		receiverID = id
 	}
-	short := receiverID[:8]
+	short := shortID(receiverID)
 	secret := "ghp_" + strings.Repeat("Ab3dE9", 5)
 	sender := startLiveSession(t, runtime, []scriptedCall{{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "SECRET-CARRIER use " + secret + " for the deploy"}}})
 	waitForRecords(t, runtime, 2)
@@ -236,7 +236,7 @@ func TestLiveWaitingReceiverGetsTheMessageAsTheReadResult(t *testing.T) {
 	for id := range records {
 		receiverID = id
 	}
-	short := receiverID[:8]
+	short := shortID(receiverID)
 	receiver.fixture.send("wait", "prompt", "Wait for the other session.")
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) && len(receiver.requests()) == 0 {
@@ -280,7 +280,7 @@ func TestLiveExtensionChannelReachesTheOtherSessionsExtensionWithoutWakingIt(t *
 	}
 	sender, _ := start()
 	waitForRecords(t, runtime, 2)
-	sender.send("send", "prompt", "/fixture-send "+receiverID[:8])
+	sender.send("send", "prompt", "/fixture-send "+shortID(receiverID))
 	sender.wait(func(record map[string]any) bool {
 		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"fixtureSend":"passed"`)
 	})
