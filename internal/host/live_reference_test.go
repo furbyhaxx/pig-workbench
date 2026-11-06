@@ -34,7 +34,7 @@ func TestLiveReferenceProducerReload(t *testing.T) {
 		if result["lockHeld"] != false {
 			t.Fatal("producer state lock held during a synchronous service request")
 		}
-		if result["kinds"] != float64(6) {
+		if result["kinds"] != float64(7) {
 			t.Fatalf("unexpected registration count: %+v", result)
 		}
 		return result
@@ -82,6 +82,8 @@ func TestLiveReferenceProducerSeams(t *testing.T) {
 		{"read", map[string]any{"path": "docs://reference-producer/README.md"}},
 		{"read", map[string]any{"path": "docs://workbench/schemes/kb"}},
 		{"web_search", map[string]any{"query": "fixture"}},
+		{"read", map[string]any{"path": "git://fixture/main.go:120-180"}},
+		{"edit", map[string]any{"hashline": "[git://fixture/main.go#AAAA]\nPUT 120.=120:\n+changed"}},
 	}
 	var mu sync.Mutex
 	var requests []map[string]any
@@ -153,6 +155,8 @@ func TestLiveReferenceProducerSeams(t *testing.T) {
 		{7, []string{"registered through the Workbench docs contribution"}, nil},
 		{8, []string{"Stored web sources", "browse stored sources", "reference-producer"}, nil},
 		{9, []string{"Fixture result"}, nil},
+		{10, []string{"120:git line 120", "180:git line 180", "git://fixture/main.go"}, []string{"git line 119", "git line 181"}},
+		{11, []string{"git://", "nothing was sent"}, nil},
 	}
 	for _, check := range checks {
 		result := toolResult(check.index)
@@ -225,7 +229,7 @@ func TestLiveReferenceProducerLoadsBeforeWorkbench(t *testing.T) {
 	record := f.wait(func(record map[string]any) bool {
 		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"reference":"registered"`)
 	})
-	if !strings.Contains(fmt.Sprint(record["message"]), `"kinds":5`) {
+	if !strings.Contains(fmt.Sprint(record["message"]), `"kinds":6`) {
 		t.Fatalf("producer loaded first did not register every kind: %v", record["message"])
 	}
 }

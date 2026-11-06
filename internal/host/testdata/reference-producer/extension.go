@@ -23,7 +23,16 @@ var (
 	lockObserved    atomic.Bool
 )
 
+var gitFile = func() string {
+	var out strings.Builder
+	for i := 1; i <= 200; i++ {
+		fmt.Fprintf(&out, "git line %d\n", i)
+	}
+	return out.String()
+}()
+
 var documents = map[string]string{
+	"git://fixture/main.go":    gitFile,
 	"kb://sources/a.md":        "alpha one\nalpha two\nalpha three\nalpha four\nalpha five\n",
 	"kb://sources/page.html":   "<html><body><article><h1>Located page</h1><p>Served from the knowledge base snapshot.</p></article></body></html>",
 	"kb://sources/nested/b.md": "bravo\n",
@@ -32,7 +41,7 @@ var documents = map[string]string{
 func execute(request api.ResourceRequest) (any, *api.Error) {
 	switch request.Operation {
 	case "stat":
-		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" {
+		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" || request.URI == "git://fixture/" || request.URI == "git://fixture" {
 			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir"}, nil
 		}
 		text, ok := documents[request.URI]
@@ -41,6 +50,10 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 		}
 		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Size: int64(len(text)), Lines: strings.Count(text, "\n"), Revision: fmt.Sprintf("r%d", len(text))}, nil
 	case "list":
+		if request.URI == "git://fixture/" || request.URI == "git://fixture" {
+			complete := true
+			return api.ResourceResult{CanonicalURI: "git://fixture/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "main.go", URI: "git://fixture/main.go", Kind: "file", Size: int64(len(gitFile))}}}, nil
+		}
 		if request.URI != "kb://sources/" && request.URI != "kb://sources" {
 			return nil, &api.Error{Code: "notFound", Message: "no such directory"}
 		}
@@ -152,6 +165,7 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		{"toolPresentation", "web_search", map[string]any{"toolNames": []string{"web_search"}, "label": "Web search", "presentationVersion": 1, "preset": "search", "defaultDisplay": map[string]any{"density": "normal", "previewLines": 6}, "callFields": []any{map[string]any{"pointer": "/query", "label": "query", "format": "plain"}}, "metricDefinitions": []any{map[string]any{"id": "results", "label": "results", "unit": "count"}}}},
 		{"resourceProvider", "kb", map[string]any{"label": "Knowledge base", "summary": "Stored web sources and research notes", "schemes": []string{"kb"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls kb://sources/` to browse stored sources.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"fetchBackend", "web", map[string]any{"label": "Reference reader", "match": []any{map[string]any{"host": "fixture.test"}}, "capabilities": []string{"fetch", "locate"}, "egress": "none", "retention": "user"}},
+		{"resourceProvider", "git", map[string]any{"label": "Git objects", "summary": "Read-only files of a repository at a revision", "schemes": []string{"git"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls git://fixture/` to browse the fixture repository.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"statusSegment", "web", map[string]any{"label": "web", "priority": 10, "maxColumns": 24}},
 		{"frameProducer", "reference.research", map[string]any{"label": "Research notices", "kinds": []string{"notice", "info"}, "contextFields": []any{map[string]any{"source": "session.model", "field": "knowledge_cutoff"}}}},
 	}
@@ -166,7 +180,11 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		if err != nil {
 			return fmt.Errorf("register %s/%s: %w", c.kind, c.key, err)
 		}
-		receipts[c.kind] = receipt
+		key := c.kind
+		if _, taken := receipts[key]; taken {
+			key = c.kind + ":" + c.key
+		}
+		receipts[key] = receipt
 	}
 	if err := active.Call(ctx, endpoint, "status.update", map[string]any{"text": "web ready", "style": "success"}, nil, &api.CallOptions{RegistrationID: receipts["statusSegment"].RegistrationID}); err != nil {
 		return fmt.Errorf("status.update: %w", err)
@@ -303,7 +321,11 @@ func Extension() *sdk.Extension {
 		count := 0
 		for _, registration := range described.Registrations {
 			if registration.Owner == "reference-producer" {
-				if registered[registration.Kind].RegistrationID != registration.RegistrationID {
+				known := false
+				for _, receipt := range registered {
+					known = known || receipt.RegistrationID == registration.RegistrationID
+				}
+				if !known {
 					return fmt.Errorf("unexpected live %s registration", registration.Kind)
 				}
 				count++
