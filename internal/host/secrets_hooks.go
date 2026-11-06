@@ -1,8 +1,13 @@
 package host
 
 import (
+	"bytes"
+	"context"
+	"errors"
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
+	"os"
+	"os/exec"
 )
 
 // redactText replaces secrets in text. active is false when the user disabled secrets.
@@ -75,4 +80,87 @@ func (a *app) redactResult(ctx sdk.Context, data map[string]any) (any, error) {
 		s.secrets.withhold(ctx, cause)
 	}
 	return patch, nil
+}
+
+const maxUserBashOutput = 4 << 20
+
+// userBash runs a user `!` command with placeholders substituted and its output redacted,
+// so the transcript only ever holds placeholders. Output is buffered because a secret
+// split across two streamed chunks would escape detection.
+func (a *app) userBash(ctx sdk.Context, _ map[string]any) (any, error) {
+	s, err := a.current()
+	if err != nil {
+		return nil, nil
+	}
+	guard, enabled, err := s.secrets.Guard()
+	if err == nil && !enabled {
+		return nil, nil
+	}
+	return map[string]any{"operations": sdk.BashOperations{Exec: func(command, cwd string, options sdk.BashExecOptions) (sdk.BashExecResult, error) {
+		if err != nil {
+			s.secrets.withhold(ctx, err)
+			return sdk.BashExecResult{}, errors.New("secrets boundary unavailable; command not run")
+		}
+		real, subErr := guard.Substitute(command)
+		if subErr != nil {
+			return sdk.BashExecResult{}, errors.New("command refused: it names an unknown or deleted secret placeholder")
+		}
+		shell := "/bin/sh"
+		if _, statErr := os.Stat("/bin/bash"); statErr == nil {
+			shell = "/bin/bash"
+		}
+		signal := options.Signal
+		if signal == nil {
+			signal = context.Background()
+		}
+		cmd := exec.CommandContext(signal, shell, "-c", real)
+		cmd.Dir = cwd
+		if len(options.Env) > 0 {
+			cmd.Env = os.Environ()
+			for name, value := range options.Env {
+				cmd.Env = append(cmd.Env, name+"="+value)
+			}
+		}
+		var output limitedBuffer
+		output.limit = maxUserBashOutput
+		cmd.Stdout, cmd.Stderr = &output, &output
+		runErr := cmd.Run()
+		redacted, redactErr := guard.Redact(output.String())
+		if redactErr != nil {
+			s.secrets.withhold(ctx, redactErr)
+			return sdk.BashExecResult{}, errors.New("secrets boundary unavailable; output withheld")
+		}
+		if options.OnData != nil && redacted != "" {
+			options.OnData([]byte(redacted))
+		}
+		var exit *exec.ExitError
+		switch {
+		case runErr == nil:
+			code := 0
+			return sdk.BashExecResult{ExitCode: &code}, nil
+		case errors.As(runErr, &exit):
+			code := exit.ExitCode()
+			if code < 0 {
+				code = 128
+			}
+			return sdk.BashExecResult{ExitCode: &code}, nil
+		case signal.Err() != nil:
+			return sdk.BashExecResult{}, errors.New("aborted")
+		default:
+			return sdk.BashExecResult{}, errors.New("command could not start")
+		}
+	}}}, nil
+}
+
+// limitedBuffer keeps at most limit bytes and silently drops the rest.
+type limitedBuffer struct {
+	bytes.Buffer
+	limit int
+}
+
+func (b *limitedBuffer) Write(p []byte) (int, error) {
+	if room := b.limit - b.Len(); room > 0 {
+		b.Buffer.Write(p[:min(len(p), room)])
+	}
+	return len(p), nil
 }

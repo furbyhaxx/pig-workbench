@@ -269,3 +269,39 @@ func TestSeenStateSurvivesRedactionOfTheDeliveredBlock(t *testing.T) {
 		t.Fatalf("a read whose block was redacted must still count as seen: %v", err)
 	}
 }
+
+func TestUserBashSubstitutesPlaceholdersAndRedactsOutput(t *testing.T) {
+	b, _ := testBoundary(t)
+	guard, _, err := b.Guard()
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := "user-bash-secret-value-9"
+	if err := guard.Learn([]byte(value), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	placeholder, err := guard.Redact(value)
+	if err != nil || placeholder == value {
+		t.Fatalf("placeholder = %q %v", placeholder, err)
+	}
+	a := &app{session: &session{secrets: b}}
+	result, err := a.userBash(sdk.Context{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec := result.(map[string]any)["operations"].(sdk.BashOperations).Exec
+	var streamed strings.Builder
+	exit, err := exec("echo "+placeholder+" && test "+placeholder+" = "+value, t.TempDir(), sdk.BashExecOptions{OnData: func(data []byte) { streamed.Write(data) }})
+	if err != nil || exit.ExitCode == nil {
+		t.Fatalf("exec = %v %v", exit, err)
+	}
+	if *exit.ExitCode != 0 {
+		t.Fatalf("the command did not receive the real value (exit %d)", *exit.ExitCode)
+	}
+	if strings.Contains(streamed.String(), value) || !strings.Contains(streamed.String(), placeholder) {
+		t.Fatalf("streamed output = %q", streamed.String())
+	}
+	if _, err := exec("echo red-sec-unknownunknownun", t.TempDir(), sdk.BashExecOptions{}); err == nil {
+		t.Fatal("an unknown placeholder must refuse the command")
+	}
+}

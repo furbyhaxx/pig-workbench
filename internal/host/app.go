@@ -93,6 +93,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnEvent("input", a.redactInput)
+	ext.OnEvent("user_bash", a.userBash)
 	ext.OnToolResult(a.redactResult)
 	ext.OnToolResult(a.confirmRead)
 	ext.OnEvent("before_agent_start", a.contextFrames)
