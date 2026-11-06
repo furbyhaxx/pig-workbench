@@ -114,7 +114,7 @@ A job also outlives the runtime that started it when that runtime dies without s
 
 Native TUI/RPC dialogs support single, multi, preview, freeform and secret questions, with custom answers and notes. Cancellation returns no partial answers. Headless print/JSON execution returns `interactionUnavailable`; it never invents choices. RPC questions use the configured dialog deadline.
 
-Secret values are collected before finalization, stored encrypted, and returned as placeholders only. Local typing need not be masked. Successful completed-record persistence is the submission commit point. If secret storage partially succeeds, the error reports retained placeholder IDs rather than claiming rollback or ordinary cancellation. `/workbench ask show|resume|discard` manages pending forms. The rich questionnaire panel is pending; multi and preview questions have not been live-tested.
+Secret values are collected before finalization, stored encrypted, and returned as placeholders only. Local typing need not be masked. Successful completed-record persistence is the submission commit point. If secret storage partially succeeds, the error reports retained placeholder IDs rather than claiming rollback or ordinary cancellation. `/workbench ask show|resume|discard` manages pending forms. The rich questionnaire panel is pending. Multi and preview questions have been exercised through native RPC dialogs with a scripted provider.
 
 ## Locations
 

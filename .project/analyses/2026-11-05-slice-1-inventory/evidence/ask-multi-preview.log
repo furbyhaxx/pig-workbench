@@ -1,0 +1,8 @@
+=== RUN   TestLiveAskMultiAndPreviewThroughNativeDialogs
+--- PASS: TestLiveAskMultiAndPreviewThroughNativeDialogs (0.80s)
+=== RUN   TestLiveAskMultiAndPreviewThroughNativeDialogs
+--- PASS: TestLiveAskMultiAndPreviewThroughNativeDialogs (0.81s)
+=== RUN   TestLiveAskMultiAndPreviewThroughNativeDialogs
+--- PASS: TestLiveAskMultiAndPreviewThroughNativeDialogs (0.89s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.535s

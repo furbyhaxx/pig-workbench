@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -78,6 +79,68 @@ func TestLiveAskUsesNativeRPCAndReturnsUserChoice(t *testing.T) {
 	defer mu.Unlock()
 	if !strings.Contains(messages, `chosen`) || !strings.Contains(messages, `answers`) {
 		t.Fatalf("user answer did not reach model context: %s", messages)
+	}
+}
+
+func TestLiveAskMultiAndPreviewThroughNativeDialogs(t *testing.T) {
+	root := t.TempDir()
+	form := map[string]any{"title": "Choices", "questions": []any{
+		map[string]any{"id": "targets", "label": "Targets", "prompt": "Choose targets", "type": "multi", "options": []any{
+			map[string]any{"value": "a", "label": "Alpha"}, map[string]any{"value": "b", "label": "Beta"},
+		}},
+		map[string]any{"id": "layout", "label": "Layout", "prompt": "Choose a layout", "type": "preview", "options": []any{
+			map[string]any{"value": "compact", "label": "Compact", "preview": "Compact preview\nsecond line"},
+		}},
+	}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ask_user", form}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user")
+	fixture.send("ask", "prompt", "Ask the questions.")
+	for index, wanted := range []string{"Alpha", "Beta", "Done selecting", "Compact", "Use this option"} {
+		event := fixture.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && event["method"] == "select"
+		})
+		if index == 4 && fmt.Sprint(event["title"]) != "Compact preview\nsecond line" {
+			t.Fatalf("preview text was not shown: %+v", event)
+		}
+		options, ok := event["options"].([]any)
+		if !ok {
+			t.Fatalf("missing select options: %+v", event)
+		}
+		choice := ""
+		for _, option := range options {
+			if value, ok := option.(string); ok && strings.Contains(value, wanted) {
+				choice = value
+				break
+			}
+		}
+		if choice == "" {
+			t.Fatalf("missing %q in %v", wanted, options)
+		}
+		response, _ := json.Marshal(map[string]any{"type": "extension_ui_response", "id": event["id"], "value": choice})
+		if _, err := fmt.Fprintf(fixture.stdin, "%s\n", response); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 1 {
+		t.Fatalf("expected one questionnaire result, got %v", results)
+	}
+	var result struct {
+		Answers map[string]struct {
+			Values []string `json:"values"`
+		} `json:"answers"`
+	}
+	if err := json.Unmarshal([]byte(results[0]), &result); err != nil {
+		t.Fatalf("invalid questionnaire result %q: %v", results[0], err)
+	}
+	if !slices.Equal(result.Answers["targets"].Values, []string{"a", "b"}) || !slices.Equal(result.Answers["layout"].Values, []string{"compact"}) {
+		t.Fatalf("wrong submitted answers: %+v", result.Answers)
 	}
 }
 
