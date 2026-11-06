@@ -164,3 +164,31 @@ func (b *limitedBuffer) Write(p []byte) (int, error) {
 	}
 	return len(p), nil
 }
+
+// redactContext is the per-turn backstop for content that entered without a hook of ours: the
+// system prompt, context files and other extensions' messages. It cannot withhold a request;
+// a failure leaves the context as is and before_provider_request aborts the turn.
+func (a *app) redactContext(ctx sdk.Context, data map[string]any) (any, error) {
+	messages, ok := data["messages"].([]any)
+	if !ok {
+		return nil, nil
+	}
+	s, err := a.current()
+	if err != nil {
+		return nil, nil
+	}
+	guard, enabled, err := s.secrets.Guard()
+	if err != nil {
+		s.secrets.withhold(ctx, err)
+		return nil, nil
+	}
+	if !enabled {
+		return nil, nil
+	}
+	redacted, err := secrets.RedactMessages(guard, messages)
+	if err != nil {
+		s.secrets.withhold(ctx, err)
+		return nil, nil
+	}
+	return map[string]any{"messages": redacted}, nil
+}

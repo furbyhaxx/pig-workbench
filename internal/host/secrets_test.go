@@ -305,3 +305,22 @@ func TestUserBashSubstitutesPlaceholdersAndRedactsOutput(t *testing.T) {
 		t.Fatal("an unknown placeholder must refuse the command")
 	}
 }
+
+func TestRedactContextCleansTheSystemMessageAndOtherMessages(t *testing.T) {
+	b, _ := testBoundary(t)
+	a := &app{session: &session{secrets: b}}
+	token := "ghp_" + strings.Repeat("u1V2", 6)
+	got, err := a.redactContext(sdk.Context{}, map[string]any{"messages": []any{
+		map[string]any{"role": "system", "content": "project_context: " + token},
+		map[string]any{"role": "user", "content": []any{map[string]any{"type": "text", "text": "again " + token}}},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	messages := got.(map[string]any)["messages"].([]any)
+	system := messages[0].(map[string]any)["content"].(string)
+	user := messages[1].(map[string]any)["content"].([]any)[0].(map[string]any)["text"].(string)
+	if strings.Contains(system, token) || strings.Contains(user, token) || messages[0].(map[string]any)["role"] != "system" {
+		t.Fatalf("messages = %+v", messages)
+	}
+}
