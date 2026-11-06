@@ -345,3 +345,26 @@ func TestRestoreMissingCwdSkipsProjectLookup(t *testing.T) {
 		t.Fatal("unavailable location substituted its project root")
 	}
 }
+
+func TestSymlinkedLocationHasTheTargetIdentity(t *testing.T) {
+	root := t.TempDir()
+	target := filepath.Join(root, "real")
+	link := filepath.Join(root, "link")
+	if err := os.Mkdir(target, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Skip("symlinks unavailable")
+	}
+	m, err := New(context.Background(), link, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical, err := filepath.EvalSymlinks(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := m.Current().Cwd; got != canonical {
+		t.Fatalf("cwd = %s, want %s", got, canonical)
+	}
+}
