@@ -64,17 +64,31 @@ func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 	recorder := &secretRecorder{calls: []scriptedCall{
 		{"read", map[string]any{"path": "notes.txt"}},
 		{"bash", map[string]any{"command": "sh emit.sh"}},
+		{"bash", map[string]any{"command": "sh emit.sh; sleep 30", "background": true}},
 	}}
+	recorder.next = func(index int) *scriptedCall {
+		recorder.mu.Lock()
+		last := recorder.bodies[len(recorder.bodies)-1]
+		recorder.mu.Unlock()
+		id := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(last)
+		switch {
+		case index == 3 && id != nil:
+			return &scriptedCall{"jobs", map[string]any{"action": "output", "id": id[1]}}
+		case index == 4 && id != nil:
+			return &scriptedCall{"read", map[string]any{"path": "job://" + id[1] + "/log"}}
+		}
+		return nil
+	}
 	server := recorder.serve(t)
 	defer server.Close()
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
-	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash")
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash,jobs")
 	fixture.send("script", "prompt", "My token is "+promptToken+", use it carefully.")
 	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 	recorder.mu.Lock()
 	defer recorder.mu.Unlock()
-	if len(recorder.bodies) != len(recorder.calls)+1 {
-		t.Fatalf("got %d provider requests, want %d", len(recorder.bodies), len(recorder.calls)+1)
+	if len(recorder.bodies) != 6 {
+		t.Fatalf("got %d provider requests, want 6", len(recorder.bodies))
 	}
 	placeholder := regexp.MustCompile(`red-sec-[a-z2-7]{16}`)
 	for i, body := range recorder.bodies {
@@ -85,6 +99,26 @@ func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 		}
 	}
 	last := recorder.bodies[len(recorder.bodies)-1]
+	var request struct {
+		Messages []map[string]any `json:"messages"`
+	}
+	if err := json.Unmarshal([]byte(last), &request); err != nil {
+		t.Fatal(err)
+	}
+	var results []string
+	for _, message := range request.Messages {
+		if message["role"] == "tool" {
+			results = append(results, toolMessageText(message))
+		}
+	}
+	if len(results) != 5 {
+		t.Fatalf("got %d tool results, want 5: %q", len(results), results)
+	}
+	for _, index := range []int{3, 4} {
+		if !placeholder.MatchString(results[index]) {
+			t.Fatalf("result %d did not carry the job log as a placeholder: %s", index, results[index])
+		}
+	}
 	if got := len(placeholder.FindAllString(last, -1)); got < 3 {
 		t.Fatalf("the final request should carry placeholders for all three secrets, found %d", got)
 	}
