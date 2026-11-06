@@ -192,3 +192,42 @@ func TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates(t *testing.T) 
 		t.Fatalf("a failing boundary must return an error and no text, got %q %v", out, err)
 	}
 }
+
+func TestRedactResultPatchesBlocksAndKeepsOpaqueOnes(t *testing.T) {
+	b, _ := testBoundary(t)
+	token := "ghp_" + strings.Repeat("w3X4", 6)
+	got, err := b.resultPatch([]any{
+		map[string]any{"type": "text", "text": "key " + token},
+		map[string]any{"type": "image", "data": "AAAA", "mimeType": "image/png"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	blocks := got.(map[string]any)["content"].([]any)
+	if text := blocks[0].(map[string]any)["text"].(string); strings.Contains(text, token) || !strings.Contains(text, "red-sec-") {
+		t.Fatalf("text block = %q", text)
+	}
+	if blocks[1].(map[string]any)["data"] != "AAAA" {
+		t.Fatal("an image block must stay intact")
+	}
+	if got, err := b.resultPatch("nothing secret"); err != nil || got.(map[string]any)["content"] != "nothing secret" {
+		t.Fatalf("a clean string result must be returned unchanged, got %v %v", got, err)
+	}
+}
+
+func TestRedactResultWithholdsOutputWhenTheBoundaryFails(t *testing.T) {
+	b, agent := testBoundary(t)
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	raw := "ghp_" + strings.Repeat("e5R6", 6)
+	got, cause := b.resultPatch(raw)
+	if cause == nil {
+		t.Fatal("the failure cause must be reported")
+	}
+	patch := got.(map[string]any)
+	text := patch["content"].([]any)[0].(map[string]any)["text"].(string)
+	if strings.Contains(text, raw) || patch["isError"] != true || !strings.Contains(text, "withheld") {
+		t.Fatalf("patch = %+v", patch)
+	}
+}

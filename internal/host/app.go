@@ -93,6 +93,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnEvent("input", a.redactInput)
+	ext.OnToolResult(a.redactResult)
 	ext.OnToolResult(a.confirmRead)
 	ext.OnEvent("before_agent_start", a.contextFrames)
 	ext.OnEvent("before_provider_request", a.spliceLatePrompt)

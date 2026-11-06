@@ -129,7 +129,7 @@ func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
 	delete(s.runningCalls, id)
 	s.viewsMu.Unlock()
 	for _, view := range views {
-		if view.block != "" && containsTextBlock(data["content"], view.block) {
+		if view.block != "" && (containsTextBlock(data["content"], view.block) || containsTextBlock(data["content"], s.redactedView(view.block))) {
 			_ = s.snapshots.Delivered(view.uri, view.revision, view.epoch, view.spans, view.tagged)
 		}
 	}
@@ -165,4 +165,12 @@ func (a *app) invalidateSeen(_ sdk.Context, _ map[string]any) (any, error) {
 	clear(s.pendingViews)
 	s.viewsMu.Unlock()
 	return nil, s.snapshots.SetEpoch(hex.EncodeToString(nonce[:]))
+}
+
+// redactedView is the block as the model sees it after the secrets hook ran, so seen-state still matches.
+func (s *session) redactedView(block string) string {
+	if redacted, active, err := s.secrets.redactText(block); err == nil && active {
+		return redacted
+	}
+	return block
 }
