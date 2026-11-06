@@ -2,88 +2,59 @@
 document:
   type: "analysis"
   id: "ANA-2026-11-05-slice-1-inventory"
-  title: "Slice 1 inventory: implementation state against every PLAN-0001 §9 ownership row"
-  description: "Which Slice 1 ownership rows are implemented with evidence, which are partial, and which are missing, as observed at eeb3e27 plus later commits"
+  title: "Slice 1 acceptance inventory"
+  description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 1
+  revision: 2
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-05T16:40:00+01:00"
+  updated_at: "2026-11-07T00:12:17+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Separate completed evidence from missing wiring, behavior and acceptance without narrowing scope"
       changes: ["Recorded per-row status with file and test anchors", "Named the ordered remaining work per phase", "Confirmed no row is satisfied by an unadvertised or stub path"]
+    - revision: 2
+      reason: "Reconcile the current implementation and retain observed representative acceptance evidence"
+      changes: ["Enumerated every Slice 1 ownership row", "Recorded passing real-host cases without equating them to complete row acceptance", "Exposed missing scheme commands, provider search and private instruction discovery"]
 ---
 
-# Scope
+# Scope and evidence
 
-Inventory of the Slice 1 rows in [PLAN-0001 §9](../../plans/0001-pig-workbench.md) against the implementation
-observed at `8fb437a` (after Phase C). Status words are used strictly:
+This table follows [PLAN-0001 §9](../../plans/0001-pig-workbench.md), including the Slice 1 portions of split rows. A passing test proves only the behavior named in its cell, **not the full ownership row**. A dash means no representative execution was established in this run. No row is claimed frozen or fully accepted by this inventory.
 
-- **done** — implemented, wired and covered by an observed test or live run.
-- **partial** — the named subset works and is tested; the listed remainder does not exist yet.
-- **missing** — no implementation.
+The following subset ran against a real PiG host with an isolated local scripted provider, without billed inference; its output is [acceptance-subset.txt](evidence/acceptance-subset.txt). All test names in the table refer to `internal/host/` integration tests and appear in that output unless marked otherwise. Reproduce with `just _modfile`, then `go test -race -tags=integration -modfile=.tmp/go.mod ./internal/host -run '<test-name>' -count=1 -v`. Source findings are supported by [source-audit.txt](evidence/source-audit.txt) and the named implementation files.
 
-Nothing in this table is satisfied by a stub, an unadvertised registration or an `unsupported` answer to an
-advertised operation. Acceptance anchors of the specifications are **not** rewritten here; where a row is
-partial, the spec anchor has not been passed.
+| PLAN-0001 §9 row | Owner | Observed representative behavior | Remaining acceptance or known gap |
+|---|---|---|---|
+| 0001 §2–§7 | S1 C | `TestLiveServiceDiscoveryRPC` discovers the service. | Full protocol failure, cancellation and receipt matrix needs reconciliation with the acceptance anchor. |
+| 0001 §8 | S1 C + consumer | `TestLiveReferenceProducerSeams` exercises registered contributions and consumers. | Each collaboration method and conditional grant still needs an explicit acceptance mapping. |
+| 0002 all | S1 F | `TestLiveResumeDoesNotResendDeliveredContextFrames` checks resume delivery. | Branch, compaction, trust and projection cases are not all established by that run. |
+| 0003 §2–§6, §10 | S1 F, B | `TestLiveReferenceProducerSeams` exercises reference presentation. | SPEC-0003 is draft; plain-state and width cases require complete row reconciliation. |
+| 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration; grep/find do not route provider roots. Full policy and mutation acceptance is not established. |
+| 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
+| 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
+| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode` and `TestLiveGrepAcceptsLiteralPatternList` exercise local reads and literal OR search. | SPEC-0006 is draft. Grep context is accepted but ignored; grep/find treat provider URIs as local paths. Loop guard and supersession need explicit evidence. |
+| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | SPEC-0007 is draft; project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
+| 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | SPEC-0008 is draft; full location acceptance requires reconciliation. |
+| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. | SPEC-0008 is draft. `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths; redirects only route to `job://`. Provider approval parity is unproven. |
+| 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice. | Multi/preview types are not live-tested; the rich TUI panel is deferred chrome. |
+| 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
+| 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. Real TUI placement has separate coverage; failed-job counting lacks a dedicated real-failure unit test. Click requires a fork host; configured shortcut is not applied. |
+| 0010 all | S1 B | `TestLiveSettingsScopesAndReload` exercises settings scopes and reload. | Many validated settings remain unavailable; their catalog entries identify them. Full storage, trust and lifecycle matrix is not established by this one test. |
+| 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake. | SPEC-0011 is draft; real agent-reply hop increment is untested, and Windows messaging is compile-level only. |
+| 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |
+| 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
+| 0012 §3.6 | S1 K | — | Private notes class is not present in `instructions.DefaultClasses`, which the host uses; no live test proves it. |
+| 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing. | Provider-root search/walking is not wired; first-touch guide and naming acceptance need separate mapping. |
+| 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees. | Stored-session title writes with a real confirmation dialog remain untested; each core scheme needs separate evidence. |
+| 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |
+| 0013 §2–§5, §7 | S1 I | `TestLiveStoredSearchKeyIsRedactedInJobLogs` verifies a stored key is redacted in a job log. | Native custom credential resolver coverage is unavailable; all redaction/substitution boundaries need individual acceptance evidence. |
+| 0014 §3–§5, §6.1–§6.2, §7, §8 | S1 J | `TestLivePromptSettingsControlTakeover` verifies forced, disabled and auto behavior. | Auto retains PiG's prompt until user-authorized A/B evaluation; prompt takeover also depends on `instructions.enabled`. Skills and every frame require separate evidence. |
 
-# Row status
+# Acceptance blockers
 
-| Spec § | Owner | Status | Observed evidence | Missing |
-|---|---|---|---|---|
-| 0001 §2–§7 | C | done | `internal/host/services.go` (discover/register/unregister/describe/cancel, generation checks, in-flight limits, owner/instance correlation), `api/client.go` (`Discover`/`Call`/`Close`, late-reply discard, outcome-classified transport errors), `internal/host/services_test.go`, `api/client_test.go`, `internal/host/live_services_test.go` (absent/incompatible/ambiguous, stale generation, session replacement, resume) | `operation.status` and admitted deferred work are not implemented, consistent with SPEC-0001 §3's rule not to advertise unproven deferred operations |
-| 0001 §8 | C + consumer | partial | Advertised: `location`, `presentation`, `resources`, `fetch`, `status`, `docs`, `frames`. Events: `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed` | `snapshots`, `sessions`, `secrets` services; `resources.changed`, `frames.deliveryChanged`, `sessions.message` events |
-| 0002 all | F | partial | `internal/frames` ledger with determinism, dedup, expiry, ownership, branch scope, epoch binding; `internal/host/contributed_frames.go` (publish/status/get/cancel/list, trust, nextBoundary steer, nextPrompt), `internal/host/frame_context.go`, `internal/frames/*_test.go`, live notice delivery in `internal/host/live_reference_test.go` | Ledger replay across resume and branch switch, compaction reconstruction, `beforePrompt` delivery path verification, bounded receipt index at `session://self/frames` |
-| 0003 §2–§6, §10 | F, B | partial | `internal/presentation` typed snapshots with validation, `internal/host/presentation.go` + `presentation_render.go` (live resolver reading the registry, presets, sanitizing, width fitting), `internal/host/contributions_test.go` | Resolver coverage for every preset/cell kind and plain renderers for every lifecycle state; `codemode` captures; §10.3 path-display goldens (no `displayPath` helper exists) |
-| 0004 §1–§10 | D | partial | `internal/resource` parser, selector grammar, pager, router, walking; providers `file`, `http`, `https`, `cfg`, `artifact`, `session`, `local`, `out`, `docs`; `internal/resource/*_test.go`, `internal/host/live_http_test.go`, `internal/host/live_reference_test.go` | `job://`, `skill://`, `agent://` providers; first-touch guide injection on read (guides are served but not injected on first touch); `resources.changed` invalidation |
-| 0004 §11 | D | done | `internal/resource/http.go`, `internal/host/contributed_fetch.go` (most-specific rule, locate, 4xx final, fallback with notice), `internal/host/contributed_test.go`, live backend/locate/404 rows in `internal/host/live_reference_test.go` | Redirect hardening is covered by `internal/htmlread` plus policy tests; no known gap |
-| 0005 §2–§8, §10, G5.2 | G | partial | `internal/hashline` (normalize with staged origins, XXH32 tags, staged restore, seen spans, relocation, store with epoch+delivered gating), `internal/fileedit` commit executor, `internal/host/edit.go` (tagged and exact-text, current-source re-read, relocation, seen guards, per-turn mode), `internal/host/write.go`, `internal/host/snapshots.go`, `internal/host/live_edit_test.go`, `internal/host/live_write_test.go`, `internal/hashline/*_test.go` | Public `snapshots.view`/`snapshots.status`/`snapshots.touched` service (SPEC-0005 §10); persistent register replay across sessions; notebooks; donor fixture corpus for §8 edge rows |
-| 0006 §2–§4, §6–§7 | D | partial | `internal/resource/page.go` (shown spans, continuation, selection- vs resource-complete), `internal/host/tools.go` read/write/ls, `internal/host/search.go` grep/find, `internal/syntax` summaries and enclosing boundaries, `internal/host/live_test.go` | Supersession and repeated-read hints; loop-guard rows; multi-read parity in codemode |
-| 0007 §2–§8 local | K | partial | `internal/instructions` discovery with exact-byte digests, caps and steering defaults; `internal/host/instruction_context.go` root+nearest delivery with project trust anchoring; duplicate host injection suppressed; `internal/host/live_test.go` frame delivery | Pins, diff updates, multi-touch unions, watchers for new candidates, withdrawal, compaction and branch reconstruction, `projectPrivate` class wiring |
-| 0008 §2–§3 local | E1 | done | `internal/location` (capture, revisions, leases, transitions, persistence), `internal/host/tools.go` `cd` tool, `/cd`, `/wb:cd`, `location` service and `location.changed`, `internal/host/live_test.go`, `internal/host/live_services_test.go` (cd, session replacement, resume) | — |
-| 0008 §5–§7, G8.20 | H | partial | `internal/jobs` supervision (process groups, pidfd identity, bounded logs with cursors, stdin/EOF, waits, kill), `internal/host/jobs.go` (`bash`, `jobs` tools), `internal/host/live_jobs_test.go` | `job://` resources, `/workbench jobs` and `/wb:jobs`, G8.20 scheme command dispatch, reload job termination verification, secret env injection, crash/ownership matrix |
-| 0009 §2–§3, §5 | L2 | partial | `internal/ask` (schema, dialogs, records, results), `internal/host/ask.go` including vault-backed secret answers, `internal/host/live_ask_test.go` (native RPC choice reaching the model) | Pending-ask persistence and recovery across reload, rich TUI questionnaire, full question-type and mode matrix (§6) |
-| 0009 §8 | M | partial | `/workbench show|tools|cd|settings`, `/tools`, `/cd`, `/wb:cd`; completions on `/workbench` | `/workbench integrations|resources|prompt|skills|sessions|jobs|frames|instructions|trust|projects unlink-storage`, `/wb:jobs` |
-| 0009 §9 | M, F | partial | Contributed `statusSegment` with priority, fitting, severity wording, 4/s coalescing (`internal/host/contributed_status.go`, `internal/host/contributed_test.go`); fixture status row observed live | Builtin activity counts, shortcut target, activity placement wiring in the status line, TUI captures |
-| 0010 all | B | partial | `internal/config` scoped TOML with provenance, strict validation, last-valid stale state, merge-preserving atomic saves, cross-process locking, trust restrictions; `internal/host/settings.go`, `internal/config/*_test.go`, `internal/host/live_settings_test.go` | `Secrets.toml`, complex instruction classes, trust-rule editing, dynamic producer settings, reload leak verification |
-| 0011 §2–§8 | L1 | missing | `internal/endpoint` holds record/store/registry primitives with tests only | Transport, authentication, wake/state tracking, envelope delivery, loop guards, `agent://` send/read/wait, `sessions` channel, `/workbench sessions` |
-| 0012 §3.1–§3.4 | E1 | partial | `internal/project` document/registry/detection, `Project.toml` parsing, `prj-` ids, `global`, project facts entering `session.project`, `internal/project/*_test.go`, `internal/host/live_test.go` | Full recognition precedence rows and provider request `project` field (no `project` in `api.ResourceRequest` yet) |
-| 0012 §3.5 | E2 | missing | — | Journaled bucket conversion, live-session conflict deferral, crash recovery, `projects unlink-storage` undo |
-| 0012 §3.6 | K | missing | — | `projectPrivate` instruction class |
-| 0012 §5.1–§5.2, §5.5 | D | partial | Scheme naming, tool semantics over the router, contributed per-sub-namespace guides served at `docs://workbench/schemes/<scheme>` | First-touch guide injection into read results |
-| 0012 §5.3 core | D, H, J, L1 | partial | `file://`, `artifact://`, `out://`, `local://`, `cfg://`, `session://self/*` | `session://<id>`, `by-id/`, titles of own and stored sessions, `agent://`, `skill://`, `job://` |
-| 0012 §5.4 | C, D | done | `internal/host/contributed_docs.go` serving `docs://<owner>/` and `docs://workbench/schemes/<scheme>`; live rows in `internal/host/live_reference_test.go` | PiG source docs are S2 |
-| 0013 §2–§5, §7 | I | partial | Detection, placeholders, keys, vault primitives with tests; `ask_user` secret answers stored encrypted with placeholder-only records | Entry-time/context redaction, provider-payload fail-closed hooks, tool-call substitution for every tool including other extensions, appended-block redaction order, injected environment, agent-awareness prompt section |
-| 0014 §3–§5, §6.1–§6.2, §7, §8 | J | partial | `internal/prompt` gonja engine with confined loader, strict `attr`, cancellable loops; six context facts delivered (`session.date/environment/project/location/model/capabilities`), owner-scoped `knowledge_cutoff` via `context.fields.set`; `internal/host/frame_context.go`, `internal/host/live_test.go`, `internal/host/live_reference_test.go` | `builtin/workbench` template and takeover, sections/helpers, delivery `auto` with fallback, epochs, late-section splice, skill catalog/listing ladder/load-unload/`skill://`/compaction replay, `/workbench prompt|skills` |
-
-# Cross-cutting observations
-
-- The advertised capability list is honest: `advertisedCapabilities` contains only wired services, and the
-  unknown-capability test refuses the rest.
-- Three ownership rows are dominated by one missing subsystem each: `snapshots` (G), `job://` + G8.20 (H),
-  and the secret boundary (I). They are the cheapest large wins because their engines exist.
-- The largest genuinely missing subsystems are messaging (L1) and session-storage adoption (E2), which E2
-  depends on.
-- Phase M is the only row group that is mostly a matter of wiring existing state into commands.
-
-# Ordered remaining work
-
-Follows the plan's phase order, not by cost:
-
-1. **A** — ledger, frozen contracts, pig-web answer.
-2. **B** — `Secrets.toml`, remaining config/trust editing, path-display goldens at 36/57/80/140.
-3. **C** — done.
-4. **D** — `job://`, `skill://`, `agent://` providers, first-touch guides, `resources.changed`, remaining §10 rows.
-5. **E1** — project request field and recognition rows; **E2** after L1.
-6. **F** — replay/compaction, `beforePrompt` verification, full preset/cell renderers.
-7. **G** — `snapshots` service, register persistence, §8 donor fixtures.
-8. **H** — `job://`, `/workbench jobs`, `/wb:jobs`, G8.20, reload cleanup.
-9. **I** — the whole redaction/substitution boundary plus `secrets.redact`.
-10. **J** — prompt takeover, sections, epochs, skills.
-11. **K** — pins, diffs, unions, watchers, reconstruction.
-12. **L1** — messaging; then **E2**.
-13. **L2** — pending recovery and TUI questionnaire.
-14. **M** — command inventory and activity line.
-15. **17** — acceptance table, gates, docs, seam gate with the reference extension.
+- The five draft specifications SPEC-0003, SPEC-0006, SPEC-0007, SPEC-0008 and SPEC-0011 await user approval. Slice 1 cannot be called frozen before that decision.
+- G8.20 dispatch, provider-root grep/find, grep context and project-private instruction discovery are not complete. The task list retains them; no acceptance row above should be read as a waiver.
+- Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
+- `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

@@ -1,0 +1,45 @@
+=== RUN   TestLiveAskUsesNativeRPCAndReturnsUserChoice
+--- PASS: TestLiveAskUsesNativeRPCAndReturnsUserChoice (0.83s)
+=== RUN   TestLiveTaggedAndExactEditUseObservedSource
+--- PASS: TestLiveTaggedAndExactEditUseObservedSource (0.84s)
+=== RUN   TestLiveResumeDoesNotResendDeliveredContextFrames
+--- PASS: TestLiveResumeDoesNotResendDeliveredContextFrames (0.93s)
+=== RUN   TestLiveHTTPReadUsesBuiltinStaticReader
+--- PASS: TestLiveHTTPReadUsesBuiltinStaticReader (0.78s)
+=== RUN   TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn
+--- PASS: TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn (0.87s)
+=== RUN   TestLiveBackgroundJobStdinAndCompletion
+--- PASS: TestLiveBackgroundJobStdinAndCompletion (0.79s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.00s)
+=== RUN   TestLiveStoredSearchKeyIsRedactedInJobLogs
+--- PASS: TestLiveStoredSearchKeyIsRedactedInJobLogs (2.78s)
+=== RUN   TestLivePromptSettingsControlTakeover
+=== RUN   TestLivePromptSettingsControlTakeover/force
+=== RUN   TestLivePromptSettingsControlTakeover/disabled
+=== RUN   TestLivePromptSettingsControlTakeover/auto
+--- PASS: TestLivePromptSettingsControlTakeover (2.31s)
+    --- PASS: TestLivePromptSettingsControlTakeover/force (0.75s)
+    --- PASS: TestLivePromptSettingsControlTakeover/disabled (0.82s)
+    --- PASS: TestLivePromptSettingsControlTakeover/auto (0.74s)
+=== RUN   TestLiveGrepAcceptsLiteralPatternList
+--- PASS: TestLiveGrepAcceptsLiteralPatternList (0.87s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (1.07s)
+=== RUN   TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes
+--- PASS: TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes (1.54s)
+=== RUN   TestLiveEveryCompletedCommandIsAcceptedByItsHandler
+--- PASS: TestLiveEveryCompletedCommandIsAcceptedByItsHandler (0.63s)
+=== RUN   TestLiveActivityLineCountsMatchTheRegistries
+    live_sessions_test.go:560: no setWidget record was observed in RPC mode; the line is verified through the shared items
+--- PASS: TestLiveActivityLineCountsMatchTheRegistries (2.81s)
+=== RUN   TestLiveStoredSessionsAreListedReadAndTitled
+--- PASS: TestLiveStoredSessionsAreListedReadAndTitled (1.08s)
+=== RUN   TestLiveSettingsScopesAndReload
+--- PASS: TestLiveSettingsScopesAndReload (0.80s)
+=== RUN   TestLiveSessionStorageIsSharedThenUnlinked
+--- PASS: TestLiveSessionStorageIsSharedThenUnlinked (1.01s)
+=== RUN   TestLiveReadLocationAndCodemode
+--- PASS: TestLiveReadLocationAndCodemode (1.07s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	23.033s
