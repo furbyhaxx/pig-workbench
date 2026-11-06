@@ -1,6 +1,6 @@
 # Tools
 
-Workbench registers these tools in place of the builtin names. Every tool resolves relative paths against the Workbench working location (see [locations](#locations)), never against a directory changed by `cd` on PiG's side, and reports the location and configuration revision it acted on in `Details`.
+Workbench registers these tools in place of the builtin names. Local relative paths use the captured Workbench working location (see [locations](#locations)); PiG's session cwd does not change. Individual tool results report the details available for their operation.
 
 ## `read`
 
@@ -21,15 +21,26 @@ For a multi-read, one failing target does not turn the whole result into an erro
 
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, total lines, shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.
 
-Supported schemes today: `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`.
+Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers.
 
-`http(s)://` reads use the builtin static reader: HTML is converted to readable Markdown by default, while `:raw` keeps the decoded document. Credentials in URLs, bare hosts without an explicit `/`, non-http(s) redirects and redirect cycles are refused; redirects are reauthorized per hop within an 8-hop limit. Charset metadata is decoded, bodies and rendered output are capped at 4 MiB, binary media is refused, and page facts name the handler, content type, final URI and notices. Scripts are never executed and meta/script redirects are reported, not followed.
+`http(s)://` reads can use a registered fetch backend or the builtin static reader. In the builtin reader, HTML is converted to readable Markdown by default, while `:raw` keeps the decoded document. Credentials in URLs, bare hosts without an explicit `/`, non-http(s) redirects and redirect cycles are refused; redirects are reauthorized per hop within an 8-hop limit. Charset metadata is decoded, bodies and rendered output are capped at 4 MiB, binary media is refused, and page facts name the handler, content type, final URI and notices. Scripts are never executed and meta/script redirects are reported, not followed.
 
 `artifact://specs/0001-x.md` resolves to the nearest `.project/` directory above the session's project root, so every worktree and subdirectory of a project sees the same artifact tree without absolute paths. Paths cannot escape it, and a working location with no artifact tree reports not-found.
 
 Reading a **directory** returns a stable listing view instead of an error: `dir/` for subdirectories, `name (N bytes)` for files, `name -> target` for links, directories first then lexical order. A single range or a tail pages the listing (`:10-20`, `:-5`); multiple ranges and `:raw` are refused because a listing is not source text.
 
 A **bare** read of a code file with at least `read.summarize.min-total-lines` lines (default 200) returns a declaration skeleton instead of exact text: declaration lines with real line numbers, an explicit `⋯ lines A-B omitted` marker per folded body, and a continuation to the full text. A summary never marks folded lines seen, reports `truncation: "summary"` with `omittedRanges`, and is never used for an explicit selector, a `:raw` read, a prose file, or a file above 4 MiB. `read.summarize.enabled = false` disables it.
+
+## `edit`
+
+Use a tagged batch from an observed local read, or exact-text replacements when the configured `edit.mode` permits them:
+
+```text
+edit {"hashline": "[notes.md#A1B2]\nPUT 2.=2:\n+replacement\n"}
+edit {"path": "notes.md", "edits": [{"oldText": "before", "newText": "after"}]}
+```
+
+Tagged edits support PUT, CUT, REM, MV, structural blocks and registers. Seen-line enforcement covers complete consumed ranges. Changed sources are relocated only with unambiguous evidence; otherwise read the current file again. Exact replacements must be unique and non-overlapping. Edits are preflighted and revision-checked; a partial I/O failure reports what landed rather than claiming rollback.
 
 ## `write`
 
@@ -40,6 +51,8 @@ write {"path": "notes.md", "content": "text", "expectedRevision": "<revision fro
 
 Creates or fully replaces one local file. A supplied `expectedRevision` must match the file's current digest or the write is refused with `staleRevision`. The replacement is atomic (same-directory temporary file, flush, rename), an existing file keeps its mode, a new file is created `0600`, and the parent directory must already exist. Line selectors are rejected; use `edit` for partial changes.
 
+Control writes also support `job://<id>/stdin|ctl`, `skill://` unload, `agent://<id>/inbox`, `session://<id>/title` and `session://self/instructions/ctl`. They use the corresponding action's policy and confirmation rules. An `expectedRevision` on a control write is rejected before the action; it is not silently ignored.
+
 ## `ls`
 
 ```text
@@ -48,7 +61,7 @@ ls {"path": "session://self"}
 ls {"path": ".", "cursor": "…", "limit": 200}
 ```
 
-Typed entries (`file`, `dir`, `link`, `ctl`), directories first, then lexical order, with a continuation cursor and an explicit `complete` flag in `Details`.
+Lists containers supported by the selected provider. Entries have types (`file`, `dir`, `link`, `ctl`), a continuation cursor and an explicit `complete` flag in `Details`.
 
 ## `grep`
 
@@ -58,7 +71,7 @@ grep {"pattern": "needle", "ignoreCase": true, "glob": "*.go", "exclude": ["vend
 grep {"patterns": ["TODO", "FIXME"], "literal": true}
 ```
 
-`patterns[]` requires `literal: true`; `pattern` is a regex. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match or file limit reports `complete: false` — never a silent "that is all". `context` is accepted but surrounding lines are not emitted yet.
+`patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match or file limit reports `complete: false` — never a silent "that is all". `context` is accepted but surrounding lines are not emitted yet. Search roots are local filesystem paths; provider URIs are not routed.
 
 ## `find`
 
@@ -66,7 +79,7 @@ grep {"patterns": ["TODO", "FIXME"], "literal": true}
 find {"pattern": "*.go", "exclude": ["vendor"], "limit": 200}
 ```
 
-Walks file names under the location. Symlinked directories are not followed; `.git` is skipped; excluded names are pruned before descending.
+Walks file names under the location or a local filesystem path. Symlinked directories are not followed; `.git` is skipped; excluded names are pruned before descending. Provider URIs are not routed.
 
 ## `cd`
 
@@ -95,13 +108,13 @@ The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `wri
 
 A job also outlives the runtime that started it when that runtime dies without shutting down. To keep such a job from becoming an unsupervised process, each runtime claims a liveness lock for its generation under `$XDG_STATE_HOME/pig-workbench/jobs/`, records the pid and kernel start time of every job it starts, and the next start terminates the process groups whose owner lock is free — after rechecking the recorded pid against its start time, so a recycled pid is never signalled. Records of a live runtime are left untouched, including another session's.
 
-`job://` resources, `/workbench jobs`, `/wb:jobs` and standalone scheme commands (`ls`, `cat`, `>` redirect) are wired. `rm`, `mv`, `cp` and `mkdir` on a scheme are recognized and refused until that scheme implements them. Job panels remain pending.
+`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. Standalone `ls` and `cat` are routed for non-locatable scheme paths; redirects currently work only for `job://`. Scheme-path `rm`, `mv`, `cp` and `mkdir` are unconditionally refused, and pipes and compounds are rejected. Full provider-directed scheme-command dispatch and job panels remain pending.
 
 ## `ask_user`
 
 Native TUI/RPC dialogs support single, multi, preview, freeform and secret questions, with custom answers and notes. Cancellation returns no partial answers. Headless print/JSON execution returns `interactionUnavailable`; it never invents choices. RPC questions use the configured dialog deadline.
 
-Secret values are collected before finalization, stored encrypted, and returned as placeholders only. Local typing need not be masked. Successful completed-record persistence is the submission commit point. If secret storage partially succeeds, the error reports retained placeholder IDs rather than claiming rollback or ordinary cancellation. The rich questionnaire panel and recovery commands remain pending.
+Secret values are collected before finalization, stored encrypted, and returned as placeholders only. Local typing need not be masked. Successful completed-record persistence is the submission commit point. If secret storage partially succeeds, the error reports retained placeholder IDs rather than claiming rollback or ordinary cancellation. `/workbench ask show|resume|discard` manages pending forms. The rich questionnaire panel is pending; multi and preview questions have not been live-tested.
 
 ## Locations
 
@@ -116,4 +129,4 @@ The working location is captured per call. Mutating tools take a lease, so a `cd
 - `cfg://workbench/status` — configuration readiness, revision and effective read policy.
 - `cfg://<group>/<key>` — one effective setting with its source scope and file.
 
-All are read-only and accept the same selectors as `read`.
+These resources are read with the selectors supported by their providers. `session://self/title` is also writable; stored-session title changes require confirmation and are refused for a live session.

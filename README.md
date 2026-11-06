@@ -1,39 +1,52 @@
 # pig-workbench
 
-A [PiG](https://github.com/MichaelKinsy/PiG) extension that upgrades the builtin coding tools: hashline editing, selector-driven reads, `scheme://` resources, local and SSH working locations, harness frames with instruction and backlog injection, questionnaires and background jobs.
+A [PiG](https://github.com/MichaelKinsy/PiG) extension for coding tools, resource URIs, working locations, instruction frames, secret redaction, questionnaires and supervised shell jobs.
 
-**Status: Slice 1 implementation in progress, not feature-complete.** Local selector-driven `read`, revisioned `cd`, session shutdown draining and the `location` extension service are wired. Layered TOML configuration and safe saves are also wired. Native questionnaire dialogs and encrypted secret-answer storage are wired. Full hashline editing, jobs tools, the general secret boundary, prompt takeover, rich questionnaire panels and other Slice 1 requirements remain incomplete. Scope and acceptance gates are tracked in [the slice plan](.project/plans/0002-slice-1-foundation.md).
+**Status:** Slice 1 is in progress and is not frozen. The extension runs on Linux, but some Slice 1 behaviors and acceptance checks remain open; see [current limitations](#current-limitations).
 
-## Available now
+## Get started
 
-- `read`: exactly one of `path` or `paths` (1–32 files). Select with `:N`, `:A-B`, `:A+C`, `:-N`, comma ranges or `:raw`. Literal filenames take precedence. Local source reads carry hashline tags and epoch-bound delivered visibility; raw views preserve bytes. The resource router also exposes `http(s)://` through the bounded builtin static reader: HTML becomes readable Markdown by default and `:raw` keeps the document; redirects are reauthorized, charsets decoded and unsupported media refused. Local scratch, configuration, session and artifact trees are also available. One 50 KiB/2000-line batch budget; Details retain actual coverage, revision and continuation.
-- `edit`: tagged PUT/CUT/REM/MV batches, named registers and unique exact-text replacements, restricted by `edit.mode`. Complete seen ranges, whole-batch preflight, ambiguous-anchor refusal and current-source relocation are enforced; landed/unattempted outcomes remain explicit on I/O failure. Syntax blocks, full donor recovery, persistent register replay and diff previews remain pending.
-- `write`: create or fully replace a local file with optional `expectedRevision`, atomic replacement and preserved mode. Complete copied tagged views are unwrapped only when their tag identifies an unambiguous full view; `raw:true` writes presentation text literally. No directory creation or non-local schemes yet.
-- `ls`: list one directory through the resource router (`path`, `file://`, `local://`, `out://`) with typed entries, directories first, a continuation cursor and honest completeness.
-- `session://` resources: `ls session://` lists this project's stored sessions (title, messages, time, cwd), `session://by-id/` lists all of them as links; `session://<id or self>/meta|title|transcript|entries` are pageable with the same selectors (IDs resolve by unambiguous prefix of 6+ characters). Writing `session://self/title` sets the title; a stored session's title changes only after user confirmation and never while that session is running (`sessionLive`). `cfg://` exposes effective settings with provenance (`cfg://workbench/status`, `cfg://<group>/<key>`).
-- `grep`: search file contents under the location with regex or literal OR-patterns, glob/exclusion filters and honest `complete` reporting.
-- `find`: walk for file-name globs; symlinked directories are not followed.
-- `bash` and `jobs`: local foreground/background execution, delayed promotion, deadlines, output cursors, stdin/EOF and process-group cancellation. Linux requires identity-bound pidfd group signalling. `job://<id>/{status,cmdline,cwd,log,stdout,stderr,stdin,ctl}` is readable and writable through the router, and `/workbench jobs` plus `/wb:jobs` share the jobs tool. A standalone `ls`, `cat` or `>` redirect on a non-locatable scheme runs in-process; pipes and compounds naming such a path are refused.
-- `ask_user`: native single/multi/preview/freeform/secret dialogs with notes and custom answers. Cancellation discards partial answers; headless modes report unavailable. Secret answers are encrypted in the vault and returned as placeholders. A form left unanswered when the process ended is announced on the next start of that session and never answered for you; `/workbench ask show|resume|discard` handles it. The rich TUI panel and replay command are still pending.
-- `agent://` (live sessions of the same user): `ls agent://` lists them by the last 8 characters of their session ID (UUIDv7 prefixes repeat within a minute; a unique prefix of 6+ characters or an exact title also works), `read agent://<id>/status|messages`, `write agent://<id>/inbox` sends (plain text or JSON `{subject, body, attachments, wake, progress}`) and returns the receipt, `read agent://self/inbox?wait=60[&from=<id>]` waits for the next message. Peer text arrives as an untrusted data frame; an idle receiver is woken within `sessions.wake` and its budget, a busy one is steered, and conversations stop waking after `sessions.max-hops`. Endpoints live in the private runtime directory with a per-session token and a peer-UID check.
-- `cd`: `{}` reports status, `{"path":"…"}` changes the Workbench location, `{"reset":true}` returns to the origin. It never changes PiG’s cwd. Until the remaining overrides land, other builtin tools still use PiG’s cwd.
-- `/workbench show`, `/workbench cd`, `/cd`, `/wb:cd`: inspect or change that location. `/tools [name]` and `/workbench tools [name]` inspect the live host registry.
-- `/workbench projects [status|unlink-storage]`: a session in a recognised project shares one session directory per project (`projects.session-storage = "link"`): PiG's per-directory bucket becomes a symlink to `<agent>/projects/<id>/sessions/`. The journaled conversion resumes after a crash, waits while another live session uses the directory, and `unlink-storage` restores real directories (see [configuration](docs/configuration.md)).
-- Activity line (`activity.enabled`, `activity.placement`): one row above or below the editor with counts from the live registries: `2 jobs`, `1 failed`, `1 waiting for you`, `3 live sessions`, `5 skills` and contributed `statusSegment` items with `placement: "activity"`. Zero counts are hidden; below 50 columns items become glyph plus number (`⚇2 ⚙1`); the lowest priority drops first. `alt+w` (fixed key; the `activity.shortcut` setting is not applied yet) lists the items and the command that inspects the first one. `/workbench show` and `cfg://workbench/status` carry the same items. Clicking an item needs a host change and is not available.
-- `/workbench sessions [ls|send <session> <text>|trust|untrust|block|unblock <session>|hide|show]`: list live sessions and message them; `send` redacts secrets like any message, `trust` lifts a peer's frames to trusted data, `block` rejects a peer until `unblock`, `hide` stops publishing this session (conversations in progress keep working). Trust and block marks last for the running session.
-- `/workbench integrations [owner]` and `/workbench resources [scheme]`: read-only lists of every extension registration and every URI scheme with its origin; `cfg://workbench/integrations/[<owner>]` serves the same registrations to agents.
-- `/workbench trust [ls|add allow|deny <dir>|rm <dir>]`: Workbench's own rules (user settings key `trust.rules`, never project settings, not PiG's `/trust`). The nearest rule decides whether the `AGENTS.md`/`BACKLOG.md` of a nested repository may load; without a matching allow it stays a boundary with a notice.
-- `/workbench settings show|catalog|set|reset|reload`: inspect scoped values and change user/project/runtime settings. Read byte/line ceilings apply live; other catalog entries are explicitly marked unavailable. See [configuration](docs/configuration.md) for paths, syntax, trust restrictions and save guarantees, and [tools](docs/tools.md) for every tool contract, selector and result fact.
-- Context facts and applicable steering files are emitted as attributed frames. User/trusted-project instruction discovery runs at prompt/tool boundaries; duplicate host context-file injection is suppressed. A changed instruction file arrives as a unified diff against the view the model actually received (full view when no delivered base exists or the diff is not smaller; context lines from `instructions.updates.context`). `BACKLOG.md` files can be pinned so they stay delivered wherever the model works: `/workbench instructions pin|unpin|ls`, or the agent writes `pin <path>` / `unpin <path>` to `session://self/instructions/ctl`. Steering (`AGENTS.md`) is not pinnable, pins stay inside the trusted project or the agent directory, and pins follow the active branch. A backlog pointer whose target is missing or not `status: "open"` stays visible with a marker (`instructions.backlog.validate-pointers`). `edit` and `write` are blocked once with `instructionContextChanged` when new or changed instructions apply to the call, so the model sees them before it mutates. `/workbench instructions rules|reload` and `/workbench frames` inspect the engine. Native file watchers are not implemented; creations, edits and deletions are reconciled at the next prompt or tool boundary.
-- Extension consumers can discover and call protocol v1 through `api.Client`; see [extension services](docs/extension-services.md). Discovery advertises `location`, `presentation`, `resources`, `fetch`, `status`, `docs`, `frames`, `snapshots` and `sessions` (anchors for another tool's output). Other extensions register tool presentations, read-only `scheme://` resource providers (read through `read`/`ls` with Workbench selectors), `http(s)` fetch backends with builtin-reader fallback, status segments, `docs://<owner>/` documentation sets and frame producers (notices plus model-bound `knowledge_cutoff`). `secrets` and `sessions` are not advertised yet.
-
-## Develop
-
-Requires Go and a `pig` binary on `PATH`; the SDK is the staged copy that matches the running `pig`.
+Install Go, [PiG](https://github.com/MichaelKinsy/PiG) and `just`, then from this repository:
 
 ```sh
-just check            # gofmt, vet, tests and PiG validation
-just race             # concurrent domain checks
-just integration      # real PiG + localhost scripted provider and tmux; no billed inference
-pig -e .              # load into a session; /reload after edits
+just check   # format check, vet, tests and PiG validation
+pig -e .     # load the extension in a session
 ```
+
+Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workbench settings catalog` to see which settings are applied. See [tools](docs/tools.md), [configuration](docs/configuration.md) and [extension services](docs/extension-services.md) for contracts and examples.
+
+## What works
+
+- **Read and edit:** `read` supports bounded multi-read, selectors and registered `scheme://` providers; local source snapshots supply hashline tags and seen-line guards. `edit` supports tagged batches, structural blocks, registers and exact-text replacement. `write` atomically creates or replaces local files with optional revision checks; it also dispatches supported `job://`, `skill://`, `agent://` and `session://` control writes. `ls`, `grep` and `find` are available; grep/find currently search local filesystem paths only.
+- **Resources:** Builtin trees include `file://`, `http(s)://`, `local://`, `out://`, `artifact://`, `cfg://`, `session://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. HTTP can use a contributed fetch backend or the bounded builtin static reader. Resource providers from other extensions are read-only.
+- **Locations and jobs:** `cd`, `/cd` and `/wb:cd` change Workbench's captured local location without changing PiG's cwd. `bash` and the single `jobs` tool supervise foreground and background processes, stdin, output and cancellation; `/workbench jobs` and `/wb:jobs` expose the same jobs. Session-storage links and `/workbench projects unlink-storage` are documented in [configuration](docs/configuration.md).
+- **Instructions and frames:** Applicable steering and backlog files arrive as attributed frames. `/workbench instructions` manages inspection and backlog pins; `/workbench frames` inspects frames. Changes are reconciled at prompt or tool boundaries, not by native file watchers.
+- **Questions and secrets:** `ask_user` uses native interactive dialogs; headless use reports `interactionUnavailable`. Unanswered forms can be inspected, resumed or discarded through `/workbench ask`. The secrets boundary redacts known values from model-bound content and supports encrypted secret answers and controlled substitution.
+- **Sessions:** `agent://` and `/workbench sessions` provide authenticated same-user session discovery and messaging, including idle wake and busy steering. `/workbench sessions` can also trust, block, hide or show peers. Session trees and titles are accessible through `session://`.
+- **Inspection:** `/workbench settings`, `prompt`, `skills`, `integrations`, `resources`, `trust`, `projects` and `show` expose their respective state. The activity line displays live counts and contributed items; fixed `alt+w` opens its inspection shortcut.
+- **Extensions:** Protocol v1 exposes location, presentation, resources, fetch, status, docs, frames and snapshots; sessions are advertised when an endpoint is available, and `secrets.redact` only to explicitly granted owners. See [extension services](docs/extension-services.md).
+
+## Current limitations
+
+**Unfinished Slice 1:**
+
+- `grep` accepts `context` but does not emit surrounding lines; `grep` and `find` do not search provider URIs. The project-private instruction class is not wired.
+- For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. Redirects currently target `job://` only; `rm`, `mv`, `cp` and `mkdir` are rejected. Provider mutation authorization and full scheme-command routing remain open.
+- `prompt.delivery = "auto"` retains PiG's prompt; `force` opts in to `builtin/workbench` only when instructions are enabled. The live prompt A/B evaluation and full real-agent transcript await authorization for provider spend. The `prompt.template` setting is not applied.
+- Five specifications remain draft and await approval; the slice cannot be called frozen. The [acceptance inventory](.project/analyses/2026-11-05-slice-1-inventory/README.md) distinguishes observed tests from incomplete rows.
+- Windows messaging, session storage and registry have compile-level coverage only; some required platform security operations fail closed. Stored-session title writes with a real confirmation dialog, real agent-reply hop increments, and multi/preview questions have not been live-tested. Activity failed-job counting has no dedicated test against real failed jobs.
+
+**Deferred depth:**
+
+- Broadcast, coordinator and by-project agent/session trees belong to Slice 2. The rich questionnaire panel is later UI work.
+- Activity-item click needs a fork host change. `activity.shortcut` is not applied: `alt+w` is registered statically.
+- Additional resource formats, SSH locations, PTY jobs, extended recovery and other depth are listed in the [Slice 2 plan](.project/plans/0003-slice-2-feature-complete.md).
+
+## Development
+
+```sh
+just race         # race-enabled unit tests
+just integration  # real PiG with a local scripted provider and tmux; no billed inference
+```
+
+The Go SDK is staged from the installed `pig`; use the Justfile recipes rather than bare `go test`. See the [Slice 1 plan](.project/plans/0002-slice-1-foundation.md) for the remaining acceptance gates.
