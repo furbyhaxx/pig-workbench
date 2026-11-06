@@ -184,7 +184,19 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 				_ = state.ledger.Cancel(record.Frame.FrameID)
 			}
 		}
-		clear(state.last)
+		entries, err := ctx.GetEntries()
+		if err != nil {
+			return nil, err
+		}
+		branch, err := ctx.GetBranch()
+		if err != nil {
+			return nil, err
+		}
+		baseline, err := frameBaseline(entries, branch)
+		if err != nil {
+			return nil, err
+		}
+		state.last = baseline
 	}
 	state.scope = scope
 	currentInstructionKeys := make(map[string]bool)
