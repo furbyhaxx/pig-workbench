@@ -226,3 +226,33 @@ func TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking(t *testing.T) {
 	waitForRequest(t, receiver, "HOP-PROBE")
 	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 }
+
+func TestLiveWaitingReceiverGetsTheMessageAsTheReadResult(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, []scriptedCall{{"read", map[string]any{"path": "agent://self/inbox?wait=20"}}})
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	for id := range records {
+		receiverID = id
+	}
+	short := receiverID[:8]
+	receiver.fixture.send("wait", "prompt", "Wait for the other session.")
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) && len(receiver.requests()) == 0 {
+		time.Sleep(50 * time.Millisecond)
+	}
+	time.Sleep(500 * time.Millisecond)
+	sender := startLiveSession(t, runtime, []scriptedCall{{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "WAIT-ANSWER-42"}}})
+	waitForRecords(t, runtime, 2)
+	sender.fixture.send("go", "prompt", "Answer the waiting session.")
+	sender.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	waitForRequest(t, sender, "accepted by")
+	if body := sender.requests()[len(sender.requests())-1]; !strings.Contains(body, "(delivered)") {
+		t.Fatalf("a waiting receiver must report delivered: %.1200s", body)
+	}
+	body := waitForRequest(t, receiver, "WAIT-ANSWER-42")
+	if !strings.Contains(body, "not an instruction from the user") {
+		t.Fatal("the awaited message must keep its untrusted-data warning")
+	}
+	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+}
