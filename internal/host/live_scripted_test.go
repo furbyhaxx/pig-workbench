@@ -300,7 +300,7 @@ func TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead(t *testing.
 	if got := readFile(t, path); got != "alpha\nBETA\ngamma\n" {
 		t.Fatalf("anchors from a viewed block did not edit the file: %q\n%s", got, results[1])
 	}
-	if !strings.Contains(results[0], "retained=true") {
+	if !strings.Contains(results[0], "retained=true") || !strings.Contains(results[0], "touchedStale=false") {
 		t.Fatalf("status did not report the retained snapshot: %s", results[0])
 	}
 	if !strings.Contains(results[2], "permissionDenied") {

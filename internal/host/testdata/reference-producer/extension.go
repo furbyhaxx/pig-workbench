@@ -258,7 +258,11 @@ func Extension() *sdk.Extension {
 		if err := active.Call(ctx, binding, "snapshots.status", api.SnapshotStatusParams{URI: uri}, &status, nil); err != nil {
 			return nil, err
 		}
-		return sdk.ToolResult{Content: block + "\nstatus: retained=" + fmt.Sprint(status.Retained) + " seen=" + fmt.Sprint(status.SeenLines)}, nil
+		var touched api.SnapshotTouched
+		if err := active.Call(ctx, binding, "snapshots.touched", api.SnapshotTouchedParams{URIs: []string{uri}}, &touched, nil); err != nil {
+			return nil, err
+		}
+		return sdk.ToolResult{Content: block + "\nstatus: retained=" + fmt.Sprint(status.Retained) + " seen=" + fmt.Sprint(status.SeenLines) + " touchedStale=" + fmt.Sprint(touched.Files[0].Stale)}, nil
 	}})
 	ext.Command("reference", "Reference producer controls: status, reload", func(ctx sdk.Context, args string) error {
 		if strings.TrimSpace(args) == "reload" {
