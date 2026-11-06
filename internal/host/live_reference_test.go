@@ -229,3 +229,30 @@ func TestLiveReferenceProducerLoadsBeforeWorkbench(t *testing.T) {
 		t.Fatalf("producer loaded first did not register every kind: %v", record["message"])
 	}
 }
+
+func TestLiveIntegrationsAndResourcesCommandsListTheContributions(t *testing.T) {
+	repo := repoRoot(t)
+	t.Setenv("WORKBENCH_REFERENCE_DOCS", filepath.Join(repo, "internal/host/testdata/reference-producer/docs"))
+	f := startRPC(t, t.TempDir(), "-e", filepath.Join(repo, "internal/host/testdata/reference-producer"))
+	notice := func(id, command, want string) string {
+		f.send(id, "prompt", command)
+		record := f.wait(func(record map[string]any) bool {
+			return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), want)
+		})
+		return fmt.Sprint(record["message"])
+	}
+	all := notice("all", "/workbench integrations", "reference-producer")
+	for _, kind := range []string{"frameProducer", "toolPresentation", "resourceProvider", "fetchBackend", "statusSegment", "docs"} {
+		if !strings.Contains(all, kind) {
+			t.Errorf("/workbench integrations lacks the %s registration:\n%s", kind, all)
+		}
+	}
+	one := notice("one", "/workbench integrations reference-producer", `"schemes"`)
+	if !strings.Contains(one, "kb") {
+		t.Errorf("an owner view must show full descriptors:\n%s", one)
+	}
+	schemes := notice("schemes", "/workbench resources", "kb://")
+	if !strings.Contains(schemes, "kb://  contributed by reference-producer") || !strings.Contains(schemes, "file://  builtin") {
+		t.Errorf("/workbench resources must separate builtin and contributed schemes:\n%s", schemes)
+	}
+}

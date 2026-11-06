@@ -14,6 +14,8 @@ import (
 // cfgProvider exposes effective settings and status as read-only resources.
 type cfgProvider struct {
 	source func() (*config.Snapshot, config.Status)
+	// integrations serves cfg://workbench/integrations/: owners with no argument, one owner's registrations otherwise.
+	integrations func(owner string) (names []string, text string, ok bool)
 }
 
 func (cfgProvider) Scheme() string { return "cfg" }
@@ -52,6 +54,15 @@ func (p cfgProvider) Stat(ctx context.Context, uri string) (resource.StatResult,
 	if _, _, err := p.snapshot(); err != nil {
 		return resource.StatResult{}, err
 	}
+	if len(parts) >= 2 && parts[0] == "workbench" && parts[1] == "integrations" && p.integrations != nil && len(parts) <= 3 {
+		if len(parts) == 2 {
+			return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
+		}
+		if _, _, ok := p.integrations(parts[2]); ok {
+			return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
+		}
+		return resource.StatResult{}, resource.ErrNotFound
+	}
 	if len(parts) == 1 && parts[0] != "workbench" {
 		for _, definition := range config.Catalog() {
 			if strings.HasPrefix(definition.Key, parts[0]+".") {
@@ -67,6 +78,14 @@ func (p cfgProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	parts, err := splitCfg(uri)
 	if err != nil {
 		return resource.Listing{}, err
+	}
+	if len(parts) == 2 && parts[0] == "workbench" && parts[1] == "integrations" && p.integrations != nil {
+		owners, _, _ := p.integrations("")
+		listing := resource.Listing{Complete: true}
+		for _, owner := range owners {
+			listing.Entries = append(listing.Entries, resource.Entry{Name: owner, URI: "cfg://workbench/integrations/" + owner, Kind: resource.EntryFile})
+		}
+		return listing, nil
 	}
 	if len(parts) != 0 {
 		return resource.Listing{}, resource.ErrUnsupported
@@ -126,6 +145,16 @@ func (p cfgProvider) Read(ctx context.Context, request resource.ReadRequest) (re
 			"read":           snapshot.Read(),
 			"warnings":       snapshot.Warnings(),
 		}
+	case parts[0] == "workbench" && len(parts) == 3 && parts[1] == "integrations" && p.integrations != nil:
+		_, text, ok := p.integrations(parts[2])
+		if !ok {
+			return resource.ReadResult{}, resource.ErrNotFound
+		}
+		page, err := resource.RenderText(ctx, request.URI, request.Requested, []byte(text), request.Selector, request.Budget)
+		if err != nil {
+			return resource.ReadResult{}, err
+		}
+		return resource.ReadResult{Content: page.Content, Facts: page}, nil
 	case parts[0] == "workbench":
 		return resource.ReadResult{}, resource.ErrNotFound
 	default:

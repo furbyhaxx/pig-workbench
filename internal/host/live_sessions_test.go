@@ -297,3 +297,48 @@ func TestLiveExtensionChannelReachesTheOtherSessionsExtensionWithoutWakingIt(t *
 		t.Fatal("an extension-channel message must not start a turn")
 	}
 }
+
+func notifyContaining(f *rpcFixture, want string) map[string]any {
+	return f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), want)
+	})
+}
+
+func TestLiveSessionsCommandSendsRedactsAndHonoursBlock(t *testing.T) {
+	runtime := shortRuntime(t)
+	t.Setenv("XDG_RUNTIME_DIR", runtime)
+	receiver := startLiveSession(t, runtime, nil)
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	for id := range records {
+		receiverID = id
+	}
+	sender := startLiveSession(t, runtime, nil)
+	all := waitForRecords(t, runtime, 2)
+	var senderID string
+	for id := range all {
+		if id != receiverID {
+			senderID = id
+		}
+	}
+	secret := "ghp_" + strings.Repeat("Zy8xW7", 5)
+	sender.fixture.send("ls", "prompt", "/workbench sessions ls")
+	notifyContaining(sender.fixture, shortID(receiverID))
+	sender.fixture.send("send", "prompt", "/workbench sessions send "+shortID(receiverID)+" CMD-CARRIER token "+secret)
+	notifyContaining(sender.fixture, "accepted by")
+	body := waitForRequest(t, receiver, "CMD-CARRIER")
+	if strings.Contains(body, secret) || !regexp.MustCompile(`red-sec-[a-z2-7]{16}`).MatchString(body) {
+		t.Fatal("a secret typed into /workbench sessions send must reach the receiver only as a placeholder")
+	}
+	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+
+	receiver.fixture.send("block", "prompt", "/workbench sessions block "+senderID)
+	notifyContaining(receiver.fixture, "block:")
+	sender.fixture.send("again", "prompt", "/workbench sessions send "+shortID(receiverID)+" AFTER-BLOCK")
+	notifyContaining(sender.fixture, "policyDenied")
+	for _, request := range receiver.requests() {
+		if strings.Contains(request, "AFTER-BLOCK") {
+			t.Fatal("a blocked peer's message reached the receiver")
+		}
+	}
+}

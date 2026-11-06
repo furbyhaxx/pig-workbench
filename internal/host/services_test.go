@@ -183,3 +183,26 @@ func TestArtifactProviderResolvesProjectTree(t *testing.T) {
 		t.Fatalf("missing artifact tree reported as %v", err)
 	}
 }
+
+func TestCfgProviderServesIntegrationsPerOwner(t *testing.T) {
+	provider := cfgProvider{
+		source: func() (*config.Snapshot, config.Status) { return &config.Snapshot{}, config.Status{} },
+		integrations: func(owner string) ([]string, string, bool) {
+			if owner == "" {
+				return []string{"alpha", "beta"}, "", true
+			}
+			return nil, "alpha  docs  key\n", owner == "alpha"
+		},
+	}
+	listing, err := provider.List(context.Background(), "cfg://workbench/integrations/", "", 10)
+	if err != nil || len(listing.Entries) != 2 || listing.Entries[1].URI != "cfg://workbench/integrations/beta" {
+		t.Fatalf("owners = %+v, %v", listing, err)
+	}
+	read, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://workbench/integrations/alpha", Requested: "cfg://workbench/integrations/alpha", Budget: resource.Budget{Bytes: 4096, Lines: 100}})
+	if err != nil || !strings.Contains(read.Content, "alpha  docs  key") {
+		t.Fatalf("owner view = %+v, %v", read, err)
+	}
+	if _, err := provider.Read(context.Background(), resource.ReadRequest{URI: "cfg://workbench/integrations/missing", Requested: "cfg://workbench/integrations/missing", Budget: resource.Budget{Bytes: 4096, Lines: 100}}); !errors.Is(err, resource.ErrNotFound) {
+		t.Fatalf("an unknown owner must be not found, got %v", err)
+	}
+}

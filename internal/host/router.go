@@ -24,6 +24,16 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	}
 	if err := router.RegisterBuiltin(cfgProvider{source: func() (*config.Snapshot, config.Status) {
 		return settings.Inspect()
+	}, integrations: func(owner string) ([]string, string, bool) {
+		s, ok := jobsSource()
+		if !ok || s == nil {
+			return nil, "", false
+		}
+		if owner == "" {
+			return s.integrationOwners(), "", true
+		}
+		text, found := s.integrationsText(owner)
+		return nil, text, found
 	}}); err != nil {
 		return nil, "", err
 	}
