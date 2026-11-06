@@ -169,3 +169,37 @@ func TestLiveReferenceProducerSeams(t *testing.T) {
 		t.Logf("pig output tail:\n%s", output[max(0, len(output)-3000):])
 	}
 }
+
+// TestLiveReferenceProducerFrameRules drives the SPEC-0002 §8 publication rows
+// through the service bus from an independent producer.
+func TestLiveReferenceProducerFrameRules(t *testing.T) {
+	repo := repoRoot(t)
+	f := startRPC(t, t.TempDir(), "-e", filepath.Join(repo, "internal/host/testdata/reference-producer"))
+	f.send("frames", "prompt", "/reference frames")
+	record := f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"frames":"probed"`)
+	})
+	var got map[string]any
+	if err := json.Unmarshal([]byte(record["message"].(string)), &got); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{
+		"duplicateSameFrame": true,
+		"changedDuplicate":   "conflict",
+		"followUp":           "permissionDenied",
+		"undeclaredKind":     "permissionDenied",
+		"statusState":        "pending",
+		"statusErr":          true,
+		"cancelState":        "cancelled",
+		"cancelErr":          true,
+		"cancelAgain":        "conflict",
+	}
+	for key, value := range want {
+		if got[key] != value {
+			t.Errorf("%s = %v, want %v (all: %v)", key, got[key], value, got)
+		}
+	}
+	if code, _ := got["foreignSource"].(string); code == "" {
+		t.Errorf("a source outside the producer prefix was accepted: %v", got)
+	}
+}

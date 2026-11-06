@@ -2,6 +2,7 @@ package fixture
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -243,6 +244,9 @@ func Extension() *sdk.Extension {
 		}
 		active, binding, registered := client, currentEndpoint, currentReceipts
 		mu.Unlock()
+		if strings.TrimSpace(args) == "frames" {
+			return probeFrames(ctx, active, binding, registered["frameProducer"].RegistrationID)
+		}
 		var described struct {
 			Registrations []struct {
 				Owner          string `json:"owner"`
@@ -274,4 +278,62 @@ func Extension() *sdk.Extension {
 		return nil
 	})
 	return ext
+}
+
+// probeFrames drives the SPEC-0002 §8 publication rows over the wire and notifies the outcome codes.
+func probeFrames(ctx sdk.Context, active *api.Client, binding api.Discovery, registrationID string) error {
+	options := &api.CallOptions{RegistrationID: registrationID}
+	publish := func(params map[string]any) (map[string]any, string) {
+		var receipt map[string]any
+		err := active.Call(ctx, binding, "frames.publish", params, &receipt, options)
+		var failure *api.Error
+		if errors.As(err, &failure) {
+			return nil, failure.Code
+		}
+		if err != nil {
+			return nil, "transport:" + err.Error()
+		}
+		return receipt, ""
+	}
+	base := map[string]any{"eventKey": "probe-1", "kind": "info", "source": "reference.research", "body": "probe body", "delivery": "nextPrompt"}
+	first, _ := publish(base)
+	again, _ := publish(base)
+	changed := map[string]any{}
+	for key, value := range base {
+		changed[key] = value
+	}
+	changed["body"] = "different body"
+	_, changedCode := publish(changed)
+	followUp := map[string]any{}
+	for key, value := range base {
+		followUp[key] = value
+	}
+	followUp["eventKey"], followUp["delivery"] = "probe-2", "followUp"
+	_, followUpCode := publish(followUp)
+	undeclared := map[string]any{}
+	for key, value := range base {
+		undeclared[key] = value
+	}
+	undeclared["eventKey"], undeclared["kind"] = "probe-3", "error"
+	_, undeclaredCode := publish(undeclared)
+	foreign := map[string]any{}
+	for key, value := range base {
+		foreign[key] = value
+	}
+	foreign["eventKey"], foreign["source"] = "probe-4", "other.source"
+	_, foreignCode := publish(foreign)
+	var status map[string]any
+	statusErr := active.Call(ctx, binding, "frames.status", map[string]any{"frameId": first["frameId"]}, &status, options)
+	var cancelled map[string]any
+	cancelErr := active.Call(ctx, binding, "frames.cancel", map[string]any{"frameId": first["frameId"]}, &cancelled, options)
+	var cancelledAgain map[string]any
+	againErr := active.Call(ctx, binding, "frames.cancel", map[string]any{"frameId": first["frameId"]}, &cancelledAgain, options)
+	var againFailure *api.Error
+	againCode := ""
+	if errors.As(againErr, &againFailure) {
+		againCode = againFailure.Code
+	}
+	encoded, _ := json.Marshal(map[string]any{"frames": "probed", "duplicateSameFrame": first != nil && again != nil && first["frameId"] == again["frameId"], "changedDuplicate": changedCode, "followUp": followUpCode, "undeclaredKind": undeclaredCode, "foreignSource": foreignCode, "statusState": status["state"], "statusErr": statusErr == nil, "cancelState": cancelled["state"], "cancelErr": cancelErr == nil, "cancelAgain": againCode})
+	ctx.Notify(string(encoded), "info")
+	return nil
 }
