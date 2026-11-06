@@ -235,7 +235,7 @@ func Catalog() []Definition {
 			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
 		case "skills.listing-budget":
 			d.Application = "live"
-			d.Description = "Byte budget for the /workbench skills listing; does not change PiG's prompt skill listing."
+			d.Description = "Target byte budget for the /workbench skills listing; zero disables the ladder. It does not change PiG's prompt skill listing."
 		case "activity.shortcut":
 			d.Description = "Not applied: alt+w is registered statically before settings load."
 		case "read.max-lines":
