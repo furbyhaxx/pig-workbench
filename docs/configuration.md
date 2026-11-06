@@ -25,6 +25,8 @@ max-lines = 400
 
 Currently, `read.max-bytes` (1024–51200) and `read.max-lines` (5–2000) are live consumers. Each read captures one immutable configuration revision and reports it in Details. The complete result, including framing, must fit the selected budget.
 
+`trust.rules` (user/runtime only; entries `allow <absolute dir>` or `deny <absolute dir>`, managed with `/workbench trust`) and `projects.session-storage` (`link`, the default, or `off`) are live too. With `link`, a session start in a directory that belongs to a recognised project converts PiG's per-directory session bucket into a symlink to `<agent>/projects/<id>/sessions/`, so `/resume` lists every checkout's sessions. The conversion is journaled and resumes after a crash, never moves a file a running session has open, and waits (with a notice) while another live session uses the same directory or the bucket is on another filesystem. `/workbench projects unlink-storage` restores real directories. A custom `--session-dir` is never touched.
+
 Other scalar settings from the specifications are retained and validated, but catalog entries marked `unavailable` have no wired consumer yet. Saving one does not activate its feature. Complex instruction classes, producer-specific settings and trust-rule editing are not implemented yet.
 
 ## Inspect and change

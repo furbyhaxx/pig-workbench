@@ -149,6 +149,7 @@ func Catalog() []Definition {
 		boolean("secrets.env-injection", true, DenyProject),
 		stringList("secrets.redact-owners", []string{}, DenyProject),
 		stringList("trust.rules", []string{}, DenyProject),
+		choice("projects.session-storage", "link", DenyProject, "link", "off"),
 		boolean("activity.enabled", true, DenyProject),
 		choice("activity.placement", "above-editor", DenyProject, "above-editor", "below-editor"),
 		text("activity.shortcut", "alt+w", DenyProject),
@@ -171,6 +172,9 @@ func Catalog() []Definition {
 		case "read.max-lines":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result lines, including framing; 5–2000."
+		case "projects.session-storage":
+			d.Application = "live"
+			d.Description = "`link` shares one session directory per recognised project through symlinked buckets at session start (SPEC-0012 §3.5); `off` never touches session storage. Undo with /workbench projects unlink-storage."
 		case "trust.rules":
 			d.Application = "live"
 			d.Description = "Workbench source trust rules, each `allow <absolute dir>` or `deny <absolute dir>`; the nearest rule decides whether instructions from a nested repository load. Manage with /workbench trust."

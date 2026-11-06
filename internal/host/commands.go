@@ -39,6 +39,8 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.instructionsCommand(ctx, rest)
 			case "ask":
 				return a.askCommand(ctx, rest)
+			case "projects":
+				return a.projectsCommand(ctx, rest)
 			case "sessions":
 				return a.sessionsCommand(ctx, rest)
 			case "integrations":
@@ -48,7 +50,7 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 			case "trust":
 				return a.trustCommand(ctx, rest)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {

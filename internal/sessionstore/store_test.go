@@ -195,3 +195,70 @@ func TestEncodeBucketMatchesPiGNaming(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func sessionLine(cwd string) string {
+	return `{"type":"session","id":"x","cwd":"` + cwd + `"}` + "\n"
+}
+
+func TestUnlinkRestoresRealDirectoriesWithTheirOwnSessions(t *testing.T) {
+	root := t.TempDir()
+	target := filepath.Join(root, "projects", "prj-1", "sessions")
+	repo, clone := EncodeBucket("/work/repo"), EncodeBucket("/work/clone")
+	if err := os.MkdirAll(target, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for name, cwd := range map[string]string{"r1.jsonl": "/work/repo", "r2.jsonl": "/work/repo", "c1.jsonl": "/work/clone", "o1.jsonl": "/elsewhere"} {
+		if err := os.WriteFile(filepath.Join(target, name), []byte(sessionLine(cwd)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sessions := filepath.Join(root, "sessions")
+	if err := os.Mkdir(sessions, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, bucket := range []string{repo, clone} {
+		if err := os.Symlink(target, filepath.Join(sessions, bucket)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	result, err := Unlink(sessions, target)
+	if err != nil || len(result.Restored) != 2 {
+		t.Fatalf("result = %+v, err = %v", result, err)
+	}
+	for bucket, want := range map[string]int{repo: 2, clone: 1} {
+		info, err := os.Lstat(filepath.Join(sessions, bucket))
+		if err != nil || !info.IsDir() {
+			t.Fatalf("%s must be a real directory again", bucket)
+		}
+		if got := visible(t, filepath.Join(sessions, bucket)); len(got) != want {
+			t.Fatalf("%s holds %v, want %d sessions", bucket, got, want)
+		}
+	}
+	if len(result.Kept) != 1 || result.Kept[0] != "o1.jsonl" {
+		t.Fatalf("a session of no restored bucket must stay in the project storage: %v", result.Kept)
+	}
+	again, err := Unlink(sessions, target)
+	if err != nil || len(again.Restored) != 0 {
+		t.Fatalf("a second undo must change nothing: %+v %v", again, err)
+	}
+}
+
+func TestConvertDefersAcrossFilesystems(t *testing.T) {
+	other, err := os.MkdirTemp("/dev/shm", "wbstore")
+	if err != nil {
+		t.Skip("no second filesystem available")
+	}
+	t.Cleanup(func() { os.RemoveAll(other) })
+	bucket, _ := fixture(t, map[string]string{"a.jsonl": "A\n"})
+	a, errA := device(bucket)
+	b, errB := device(other)
+	if errA != nil || errB != nil || a == b {
+		t.Skip("/dev/shm shares a device with the temp directory")
+	}
+	if _, err := Convert(bucket, filepath.Join(other, "sessions"), Hooks{}); !errors.Is(err, ErrCrossFilesystem) {
+		t.Fatalf("got %v", err)
+	}
+	if info, err := os.Lstat(bucket); err != nil || !info.IsDir() || visible(t, bucket)["a.jsonl"] != "A\n" {
+		t.Fatal("a deferred conversion must leave the bucket untouched")
+	}
+}

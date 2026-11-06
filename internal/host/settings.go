@@ -14,7 +14,7 @@ import (
 )
 
 func workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error) {
-	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
+	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
 	}
