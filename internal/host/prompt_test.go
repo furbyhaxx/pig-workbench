@@ -1,6 +1,11 @@
 package host
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	"github.com/furbyhaxx/pig-workbench/internal/prompt"
+)
 
 func TestPromptOverrideStaysOffUnlessForced(t *testing.T) {
 	if _, ok := promptOverride(true, "auto", "rendered"); ok {
@@ -34,4 +39,33 @@ func TestPromptEpochIsStableForTheSameText(t *testing.T) {
 	if promptEpoch("same") == promptEpoch("other") {
 		t.Fatal("different renders shared an epoch")
 	}
+}
+
+func TestPromptEpochChangesWhenTheToolListChanges(t *testing.T) {
+	first := renderEpoch(t, []string{"read"})
+	second := renderEpoch(t, []string{"read"})
+	changed := renderEpoch(t, []string{"read", "edit"})
+	if first != second {
+		t.Fatalf("same tools changed epoch %s %s", first, second)
+	}
+	if first == changed {
+		t.Fatal("a tool-list change kept the epoch")
+	}
+}
+
+func renderEpoch(t *testing.T, tools []string) string {
+	t.Helper()
+	loader, err := prompt.NewFileSystemLoader(prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	engine, err := prompt.New(prompt.Options{Loader: loader})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rendered, err := engine.Render(context.Background(), "builtin/workbench", prompt.Data{Tools: prompt.Tools{Declared: tools}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return promptEpoch(rendered.Text)
 }
