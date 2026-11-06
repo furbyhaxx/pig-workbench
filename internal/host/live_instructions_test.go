@@ -4,6 +4,7 @@ package host
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -165,5 +166,59 @@ func TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn(t *testing.T) {
 	}
 	if !strings.Contains(recorder.bodies[5], "no longer applies") {
 		t.Fatal("a deleted steering file must be withdrawn explicitly")
+	}
+}
+
+func TestLiveInstructionChangedAcrossCompactionArrivesAsOneFullView(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	agents := filepath.Join(root, "AGENTS.md")
+	var original strings.Builder
+	for i := 1; i <= 30; i++ {
+		original.WriteString("Rule number " + strings.Repeat("n", i) + " applies.\n")
+	}
+	if err := os.WriteFile(agents, []byte(original.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "settings.json"), []byte(`{"compaction":{"enabled":true,"keepRecentTokens":1}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	for i, prompt := range []string{"first", "second"} {
+		f.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	}
+	changed := strings.Replace(original.String(), "Rule number nnnnn applies.", "Rule CHANGED-ACROSS-COMPACTION applies.", 1)
+	if err := os.WriteFile(agents, []byte(changed), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f.sendRaw("compact", "compact", nil)
+	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "compact" })
+	recorder.mu.Lock()
+	before := len(recorder.bodies)
+	recorder.mu.Unlock()
+	f.send("p2", "prompt", "third")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) <= before {
+		t.Fatal("no provider request after compaction")
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Contains(last, "Instruction update for") {
+		t.Fatal("a diff cannot apply after compaction: its base was summarized away")
+	}
+	if got := strings.Count(last, "CHANGED-ACROSS-COMPACTION"); got != 1 {
+		t.Fatalf("the changed view appears %d times after compaction, want exactly 1", got)
+	}
+	if got := strings.Count(last, "Rule number nnnnnnnnnn applies."); got != 1 {
+		t.Fatalf("the unchanged rules must arrive once as part of the full view, got %d", got)
 	}
 }
