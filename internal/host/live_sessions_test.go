@@ -219,8 +219,14 @@ func TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking(t *testing.T) {
 	if len(receiver.requests()) != 0 {
 		t.Fatal("a message beyond maxHops woke the receiver")
 	}
-	envelope = messagingEnvelope(receiverID, 0)
+	settingsNotice(t, receiver.fixture, "hop-limit", "set runtime sessions.max-hops 1")
+	envelope = messagingEnvelope(receiverID, 1)
 	envelope.ID = "m2"
+	if reply := callEndpoint(t, runtime, data, envelope); reply["delivery"] != "queued" {
+		t.Fatalf("configured hop limit must prevent automatic wake, got %v", reply)
+	}
+	envelope = messagingEnvelope(receiverID, 0)
+	envelope.ID = "m3"
 	if reply := callEndpoint(t, runtime, data, envelope); reply["delivery"] != "woken" {
 		t.Fatalf("hop 0 must wake an idle receiver, got %v", reply)
 	}
