@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -117,4 +118,54 @@ func TestLiveUnansweredAskIsPendingAfterRestartAndNeverAnsweredByDefault(t *test
 	third.wait(func(event map[string]any) bool {
 		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "No unanswered")
 	})
+}
+
+func TestLiveAskFreeformAndSecretReturnTheResultShape(t *testing.T) {
+	root := t.TempDir()
+	secret := "ghp_" + strings.Repeat("Qw4eR5", 5)
+	form := map[string]any{"title": "Types", "questions": []any{
+		map[string]any{"id": "notes", "label": "Notes", "prompt": "Describe it", "type": "freeform"},
+		map[string]any{"id": "token", "label": "Token", "prompt": "Your token", "type": "secret", "secret": map[string]any{"name": "ask-live-token", "scope": "global"}},
+	}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ask_user", form}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user")
+	fixture.send("ask", "prompt", "Ask the typed questions.")
+	for answered := 0; answered < 4; {
+		event := fixture.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && (event["method"] == "input" || event["method"] == "select")
+		})
+		title := fmt.Sprint(event["title"])
+		var value string
+		switch {
+		case event["method"] == "select":
+			value = fmt.Sprint(event["options"].([]any)[0])
+		case strings.Contains(title, "Token"):
+			value = secret
+		default:
+			value = "FREEFORM-ANSWER"
+		}
+		response, _ := json.Marshal(map[string]any{"type": "extension_ui_response", "id": event["id"], "value": value})
+		if _, err := fmt.Fprintf(fixture.stdin, "%s\n", response); err != nil {
+			t.Fatal(err)
+		}
+		answered++
+		if answered == 3 {
+			break
+		}
+	}
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := strings.ReplaceAll(recorder.bodies[len(recorder.bodies)-1], `\"`, `"`)
+	if !strings.Contains(last, "FREEFORM-ANSWER") || !regexp.MustCompile(`red-sec-[a-z2-7]{16}`).MatchString(last) {
+		t.Fatalf("the result must carry the freeform text and a placeholder: %v", toolResults(t, recorder.bodies[len(recorder.bodies)-1]))
+	}
+	for _, body := range recorder.bodies {
+		if strings.Contains(body, secret) {
+			t.Fatal("the raw secret reached a provider request")
+		}
+	}
 }
