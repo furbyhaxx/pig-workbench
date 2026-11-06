@@ -144,3 +144,34 @@ func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 		t.Fatal("a connection with a wrong token must be closed without a reply")
 	}
 }
+
+func TestLiveBusyReceiverIsSteeredNotWoken(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, []scriptedCall{{"bash", map[string]any{"command": "sleep 4"}}}, "--tools", "read,write,bash")
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	for id := range records {
+		receiverID = id
+	}
+	short := receiverID[:8]
+	receiver.fixture.send("busy", "prompt", "Run the slow command.")
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		for _, record := range endpointRecords(t, runtime) {
+			if record["state"] == "busy" {
+				deadline = time.Time{}
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	sender := startLiveSession(t, runtime, []scriptedCall{{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "STEER-TEXT-FROM-A"}}})
+	waitForRecords(t, runtime, 2)
+	sender.fixture.send("go", "prompt", "Tell the busy session.")
+	sender.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	waitForRequest(t, sender, "accepted by")
+	if body := sender.requests()[len(sender.requests())-1]; !strings.Contains(body, "(steered)") {
+		t.Fatalf("a busy receiver must report steered: %.1200s", body)
+	}
+	waitForRequest(t, receiver, "STEER-TEXT-FROM-A")
+	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+}
