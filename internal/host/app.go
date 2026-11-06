@@ -52,6 +52,7 @@ type session struct {
 	supervisor    *lifecycle.Supervisor
 	location      *location.Manager
 	settings      *config.Manager
+	secrets       *secretsBoundary
 	router        *resource.Router
 	skills        *skillState
 	promptText    string
@@ -190,16 +191,23 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		supervisor:    lifecycle.New(),
 		location:      manager,
 		settings:      settings,
-		router:        providers,
-		scratch:       scratch,
-		requests:      make(map[string]activeRequest),
-		projects:      projects,
-		host:          host,
-		bus:           bus,
-		fetch:         fetch,
-		status:        newStatusBoard(hostContext),
-		docs:          docs,
-		producers:     newProducerRegistry(),
+		secrets: newSecretsBoundary(settings, agentDirectory, func() string {
+			dirname, err := sdk.ConfigDirName()
+			if err != nil {
+				return ""
+			}
+			return filepath.Join(ctx.Cwd(), dirname, "Secrets.toml")
+		}, func() bool { trusted, err := ctx.IsProjectTrusted(); return err == nil && trusted }),
+		router:    providers,
+		scratch:   scratch,
+		requests:  make(map[string]activeRequest),
+		projects:  projects,
+		host:      host,
+		bus:       bus,
+		fetch:     fetch,
+		status:    newStatusBoard(hostContext),
+		docs:      docs,
+		producers: newProducerRegistry(),
 	}
 	fetch.project = s.projectIdentity
 	docs.guide = s.schemeGuide

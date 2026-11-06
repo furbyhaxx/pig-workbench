@@ -9,7 +9,7 @@ Workbench reads these layers, lowest to highest:
 
 The agent/config directories come from PiG, including its alternate/shared-directory configuration. `cd` never moves either file. There are no environment-variable overrides.
 
-Secret detection policy lives in its own `Secrets.toml` beside each `Workbench.toml` (agent directory and, while trusted, the project's config directory). It carries only `secrets.patterns` and `secrets.exclusions`; those two arrays **append** across layers instead of replacing, so a trusted project can add patterns but never drop the user's. A detection key in `Workbench.toml`, or any other setting in `Secrets.toml`, is refused with a diagnostic naming the correct file. In this slice the values are validated and retained but have no wired detector yet, so they report as `pending`.
+Secret detection policy lives in its own `Secrets.toml` beside each `Workbench.toml` (agent directory and, while trusted, the project's config directory), in the nukii schema: `version = 2`, `[env] names`, `[[patterns]]` (`name` plus one of `regex`, `prefix`, `suffix`; `min-length` ≥ 8 for prefix) and `[exclusions]` (`values`, `hashes`, `patterns`, `env-names`). Patterns and exclusions **append** across layers, so a trusted project can add to the user's policy but never drop it; only the user file may set `[env] names`. The file is read on session start and by `/workbench settings reload`; a malformed file withholds model requests (fail closed) until it is repaired. It never holds secret values.
 
 ## Example
 
@@ -39,7 +39,7 @@ Other scalar settings from the specifications are retained and validated, but ca
 /workbench settings reload
 ```
 
-Values use TOML syntax: quote strings, use `true`/`false`, and write arrays as `["one", "two"]`. Arrays replace lower-layer arrays, except `Secrets.toml` detection policy, which appends; they do not append otherwise. This command writes `Workbench.toml` only, so editing `secrets.patterns` or `secrets.exclusions` here is refused — edit `Secrets.toml` directly. Explicit `false`, `0` and `[]` remain explicit overrides when valid for that key.
+Values use TOML syntax: quote strings, use `true`/`false`, and write arrays as `["one", "two"]`. Arrays replace lower-layer arrays, except `Secrets.toml` detection policy, which appends; they do not append otherwise. This command writes `Workbench.toml` only; edit `Secrets.toml` directly for detection policy. Explicit `false`, `0` and `[]` remain explicit overrides when valid for that key.
 
 Reset deletes the chosen scope's key, revealing the lower-layer value. Runtime changes never touch a file and disappear on session replacement or extension reload.
 
@@ -49,7 +49,7 @@ Inspection shows value, source scope, source file, configuration revision and ap
 
 PiG's current trust decision controls whether Workbench reads project settings. Workbench checks it again before committing a save; it does not manufacture a trust grant.
 
-Even a trusted project cannot set `trust.rules`, `secrets.redact-owners`, session messaging policy or other user/runtime-only settings. Project detection policy is limited to adding `secrets.patterns` and `secrets.exclusions` in `Secrets.toml`. Read budgets can only be reduced relative to the user/default layer. Projects may require seen-line enforcement, never disable it.
+Even a trusted project cannot set `trust.rules`, `secrets.redact-owners`, session messaging policy or other user/runtime-only settings. Project detection policy is limited to adding patterns and exclusions in `Secrets.toml`. Read budgets can only be reduced relative to the user/default layer. Projects may require seen-line enforcement, never disable it.
 
 ## Save and recovery guarantees
 

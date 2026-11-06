@@ -60,10 +60,8 @@ func loadSettings(ctx sdk.Context) (*config.Manager, error) {
 		return nil, err
 	}
 	manager, err := config.New(config.Paths{
-		User:           filepath.Join(agent, "Workbench.toml"),
-		Secrets:        filepath.Join(agent, "Secrets.toml"),
-		Project:        filepath.Join(ctx.Cwd(), dirname, "Workbench.toml"),
-		ProjectSecrets: filepath.Join(ctx.Cwd(), dirname, "Secrets.toml"),
+		User:    filepath.Join(agent, "Workbench.toml"),
+		Project: filepath.Join(ctx.Cwd(), dirname, "Workbench.toml"),
 	}, nil)
 	if err != nil {
 		return nil, err
@@ -119,6 +117,7 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 		if err != nil {
 			return err
 		}
+		s.secrets.Reload()
 		a.settingsChanged(ctx, s, snapshot.Revision(), nil)
 		return notifyJSON(ctx, map[string]any{"settings": "reloaded", "configRevision": snapshot.Revision(), "warnings": snapshot.Warnings()})
 	case "set", "reset":

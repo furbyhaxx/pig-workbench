@@ -55,43 +55,44 @@ type document struct {
 	ast       *tomledit.Document
 }
 
-func readDocument(path string, definitions map[string]Definition) (*document, error) {
-	return readDocumentAs(path, definitions, false)
-}
-
-// readDocumentAs parses one settings file, restricting which origins it may carry.
-func readDocumentAs(path string, definitions map[string]Definition, secrets bool) (*document, error) {
-	if path == "" {
-		return parseDocumentAs(path, nil, definitions, secrets)
-	}
-	canonical, err := resolveTarget(path)
+// readTarget reads one configuration file through its resolved target; found is false when it does not exist.
+func readTarget(path string) (data []byte, canonical string, found bool, err error) {
+	canonical, err = resolveTarget(path)
 	if err != nil {
-		return nil, err
+		return nil, "", false, err
 	}
 	f, _, err := fileio.OpenRegular(canonical)
 	if errors.Is(err, os.ErrNotExist) {
-		doc, err := parseDocumentAs(path, nil, definitions, secrets)
-		if err == nil {
-			doc.canonical = canonical
-		}
-		return doc, err
+		return nil, canonical, false, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read configuration: %w", err)
+		return nil, "", false, fmt.Errorf("read configuration: %w", err)
 	}
 	defer f.Close()
-	data, err := io.ReadAll(io.LimitReader(f, MaxDocumentBytes+1))
+	data, err = io.ReadAll(io.LimitReader(f, MaxDocumentBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("read configuration: %w", err)
+		return nil, "", false, fmt.Errorf("read configuration: %w", err)
 	}
 	after, err := resolveTarget(path)
 	if err != nil {
-		return nil, err
+		return nil, "", false, err
 	}
 	if after != canonical {
-		return nil, errors.New("configuration target changed while reading; reload")
+		return nil, "", false, errors.New("configuration target changed while reading; reload")
 	}
-	doc, err := parseDocumentAs(path, data, definitions, secrets)
+	return data, canonical, true, nil
+}
+
+// readDocument parses one settings file; an absent file is an empty document.
+func readDocument(path string, definitions map[string]Definition) (*document, error) {
+	if path == "" {
+		return parseDocument(path, nil, definitions)
+	}
+	data, canonical, _, err := readTarget(path)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := parseDocument(path, data, definitions)
 	if err == nil {
 		doc.canonical = canonical
 	}
@@ -99,10 +100,6 @@ func readDocumentAs(path string, definitions map[string]Definition, secrets bool
 }
 
 func parseDocument(path string, data []byte, definitions map[string]Definition) (*document, error) {
-	return parseDocumentAs(path, data, definitions, false)
-}
-
-func parseDocumentAs(path string, data []byte, definitions map[string]Definition, secrets bool) (*document, error) {
 	if len(data) > MaxDocumentBytes {
 		return nil, &Error{Path: path, Reason: "settings file exceeds 1 MiB; reduce its size"}
 	}
@@ -134,9 +131,6 @@ func parseDocumentAs(path string, data []byte, definitions map[string]Definition
 			return nil
 		}
 		if definition, ok := definitions[key]; ok {
-			if err := definition.checkOrigin(path, secrets); err != nil {
-				return err
-			}
 			normalized, err := definition.validate(value)
 			if err != nil {
 				line := 0

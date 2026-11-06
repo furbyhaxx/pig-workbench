@@ -1,0 +1,104 @@
+package host
+
+import (
+	"errors"
+	"path/filepath"
+	"sync"
+
+	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/secrets"
+)
+
+// secretsBoundary owns the key, vault and detector of one session (SPEC-0013 §3, §4.4).
+// A failed build is never cached, so the first call after the cause is repaired succeeds.
+type secretsBoundary struct {
+	settings    *config.Manager
+	agentDir    string
+	projectPath func() string
+	trusted     func() bool
+
+	mu       sync.Mutex
+	detector *secrets.Detector
+	vault    *secrets.Vault
+}
+
+func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool) *secretsBoundary {
+	return &secretsBoundary{settings: settings, agentDir: agentDir, projectPath: projectPath, trusted: trusted}
+}
+
+// enabled reports the live `secrets.enabled` setting; a stale or unreadable snapshot counts as enabled.
+func (b *secretsBoundary) enabled() bool {
+	snapshot, err := b.settings.Current()
+	if err != nil {
+		return true
+	}
+	entry, ok := snapshot.Get("secrets.enabled")
+	value, isBool := entry.Value.(bool)
+	return !ok || !isBool || value
+}
+
+// Guard returns the detector, building it on first use. enabled=false means the user turned the feature off.
+func (b *secretsBoundary) Guard() (guard *secrets.Detector, enabled bool, err error) {
+	if !b.enabled() {
+		return nil, false, nil
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.detector != nil {
+		return b.detector, true, nil
+	}
+	detector, vault, err := b.build()
+	if err != nil {
+		return nil, true, err
+	}
+	b.detector, b.vault = detector, vault
+	return detector, true, nil
+}
+
+// Reload drops the detector so the next use rereads Secrets.toml.
+func (b *secretsBoundary) Reload() {
+	b.mu.Lock()
+	b.detector, b.vault = nil, nil
+	b.mu.Unlock()
+}
+
+func (b *secretsBoundary) build() (*secrets.Detector, *secrets.Vault, error) {
+	keyPath := filepath.Join(b.agentDir, "secret.key")
+	master, err := secrets.LoadKey(keyPath)
+	if err != nil {
+		var permission *secrets.KeyPermissionError
+		if errors.As(err, &permission) {
+			return nil, nil, err
+		}
+		master, err = secrets.CreateKey(keyPath)
+		if err != nil {
+			return nil, nil, errors.New("secret key unavailable; inspect the key file and its permissions")
+		}
+	}
+	defer clear(master)
+	vaultPath, err := secrets.VaultPath()
+	if err != nil {
+		return nil, nil, errors.New("private secret data directory unavailable")
+	}
+	vault, err := secrets.OpenVault(vaultPath, master)
+	if err != nil {
+		return nil, nil, errors.New("secret vault unavailable")
+	}
+	detection, err := config.ReadDetection(filepath.Join(b.agentDir, "Secrets.toml"), b.projectPath(), b.trusted())
+	if err != nil {
+		return nil, nil, err
+	}
+	detector, err := secrets.NewDetector(master, vault, policyOf(detection))
+	if err != nil {
+		return nil, nil, err
+	}
+	return detector, vault, nil
+}
+
+func policyOf(detection config.Detection) secrets.DetectionPolicy {
+	policy := secrets.DetectionPolicy{Exclusions: secrets.Exclusions{Values: detection.ExcludedValues, Hashes: detection.ExcludedHashes, Patterns: detection.ExcludedPatterns}}
+	for _, pattern := range detection.Patterns {
+		policy.Patterns = append(policy.Patterns, secrets.Pattern{Name: pattern.Name, Regex: pattern.Regex, Prefix: pattern.Prefix, Suffix: pattern.Suffix, MinLength: pattern.MinLength})
+	}
+	return policy
+}

@@ -509,3 +509,26 @@ func mustHMACKey(t *testing.T, master []byte) []byte {
 	}
 	return key
 }
+
+func TestDetectorExcludesValuesMatchingAnExclusionPattern(t *testing.T) {
+	master := bytes.Repeat([]byte{29}, 32)
+	policy := DetectionPolicy{
+		Patterns:   []Pattern{{Name: "acme_token", Regex: `acme_[a-z0-9]+`}},
+		Exclusions: Exclusions{Patterns: []string{`acme_demo[a-z0-9]*`}},
+	}
+	detector, _ := newTestDetector(t, master, testVaultPath(t), policy)
+	got, err := detector.Redact("acme_demovalue1 acme_realvalue1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(got, "acme_demovalue1 red-sec-") {
+		t.Fatalf("an excluded shape was redacted or a real value leaked: %q", got)
+	}
+	vault, err := OpenVault(testVaultPath(t), master)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDetector(master, vault, DetectionPolicy{Exclusions: Exclusions{Patterns: []string{"("}}}); err == nil {
+		t.Fatal("an invalid exclusion pattern was accepted")
+	}
+}

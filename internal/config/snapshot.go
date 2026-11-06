@@ -64,7 +64,7 @@ func (s *Snapshot) Warnings() []string {
 	return result
 }
 
-func compose(documents, secrets map[Scope]*document, revision uint64) (*Snapshot, error) {
+func compose(documents map[Scope]*document, revision uint64) (*Snapshot, error) {
 	snapshot := &Snapshot{revision: revision, values: make(map[string]Entry), documents: documents}
 	catalog := Catalog()
 	for _, definition := range catalog {
@@ -102,29 +102,6 @@ func compose(documents, secrets map[Scope]*document, revision uint64) (*Snapshot
 			snapshot.values[definition.Key] = Entry{Key: definition.Key, Value: cloneValue(value), Scope: scope, File: doc.path, Application: definition.Application}
 		}
 		snapshot.warnings = append(snapshot.warnings, doc.warnings...)
-		secretsDoc := secrets[scope]
-		if secretsDoc == nil {
-			continue
-		}
-		// Detection policy appends across layers instead of replacing, so a
-		// trusted project can add patterns but never drop the user's.
-		for _, definition := range catalog {
-			value, ok := secretsDoc.values[definition.Key]
-			if !ok {
-				continue
-			}
-			if scope == Project && definition.Project != AllowProject && definition.Project != RequireTrueProject {
-				return nil, &Error{Path: secretsDoc.path, Key: definition.Key, Reason: "project detection policy may only add patterns and exclusions"}
-			}
-			appended := cloneValue(value).([]string)
-			if existing, ok := snapshot.values[definition.Key]; ok {
-				if previous, ok := existing.Value.([]string); ok {
-					appended = append(slices.Clone(previous), appended...)
-				}
-			}
-			snapshot.values[definition.Key] = Entry{Key: definition.Key, Value: appended, Scope: scope, File: secretsDoc.path, Application: definition.Application}
-		}
-		snapshot.warnings = append(snapshot.warnings, secretsDoc.warnings...)
 	}
 	integer := func(key string) int { return int(snapshot.values[key].Value.(int64)) }
 	if integer("read.query.default-rows") > integer("read.query.max-rows") {

@@ -61,6 +61,8 @@ type Pattern struct {
 type Exclusions struct {
 	Values []string
 	Hashes []string
+	// Patterns are regular expressions that must match a whole candidate value to exclude it.
+	Patterns []string
 }
 
 // DetectionPolicy supplies user token shapes and exclusions. Loading policy
@@ -78,6 +80,7 @@ type Detector struct {
 	patterns             []tokenPattern
 	excludedPlaceholders map[string]struct{}
 	excludedValues       map[string]struct{}
+	excludedShapes       []*regexp.Regexp
 }
 
 type detectedValue struct {
@@ -104,7 +107,16 @@ func NewDetector(master []byte, vault *Vault, policy DetectionPolicy) (*Detector
 			excludedValues[value] = struct{}{}
 		}
 	}
+	shapes := make([]*regexp.Regexp, 0, len(policy.Exclusions.Patterns))
+	for _, source := range policy.Exclusions.Patterns {
+		expr, err := regexp.Compile(`^(?:` + source + `)$`)
+		if err != nil {
+			return nil, errors.New("secret exclusion pattern is not a valid regular expression")
+		}
+		shapes = append(shapes, expr)
+	}
 	return &Detector{
+		excludedShapes:       shapes,
 		hmacKey:              hmacKey,
 		vault:                vault,
 		patterns:             patterns,
@@ -290,8 +302,15 @@ func (d *Detector) excludedValue(value string) bool {
 	if _, ok := d.excludedValues[value]; ok {
 		return true
 	}
-	_, ok := d.excludedPlaceholders[Placeholder(d.hmacKey, []byte(value))]
-	return ok
+	if _, ok := d.excludedPlaceholders[Placeholder(d.hmacKey, []byte(value))]; ok {
+		return true
+	}
+	for _, shape := range d.excludedShapes {
+		if shape.MatchString(value) {
+			return true
+		}
+	}
+	return false
 }
 
 // detect returns distinct built-in, user and URL-password matches outside placeholders.
