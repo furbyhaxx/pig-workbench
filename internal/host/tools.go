@@ -164,7 +164,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 		if err == nil {
 			if summary, ok, summaryErr := a.summaryView(work, target, configuration); summaryErr != nil {
 				return nil, summaryErr
-			} else if ok {
+			} else if ok && len(summary.Content) <= budget.Bytes && strings.Count(summary.Content, "\n")+1 <= budget.Lines {
 				facts = append(facts, summary.Facts)
 				s.skills.noteTouch(target.Path)
 				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)

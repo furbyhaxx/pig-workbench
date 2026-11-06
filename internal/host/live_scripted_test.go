@@ -137,6 +137,40 @@ func lines(n int) string {
 	return b.String()
 }
 
+func TestLiveSummaryRespectsReadBudget(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		maxLines int
+		maxBytes int
+	}{
+		{"lines", 8, 51200},
+		{"bytes", 2000, 1024},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			var source strings.Builder
+			source.WriteString("package fixture\n\n")
+			for i := 0; i < 24; i++ {
+				fmt.Fprintf(&source, "func f%d() {\n", i)
+				for j := 0; j < 20; j++ {
+					source.WriteString("println(1)\n")
+				}
+				source.WriteString("}\n")
+			}
+			if err := os.WriteFile(filepath.Join(root, "fixture.go"), []byte(source.String()), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			settings := fmt.Sprintf("[read]\nmax-lines = %d\nmax-bytes = %d\n", tc.maxLines, tc.maxBytes)
+			results := runScriptedConfig(t, root, "read", settings, func([]string) scriptedCall {
+				return scriptedCall{"read", map[string]any{"path": "fixture.go"}}
+			})
+			if got := results[0]; len(got) > tc.maxBytes || strings.Count(got, "\n")+1 > tc.maxLines {
+				t.Fatalf("read exceeded configured budget: %d bytes, %d lines\n%s", len(got), strings.Count(got, "\n")+1, got)
+			}
+		})
+	}
+}
+
 func TestLiveEditRefusesLinesTheModelNeverSaw(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "src.txt")
