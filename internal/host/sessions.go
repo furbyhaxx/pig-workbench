@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -201,6 +202,7 @@ func (a *app) newEndpoint(ctx sdk.Context, s *session) (*sessionEndpoint, error)
 		return nil, err
 	}
 	e.server = server
+	e.pruneDead(dir)
 	work, cancel := context.WithCancel(context.Background())
 	e.cancel = cancel
 	e.wg.Add(1)
@@ -669,5 +671,25 @@ func (a *app) sessionsService(ctx context.Context, s *session, request api.Reque
 			return nil, &api.Error{Code: "internal", Message: sanitizeProviderText(err.Error()), Outcome: "notApplied"}
 		}
 		return api.SessionsSendResult{Status: receipt.Status, Reason: receipt.Reason, Delivery: receipt.Delivery, MessageID: receipt.MessageID, ConversationID: receipt.ConversationID}, nil
+	}
+}
+
+// pruneDead removes records of sessions that died without cleaning up, together with their socket files.
+// A record stays while its socket still answers, whatever its PID says.
+func (e *sessionEndpoint) pruneDead(dir string) {
+	answers := func(record endpoint.Record) bool {
+		if record.Endpoint == "" {
+			return false
+		}
+		conn, err := net.DialTimeout("unix", filepath.Join(dir, record.Endpoint+".sock"), time.Second)
+		if err != nil {
+			return false
+		}
+		conn.Close()
+		return true
+	}
+	removed, _ := e.registry.PruneUnreachable(context.Background(), time.Minute, answers)
+	for _, id := range removed {
+		_ = os.Remove(filepath.Join(dir, endpointID(id)+".sock"))
 	}
 }

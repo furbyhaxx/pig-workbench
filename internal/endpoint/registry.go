@@ -172,6 +172,12 @@ func (r *Registry) listLocked(ctx context.Context) (ListResult, error) {
 // Before automatic cleanup, the transport must also confirm the socket is unreachable.
 // Partial failures are returned as ProblemsError together with any removed IDs.
 func (r *Registry) Prune(ctx context.Context, olderThan time.Duration) (removed []string, err error) {
+	return r.PruneUnreachable(ctx, olderThan, nil)
+}
+
+// PruneUnreachable is Prune with a liveness probe: a PID-stale record is kept while answers reports true,
+// so a record is removed only when its process is gone and its endpoint no longer responds.
+func (r *Registry) PruneUnreachable(ctx context.Context, olderThan time.Duration, answers func(Record) bool) (removed []string, err error) {
 	if olderThan < 0 {
 		return nil, errors.New("endpoint prune age must not be negative")
 	}
@@ -203,6 +209,9 @@ func (r *Registry) Prune(ctx context.Context, olderThan time.Duration) (removed 
 			continue
 		}
 		if now.Sub(record.HeartbeatAt) <= olderThan {
+			continue
+		}
+		if answers != nil && answers(record) {
 			continue
 		}
 		path, _ := r.recordPath(record.SessionID)

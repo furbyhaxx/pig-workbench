@@ -136,7 +136,7 @@ func TestHeartbeatAndWireFormat(t *testing.T) {
 			t.Errorf("missing JSON field %s", key)
 		}
 	}
-	if len(fields) != 10 {
+	if len(fields) != 11 {
 		t.Fatalf("unexpected record fields: %d", len(fields))
 	}
 }
@@ -318,5 +318,31 @@ func TestConcurrentRegistries(t *testing.T) {
 	close(errs)
 	for err := range errs {
 		t.Error(err)
+	}
+}
+
+func TestPruneKeepsADeadPIDWhoseEndpointStillAnswers(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("PID probing is unsupported on Windows")
+	}
+	ctx := context.Background()
+	r, _ := registryForTest(t)
+	answering := recordForTest("pid-gone-socket-up", "token", 4194304)
+	silent := recordForTest("pid-gone-socket-down", "token", 4194304)
+	for _, record := range []Record{answering, silent} {
+		record.HeartbeatAt = time.Now().Add(-time.Hour).UTC()
+		if err := r.Register(ctx, record); err != nil {
+			t.Fatal(err)
+		}
+	}
+	removed, err := r.PruneUnreachable(ctx, time.Minute, func(record Record) bool { return record.SessionID == answering.SessionID })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(removed) != 1 || removed[0] != silent.SessionID {
+		t.Fatalf("only the record with no answering endpoint may go: %v", removed)
+	}
+	if _, err := r.Lookup(ctx, answering.SessionID); err != nil {
+		t.Fatalf("an answering endpoint must be kept: %v", err)
 	}
 }

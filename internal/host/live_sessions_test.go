@@ -417,3 +417,50 @@ func TestLiveActivityLineCountsMatchTheRegistries(t *testing.T) {
 		t.Log("no setWidget record was observed in RPC mode; the line is verified through the shared items")
 	}
 }
+
+func TestLiveACrashedSessionsRecordIsPrunedByTheNextStart(t *testing.T) {
+	runtime := shortRuntime(t)
+	crashed := startLiveSession(t, runtime, nil)
+	records := waitForRecords(t, runtime, 1)
+	var deadID string
+	for id := range records {
+		deadID = id
+	}
+	if err := crashed.fixture.cmd.Process.Kill(); err != nil {
+		t.Fatal(err)
+	}
+	<-crashed.fixture.done
+	crashed.fixture.closeOnce.Do(crashed.fixture.cancel)
+	dir := filepath.Join(runtime, "pig-workbench", "v1")
+	old := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(dir, deadID+".json"), old, old); err != nil {
+		t.Fatal(err)
+	}
+	rewriteHeartbeat(t, filepath.Join(dir, deadID+".json"), old)
+	startLiveSession(t, runtime, nil)
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, ok := endpointRecords(t, runtime)[deadID]; !ok {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatal("the dead session's record must be removed once its PID is gone and its socket is silent")
+}
+
+func rewriteHeartbeat(t *testing.T, path string, at time.Time) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var record map[string]any
+	if err := json.Unmarshal(data, &record); err != nil {
+		t.Fatal(err)
+	}
+	record["heartbeatAt"] = at.UTC().Format(time.RFC3339Nano)
+	out, _ := json.Marshal(record)
+	if err := os.WriteFile(path, out, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
