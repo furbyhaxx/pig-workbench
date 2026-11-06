@@ -28,6 +28,8 @@ type Entry struct {
 	Size     int64     `json:"size,omitempty"`
 	Revision string    `json:"revision,omitempty"`
 	Target   string    `json:"target,omitempty"`
+	// Detail is a one-line description shown after the name in listings.
+	Detail string `json:"detail,omitempty"`
 }
 
 // Listing is a bounded directory page.

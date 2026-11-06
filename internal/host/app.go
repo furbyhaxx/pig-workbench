@@ -66,6 +66,7 @@ type session struct {
 	status        *statusBoard
 	docs          *docsCatalog
 	producers     *producerRegistry
+	endpoint      *sessionEndpoint
 	installedMu   sync.Mutex
 	installed     map[string]func()
 	projectMu     sync.Mutex
@@ -92,6 +93,8 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
+	ext.OnEvent(sdk.EventAgentStart, a.onAgentStart)
+	ext.OnEvent(sdk.EventAgentEnd, a.onAgentEnd)
 	ext.OnEvent("input", a.redactInput)
 	ext.OnEvent(sdk.EventContextWithSystem, a.redactContext)
 	ext.OnEvent("user_bash", a.userBash)
@@ -264,6 +267,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.session = s
 	a.initErr = nil
 	a.mu.Unlock()
+	a.startEndpoint(ctx, s)
 	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": advertisedCapabilities}}); err != nil {
 		ctx.Notify("Workbench ready event failed; clients can discover on demand.", "warning")
 	}
@@ -279,6 +283,9 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.mu.Unlock()
 	if old != nil {
 		old.status.close()
+		if old.endpoint != nil {
+			old.endpoint.close()
+		}
 		old.supervisor.Stop()
 		if old.jobOwner != nil {
 			_ = old.jobOwner.Close()

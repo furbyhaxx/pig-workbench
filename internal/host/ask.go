@@ -146,6 +146,9 @@ func (a *app) askUser(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer release()
+	if s.endpoint != nil {
+		defer s.endpoint.beginAsk(ctx)()
+	}
 	timeout := time.Duration(0)
 	if ctx.Mode() == "rpc" {
 		configuration, err := s.settings.Current()

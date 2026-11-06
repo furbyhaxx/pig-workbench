@@ -38,6 +38,12 @@ type Record struct {
 	StartedAt     time.Time `json:"startedAt"`
 	HeartbeatAt   time.Time `json:"heartbeatAt"`
 	Discoverable  bool      `json:"discoverable"`
+	// Endpoint names the session's socket file; it is stable across reloads.
+	StateSince  time.Time `json:"stateSince,omitempty"`
+	Endpoint    string    `json:"endpoint,omitempty"`
+	SessionName string    `json:"sessionName,omitempty"`
+	ProjectSlug string    `json:"projectSlug,omitempty"`
+	Model       string    `json:"model,omitempty"`
 }
 
 // Problem identifies a record that could not be safely inspected.

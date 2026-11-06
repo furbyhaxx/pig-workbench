@@ -115,6 +115,13 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		}
 		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI}}, nil
 	}
+	if target.Scheme == "agent" {
+		message, receipt, err := a.agentWrite(work, s, target.URI, input.Content)
+		if err != nil {
+			return nil, err
+		}
+		return sdk.ToolResult{Content: message + "\n", Details: map[string]any{"uri": target.URI, "receipt": receipt}}, nil
+	}
 	if target.Scheme == "session" {
 		if err := work.Err(); err != nil {
 			return nil, err
@@ -135,7 +142,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
 	}
 	if target.Scheme != "file" {
-		return nil, fmt.Errorf("write supports local files and job://, skill:// and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+		return nil, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
 	}
 	if err := work.Err(); err != nil {
 		return nil, err
@@ -258,6 +265,9 @@ func (a *app) ls(ctx sdk.Context, params map[string]any) (any, error) {
 			_, _ = fmt.Fprintf(&body, " -> %s", entry.Target)
 		case entry.Size > 0:
 			_, _ = fmt.Fprintf(&body, " (%d bytes)", entry.Size)
+		}
+		if entry.Detail != "" {
+			_, _ = fmt.Fprintf(&body, "  %s", sanitizeProviderText(entry.Detail))
 		}
 		body.WriteByte('\n')
 	}

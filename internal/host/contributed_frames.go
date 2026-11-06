@@ -233,32 +233,15 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 	}
 	// External producers keep data authority: requesting instruction is never self-authorization.
 	authority := "data"
-	state := s.contextFrames
-	state.mu.Lock()
-	scope, err := a.currentFrameScope(host, s, state)
-	if err != nil {
-		state.mu.Unlock()
-		return nil, &api.Error{Code: "internal", Message: "cannot determine the current branch", Outcome: "notApplied"}
-	}
-	ledger := state.ledger.Ledger(frames.Context{SessionID: s.id, ProducerPrefix: producer.key, BranchLeaf: scope.BranchLeaf, Ancestors: scope.Ancestors, Epoch: scope.Epoch, Trusted: false, Authority: authority})
-	receipt, err := ledger.Admit(frames.Publish{EventKey: params.EventKey, Kind: params.Kind, Source: params.Source, Body: params.Body, Title: params.Title, Summary: params.Summary, SubjectKey: params.SubjectKey, Resource: params.Resource, Delivery: params.Delivery, DataTrust: params.DataTrust, CoalesceKey: params.CoalesceKey, ExpiresAt: params.ExpiresAt})
-	if err != nil {
-		state.mu.Unlock()
-		return nil, frameError(err)
-	}
-	var frame frames.Frame
-	for _, raw := range state.ledger.Snapshot() {
-		var record struct {
-			Frame frames.Frame `json:"frame"`
+	publish := frames.Publish{EventKey: params.EventKey, Kind: params.Kind, Source: params.Source, Body: params.Body, Title: params.Title, Summary: params.Summary, SubjectKey: params.SubjectKey, Resource: params.Resource, Delivery: params.Delivery, DataTrust: params.DataTrust, CoalesceKey: params.CoalesceKey, ExpiresAt: params.ExpiresAt}
+	receipt, frame, admitted := a.admitFrame(host, s, producer.key, authority, false, publish)
+	if admitted != nil {
+		switch admitted.stage {
+		case "scope":
+			return nil, &api.Error{Code: "internal", Message: "cannot determine the current branch", Outcome: "notApplied"}
+		case "admit":
+			return nil, frameError(admitted.err)
 		}
-		if json.Unmarshal(raw, &record) == nil && record.Frame.FrameID == receipt.FrameID {
-			frame = record.Frame
-		}
-	}
-	persistErr := persistFrames(host, state.ledger, []string{receipt.FrameID})
-	state.mu.Unlock()
-	if persistErr != nil {
-		_ = state.ledger.Fail(receipt.FrameID)
 		return nil, &api.Error{Code: "internal", Message: "frame could not be persisted", Outcome: "unknown"}
 	}
 	receipt.Durable = true
@@ -273,6 +256,44 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 		}
 	}
 	return receipt, nil
+}
+
+type admitFailure struct {
+	stage string
+	err   error
+}
+
+// admitFrame admits and persists one frame for prefix on the current branch. A persistence failure fails the frame.
+func (a *app) admitFrame(host sdk.Context, s *session, prefix, authority string, trusted bool, publish frames.Publish) (frames.Receipt, frames.Frame, *admitFailure) {
+	state := s.contextFrames
+	state.mu.Lock()
+	scope, err := a.currentFrameScope(host, s, state)
+	if err != nil {
+		state.mu.Unlock()
+		return frames.Receipt{}, frames.Frame{}, &admitFailure{"scope", err}
+	}
+	ledger := state.ledger.Ledger(frames.Context{SessionID: s.id, ProducerPrefix: prefix, BranchLeaf: scope.BranchLeaf, Ancestors: scope.Ancestors, Epoch: scope.Epoch, Trusted: trusted, Authority: authority})
+	receipt, err := ledger.Admit(publish)
+	if err != nil {
+		state.mu.Unlock()
+		return frames.Receipt{}, frames.Frame{}, &admitFailure{"admit", err}
+	}
+	var frame frames.Frame
+	for _, raw := range state.ledger.Snapshot() {
+		var record struct {
+			Frame frames.Frame `json:"frame"`
+		}
+		if json.Unmarshal(raw, &record) == nil && record.Frame.FrameID == receipt.FrameID {
+			frame = record.Frame
+		}
+	}
+	persistErr := persistFrames(host, state.ledger, []string{receipt.FrameID})
+	state.mu.Unlock()
+	if persistErr != nil {
+		_ = state.ledger.Fail(receipt.FrameID)
+		return frames.Receipt{}, frames.Frame{}, &admitFailure{"persist", persistErr}
+	}
+	return receipt, frame, nil
 }
 
 // currentFrameScope binds new frames to the current branch leaf and context epoch.
