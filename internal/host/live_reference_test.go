@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestLiveReferenceProducerReload(t *testing.T) {
@@ -201,5 +203,29 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 	}
 	if code, _ := got["foreignSource"].(string); code == "" {
 		t.Errorf("a source outside the producer prefix was accepted: %v", got)
+	}
+}
+
+// TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
+// extension load order must not matter.
+func TestLiveReferenceProducerLoadsBeforeWorkbench(t *testing.T) {
+	repo := repoRoot(t)
+	root := t.TempDir()
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	cmd := exec.CommandContext(ctx, "pig", "--offline", "--session-dir", filepath.Join(root, "sessions"), "-e", filepath.Join(repo, "internal/host/testdata/reference-producer"), "-e", repo, "--mode", "rpc")
+	cmd.Dir = root
+	for _, v := range os.Environ() {
+		if !strings.HasPrefix(v, "PIG_") && !strings.HasPrefix(v, "PI_") {
+			cmd.Env = append(cmd.Env, v)
+		}
+	}
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+	f := newRPCFixture(t, cmd, ctx, cancel)
+	f.send("status", "prompt", "/reference status")
+	record := f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"reference":"registered"`)
+	})
+	if !strings.Contains(fmt.Sprint(record["message"]), `"kinds":5`) {
+		t.Fatalf("producer loaded first did not register every kind: %v", record["message"])
 	}
 }

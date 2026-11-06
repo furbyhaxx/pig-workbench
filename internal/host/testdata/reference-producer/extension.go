@@ -210,7 +210,7 @@ func Extension() *sdk.Extension {
 		})
 	})
 	ext.OnSessionStart(func(ctx sdk.Context, _ map[string]any) (any, error) {
-		if err := register(ctx, ext); err != nil {
+		if err := register(ctx, ext); err != nil && !errors.Is(err, api.ErrUnavailable) {
 			ctx.Notify("reference producer registration failed: "+err.Error(), "error")
 		}
 		return nil, nil
@@ -236,6 +236,14 @@ func Extension() *sdk.Extension {
 	ext.Command("reference", "Reference producer controls: status, reload", func(ctx sdk.Context, args string) error {
 		if strings.TrimSpace(args) == "reload" {
 			return ctx.Reload()
+		}
+		mu.Lock()
+		unregistered := client == nil || currentEndpoint.Generation == ""
+		mu.Unlock()
+		if unregistered {
+			if err := register(ctx, ext); err != nil {
+				return err
+			}
 		}
 		mu.Lock()
 		if client == nil {
