@@ -137,6 +137,44 @@ func lines(n int) string {
 	return b.String()
 }
 
+func TestLivePromptSettingsControlTakeover(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		enabled       bool
+		delivery      string
+		wantWorkbench bool
+	}{
+		{"force", true, "force", true},
+		{"disabled", false, "force", false},
+		{"auto", true, "auto", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			recorder := &requestRecorder{}
+			server := recorder.serve(t)
+			defer server.Close()
+			agent := filepath.Join(root, "agent")
+			writeFixtureProvider(t, agent, server.URL)
+			settings := fmt.Sprintf("[prompt]\nenabled = %t\ndelivery = '%s'\n", tc.enabled, tc.delivery)
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
+				t.Fatal(err)
+			}
+			fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+			fixture.send("go", "prompt", "Test prompt delivery.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			if len(recorder.bodies) != 1 {
+				t.Fatalf("got %d provider requests", len(recorder.bodies))
+			}
+			got := strings.Contains(recorder.bodies[0], "Workbench resources are reachable by URI")
+			if got != tc.wantWorkbench {
+				t.Fatalf("workbench prompt present=%v, want %v", got, tc.wantWorkbench)
+			}
+		})
+	}
+}
+
 func TestLiveSummaryRespectsReadBudget(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
