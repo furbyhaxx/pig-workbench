@@ -80,6 +80,21 @@ func TestLiveSessionStorageIsSharedThenUnlinked(t *testing.T) {
 	}
 }
 
+func TestLiveSessionStorageCanBeDisabled(t *testing.T) {
+	root, work := storageFixture(t)
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[projects]\nsession-storage = 'off'\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	f := startDefaultBuckets(t, root, work, shortRuntime(t))
+	f.send("go", "prompt", "first session")
+	f.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	f.close()
+	bucket := filepath.Join(root, "agent", "sessions", "--"+strings.ReplaceAll(strings.TrimLeft(work, "/"), "/", "-")+"--")
+	if info, err := os.Lstat(bucket); err != nil || !info.IsDir() {
+		t.Fatalf("disabled session storage must leave a real bucket, got %v (%v)", info, err)
+	}
+}
+
 func TestLiveAnotherLiveSessionInTheDirectoryDefersConversion(t *testing.T) {
 	root, work := storageFixture(t)
 	runtime := shortRuntime(t)
