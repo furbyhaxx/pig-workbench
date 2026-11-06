@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
 
 func (a *app) registerCommands(ext *sdk.Extension) {
@@ -26,8 +27,10 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.settingsCommand(ctx, rest)
 			case "jobs":
 				return a.jobsCommand(ctx, rest)
+			case "skills":
+				return a.skillsCommand(ctx)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {
@@ -160,5 +163,41 @@ func (a *app) jobsCommand(ctx sdk.Context, args string) error {
 		return err
 	}
 	notify(ctx, result.(sdk.ToolResult).Content)
+	return nil
+}
+
+func (a *app) skillsCommand(ctx sdk.Context) error {
+	s, err := a.current()
+	if err != nil {
+		return err
+	}
+	catalog, err := s.skills.catalog()
+	if err != nil {
+		return err
+	}
+	s.skills.mu.Lock()
+	loaded := s.skills.loaded
+	s.skills.mu.Unlock()
+	visible := skills.Visible(catalog, s.location.Current().Cwd, loaded)
+	budget := 4096
+	if configuration, err := s.settings.Current(); err == nil {
+		if entry, ok := configuration.Get("skills.listing-budget"); ok {
+			if value, ok := entry.Value.(int64); ok {
+				budget = int(value)
+			}
+		}
+	}
+	var b strings.Builder
+	for _, item := range skills.List(visible, budget) {
+		state := "available"
+		if loaded[item.Name] {
+			state = "loaded"
+		}
+		fmt.Fprintf(&b, "%s [%s] %s %s\n", item.Name, state, item.Location, item.Description)
+	}
+	if b.Len() == 0 {
+		b.WriteString("no skills\n")
+	}
+	notify(ctx, b.String())
 	return nil
 }

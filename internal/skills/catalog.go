@@ -18,6 +18,9 @@ type Skill struct {
 	File        string
 	Parent      string
 	WhenFiles   []string
+	AutoFiles   []string
+	AutoTouched []string
+	Bundled     bool
 	Body        string
 }
 
@@ -64,7 +67,8 @@ func readSkill(path string) (Skill, error) {
 	}
 	name := filepath.Base(filepath.Dir(path))
 	description := ""
-	var when []string
+	var when, autoFiles, autoTouched []string
+	var bundled bool
 	body := data
 	if bytes.HasPrefix(data, []byte("---\n")) {
 		rest := data[4:]
@@ -72,7 +76,7 @@ func readSkill(path string) (Skill, error) {
 		if end >= 0 {
 			front := string(rest[:end])
 			body = bytes.TrimLeft(rest[end+4:], "\n")
-			name, description, when = parseFront(front, name)
+			name, description, when, autoFiles, autoTouched, bundled = parseFront(front, name)
 		}
 	}
 	parent := ""
@@ -80,19 +84,29 @@ func readSkill(path string) (Skill, error) {
 	if filepath.Base(filepath.Dir(dir)) == "skills" {
 		parent = filepath.Base(filepath.Dir(filepath.Dir(dir)))
 	}
-	return Skill{Name: name, Description: description, Dir: dir, File: path, Parent: parent, WhenFiles: when, Body: string(body)}, nil
+	return Skill{Name: name, Description: description, Dir: dir, File: path, Parent: parent, WhenFiles: when, AutoFiles: autoFiles, AutoTouched: autoTouched, Bundled: bundled, Body: string(body)}, nil
 }
 
-func parseFront(front, name string) (string, string, []string) {
+func parseFront(front, name string) (string, string, []string, []string, []string, bool) {
 	var description string
-	var when []string
+	var when, autoFiles, autoTouched []string
+	var bundled bool
+	section := ""
 	inFiles := false
 	sc := bufio.NewScanner(strings.NewReader(front))
 	for sc.Scan() {
 		line := sc.Text()
 		trim := strings.TrimSpace(line)
 		if strings.HasPrefix(line, "  - ") && inFiles {
-			when = append(when, strings.Trim(strings.TrimPrefix(trim, "- "), `"'`))
+			item := strings.Trim(strings.TrimPrefix(trim, "- "), `"'`)
+			switch section {
+			case "when":
+				when = append(when, item)
+			case "auto-files":
+				autoFiles = append(autoFiles, item)
+			case "auto-touched":
+				autoTouched = append(autoTouched, item)
+			}
 			continue
 		}
 		inFiles = false
@@ -109,20 +123,45 @@ func parseFront(front, name string) (string, string, []string) {
 		case "description":
 			description = value
 		case "files":
+			target := &when
+			if section == "auto_load" {
+				target = &autoFiles
+			}
 			if strings.HasPrefix(value, "[") {
-				inner := strings.Trim(value, "[]")
-				for _, part := range strings.Split(inner, ",") {
-					part = strings.Trim(strings.TrimSpace(part), `"'`)
-					if part != "" {
-						when = append(when, part)
-					}
-				}
+				*target = append(*target, splitList(value)...)
 			} else {
 				inFiles = true
+				if section == "auto_load" {
+					section = "auto-files"
+				} else {
+					section = "when"
+				}
 			}
+		case "touched":
+			if strings.HasPrefix(value, "[") {
+				autoTouched = append(autoTouched, splitList(value)...)
+			} else {
+				inFiles = true
+				section = "auto-touched"
+			}
+		case "when", "auto_load":
+			section = key
+		case "bundle":
+			bundled = value == "true"
 		}
 	}
-	return name, description, when
+	return name, description, when, autoFiles, autoTouched, bundled
+}
+
+func splitList(value string) []string {
+	var out []string
+	for _, part := range strings.Split(strings.Trim(value, "[]"), ",") {
+		part = strings.Trim(strings.TrimSpace(part), `"'`)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 // Visible reports skills whose when.files match root, hiding nested skills until parent is loaded.

@@ -166,6 +166,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 				return nil, summaryErr
 			} else if ok {
 				facts = append(facts, summary.Facts)
+				s.skills.noteTouch(target.Path)
 				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)
 				text := summary.Content
 				content.WriteString(text)
@@ -189,6 +190,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			failedCount++
 		} else {
 			text = page.Content
+			s.skills.noteTouch(target.Path)
 			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 			if guide, ok := s.firstTouchGuide(target.Scheme); ok {
 				text += "\n\n" + guide
@@ -211,6 +213,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	// One failed target in a multi-read must not mark the whole result as an
 	// error: the successful content is still valid and useful to the model.
 	allFailed := failedCount == len(targets)
+	s.deliverAutoSkills(ctx)
 	return sdk.ToolResult{
 		Content: content.String(),
 		Details: map[string]any{

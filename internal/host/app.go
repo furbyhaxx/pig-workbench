@@ -237,10 +237,13 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 			ctx.Notify(noticeText("Job registry unavailable: "+registryErr.Error(), 0), "warning")
 		}
 	}
-	s.skills = &skillState{loaded: map[string]bool{}, roots: func() []string {
+	s.skills = &skillState{loaded: map[string]bool{}, declined: map[string]bool{}, replayed: map[string]bool{}, roots: func() []string {
 		cwd := s.location.Current().Cwd
 		return []string{cwd + "/.agents/skills", cwd + "/.pig/skills"}
+	}, persist: func(loaded, declined []string) error {
+		return ctx.AppendEntry("pig-workbench.skills", map[string]any{"schemaVersion": 1, "loaded": loaded, "declined": declined})
 	}}
+	restoreSkills(ctx, s.skills)
 	current = s
 	a.mu.Lock()
 	a.session = s

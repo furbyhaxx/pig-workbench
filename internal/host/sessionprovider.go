@@ -43,7 +43,7 @@ func splitSession(uri string) ([]string, error) {
 	return parts, nil
 }
 
-var sessionFiles = []string{"meta", "transcript", "entries", "title"}
+var sessionFiles = []string{"meta", "transcript", "entries", "title", "system-prompt"}
 
 func (p sessionProvider) Stat(ctx context.Context, uri string) (resource.StatResult, error) {
 	parts, err := splitSession(uri)
@@ -160,6 +160,8 @@ func (p sessionProvider) render(ctx context.Context, session sdk.Context, name s
 			return []byte("\n"), nil
 		}
 		return []byte(*title + "\n"), nil
+	case "system-prompt":
+		return []byte("prompt takeover is not active; PiG is still serving the system prompt\n"), nil
 	case "entries":
 		entries, err := session.GetEntries()
 		if err != nil {
