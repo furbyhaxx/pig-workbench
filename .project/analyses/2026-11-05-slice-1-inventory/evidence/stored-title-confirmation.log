@@ -1,0 +1,8 @@
+=== RUN   TestLiveStoredSessionTitleRequiresConfirmation
+--- PASS: TestLiveStoredSessionTitleRequiresConfirmation (1.09s)
+=== RUN   TestLiveStoredSessionTitleRequiresConfirmation
+--- PASS: TestLiveStoredSessionTitleRequiresConfirmation (1.05s)
+=== RUN   TestLiveStoredSessionTitleRequiresConfirmation
+--- PASS: TestLiveStoredSessionTitleRequiresConfirmation (1.11s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	4.277s

@@ -34,7 +34,7 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 - For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. Redirects currently target `job://` only; `rm`, `mv`, `cp` and `mkdir` are rejected. Provider mutation authorization and full scheme-command routing remain open.
 - `prompt.delivery = "auto"` retains PiG's prompt; `force` opts in to `builtin/workbench` only when instructions are enabled. The live prompt A/B evaluation and full real-agent transcript await authorization for provider spend. The `prompt.template` setting is not applied.
 - Five specifications remain draft and await approval; the slice cannot be called frozen. The [acceptance inventory](.project/analyses/2026-11-05-slice-1-inventory/README.md) distinguishes observed tests from incomplete rows.
-- Windows messaging, session storage and registry have compile-level coverage only; some required platform security operations fail closed. Stored-session title writes with a real confirmation dialog and real agent-reply hop increments have not been live-tested.
+- Windows messaging, session storage and registry have compile-level coverage only; some required platform security operations fail closed. Real agent-reply hop increments have not been live-tested. Stored-session title confirmation has been tested through PiG's RPC dialog path, not visually in a TUI.
 
 **Deferred depth:**
 

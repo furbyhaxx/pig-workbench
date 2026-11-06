@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 5
+  revision: 6
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T00:32:04+01:00"
+  updated_at: "2026-11-07T00:34:19+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -26,6 +26,9 @@ document:
     - revision: 5
       reason: "Exercise multi and preview questions through real native RPC dialogs"
       changes: ["Recorded selected values and preview display with a local scripted provider"]
+    - revision: 6
+      reason: "Exercise stored-session title confirmation"
+      changes: ["Recorded actual PiG RPC confirmation, decline, acceptance and title reads"]
 ---
 
 # Scope and evidence
@@ -56,7 +59,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
 | 0012 §3.6 | S1 K | — | Private notes class is not present in `instructions.DefaultClasses`, which the host uses; no live test proves it. |
 | 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing. | Provider-root search/walking is not wired; first-touch guide and naming acceptance need separate mapping. |
-| 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees. | Stored-session title writes with a real confirmation dialog remain untested; each core scheme needs separate evidence. |
+| 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees; `TestLiveStoredSessionTitleRequiresConfirmation` checks decline and acceptance in native RPC dialogs ([stored-title-confirmation.log](evidence/stored-title-confirmation.log)). | The confirmation was not visually tested in TUI; each core scheme needs separate evidence. |
 | 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |
 | 0013 §2–§5, §7 | S1 I | `TestLiveStoredSearchKeyIsRedactedInJobLogs` verifies a stored key is redacted in a job log. | Native custom credential resolver coverage is unavailable; all redaction/substitution boundaries need individual acceptance evidence. |
 | 0014 §3–§5, §6.1–§6.2, §7, §8 | S1 J | `TestLivePromptSettingsControlTakeover` verifies forced, disabled and auto behavior. | Auto retains PiG's prompt until user-authorized A/B evaluation; prompt takeover also depends on `instructions.enabled`. Skills and every frame require separate evidence. |

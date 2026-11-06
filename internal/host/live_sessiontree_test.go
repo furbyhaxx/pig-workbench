@@ -5,6 +5,7 @@ package host
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +46,45 @@ func storedSessionID(t *testing.T, root string) string {
 		t.Fatal("stored session has no id")
 	}
 	return header.ID
+}
+
+func TestLiveStoredSessionTitleRequiresConfirmation(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := startInRoot(t, root, []scriptedCall{{"write", map[string]any{"path": "session://self/title", "content": "Original title"}}})
+	first.send("initial", "prompt", "Set the original title.")
+	first.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	first.close()
+	id := storedSessionID(t, root)
+	uri := "session://" + id + "/title"
+	second, recorder := startInRoot(t, root, []scriptedCall{
+		{"write", map[string]any{"path": uri, "content": "Declined title"}},
+		{"read", map[string]any{"path": uri}},
+		{"write", map[string]any{"path": uri, "content": "Approved title"}},
+		{"read", map[string]any{"path": uri}},
+	})
+	second.send("rename", "prompt", "Change the stored session title.")
+	for _, decision := range []bool{false, true} {
+		event := second.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && event["method"] == "confirm"
+		})
+		if !strings.Contains(fmt.Sprint(event["title"]), "Change session title") {
+			t.Fatalf("unexpected confirmation: %+v", event)
+		}
+		response, _ := json.Marshal(map[string]any{"type": "extension_ui_response", "id": event["id"], "confirmed": decision})
+		if _, err := fmt.Fprintf(second.stdin, "%s\n", response); err != nil {
+			t.Fatal(err)
+		}
+	}
+	second.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 4 || !strings.Contains(results[0], "declined") || !strings.Contains(results[1], "Original title") || !strings.Contains(results[2], "title set") || !strings.Contains(results[3], "Approved title") {
+		t.Fatalf("confirmation did not guard title changes: %v", results)
+	}
 }
 
 func TestLiveStoredSessionsAreListedReadAndTitled(t *testing.T) {
