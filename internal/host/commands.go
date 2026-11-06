@@ -229,6 +229,7 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 		return err
 	}
 	s.promptText = rendered
+	fmt.Fprintf(&b, "epoch: %s\n", promptEpoch(rendered))
 	b.WriteString("rendered builtin/workbench:\n")
 	b.WriteString(rendered)
 	b.WriteString("\ndelivery auto still serves PiG until the approved A/B run; prompt.delivery=force replaces it\n")

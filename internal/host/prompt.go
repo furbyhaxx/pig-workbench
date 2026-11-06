@@ -1,6 +1,8 @@
 package host
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -80,4 +82,9 @@ func lateSections(ctx sdk.Context, served string) string {
 		fmt.Fprintf(&b, "<%s>\n%s\n</%s>", section.Name, section.Value, section.Name)
 	}
 	return b.String()
+}
+
+func promptEpoch(rendered string) string {
+	sum := sha256.Sum256([]byte(rendered))
+	return hex.EncodeToString(sum[:8])
 }

@@ -26,3 +26,12 @@ func TestWalkReplaceChangesOnlyTheExactServedPrompt(t *testing.T) {
 		t.Fatal("unrelated text changed")
 	}
 }
+
+func TestPromptEpochIsStableForTheSameText(t *testing.T) {
+	if promptEpoch("same") != promptEpoch("same") {
+		t.Fatal("epoch changed for identical text")
+	}
+	if promptEpoch("same") == promptEpoch("other") {
+		t.Fatal("different renders shared an epoch")
+	}
+}

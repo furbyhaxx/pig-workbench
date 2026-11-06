@@ -54,6 +54,7 @@ type session struct {
 	router        *resource.Router
 	skills        *skillState
 	promptText    string
+	promptEpoch   string
 	scratch       string
 	projects      *project.Registry
 	host          sdk.Context

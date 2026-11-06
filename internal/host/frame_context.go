@@ -260,6 +260,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			}
 			if rendered, err := renderBuiltinPrompt(s); err == nil {
 				s.promptText = rendered
+				s.promptEpoch = promptEpoch(rendered)
 				if text, ok := promptOverride(true, deliveryMode, rendered); ok {
 					options["forceSystemPrompt"] = text
 				}
