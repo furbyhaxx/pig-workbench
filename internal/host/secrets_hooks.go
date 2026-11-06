@@ -192,3 +192,37 @@ func (a *app) redactContext(ctx sdk.Context, data map[string]any) (any, error) {
 	}
 	return map[string]any{"messages": redacted}, nil
 }
+
+// redactProviderRequest is the last pass over an agent turn. Returning an error alone would let
+// PiG send the original payload, so a failure also aborts the request.
+func (a *app) redactProviderRequest(ctx sdk.Context, data map[string]any) (any, error) {
+	s, err := a.current()
+	if err != nil {
+		return nil, nil
+	}
+	payload, ok := data["payload"].(map[string]any)
+	if !ok {
+		if _, present := data["payload"]; present && data["payload"] != nil {
+			return a.abortRequest(ctx, s, errors.New("provider payload has an unsupported shape"))
+		}
+		return nil, nil
+	}
+	guard, enabled, err := s.secrets.Guard()
+	if err != nil {
+		return a.abortRequest(ctx, s, err)
+	}
+	if !enabled {
+		return nil, nil
+	}
+	redacted, err := secrets.RedactProviderPayload(guard, payload)
+	if err != nil {
+		return a.abortRequest(ctx, s, err)
+	}
+	return redacted, nil
+}
+
+func (a *app) abortRequest(ctx sdk.Context, s *session, cause error) (any, error) {
+	s.secrets.withhold(ctx, cause)
+	ctx.Abort()
+	return nil, errors.New("request withheld: the secrets boundary is unavailable")
+}

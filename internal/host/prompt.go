@@ -68,7 +68,7 @@ func (a *app) spliceLatePrompt(ctx sdk.Context, data map[string]any) (any, error
 		}
 		return nil, nil
 	}
-	return map[string]any{"payload": replaced}, nil
+	return replaced, nil
 }
 
 func (s *session) admitLateSection(ctx sdk.Context, body string) error {
