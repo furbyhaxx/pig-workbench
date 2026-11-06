@@ -502,3 +502,21 @@ func TestRestoreFailureIsAtomic(t *testing.T) {
 		t.Fatalf("cross-session restore error = %v", err)
 	}
 }
+
+func TestRetryDeduplicatesAfterTheBranchLeafAdvances(t *testing.T) {
+	s := testSession()
+	first := s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-1", Epoch: "epoch-1", Ancestors: map[string]bool{"": true, "leaf-1": true}})
+	receipt, err := first.Admit(testPublish("a"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	advanced := s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-2", Epoch: "epoch-1", Ancestors: map[string]bool{"": true, "leaf-1": true, "leaf-2": true}})
+	again, err := advanced.Admit(testPublish("a"))
+	if err != nil || again != receipt {
+		t.Fatalf("retry on the same branch = %+v, %v; want %+v", again, err, receipt)
+	}
+	sibling := s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-3", Epoch: "epoch-1", Ancestors: map[string]bool{"": true, "leaf-3": true}})
+	if _, err := sibling.Admit(testPublish("a")); !errors.Is(err, ErrConflict) {
+		t.Fatalf("same event key on a sibling branch = %v, want ErrConflict", err)
+	}
+}

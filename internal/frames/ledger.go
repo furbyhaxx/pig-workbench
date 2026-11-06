@@ -94,6 +94,13 @@ func (s *Session) SetClock(clock func() time.Time) {
 	s.clock = clock
 }
 
+func (l *Ledger) sameBranch(leaf string) bool {
+	if l.context.Ancestors != nil {
+		return l.context.Ancestors[leaf]
+	}
+	return leaf == l.context.BranchLeaf
+}
+
 // Admit validates and records a frame or returns the original idempotent receipt.
 func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	p, err := ValidatePublish(p)
@@ -114,7 +121,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	s.expireLocked(now)
 	event := eventKey{producer: l.context.ProducerPrefix, event: p.EventKey}
 	if existing := s.events[event]; existing != nil {
-		if !samePublish(existing.publish(), p) || existing.Frame.BranchLeaf != l.context.BranchLeaf || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
+		if !samePublish(existing.publish(), p) || !l.sameBranch(existing.Frame.BranchLeaf) || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
 			return Receipt{}, ErrConflict
 		}
 		return existing.Receipt, nil

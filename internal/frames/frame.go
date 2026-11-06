@@ -66,6 +66,8 @@ type Context struct {
 	ProducerPrefix string `json:"producerPrefix"`
 	BranchLeaf     string `json:"branchLeaf"`
 	Epoch          string `json:"epoch"`
+	// Ancestors, when set, lets an event key admitted earlier on the active branch deduplicate.
+	Ancestors map[string]bool `json:"-"`
 	// Trusted is a host policy grant, never a producer-requested value.
 	Trusted bool `json:"trusted,omitempty"`
 	// Authority is the host-approved data or instruction authority.

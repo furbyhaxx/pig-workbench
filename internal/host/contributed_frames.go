@@ -240,7 +240,7 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 		state.mu.Unlock()
 		return nil, &api.Error{Code: "internal", Message: "cannot determine the current branch", Outcome: "notApplied"}
 	}
-	ledger := state.ledger.Ledger(frames.Context{SessionID: s.id, ProducerPrefix: producer.key, BranchLeaf: scope.BranchLeaf, Epoch: scope.Epoch, Trusted: false, Authority: authority})
+	ledger := state.ledger.Ledger(frames.Context{SessionID: s.id, ProducerPrefix: producer.key, BranchLeaf: scope.BranchLeaf, Ancestors: scope.Ancestors, Epoch: scope.Epoch, Trusted: false, Authority: authority})
 	receipt, err := ledger.Admit(frames.Publish{EventKey: params.EventKey, Kind: params.Kind, Source: params.Source, Body: params.Body, Title: params.Title, Summary: params.Summary, SubjectKey: params.SubjectKey, Resource: params.Resource, Delivery: params.Delivery, DataTrust: params.DataTrust, CoalesceKey: params.CoalesceKey, ExpiresAt: params.ExpiresAt})
 	if err != nil {
 		state.mu.Unlock()
