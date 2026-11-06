@@ -250,6 +250,20 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	if enabled.Value == true {
 		if options, ok := data["systemPromptOptions"].(map[string]any); ok {
 			options["contextFiles"] = []any{}
+			deliveryMode := "auto"
+			if configuration, err := s.settings.Current(); err == nil {
+				if entry, ok := configuration.Get("prompt.delivery"); ok {
+					if value, ok := entry.Value.(string); ok {
+						deliveryMode = value
+					}
+				}
+			}
+			if rendered, err := renderBuiltinPrompt(s); err == nil {
+				s.promptText = rendered
+				if text, ok := promptOverride(true, deliveryMode, rendered); ok {
+					options["forceSystemPrompt"] = text
+				}
+			}
 			result["systemPromptOptions"] = options
 		}
 	}

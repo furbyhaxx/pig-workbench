@@ -161,7 +161,7 @@ func (p sessionProvider) render(ctx context.Context, session sdk.Context, name s
 		}
 		return []byte(*title + "\n"), nil
 	case "system-prompt":
-		return []byte("prompt takeover is not active; PiG is still serving the system prompt\n"), nil
+		return []byte("delivery auto still serves PiG; /workbench prompt renders builtin/workbench without sending it\n"), nil
 	case "entries":
 		entries, err := session.GetEntries()
 		if err != nil {

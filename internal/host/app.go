@@ -53,6 +53,7 @@ type session struct {
 	settings      *config.Manager
 	router        *resource.Router
 	skills        *skillState
+	promptText    string
 	scratch       string
 	projects      *project.Registry
 	host          sdk.Context

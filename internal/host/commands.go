@@ -1,12 +1,14 @@
 package host
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
 
@@ -222,7 +224,34 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 		}
 		fmt.Fprintf(&b, "%s: %v\n", key, entry.Value)
 	}
-	b.WriteString("takeover: not installed; session://self/system-prompt reports that PiG still serves the prompt\n")
+	rendered, err := renderBuiltinPrompt(s)
+	if err != nil {
+		return err
+	}
+	s.promptText = rendered
+	b.WriteString("rendered builtin/workbench:\n")
+	b.WriteString(rendered)
+	b.WriteString("\ndelivery auto still serves PiG until the approved A/B run; prompt.delivery=force replaces it\n")
 	notify(ctx, b.String())
 	return nil
+}
+
+func renderBuiltinPrompt(s *session) (string, error) {
+	loader, err := prompt.NewFileSystemLoader(prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()})
+	if err != nil {
+		return "", err
+	}
+	engine, err := prompt.New(prompt.Options{Loader: loader})
+	if err != nil {
+		return "", err
+	}
+	root := ""
+	if s.location != nil {
+		root = s.location.Current().Cwd
+	}
+	rendered, err := engine.Render(context.Background(), "builtin/workbench", prompt.Data{ProjectRoot: root})
+	if err != nil {
+		return "", err
+	}
+	return rendered.Text, nil
 }
