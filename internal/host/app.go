@@ -197,7 +197,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 				return ""
 			}
 			return filepath.Join(ctx.Cwd(), dirname, "Secrets.toml")
-		}, func() bool { trusted, err := ctx.IsProjectTrusted(); return err == nil && trusted }),
+		}, func() bool { trusted, err := ctx.IsProjectTrusted(); return err == nil && trusted }, func() string { return manager.Current().Cwd }),
 		router:    providers,
 		scratch:   scratch,
 		requests:  make(map[string]activeRequest),

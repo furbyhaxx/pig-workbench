@@ -2,6 +2,7 @@ package host
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -16,15 +17,21 @@ type secretsBoundary struct {
 	agentDir    string
 	projectPath func() string
 	trusted     func() bool
+	cwd         func() string
+	environ     func() []string
+	home        string
 
 	mu       sync.Mutex
 	detector *secrets.Detector
 	vault    *secrets.Vault
+	names    nameMatcher
+	learned  string
 	noticed  string
 }
 
-func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool) *secretsBoundary {
-	return &secretsBoundary{settings: settings, agentDir: agentDir, projectPath: projectPath, trusted: trusted}
+func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool, cwd func() string) *secretsBoundary {
+	home, _ := os.UserHomeDir()
+	return &secretsBoundary{settings: settings, agentDir: agentDir, projectPath: projectPath, trusted: trusted, cwd: cwd, environ: os.Environ, home: home}
 }
 
 // enabled reports the live `secrets.enabled` setting; a stale or unreadable snapshot counts as enabled.
@@ -48,11 +55,15 @@ func (b *secretsBoundary) Guard() (guard *secrets.Detector, enabled bool, err er
 	if b.detector != nil {
 		return b.detector, true, nil
 	}
-	detector, vault, err := b.build()
+	detector, vault, names, err := b.build()
 	if err != nil {
 		return nil, true, err
 	}
-	b.detector, b.vault, b.noticed = detector, vault, ""
+	b.detector, b.vault, b.names, b.learned, b.noticed = detector, vault, names, "", ""
+	if err := b.learnLocked(); err != nil {
+		b.detector = nil
+		return nil, true, err
+	}
 	return detector, true, nil
 }
 
@@ -67,6 +78,29 @@ func (b *secretsBoundary) Withheld(err error) (reason string, fresh bool) {
 	return reason, fresh
 }
 
+// learnLocked stores the environment and .env secrets for the current cwd once per cwd.
+func (b *secretsBoundary) learnLocked() error {
+	cwd := b.cwd()
+	if b.learned == cwd {
+		return nil
+	}
+	if err := learnEnvironment(b.detector, b.names, b.environ(), b.home, cwd); err != nil {
+		return err
+	}
+	b.learned = cwd
+	return nil
+}
+
+// Refresh learns the environment secrets of the current cwd after a directory change.
+func (b *secretsBoundary) Refresh() error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.detector == nil {
+		return nil
+	}
+	return b.learnLocked()
+}
+
 // Reload drops the detector so the next use rereads Secrets.toml.
 func (b *secretsBoundary) Reload() {
 	b.mu.Lock()
@@ -74,37 +108,37 @@ func (b *secretsBoundary) Reload() {
 	b.mu.Unlock()
 }
 
-func (b *secretsBoundary) build() (*secrets.Detector, *secrets.Vault, error) {
+func (b *secretsBoundary) build() (*secrets.Detector, *secrets.Vault, nameMatcher, error) {
 	keyPath := filepath.Join(b.agentDir, "secret.key")
 	master, err := secrets.LoadKey(keyPath)
 	if err != nil {
 		var permission *secrets.KeyPermissionError
 		if errors.As(err, &permission) {
-			return nil, nil, err
+			return nil, nil, nameMatcher{}, err
 		}
 		master, err = secrets.CreateKey(keyPath)
 		if err != nil {
-			return nil, nil, errors.New("secret key unavailable; inspect the key file and its permissions")
+			return nil, nil, nameMatcher{}, errors.New("secret key unavailable; inspect the key file and its permissions")
 		}
 	}
 	defer clear(master)
 	vaultPath, err := secrets.VaultPath()
 	if err != nil {
-		return nil, nil, errors.New("private secret data directory unavailable")
+		return nil, nil, nameMatcher{}, errors.New("private secret data directory unavailable")
 	}
 	vault, err := secrets.OpenVault(vaultPath, master)
 	if err != nil {
-		return nil, nil, errors.New("secret vault unavailable")
+		return nil, nil, nameMatcher{}, errors.New("secret vault unavailable")
 	}
 	detection, err := config.ReadDetection(filepath.Join(b.agentDir, "Secrets.toml"), b.projectPath(), b.trusted())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nameMatcher{}, err
 	}
 	detector, err := secrets.NewDetector(master, vault, policyOf(detection))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nameMatcher{}, err
 	}
-	return detector, vault, nil
+	return detector, vault, newNameMatcher(detection), nil
 }
 
 func policyOf(detection config.Detection) secrets.DetectionPolicy {
