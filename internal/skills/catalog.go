@@ -42,7 +42,7 @@ func Scan(roots []string) (Catalog, error) {
 			if walkErr != nil || entry.IsDir() || entry.Name() != "SKILL.md" {
 				return nil
 			}
-			skill, err := readSkill(path)
+			skill, err := readSkill(path, root)
 			if err != nil {
 				return nil
 			}
@@ -60,7 +60,7 @@ func Scan(roots []string) (Catalog, error) {
 	return catalog, nil
 }
 
-func readSkill(path string) (Skill, error) {
+func readSkill(path, root string) (Skill, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Skill{}, err
@@ -81,7 +81,7 @@ func readSkill(path string) (Skill, error) {
 	}
 	parent := ""
 	dir := filepath.Dir(path)
-	if filepath.Base(filepath.Dir(dir)) == "skills" {
+	if filepath.Clean(filepath.Dir(dir)) != filepath.Clean(root) && filepath.Base(filepath.Dir(dir)) == "skills" {
 		parent = filepath.Base(filepath.Dir(filepath.Dir(dir)))
 	}
 	return Skill{Name: name, Description: description, Dir: dir, File: path, Parent: parent, WhenFiles: when, AutoFiles: autoFiles, AutoTouched: autoTouched, Bundled: bundled, Body: string(body)}, nil

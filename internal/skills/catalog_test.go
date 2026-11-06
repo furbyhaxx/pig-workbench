@@ -25,6 +25,23 @@ func TestScanReadsFrontmatterAndHidesNestedUntilLoad(t *testing.T) {
 	}
 }
 
+func TestScanKeepsRootSkillsVisibleWhenRootIsNamedSkills(t *testing.T) {
+	root := filepath.Join(t.TempDir(), ".agents", "skills")
+	writeSkill(t, filepath.Join(root, "alpha", "SKILL.md"), "alpha", "top level", "")
+	writeSkill(t, filepath.Join(root, "alpha", "skills", "beta", "SKILL.md"), "beta", "nested", "")
+	catalog, err := Scan([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	visible := Visible(catalog, root, nil)
+	if len(visible) != 1 || visible[0].Name != "alpha" {
+		t.Fatalf("top-level skills must be visible and nested skills hidden: %+v", visible)
+	}
+	if visible = Visible(catalog, root, map[string]bool{"alpha": true}); len(visible) != 2 {
+		t.Fatalf("loading the parent must reveal the nested skill: %+v", visible)
+	}
+}
+
 func TestWhenFilesHidesUnmatchedSkill(t *testing.T) {
 	root := t.TempDir()
 	writeSkill(t, filepath.Join(root, "rust", "SKILL.md"), "rust", "rust only", "Cargo.toml")
