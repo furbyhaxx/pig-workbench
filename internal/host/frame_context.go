@@ -171,7 +171,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		if path, ok := data["workbenchInstructionTarget"].(string); ok {
 			target = path
 		}
-		selected, err := instructionFacts(ctx, target, root, projectID, validating)
+		selected, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })
 		if err != nil {
 			return nil, err
 		}

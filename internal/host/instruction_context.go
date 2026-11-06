@@ -12,7 +12,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool) ([]contextFact, error) {
+func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool, allowNested func(dir string) bool) ([]contextFact, error) {
 	trusted, err := ctx.IsProjectTrusted()
 	if err != nil {
 		return nil, err
@@ -52,8 +52,12 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 		if !errors.As(err, &nested) {
 			return nil, err
 		}
-		boundary = nested.Dir
-		selected, err = instructions.Discover(requestContext{ctx}, agent, nil, instructions.Options{ProjectRoot: agent})
+		if allowNested != nil && allowNested(nested.Dir) {
+			selected, err = instructions.Discover(requestContext{ctx}, target, nil, instructions.Options{ProjectRoot: root, UserRoots: []string{agent}, AllowNested: true})
+		} else {
+			boundary = nested.Dir
+			selected, err = instructions.Discover(requestContext{ctx}, agent, nil, instructions.Options{ProjectRoot: agent})
+		}
 		if err != nil {
 			return nil, err
 		}

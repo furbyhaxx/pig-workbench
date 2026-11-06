@@ -148,6 +148,7 @@ func Catalog() []Definition {
 		boolean("secrets.enabled", true, DenyProject),
 		boolean("secrets.env-injection", true, DenyProject),
 		stringList("secrets.redact-owners", []string{}, DenyProject),
+		stringList("trust.rules", []string{}, DenyProject),
 		boolean("activity.enabled", true, DenyProject),
 		choice("activity.placement", "above-editor", DenyProject, "above-editor", "below-editor"),
 		text("activity.shortcut", "alt+w", DenyProject),
@@ -170,6 +171,9 @@ func Catalog() []Definition {
 		case "read.max-lines":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result lines, including framing; 5–2000."
+		case "trust.rules":
+			d.Application = "live"
+			d.Description = "Workbench source trust rules, each `allow <absolute dir>` or `deny <absolute dir>`; the nearest rule decides whether instructions from a nested repository load. Manage with /workbench trust."
 		default:
 			d.Description = "Validated setting for its owning subsystem; inspect application status before relying on it."
 		}

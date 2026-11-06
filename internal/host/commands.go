@@ -39,8 +39,10 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.instructionsCommand(ctx, rest)
 			case "ask":
 				return a.askCommand(ctx, rest)
+			case "trust":
+				return a.trustCommand(ctx, rest)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {

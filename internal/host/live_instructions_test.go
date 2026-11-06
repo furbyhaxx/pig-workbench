@@ -310,3 +310,51 @@ func TestLiveFramesAndInstructionRulesCommands(t *testing.T) {
 	fixture.send("rules", "prompt", "/workbench instructions rules")
 	fixture.wait(notified("steering  " + filepath.Join(root, "AGENTS.md")))
 }
+
+func TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "vendor", "lib")
+	for _, dir := range []string{filepath.Join(root, ".git"), filepath.Join(nested, ".git")} {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(nested, "AGENTS.md"), []byte("NESTED-RULE-MARKER applies here.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, "x.txt"), []byte("x\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "vendor/lib/x.txt"}}}}
+	recorder.next = func(index int) *scriptedCall {
+		if index == 2 {
+			return &scriptedCall{"read", map[string]any{"path": "vendor/lib/x.txt"}}
+		}
+		return nil
+	}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("first", "prompt", "Read the vendored file.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	fixture.send("trust", "prompt", "/workbench trust add allow "+nested)
+	fixture.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "Trust rules saved")
+	})
+	fixture.send("second", "prompt", "Read the vendored file again.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" && len(recorder.bodies) >= 4 })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i := 0; i < 2; i++ {
+		if strings.Contains(recorder.bodies[i], "NESTED-RULE-MARKER") {
+			t.Fatalf("request %d carried nested instructions without a trust rule", i)
+		}
+	}
+	if !strings.Contains(recorder.bodies[1], "Nested repository instructions were not loaded") {
+		t.Fatal("the boundary notice must explain why nothing loaded")
+	}
+	if !strings.Contains(recorder.bodies[len(recorder.bodies)-1], "NESTED-RULE-MARKER") {
+		t.Fatal("an allow rule must let the nested repository's instructions load")
+	}
+}
