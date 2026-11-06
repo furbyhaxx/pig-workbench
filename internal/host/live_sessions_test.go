@@ -185,6 +185,79 @@ func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 	}
 }
 
+func TestLiveAgentReplyIncrementsHopAndStopsWake(t *testing.T) {
+	runtime := shortRuntime(t)
+	initiator := startLiveSession(t, runtime, nil)
+	initial := waitForRecords(t, runtime, 1)
+	var initiatorID string
+	for id := range initial {
+		initiatorID = id
+	}
+	settingsNotice(t, initiator.fixture, "hop-limit", "set runtime sessions.max-hops 1")
+	form := map[string]any{"title": "Continue", "questions": []any{map[string]any{
+		"id": "proceed", "label": "Proceed", "prompt": "Send the reply?", "type": "single",
+		"options": []any{map[string]any{"value": "yes", "label": "Yes"}},
+	}}}
+	replier := startLiveSession(t, runtime, []scriptedCall{
+		{"ask_user", form},
+		{"write", map[string]any{"path": "agent://" + shortID(initiatorID) + "/inbox", "content": "REAL-AGENT-REPLY"}},
+	}, "--tools", "read,write,ls,ask_user")
+	records := waitForRecords(t, runtime, 2)
+	var replierID string
+	for id := range records {
+		if id != initiatorID {
+			replierID = id
+		}
+	}
+	if replierID == "" {
+		t.Fatal("replying session was not discovered")
+	}
+	initiator.recorder.calls = []scriptedCall{{"write", map[string]any{"path": "agent://" + shortID(replierID) + "/inbox", "content": "START-CONVERSATION"}}}
+	initiator.fixture.send("start", "prompt", "Start the conversation.")
+	initiator.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		if endpointRecords(t, runtime)[initiatorID]["state"] == "idle" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("initiator did not return to idle before the reply")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	initialReceipt := waitForRequest(t, initiator, "accepted by")
+	if !strings.Contains(initialReceipt, "(woken)") {
+		t.Fatalf("initial message did not wake the replier: %v", toolResults(t, initialReceipt))
+	}
+	beforeReply := len(initiator.requests())
+	dialog := replier.fixture.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "select"
+	})
+	options, ok := dialog["options"].([]any)
+	if !ok || len(options) == 0 {
+		t.Fatalf("reply dialog had no options: %+v", dialog)
+	}
+	response, _ := json.Marshal(map[string]any{"type": "extension_ui_response", "id": dialog["id"], "value": options[0]})
+	if _, err := fmt.Fprintf(replier.fixture.stdin, "%s\n", response); err != nil {
+		t.Fatal(err)
+	}
+	replier.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	body := waitForRequest(t, replier, "accepted by")
+	if !strings.Contains(body, "(queued)") {
+		t.Fatalf("reply at hop limit must be queued without waking: %v", toolResults(t, body))
+	}
+	conversation := regexp.MustCompile(`conversation ([0-9a-f]{8})`)
+	first := conversation.FindStringSubmatch(initialReceipt)
+	reply := conversation.FindStringSubmatch(body)
+	if len(first) != 2 || len(reply) != 2 || first[1] != reply[1] {
+		t.Fatalf("reply lost its conversation: initial=%v reply=%v", first, reply)
+	}
+	time.Sleep(500 * time.Millisecond)
+	if got := len(initiator.requests()); got != beforeReply {
+		t.Fatalf("hop-limited reply woke the initiator: before=%d after=%d", beforeReply, got)
+	}
+}
+
 func TestLiveBusyReceiverIsSteeredNotWoken(t *testing.T) {
 	runtime := shortRuntime(t)
 	receiver := startLiveSession(t, runtime, []scriptedCall{{"bash", map[string]any{"command": "sleep 4"}}}, "--tools", "read,write,bash")

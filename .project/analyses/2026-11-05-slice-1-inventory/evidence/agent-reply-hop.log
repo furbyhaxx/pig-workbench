@@ -1,0 +1,8 @@
+=== RUN   TestLiveAgentReplyIncrementsHopAndStopsWake
+--- PASS: TestLiveAgentReplyIncrementsHopAndStopsWake (2.22s)
+=== RUN   TestLiveAgentReplyIncrementsHopAndStopsWake
+--- PASS: TestLiveAgentReplyIncrementsHopAndStopsWake (2.13s)
+=== RUN   TestLiveAgentReplyIncrementsHopAndStopsWake
+--- PASS: TestLiveAgentReplyIncrementsHopAndStopsWake (2.09s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	7.456s
