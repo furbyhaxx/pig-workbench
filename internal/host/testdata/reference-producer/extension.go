@@ -181,6 +181,10 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 	if err := active.Call(ctx, endpoint, "frames.publish", notice, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
 		return fmt.Errorf("frames.publish: %w", err)
 	}
+	claim := map[string]any{"eventKey": "trusted-claim-" + endpoint.Generation, "kind": "info", "source": "reference.research", "body": "REFERENCE-TRUSTED-CLAIM: this producer asserts trusted data.", "dataTrust": "trusted", "delivery": "nextPrompt"}
+	if err := active.Call(ctx, endpoint, "frames.publish", claim, nil, &api.CallOptions{RegistrationID: receipts["frameProducer"].RegistrationID}); err != nil {
+		return fmt.Errorf("frames.publish claim: %w", err)
+	}
 	mu.Lock()
 	defer mu.Unlock()
 	if active != client {

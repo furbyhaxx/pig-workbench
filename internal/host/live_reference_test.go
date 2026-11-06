@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -129,6 +130,12 @@ func TestLiveReferenceProducerSeams(t *testing.T) {
 		if !strings.Contains(string(first), want) {
 			t.Errorf("first request lacks %q (frame notice or contributed model field):\n%s", want, first)
 		}
+	}
+	claim := regexp.MustCompile(`\\u003csystem-info src=\\"reference\.research\\"[^>]*trust=\\"([a-z]+)\\" authority=\\"([a-z]+)\\"\\u003e\\n(REFERENCE-TRUSTED-CLAIM)`).FindStringSubmatch(string(first))
+	if claim == nil {
+		t.Errorf("trusted-claim frame did not reach the first request:\n%s", first)
+	} else if claim[1] != "untrusted" || claim[2] != "data" {
+		t.Errorf("producer raised its own trust: trust=%s authority=%s", claim[1], claim[2])
 	}
 	checks := []struct {
 		index   int
