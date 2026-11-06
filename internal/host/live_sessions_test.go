@@ -97,6 +97,43 @@ func waitForRequest(t *testing.T, l *liveSession, contains string) string {
 	return ""
 }
 
+func TestLiveSessionEndpointSettingsAtStartup(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		settings         string
+		wantEndpoint     bool
+		wantDiscoverable bool
+	}{
+		{"disabled", "enabled = false", false, false},
+		{"hidden", "discoverable = false", true, false},
+		{"default", "enabled = true", true, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runtime := shortRuntime(t)
+			t.Setenv("XDG_RUNTIME_DIR", runtime)
+			root := t.TempDir()
+			agent := filepath.Join(root, "agent")
+			if err := os.MkdirAll(agent, 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[sessions]\n"+tc.settings+"\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			fixture := startRPCWithExtensions(t, root, true, nil)
+			fixture.command("ready", "/workbench show")
+			records := endpointRecords(t, runtime)
+			if (len(records) == 1) != tc.wantEndpoint {
+				t.Fatalf("got %d endpoints, want endpoint=%v", len(records), tc.wantEndpoint)
+			}
+			for _, record := range records {
+				if record["discoverable"] != tc.wantDiscoverable {
+					t.Fatalf("discoverability = %v, want %v", record["discoverable"], tc.wantDiscoverable)
+				}
+			}
+		})
+	}
+}
+
 func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 	runtime := shortRuntime(t)
 	receiver := startLiveSession(t, runtime, nil)
