@@ -17,5 +17,7 @@ Feature packages keep domain logic independent of the SDK; `host/` adapts contex
 - `skills/` — SKILL.md catalog and when-file visibility. Host owns skill://.
 - `jobs/` — process supervision (see its AGENTS.md before touching process groups).
 - `endpoint/` — live-session endpoint records and liveness probing.
+- `messaging/` — Unix-socket transport, envelope, auth and rate windows for inter-session messages.
+- `sessionstore/` — journaled conversion of PiG session buckets into shared project storage.
 - `host/` — SDK lifecycle, commands and tool wiring; no duplicated domain policy.
 - Do not retain request-scoped SDK contexts in session state. Read captured configuration/location once per operation.
