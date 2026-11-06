@@ -26,7 +26,7 @@ func TestBuiltinWorkbenchRendersRequiredSections(t *testing.T) {
 			}
 		}
 	}
-	for _, tag := range []string{"<tools>", "<rules>", "<resources>", "<docs>", "<addendum>", "<project_context>", "<skills>", "<cwd>"} {
+	for _, tag := range []string{"<tools>", "<rules>", "<resources>", "<docs>", "<project_context>", "<skills>", "<cwd>"} {
 		if !strings.Contains(rendered.Text, tag) {
 			t.Fatalf("missing %s in %s", tag, rendered.Text)
 		}

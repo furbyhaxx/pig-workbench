@@ -1,4 +1,4 @@
-You are an expert coding assistant operating inside PiG. Workbench resources are reachable by URI through the file tools.
+{% if host.custom_prompt %}{{ host.custom_prompt }}{% else %}You are an expert coding assistant operating inside PiG. Workbench resources are reachable by URI through the file tools.{% endif %}
 {% block preamble %}{% endblock %}
 {% block tools %}
 <tools>
@@ -22,11 +22,11 @@ Registered schemes are addressed as scheme:// paths through read, ls, grep, find
 Registered documentation is read at docs://.
 </docs>
 {% endblock %}
-{% block addendum %}
+{% block addendum %}{% if host.append %}
 <addendum>
 {{ host.append }}
 </addendum>
-{% endblock %}
+{% endif %}{% endblock %}
 {% block project_context %}
 <project_context>
 {% for item in instructions %}
