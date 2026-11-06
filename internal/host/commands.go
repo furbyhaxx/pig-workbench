@@ -29,8 +29,10 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.jobsCommand(ctx, rest)
 			case "skills":
 				return a.skillsCommand(ctx)
+			case "prompt":
+				return a.promptCommand(ctx)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {
@@ -198,6 +200,29 @@ func (a *app) skillsCommand(ctx sdk.Context) error {
 	if b.Len() == 0 {
 		b.WriteString("no skills\n")
 	}
+	notify(ctx, b.String())
+	return nil
+}
+
+func (a *app) promptCommand(ctx sdk.Context) error {
+	s, err := a.current()
+	if err != nil {
+		return err
+	}
+	configuration, err := s.settings.Current()
+	if err != nil {
+		return err
+	}
+	var b strings.Builder
+	for _, key := range []string{"prompt.enabled", "prompt.template", "prompt.delivery"} {
+		entry, ok := configuration.Get(key)
+		if !ok {
+			fmt.Fprintf(&b, "%s: unavailable\n", key)
+			continue
+		}
+		fmt.Fprintf(&b, "%s: %v\n", key, entry.Value)
+	}
+	b.WriteString("takeover: not installed; session://self/system-prompt reports that PiG still serves the prompt\n")
 	notify(ctx, b.String())
 	return nil
 }
