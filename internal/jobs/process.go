@@ -63,11 +63,13 @@ func (*WatcherUnsupportedError) Error() string {
 // ErrWatcherUnsupported reports that safe group supervision cannot be started.
 var ErrWatcherUnsupported = &WatcherUnsupportedError{}
 
-// Spec describes a process and its combined output destination.
+// Spec describes a process and its output destinations.
 // For Shell, Command[0] is sh source and remaining entries become positional parameters.
 // A nil Env inherits the current environment; a nil Output discards output.
 // Stdin enables a writable pipe; otherwise the child receives EOF.
-// Output.Write must eventually return and must not call methods on the Process.
+// A non-nil Errors receives stderr through its own pipe; otherwise stderr joins Output.
+// Output.Write and Errors.Write may run concurrently, must eventually return and must not
+// call methods on the Process.
 type Spec struct {
 	Command []string
 	Dir     string
@@ -75,6 +77,7 @@ type Spec struct {
 	Shell   bool
 	Stdin   bool
 	Output  io.Writer
+	Errors  io.Writer
 }
 
 // Exit records the observed status of a reaped process.
@@ -97,6 +100,7 @@ type Process struct {
 	owner       *groupOwner
 	watcher     *exitWatcher
 	output      *os.File
+	errOutput   *os.File
 	outputDone  chan struct{}
 	outputErr   error
 	stdin       io.WriteCloser
@@ -195,37 +199,69 @@ func StartProcess(spec Spec) (*Process, error) {
 		return nil, fmt.Errorf("create process output pipe: %w", err)
 	}
 	cmd.Stdout, cmd.Stderr = writer, writer
+	var errReader, errWriter *os.File
+	if spec.Errors != nil {
+		errReader, errWriter, err = os.Pipe()
+		if err != nil {
+			reader.Close()
+			writer.Close()
+			return nil, fmt.Errorf("create process error pipe: %w", err)
+		}
+		cmd.Stderr = errWriter
+	}
+	closePipes := func() {
+		reader.Close()
+		writer.Close()
+		if errReader != nil {
+			errReader.Close()
+			errWriter.Close()
+		}
+	}
 	var stdin io.WriteCloser
 	if spec.Stdin {
 		stdin, err = cmd.StdinPipe()
 		if err != nil {
-			reader.Close()
-			writer.Close()
+			closePipes()
 			return nil, fmt.Errorf("create process stdin pipe: %w", err)
 		}
 	}
 	owner.configure(cmd)
 	started := time.Now()
 	if err := cmd.Start(); err != nil {
-		reader.Close()
-		writer.Close()
+		closePipes()
 		if stdin != nil {
 			stdin.Close()
 		}
 		return nil, fmt.Errorf("start process: %w", err)
 	}
 	writer.Close()
+	if errWriter != nil {
+		errWriter.Close()
+	}
 	if err := owner.bind(cmd.Process); err != nil {
-		return nil, abandonStart(cmd, owner, reader, stdin, fmt.Errorf("bind process identity: %w", err))
+		return nil, abandonStart(cmd, owner, reader, errReader, stdin, fmt.Errorf("bind process identity: %w", err))
 	}
 	watcher, err := watchProcess(owner, cmd.Process)
 	if err != nil {
-		return nil, abandonStart(cmd, owner, reader, stdin, fmt.Errorf("observe process exit: %w", err))
+		return nil, abandonStart(cmd, owner, reader, errReader, stdin, fmt.Errorf("observe process exit: %w", err))
 	}
-	p := &Process{cmd: cmd, started: started, owner: owner, watcher: watcher, output: reader, outputDone: make(chan struct{}), stdin: stdin, reapDone: make(chan struct{})}
+	p := &Process{cmd: cmd, started: started, owner: owner, watcher: watcher, output: reader, errOutput: errReader, outputDone: make(chan struct{}), stdin: stdin, reapDone: make(chan struct{})}
+	var errCopy error
+	errDone := make(chan struct{})
+	if errReader != nil {
+		go func() {
+			_, errCopy = io.Copy(spec.Errors, errReader)
+			errReader.Close()
+			close(errDone)
+		}()
+	} else {
+		close(errDone)
+	}
 	go func() {
-		_, p.outputErr = io.Copy(output, reader)
+		_, copyErr := io.Copy(output, reader)
 		reader.Close()
+		<-errDone
+		p.outputErr = errors.Join(copyErr, errCopy)
 		close(p.outputDone)
 	}()
 	return p, nil
@@ -234,7 +270,7 @@ func StartProcess(spec Spec) (*Process, error) {
 // abandonStart terminates a child whose supervision could not be established. Only stable
 // handles are used: a failed verification leaves the group unreclaimed and reports it, and a
 // child that outlives termination cannot hold the caller by the reap.
-func abandonStart(cmd *exec.Cmd, owner *groupOwner, reader *os.File, stdin io.WriteCloser, cause error) error {
+func abandonStart(cmd *exec.Cmd, owner *groupOwner, reader, errReader *os.File, stdin io.WriteCloser, cause error) error {
 	var stdinErr error
 	if stdin != nil {
 		stdinErr = stdin.Close()
@@ -243,6 +279,9 @@ func abandonStart(cmd *exec.Cmd, owner *groupOwner, reader *os.File, stdin io.Wr
 	waitErr := reapAbandoned(cmd)
 	releaseErr := owner.release()
 	reader.Close()
+	if errReader != nil {
+		errReader.Close()
+	}
 	return errors.Join(cause, stdinErr, killErr, waitErr, releaseErr)
 }
 
@@ -486,6 +525,17 @@ func (p *Process) drain() {
 	})
 }
 
+// closeOutput closes every output pipe so stuck drains return; it reports the first close error.
+func (p *Process) closeOutput() error {
+	err := p.output.Close()
+	if p.errOutput != nil {
+		if errErr := p.errOutput.Close(); err == nil || errors.Is(err, os.ErrClosed) {
+			err = errErr
+		}
+	}
+	return err
+}
+
 // drainOutput waits for the output drain; a descendant may retain the pipe after its leader
 // exited.
 func (p *Process) drainOutput() error {
@@ -495,7 +545,7 @@ func (p *Process) drainOutput() error {
 	case <-p.outputDone:
 		return p.outputErr
 	case <-timer.C:
-		p.output.Close()
+		p.closeOutput()
 		<-p.outputDone
 		return errors.Join(ErrOutputIncomplete, p.outputErr)
 	}

@@ -65,6 +65,9 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if input.Timeout != nil {
 		timeout = *input.Timeout
 	}
+	if handled, result, err := a.dispatchSchemeCommand(work, s, input.Command); handled {
+		return result, err
+	}
 	shell := "/bin/sh"
 	if _, err := os.Stat("/bin/bash"); err == nil {
 		shell = "/bin/bash"

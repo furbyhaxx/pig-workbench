@@ -154,6 +154,10 @@ func (r *Router) UnregisterContributed(schemes []string) {
 }
 
 // Schemes returns registered canonical schemes in lexical order.
+// Locatable reports whether a scheme resolves to a local filesystem path. Scheme commands
+// (G8.20) only intercept non-locatable schemes; file:// stays ordinary shell.
+func (r *Router) Locatable(scheme string) bool { return scheme == "file" || scheme == "local" }
+
 func (r *Router) Schemes() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

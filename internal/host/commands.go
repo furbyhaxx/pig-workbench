@@ -24,14 +24,17 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 				return a.cdCommand(ctx, rest)
 			case "settings":
 				return a.settingsCommand(ctx, rest)
+			case "jobs":
+				return a.jobsCommand(ctx, rest)
 			default:
-				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | settings [show|catalog|reload|set|reset]")
+				return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | settings [show|catalog|reload|set|reset]")
 			}
 		}})
 	for _, name := range []string{"cd", "wb:cd"} {
 		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
 	}
 	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", Handler: a.toolsCommand})
+	ext.RegisterCommand("wb:jobs", sdk.CommandOptions{Description: "Inspect or control Workbench jobs.", Handler: a.jobsCommand})
 }
 
 func (a *app) show(ctx sdk.Context) error {
@@ -136,4 +139,26 @@ func noticeText(text string, width int) string {
 		text = strings.Join(lines, "\n")
 	}
 	return text
+}
+
+func (a *app) jobsCommand(ctx sdk.Context, args string) error {
+	fields := strings.Fields(args)
+	params := map[string]any{"action": "list"}
+	switch len(fields) {
+	case 0:
+	case 1:
+		if fields[0] != "list" {
+			return fmt.Errorf("usage: /workbench jobs [list | <id> status|output|kill|eof]")
+		}
+	case 2:
+		params = map[string]any{"action": fields[1], "id": fields[0]}
+	default:
+		return fmt.Errorf("usage: /workbench jobs [list | <id> status|output|kill|eof]")
+	}
+	result, err := a.jobsTool(ctx, params)
+	if err != nil {
+		return err
+	}
+	notify(ctx, result.(sdk.ToolResult).Content)
+	return nil
 }

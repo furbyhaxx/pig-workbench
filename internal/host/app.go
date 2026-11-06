@@ -143,7 +143,8 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	hostContext := func() (sdk.Context, bool) { return host, true }
 	bus := newProviderBus(id, generation, hostContext)
 	fetch := &fetchRouter{bus: bus}
-	providers, scratch, err := buildRouter(ctx, settings, manager, fetch)
+	var current *session
+	providers, scratch, err := buildRouter(ctx, settings, manager, fetch, func() (*session, bool) { return current, current != nil })
 	if err != nil {
 		return nil, a.fail(err)
 	}
@@ -235,6 +236,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 			ctx.Notify(noticeText("Job registry unavailable: "+registryErr.Error(), 0), "warning")
 		}
 	}
+	current = s
 	a.mu.Lock()
 	a.session = s
 	a.initErr = nil

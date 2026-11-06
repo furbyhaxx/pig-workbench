@@ -81,6 +81,7 @@ type JobState struct {
 
 type managedJob struct {
 	process       *Process
+	streams       *streamTrack
 	sequence      uint64
 	state         JobState
 	done          chan struct{}
@@ -233,7 +234,9 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 		}
 	}()
 
-	spec.Output = managerLogWriter{logs: m.logs, id: id}
+	streams := &streamTrack{logs: m.logs, id: id}
+	spec.Output = streamWriter{track: streams}
+	spec.Errors = streamWriter{track: streams, stderr: true}
 	process, err := StartProcess(spec)
 	if err != nil {
 		return "", err
@@ -256,7 +259,7 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 		cleanupErr, unresolved = m.cleanupAdmission(process, id, admissionErr)
 		return "", cleanupErr
 	}
-	job := &managedJob{process: process, sequence: sequence, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
+	job := &managedJob{process: process, streams: streams, sequence: sequence, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
 	m.jobs[id] = job
 	admitted = true
 	go m.supervise(job)
@@ -366,7 +369,7 @@ func (m *Manager) finishProcess(process *Process, grace time.Duration) (*Exit, e
 
 func (m *Manager) closeUnobserved(process *Process, cause error) error {
 	stdinErr := process.CloseStdin()
-	outputErr := process.output.Close()
+	outputErr := process.closeOutput()
 	if errors.Is(outputErr, os.ErrClosed) {
 		outputErr = nil
 	}
@@ -500,18 +503,61 @@ func (m *Manager) Wait(ctx context.Context, id string) (JobState, error) {
 	}
 }
 
-// Output reads a page from the managed job's bounded log.
+// Output reads a page from the managed job's bounded combined log.
 func (m *Manager) Output(id string, cursor int64, max int) ([]byte, int64, bool, int64, error) {
-	if _, err := m.job(id); err != nil {
+	return m.Stream(id, StreamCombined, cursor, max)
+}
+
+// Stream reads one output stream. Stdout and stderr cursors count only that stream's bytes;
+// the combined cursor counts both. A page may contain fewer than max bytes when the scan
+// crosses the other stream.
+func (m *Manager) Stream(id string, stream Stream, cursor int64, max int) ([]byte, int64, bool, int64, error) {
+	job, err := m.job(id)
+	if err != nil {
 		return nil, 0, false, 0, err
 	}
-	data, next, truncated, gap, err := m.logs.Read(id, cursor, max)
-	if errors.Is(err, ErrLogNotFound) {
-		if _, lookupErr := m.job(id); lookupErr != nil {
-			return nil, 0, false, 0, lookupErr
+	if stream == StreamCombined || job.streams == nil {
+		data, next, truncated, gap, readErr := m.logs.Read(id, cursor, max)
+		if errors.Is(readErr, ErrLogNotFound) {
+			if _, lookupErr := m.job(id); lookupErr != nil {
+				return nil, 0, false, 0, lookupErr
+			}
+		}
+		return data, next, truncated, gap, readErr
+	}
+	const scan = 64 << 10
+	var out []byte
+	pos := int64(0)
+	var truncated bool
+	var gap int64
+	for len(out) < max || max <= 0 {
+		chunk, next, chunkTruncated, chunkGap, readErr := m.logs.Read(id, pos, scan)
+		if errors.Is(readErr, ErrLogNotFound) {
+			return nil, 0, false, 0, readErr
+		}
+		if readErr != nil && !errors.Is(readErr, ErrLogEvicted) {
+			return nil, 0, false, 0, readErr
+		}
+		if chunkTruncated {
+			truncated, gap = true, chunkGap
+		}
+		kept := job.streams.filter(chunk, pos, stream)
+		if cursor < int64(len(out)+len(kept)) {
+			from := int(cursor - int64(len(out)))
+			if from < 0 {
+				from = 0
+			}
+			out = append(out, kept[from:]...)
+		}
+		pos = next
+		if len(chunk) == 0 || next >= job.streams.written {
+			break
 		}
 	}
-	return data, next, truncated, gap, err
+	if max > 0 && len(out) > max {
+		out = out[:max]
+	}
+	return out, cursor + int64(len(out)), truncated, gap, nil
 }
 
 // Cancel requests group termination and waits for the supervision result.

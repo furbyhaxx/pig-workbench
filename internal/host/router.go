@@ -11,7 +11,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.Manager, backends resource.FetchRouter) (*resource.Router, string, error) {
+func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.Manager, backends resource.FetchRouter, jobsSource func() (*session, bool)) (*resource.Router, string, error) {
 	router := resource.NewRouter()
 	if err := router.RegisterBuiltin(resource.FileProvider{}); err != nil {
 		return nil, "", err
@@ -32,6 +32,9 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	}
 	live := ctx
 	if err := router.RegisterBuiltin(sessionProvider{ctx: func() (sdk.Context, bool) { return live, true }}); err != nil {
+		return nil, "", err
+	}
+	if err := router.RegisterBuiltin(jobProvider{source: jobsSource}); err != nil {
 		return nil, "", err
 	}
 	cache, err := os.UserCacheDir()
