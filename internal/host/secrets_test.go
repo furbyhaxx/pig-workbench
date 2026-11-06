@@ -176,3 +176,19 @@ func TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral(t *testing.T) 
 		t.Fatalf("an enumeration gap must be reported, got %v", gaps)
 	}
 }
+
+func TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates(t *testing.T) {
+	b, agent := testBoundary(t)
+	token := "ghp_" + strings.Repeat("q9Z8", 6)
+	out, active, err := b.redactText("use " + token)
+	if err != nil || !active || strings.Contains(out, token) {
+		t.Fatalf("redactText = %q active=%v err=%v", out, active, err)
+	}
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	b.Reload()
+	if out, _, err := b.redactText("use " + token); err == nil || out != "" {
+		t.Fatalf("a failing boundary must return an error and no text, got %q %v", out, err)
+	}
+}
