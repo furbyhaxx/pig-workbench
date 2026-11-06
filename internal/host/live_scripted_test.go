@@ -191,6 +191,23 @@ func TestLiveEditRefusesLinesTheModelNeverSaw(t *testing.T) {
 	}
 }
 
+func TestLiveEditSeenGuardCanBeDisabledByUser(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src.txt")
+	if err := os.WriteFile(path, []byte(lines(60)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScriptedConfig(t, root, "read,edit", "enforce-seen-lines = false\n",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "src.txt:1-5"}} },
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[src.txt#" + tagOf(t, prior[0]) + "]\nPUT 40.=40:\n+replaced\n"}}
+		},
+	)
+	if got := readFile(t, path); !strings.Contains(got, "\nreplaced\n") {
+		t.Fatalf("disabled seen guard did not allow the edit: %s", results[1])
+	}
+}
+
 func TestLiveEditRelocatesOnlyWhenTheTargetIsUnambiguous(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "src.txt")
