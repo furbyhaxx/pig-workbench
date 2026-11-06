@@ -3,10 +3,12 @@ package host
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/frames"
 )
 
 // promptOverride replaces PiG's prompt only for an explicit force delivery.
@@ -61,9 +63,21 @@ func (a *app) spliceLatePrompt(ctx sdk.Context, data map[string]any) (any, error
 	}
 	replaced, n := walkReplace(payload, session.promptText, session.promptText+"\n\n"+extra)
 	if n == 0 {
+		if err := session.admitLateSection(extra); err != nil {
+			return nil, err
+		}
 		return nil, nil
 	}
 	return map[string]any{"payload": replaced}, nil
+}
+
+func (s *session) admitLateSection(body string) error {
+	if s == nil || s.contextFrames == nil || s.contextFrames.ledger == nil {
+		return errors.New("late prompt section has no frame ledger")
+	}
+	ledger := s.contextFrames.ledger.Ledger(frames.Context{ProducerPrefix: "workbench", BranchLeaf: "prompt", Epoch: "prompt", Trusted: true, Authority: "data"})
+	_, err := ledger.Admit(frames.Publish{EventKey: "prompt/late/" + promptEpoch(body), Kind: "notice", Source: "workbench", SubjectKey: "prompt.late", Body: body, Delivery: "nextBoundary", DataTrust: "trusted", CoalesceKey: "prompt.late"})
+	return err
 }
 
 func lateSections(ctx sdk.Context, served string) string {

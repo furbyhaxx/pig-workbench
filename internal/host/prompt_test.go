@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 )
 
@@ -86,3 +87,18 @@ var errPrompt = promptRenderError{}
 type promptRenderError struct{}
 
 func (promptRenderError) Error() string { return "render failed" }
+
+func TestUnmatchedLateSectionIsAdmittedAsAFrame(t *testing.T) {
+	session := &session{promptText: "served", contextFrames: &contextFrameState{ledger: frames.NewSession("s")}}
+	payload := map[string]any{"messages": []any{"other"}}
+	replaced, n := walkReplace(payload, session.promptText, session.promptText+"\n\nextra")
+	if n != 0 {
+		t.Fatal(n)
+	}
+	if err := session.admitLateSection("extra"); err != nil {
+		t.Fatal(err)
+	}
+	if replaced.(map[string]any)["messages"].([]any)[0] != "other" {
+		t.Fatal("payload changed")
+	}
+}
