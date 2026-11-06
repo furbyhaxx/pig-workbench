@@ -53,8 +53,17 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
 | `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set` | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
 | `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
+| `secrets` | `secrets.redact` | — (advertised only to granted owners) |
 
-`secrets` and `sessions` are specified but not advertised.
+`sessions` is specified but not advertised.
+
+## Redact your own inference requests
+
+An extension that calls a model itself bypasses Workbench's hooks. If the user lists your owner name in `secrets.redact-owners` (user or runtime settings only), `discover` advertises `secrets` to you and `secrets.redact {text}` returns `{text, enabled: true}` with the same placeholders as an ordinary turn. Redact every model-visible field before each request.
+
+- Any failure (disabled detection, unavailable key or vault, text too large for the 64 KiB envelope) is an error that never echoes your input. Withhold the inference; absence of the service is not permission to send plaintext.
+- The owner name is a claim on a shared bus, not an authenticated identity: the grant guards against misrouting, not against a hostile extension.
+- Placeholders are never resolved back to values through this service.
 
 ## Make your tool output editable
 

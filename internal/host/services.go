@@ -82,12 +82,16 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		if !slices.Contains(params.Majors, 1) {
 			return nil, &api.Error{Code: "incompatibleVersion", Message: "Workbench supports protocol major 1"}
 		}
+		capabilities := slices.Clone(advertisedCapabilities)
+		if s.secrets.granted(request.From.Owner) {
+			capabilities = append(capabilities, "secrets")
+		}
 		for _, capability := range params.Capabilities {
-			if !slices.Contains(advertisedCapabilities, capability) {
+			if !slices.Contains(capabilities, capability) {
 				return nil, &api.Error{Code: "unsupported", Field: "params.capabilities", Message: "one or more requested capabilities are unavailable"}
 			}
 		}
-		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: slices.Clone(advertisedCapabilities), Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
+		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: capabilities, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
 		if slices.Contains(params.Capabilities, "location") {
 			result.Location = s.location.Current()
 		}
@@ -108,6 +112,8 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		return a.contextFieldsSet(host, s, request)
 	case "snapshots.view", "snapshots.status", "snapshots.touched":
 		return a.snapshotsService(ctx, host, s, request)
+	case "secrets.redact":
+		return a.secretsRedact(s, request)
 	case "location.get":
 		var params struct{}
 		if err := api.Decode(request.Params, &params); err != nil {

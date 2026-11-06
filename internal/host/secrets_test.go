@@ -1,11 +1,14 @@
 package host
 
 import (
+	"encoding/json"
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -322,5 +325,61 @@ func TestRedactContextCleansTheSystemMessageAndOtherMessages(t *testing.T) {
 	user := messages[1].(map[string]any)["content"].([]any)[0].(map[string]any)["text"].(string)
 	if strings.Contains(system, token) || strings.Contains(user, token) || messages[0].(map[string]any)["role"] != "system" {
 		t.Fatalf("messages = %+v", messages)
+	}
+}
+
+func TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure(t *testing.T) {
+	b, agent := testBoundary(t)
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[secrets]\nredact-owners = [\"pig-web\"]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	a := &app{}
+	s := &session{id: "session", generation: "generation", secrets: b}
+	token := "ghp_" + strings.Repeat("kJ5hG4", 5)
+	call := func(owner string, method string, params any) (any, *api.Error) {
+		raw, _ := json.Marshal(params)
+		return a.dispatchService(t.Context(), sdk.Context{}, s, api.Request{Method: method, Generation: "generation", From: api.Identity{Owner: owner, Instance: "i"}, Params: raw})
+	}
+	if _, failure := call("other", "secrets.redact", map[string]any{"text": token}); failure == nil || failure.Code != "permissionDenied" || strings.Contains(failure.Message, token) {
+		t.Fatalf("an ungranted owner must be refused: %+v", failure)
+	}
+	if _, failure := call("other", "discover", api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"secrets"}}); failure == nil || failure.Code != "unsupported" {
+		t.Fatalf("secrets must not be discoverable by an ungranted owner: %+v", failure)
+	}
+	discovered, failure := call("pig-web", "discover", api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"secrets"}})
+	if failure != nil || !slices.Contains(discovered.(api.Discovery).Capabilities, "secrets") {
+		t.Fatalf("a granted owner must discover secrets: %+v %v", discovered, failure)
+	}
+	result, failure := call("pig-web", "secrets.redact", map[string]any{"text": "key " + token})
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	if redacted := result.(api.SecretsRedactResult); !redacted.Enabled || strings.Contains(redacted.Text, token) || !strings.Contains(redacted.Text, "red-sec-") {
+		t.Fatalf("result = %+v", redacted)
+	}
+	if _, failure := call("pig-web", "secrets.redact", map[string]any{"text": "x", "extra": 1}); failure == nil || failure.Code != "invalidRequest" {
+		t.Fatalf("the request object is closed: %+v", failure)
+	}
+	// A text whose placeholders grow it past the envelope fails instead of truncating.
+	guard, _, err := b.Guard()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := guard.Learn([]byte("abcdefgh"), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	growing := strings.Repeat("abcdefgh ", 6000)
+	if _, failure := call("pig-web", "secrets.redact", map[string]any{"text": growing}); failure == nil || failure.Code != "limitExceeded" {
+		t.Fatalf("a reply that cannot fit must fail limitExceeded: %+v", failure)
+	}
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	b.Reload()
+	if result, failure := call("pig-web", "secrets.redact", map[string]any{"text": token}); failure == nil || result != nil || strings.Contains(failure.Message, token) {
+		t.Fatalf("a failing boundary must not succeed or echo: %v %+v", result, failure)
 	}
 }
