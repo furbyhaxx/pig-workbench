@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestLiveAskUsesNativeRPCAndReturnsUserChoice(t *testing.T) {
@@ -167,5 +170,63 @@ func TestLiveAskFreeformAndSecretReturnTheResultShape(t *testing.T) {
 		if strings.Contains(body, secret) {
 			t.Fatal("the raw secret reached a provider request")
 		}
+	}
+}
+
+func TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[ask.remote]\ntimeout-ms = 300\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	form := map[string]any{"title": "Slow", "questions": []any{map[string]any{"id": "choice", "label": "Choice", "prompt": "Pick one", "type": "single", "options": []any{map[string]any{"value": "a", "label": "Option A"}}}}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ask_user", form}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user")
+	fixture.send("ask", "prompt", "Ask and nobody answers.")
+	fixture.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "select"
+	})
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := strings.ReplaceAll(recorder.bodies[len(recorder.bodies)-1], `\"`, `"`)
+	if !strings.Contains(last, "timedOut") || strings.Contains(last, `"answers":{"choice"`) {
+		t.Fatalf("an elapsed dialog must report timedOut without an answer: %v", toolResults(t, recorder.bodies[len(recorder.bodies)-1]))
+	}
+}
+
+func TestLiveAskInPrintModeIsUnavailable(t *testing.T) {
+	root := t.TempDir()
+	form := map[string]any{"questions": []any{map[string]any{"id": "choice", "label": "Choice", "prompt": "Pick one", "type": "single", "options": []any{map[string]any{"value": "a", "label": "Option A"}}}}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ask_user", form}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	repo, _ := filepath.Abs("../..")
+	cmd := exec.Command("pig", "--offline", "--no-session", "-e", repo, "--model", "workbench-fixture/mock", "--tools", "ask_user", "-p", "Ask the question.")
+	cmd.Dir = root
+	for _, v := range os.Environ() {
+		if !strings.HasPrefix(v, "PIG_") && !strings.HasPrefix(v, "PI_") {
+			cmd.Env = append(cmd.Env, v)
+		}
+	}
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+	done := make(chan error, 1)
+	go func() { done <- cmd.Run() }()
+	select {
+	case <-done:
+	case <-time.After(30 * time.Second):
+		_ = cmd.Process.Kill()
+		t.Fatal("print mode blocked on a dialog that cannot be shown")
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) < 2 || !strings.Contains(recorder.bodies[len(recorder.bodies)-1], "interactionUnavailable") {
+		t.Fatalf("print mode must return interactionUnavailable promptly, got %d requests", len(recorder.bodies))
 	}
 }
