@@ -85,7 +85,7 @@ type Deps struct {
 }
 
 // Run validates and presents a form, persisting pending and completed records.
-func Run(ctx context.Context, deps Deps, form Form) (Result, error) {
+func Run(ctx context.Context, deps Deps, form Form) (out Result, runErr error) {
 	if deps.Options.DialogTimeout < 0 {
 		return Result{}, errors.New("dialog timeout must not be negative")
 	}
@@ -143,6 +143,26 @@ func Run(ctx context.Context, deps Deps, form Form) (Result, error) {
 	if err := deps.Append("pig-workbench.ask", record); err != nil {
 		return Result{}, fmt.Errorf("append pending questionnaire: %w", err)
 	}
+	// A dismissed or expired form is resolved, so recovery never offers it again.
+	defer func() {
+		state := ""
+		switch {
+		case runErr != nil:
+		case out.Cancelled:
+			state = StateCancelled
+		case out.TimedOut:
+			state = StateTimedOut
+		}
+		if state == "" {
+			return
+		}
+		terminal := record
+		terminal.State, terminal.UpdatedAt = state, clock().UTC()
+		terminal.Payload = nil
+		if err := deps.Append("pig-workbench.ask", terminal); err != nil {
+			runErr = fmt.Errorf("append %s questionnaire: %w", state, err)
+		}
+	}()
 
 	type secretDraft struct {
 		id    string

@@ -93,7 +93,7 @@ func secretForm() Form {
 	}}}
 }
 
-func TestRunCancellationDropsAllAnswersAndKeepsPending(t *testing.T) {
+func TestRunCancellationDropsAllAnswersAndResolvesTheRecord(t *testing.T) {
 	entries := &recordedEntries{}
 	ui := &fakeInteractor{ask: func(_ context.Context, q Question, _ Form) (Answer, error) {
 		if q.ID == "z-first" {
@@ -105,8 +105,11 @@ func TestRunCancellationDropsAllAnswersAndKeepsPending(t *testing.T) {
 	if err != nil || !result.Cancelled || len(result.Answers) != 0 || len(result.Order) != 0 {
 		t.Fatalf("cancellation retained answers: %#v, %v", result, err)
 	}
-	if len(entries.records) != 1 || entries.records[0].State != StatePending {
-		t.Fatalf("expected exactly one pending record: %#v", entries.records)
+	if len(entries.records) != 2 || entries.records[0].State != StatePending || entries.records[1].State != StateCancelled || entries.records[1].AskID != entries.records[0].AskID {
+		t.Fatalf("expected a pending record resolved as cancelled: %#v", entries.records)
+	}
+	if _, found, _ := LoadPending(recordsAsEntries(t, entries.records)); found {
+		t.Fatal("a dismissed form must not be offered for recovery")
 	}
 	if !reflect.DeepEqual(ui.calls, []string{"z-first", "a-second"}) {
 		t.Fatalf("wrong presentation order: %v", ui.calls)
@@ -128,7 +131,7 @@ func TestRunContextCancellationDuringForm(t *testing.T) {
 		return Answer{Values: []string{"global"}}, nil
 	}}
 	result, err := Run(ctx, runDeps(ui, entries), twoQuestions())
-	if err != nil || !result.Cancelled || len(result.Answers) != 0 || len(entries.records) != 1 {
+	if err != nil || !result.Cancelled || len(result.Answers) != 0 || len(entries.records) != 2 {
 		t.Fatalf("cancel did not discard partial form: %#v, %v, %d records", result, err, len(entries.records))
 	}
 }
@@ -151,7 +154,7 @@ func TestRunCancellationWhileClockRuns(t *testing.T) {
 		}
 		result, err := Run(ctx, deps, validForm())
 		cancel()
-		if err != nil || !result.Cancelled || len(entries.records) != cancelAt-1 {
+		if err != nil || !result.Cancelled || len(entries.records) != 2*(cancelAt-1) {
 			t.Fatalf("cancellation at clock call %d: %#v, %v, %d records", cancelAt, result, err, len(entries.records))
 		}
 	}
@@ -240,7 +243,7 @@ func TestRunCancellationAndBoundaryErrors(t *testing.T) {
 			return "", nil
 		})
 		result, err := Run(ctx, deps, secretForm())
-		if err != nil || !result.Cancelled || len(entries.records) != 1 {
+		if err != nil || !result.Cancelled || len(entries.records) != 2 {
 			t.Fatalf("cancellation before store was not returned: %#v, %v", result, err)
 		}
 	})
@@ -261,7 +264,7 @@ func TestRunLaterCancellationDoesNotStoreEarlierSecret(t *testing.T) {
 	deps := runDeps(ui, entries)
 	deps.Store = store
 	result, err := Run(context.Background(), deps, form)
-	if err != nil || !result.Cancelled || len(result.Answers) != 0 || store.value != nil || len(entries.records) != 1 {
+	if err != nil || !result.Cancelled || len(result.Answers) != 0 || store.value != nil || len(entries.records) != 2 {
 		t.Fatalf("later cancellation retained secret effects: %#v, %v", result, err)
 	}
 }
@@ -638,7 +641,7 @@ func TestRunTimeoutIsOursAndDropsAnswers(t *testing.T) {
 	deps := runDeps(ui, entries)
 	deps.Options.DialogTimeout = 5 * time.Millisecond
 	result, err := Run(context.Background(), deps, twoQuestions())
-	if err != nil || !result.TimedOut || result.Reason == "" || len(result.Answers) != 0 || len(entries.records) != 1 {
+	if err != nil || !result.TimedOut || result.Reason == "" || len(result.Answers) != 0 || len(entries.records) != 2 {
 		t.Fatalf("timeout was not terminal: %#v, %v, %d records", result, err, len(entries.records))
 	}
 }
@@ -667,7 +670,7 @@ func TestRunParentDeadlineIsCancellation(t *testing.T) {
 	deps := runDeps(ui, entries)
 	deps.Options.DialogTimeout = time.Second
 	result, err := Run(ctx, deps, validForm())
-	if err != nil || !result.Cancelled || result.TimedOut || len(entries.records) != 1 {
+	if err != nil || !result.Cancelled || result.TimedOut || len(entries.records) != 2 {
 		t.Fatalf("parent deadline was misclassified: %#v, %v", result, err)
 	}
 }
@@ -746,4 +749,17 @@ func TestRunOptionsAndAppendFailure(t *testing.T) {
 	if _, err := Run(context.Background(), deps, validForm()); !errors.Is(err, writeErr) {
 		t.Fatalf("append failure not returned: %v", err)
 	}
+}
+
+func recordsAsEntries(t *testing.T, records []Record) []json.RawMessage {
+	t.Helper()
+	var out []json.RawMessage
+	for _, record := range records {
+		raw, err := json.Marshal(record)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, raw)
+	}
+	return out
 }

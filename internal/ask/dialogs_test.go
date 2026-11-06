@@ -320,8 +320,8 @@ func TestDialogsCancellationMidwayDiscardsDraft(t *testing.T) {
 	if err != nil || !result.Cancelled || len(result.Answers) != 0 || len(result.Order) != 0 {
 		t.Fatalf("cancellation retained a draft: %#v, %v", result, err)
 	}
-	if len(entries.records) != 1 || entries.records[0].State != StatePending {
-		t.Fatalf("expected only the pending record: %#v", entries.records)
+	if len(entries.records) != 2 || entries.records[1].State != StateCancelled {
+		t.Fatalf("expected the pending record resolved as cancelled: %#v", entries.records)
 	}
 }
 
@@ -372,7 +372,7 @@ func TestDialogsHonorContext(t *testing.T) {
 		deps := runDeps(NewDialogInteractor(dialogs), entries)
 		deps.Options.DialogTimeout = 5 * time.Millisecond
 		result, err := Run(context.Background(), deps, validForm())
-		if err != nil || !result.TimedOut || len(result.Answers) != 0 || len(entries.records) != 1 {
+		if err != nil || !result.TimedOut || len(result.Answers) != 0 || len(entries.records) != 2 || entries.records[1].State != StateTimedOut {
 			t.Fatalf("dialog timeout was not terminal: %#v, %v", result, err)
 		}
 	})
@@ -389,7 +389,7 @@ func TestDialogsHonorContext(t *testing.T) {
 		deps := runDeps(NewDialogInteractor(dialogs), entries)
 		deps.Options.DialogTimeout = time.Second
 		result, err := Run(ctx, deps, validForm())
-		if err != nil || !result.Cancelled || result.TimedOut || len(entries.records) != 1 {
+		if err != nil || !result.Cancelled || result.TimedOut || len(entries.records) != 2 {
 			t.Fatalf("parent cancellation was misclassified: %#v, %v", result, err)
 		}
 	})

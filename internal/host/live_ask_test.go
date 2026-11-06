@@ -76,3 +76,45 @@ func TestLiveAskUsesNativeRPCAndReturnsUserChoice(t *testing.T) {
 		t.Fatalf("user answer did not reach model context: %s", messages)
 	}
 }
+
+func TestLiveUnansweredAskIsPendingAfterRestartAndNeverAnsweredByDefault(t *testing.T) {
+	root := t.TempDir()
+	form := map[string]any{"title": "Left open", "questions": []any{map[string]any{"id": "choice", "label": "Choice", "prompt": "Pick one", "type": "single", "options": []any{map[string]any{"value": "a", "label": "Option A"}}}}}
+	recorder := &requestRecorder{calls: []scriptedCall{{"ask_user", form}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+
+	first := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user")
+	first.send("ask", "prompt", "Ask the question.")
+	first.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "select"
+	})
+	// The process ends with the dialog unanswered, as a crash or reload would leave it.
+	first.cancel()
+	<-first.done
+	first.exitErr = nil
+
+	second := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user", "--continue")
+	notice := second.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "left unanswered")
+	})
+	if !strings.Contains(fmt.Sprint(notice["message"]), "Left open") || !strings.Contains(fmt.Sprint(notice["message"]), "Nothing was answered for you") {
+		t.Fatalf("the pending notice must name the form and say nothing was answered: %v", notice["message"])
+	}
+	second.send("show", "prompt", "/workbench ask show")
+	second.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "Pick one")
+	})
+	second.send("discard", "prompt", "/workbench ask discard")
+	second.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "Discarded")
+	})
+	second.close()
+
+	third := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user", "--continue")
+	third.send("again", "prompt", "/workbench ask show")
+	third.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "No unanswered")
+	})
+}
