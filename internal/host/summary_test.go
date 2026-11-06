@@ -32,6 +32,56 @@ func summaryFixture(t *testing.T, functions int) (string, []byte) {
 	return path, []byte(text)
 }
 
+func TestSummaryViewHonoursSettings(t *testing.T) {
+	path, _ := summaryFixture(t, 6)
+	target, err := resource.ParsePath(filepath.Dir(path), path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	manager, err := config.New(config.Paths{User: filepath.Join(t.TempDir(), "a.toml"), Project: filepath.Join(t.TempDir(), "b.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	app := &app{syntax: syntax.New()}
+	for _, tc := range []struct {
+		key   string
+		value any
+	}{
+		{"read.summarize.enabled", false},
+		{"read.summarize.min-total-lines", int64(1000)},
+	} {
+		t.Run(tc.key, func(t *testing.T) {
+			baseline, err := manager.Current()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := manager.Save(t.Context(), config.Runtime, baseline, []config.Edit{{Key: tc.key, Value: tc.value}}, nil); err != nil {
+				t.Fatal(err)
+			}
+			snapshot, err := manager.Current()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, ok, err := app.summaryView(t.Context(), target, snapshot); err != nil || ok {
+				t.Fatalf("setting did not disable summary: ok=%v err=%v", ok, err)
+			}
+			if _, err := manager.Save(t.Context(), config.Runtime, snapshot, []config.Edit{{Key: tc.key, Reset: true}}, nil); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+	baseline, err := manager.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := app.summaryView(t.Context(), target, baseline); err != nil || !ok {
+		t.Fatalf("default settings must allow summary: ok=%v err=%v", ok, err)
+	}
+}
+
 func TestSummaryViewFoldsBodiesOnly(t *testing.T) {
 	path, source := summaryFixture(t, 6)
 	app := &app{syntax: syntax.New()}
