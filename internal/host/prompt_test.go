@@ -88,17 +88,24 @@ type promptRenderError struct{}
 
 func (promptRenderError) Error() string { return "render failed" }
 
-func TestUnmatchedLateSectionIsAdmittedAsAFrame(t *testing.T) {
-	session := &session{promptText: "served", contextFrames: &contextFrameState{ledger: frames.NewSession("s")}}
-	payload := map[string]any{"messages": []any{"other"}}
-	replaced, n := walkReplace(payload, session.promptText, session.promptText+"\n\nextra")
-	if n != 0 {
-		t.Fatal(n)
-	}
-	if err := session.admitLateSection("extra"); err != nil {
+func TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch(t *testing.T) {
+	ledger := frames.NewSession("s")
+	scope := frames.DeliveryScope{Epoch: "epoch", BranchLeaf: "leaf-1", Ancestors: map[string]bool{"": true, "leaf-1": true}}
+	id, err := admitLate(ledger, scope, "extra")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if replaced.(map[string]any)["messages"].([]any)[0] != "other" {
-		t.Fatal("payload changed")
+	later := frames.DeliveryScope{Epoch: "epoch", BranchLeaf: "leaf-2", Ancestors: map[string]bool{"": true, "leaf-1": true, "leaf-2": true}}
+	pending, err := ledger.SelectPending("nextPrompt", later)
+	if err != nil || len(pending) != 1 || pending[0].FrameID != id {
+		t.Fatalf("late section not deliverable after the leaf advanced: %v %v", pending, err)
+	}
+	again, err := admitLate(ledger, later, "extra")
+	if err != nil || again != id {
+		t.Fatalf("repeat request admitted a second frame: %q vs %q (%v)", again, id, err)
+	}
+	other := frames.DeliveryScope{Epoch: "epoch", BranchLeaf: "x", Ancestors: map[string]bool{"": true, "x": true}}
+	if pending, _ := ledger.SelectPending("nextPrompt", other); len(pending) != 0 {
+		t.Fatalf("late section leaked to another branch: %v", pending)
 	}
 }

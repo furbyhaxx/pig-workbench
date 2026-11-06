@@ -63,7 +63,7 @@ func (a *app) spliceLatePrompt(ctx sdk.Context, data map[string]any) (any, error
 	}
 	replaced, n := walkReplace(payload, session.promptText, session.promptText+"\n\n"+extra)
 	if n == 0 {
-		if err := session.admitLateSection(extra); err != nil {
+		if err := session.admitLateSection(ctx, extra); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -71,13 +71,29 @@ func (a *app) spliceLatePrompt(ctx sdk.Context, data map[string]any) (any, error
 	return map[string]any{"payload": replaced}, nil
 }
 
-func (s *session) admitLateSection(body string) error {
+func (s *session) admitLateSection(ctx sdk.Context, body string) error {
 	if s == nil || s.contextFrames == nil || s.contextFrames.ledger == nil {
 		return errors.New("late prompt section has no frame ledger")
 	}
-	ledger := s.contextFrames.ledger.Ledger(frames.Context{ProducerPrefix: "workbench", BranchLeaf: "prompt", Epoch: "prompt", Trusted: true, Authority: "data"})
-	_, err := ledger.Admit(frames.Publish{EventKey: "prompt/late/" + promptEpoch(body), Kind: "notice", Source: "workbench", SubjectKey: "prompt.late", Body: body, Delivery: "nextBoundary", DataTrust: "trusted", CoalesceKey: "prompt.late"})
-	return err
+	state := s.contextFrames
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	scope, err := branchScope(ctx, s.snapshots.Epoch())
+	if err != nil {
+		return err
+	}
+	id, err := admitLate(state.ledger, scope, body)
+	if err != nil {
+		return err
+	}
+	return persistFrames(ctx, state.ledger, []string{id})
+}
+
+// admitLate queues a section the served prompt lacks for the next prompt on this branch.
+func admitLate(ledger *frames.Session, scope frames.DeliveryScope, body string) (string, error) {
+	context := frames.Context{ProducerPrefix: "workbench", BranchLeaf: scope.BranchLeaf, Ancestors: scope.Ancestors, Epoch: scope.Epoch, Trusted: true, Authority: "data"}
+	receipt, err := ledger.Ledger(context).Admit(frames.Publish{EventKey: "prompt/late/" + promptEpoch(body), Kind: "notice", Source: "workbench", SubjectKey: "prompt.late", Body: body, Delivery: "nextPrompt", DataTrust: "trusted", CoalesceKey: "prompt.late"})
+	return receipt.FrameID, err
 }
 
 func lateSections(ctx sdk.Context, served string) string {
