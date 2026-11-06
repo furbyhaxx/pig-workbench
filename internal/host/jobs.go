@@ -72,7 +72,12 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if _, err := os.Stat("/bin/bash"); err == nil {
 		shell = "/bin/bash"
 	}
-	id, err := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", input.Command}, Dir: location.Cwd, Stdin: input.Interactive})
+	environment, err := s.jobEnvironment(work)
+	if err != nil {
+		s.secrets.withhold(ctx, err)
+		return nil, errors.New("the secrets boundary is unavailable; the command was not run")
+	}
+	id, err := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", input.Command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
 	if err != nil {
 		return nil, err
 	}

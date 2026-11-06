@@ -1,10 +1,14 @@
 package host
 
 import (
+	"context"
 	"encoding/json"
+	"os"
 	"slices"
+	"sort"
 
 	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 )
 
 // redactOwners reads the user-only `secrets.redact-owners` grant.
@@ -53,4 +57,47 @@ const envelopeSlack = 2048
 func encodedLen(text string) int {
 	encoded, _ := json.Marshal(text)
 	return len(encoded)
+}
+
+// injectedEnvironment returns NAME=value pairs for vault secrets bound to an environment name in
+// the session's project or global scope. The host process environment is never changed.
+func (b *secretsBoundary) injectedEnvironment(projectID string) ([]string, error) {
+	if _, enabled, err := b.Guard(); err != nil || !enabled {
+		return nil, err
+	}
+	b.mu.Lock()
+	vault := b.vault
+	b.mu.Unlock()
+	records, err := vault.Load()
+	if err != nil {
+		return nil, err
+	}
+	values, err := vault.Values()
+	if err != nil {
+		return nil, err
+	}
+	chosen := secrets.EnvInjection(records, values, projectID)
+	names := make([]string, 0, len(chosen))
+	for name := range chosen {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	environment := make([]string, 0, len(names))
+	for _, name := range names {
+		environment = append(environment, name+"="+chosen[name])
+	}
+	return environment, nil
+}
+
+// jobEnvironment is the full environment of a bash call: the host's plus injected secrets.
+func (s *session) jobEnvironment(ctx context.Context) ([]string, error) {
+	projectID := ""
+	if identity := s.projectIdentity(ctx); identity != nil {
+		projectID = identity.ID
+	}
+	injected, err := s.secrets.injectedEnvironment(projectID)
+	if err != nil || len(injected) == 0 {
+		return nil, err
+	}
+	return append(os.Environ(), injected...), nil
 }

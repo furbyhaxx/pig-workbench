@@ -6,6 +6,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"os"
 	"path/filepath"
 	"slices"
@@ -381,5 +382,34 @@ func TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure(t *testing.T
 	b.Reload()
 	if result, failure := call("pig-web", "secrets.redact", map[string]any{"text": token}); failure == nil || result != nil || strings.Contains(failure.Message, token) {
 		t.Fatalf("a failing boundary must not succeed or echo: %v %+v", result, failure)
+	}
+}
+
+func TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning(t *testing.T) {
+	b, _ := testBoundary(t)
+	guard, _, err := b.Guard()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bind := func(value, scope, project string) {
+		t.Helper()
+		if err := guard.Learn([]byte(value), "token", "user"); err != nil {
+			t.Fatal(err)
+		}
+		placeholder, err := guard.Redact(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := b.vault.SetMetadata(secrets.Record{Placeholder: placeholder, Kind: "token", Source: "user", Scope: scope, ProjectID: project, Env: "SERVICE_TOKEN"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	bind("global-service-token-value", "global", "")
+	bind("project-service-token-value", "project", "prj-aaaaaaaa")
+	for projectID, want := range map[string]string{"prj-aaaaaaaa": "SERVICE_TOKEN=project-service-token-value", "prj-bbbbbbbb": "SERVICE_TOKEN=global-service-token-value", "": "SERVICE_TOKEN=global-service-token-value"} {
+		got, err := b.injectedEnvironment(projectID)
+		if err != nil || len(got) != 1 || got[0] != want {
+			t.Fatalf("project %q = %v %v, want %s", projectID, got, err, want)
+		}
 	}
 }

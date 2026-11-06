@@ -5,6 +5,8 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -163,5 +165,53 @@ func TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder(t *te
 		if strings.Contains(body, token) {
 			t.Fatalf("request %d carries the real token", i)
 		}
+	}
+}
+
+func TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted(t *testing.T) {
+	root := t.TempDir()
+	agent := filepath.Join(root, "agent")
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	writeFixtureProvider(t, agent, "http://127.0.0.1:1")
+	settings, err := config.New(config.Paths{User: filepath.Join(agent, "Workbench.toml"), Project: filepath.Join(root, "project", "Workbench.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	boundary := newSecretsBoundary(settings, agent, func() string { return "" }, func() bool { return false }, func() string { return root })
+	guard, _, err := boundary.Guard()
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := "injected-service-token-9f3a"
+	if err := guard.Learn([]byte(value), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	placeholder, _ := guard.Redact(value)
+	if err := boundary.vault.SetMetadata(secrets.Record{Placeholder: placeholder, Kind: "token", Source: "user", Scope: "global", Env: "SERVICE_TOKEN"}); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &secretRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": `printf %s "$SERVICE_TOKEN" > got.txt; echo "token=$SERVICE_TOKEN"`}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, agent, server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "bash")
+	fixture.send("script", "prompt", "Print the service token variable.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	got, err := os.ReadFile(filepath.Join(root, "got.txt"))
+	if err != nil || string(got) != value {
+		t.Fatalf("the command saw %q (%v), want the injected value", got, err)
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, value) {
+			t.Fatalf("request %d carries the injected secret", i)
+		}
+	}
+	if !strings.Contains(recorder.bodies[len(recorder.bodies)-1], placeholder) {
+		t.Fatal("the command output should reach the model as the placeholder")
 	}
 }
