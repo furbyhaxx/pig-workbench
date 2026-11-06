@@ -74,7 +74,7 @@ func (b *secretsBoundary) Guard() (guard *secrets.Detector, enabled bool, err er
 // Withheld returns the user-facing reason output was withheld and whether this cause is new
 // since the last success, so a failing boundary notifies once instead of per request.
 func (b *secretsBoundary) Withheld(err error) (reason string, fresh bool) {
-	reason = "Secrets boundary unavailable, so output was withheld: " + err.Error() + ". Repair it, then continue; see /workbench secrets."
+	reason = "Secrets boundary unavailable, so output was withheld: " + err.Error() + ". Repair it, run /workbench settings reload, then retry."
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	fresh = b.noticed != reason

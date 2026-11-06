@@ -61,7 +61,7 @@ func (b *secretsBoundary) resultPatch(content any) (patch any, cause error) {
 	if err == nil {
 		return nil, nil
 	}
-	return map[string]any{"content": []any{map[string]any{"type": "text", "text": "Output withheld: the secrets boundary is unavailable. Repair it (see /workbench secrets) and run the call again."}}, "isError": true}, err
+	return map[string]any{"content": []any{map[string]any{"type": "text", "text": "Output withheld: the secrets boundary is unavailable. Repair the reported error, run /workbench settings reload, then retry."}}, "isError": true}, err
 }
 
 // redactResult replaces secrets in every model-visible block of a tool result before it enters

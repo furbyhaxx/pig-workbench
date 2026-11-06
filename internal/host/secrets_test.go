@@ -90,8 +90,8 @@ func TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery(t *testing.T) 
 		t.Fatal(err)
 	}
 	_, _, err := b.Guard()
-	if _, fresh := b.Withheld(err); !fresh {
-		t.Fatal("the first failure must notify")
+	if reason, fresh := b.Withheld(err); !fresh || !strings.Contains(reason, "/workbench settings reload") {
+		t.Fatalf("the first failure must explain recovery: %q fresh=%v", reason, fresh)
 	}
 	if _, fresh := b.Withheld(err); fresh {
 		t.Fatal("the same failure must not notify twice")
