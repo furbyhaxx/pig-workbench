@@ -67,6 +67,7 @@ type session struct {
 	docs          *docsCatalog
 	producers     *producerRegistry
 	endpoint      *sessionEndpoint
+	activity      *activityLine
 	installedMu   sync.Mutex
 	installed     map[string]func()
 	projectMu     sync.Mutex
@@ -269,6 +270,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.mu.Unlock()
 	a.startEndpoint(ctx, s)
 	a.adoptSessionStorage(ctx, s)
+	a.startActivity(ctx, s)
 	announcePendingAsk(ctx)
 	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": advertisedCapabilities}}); err != nil {
 		ctx.Notify("Workbench ready event failed; clients can discover on demand.", "warning")
@@ -285,6 +287,9 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.mu.Unlock()
 	if old != nil {
 		old.status.close()
+		if old.activity != nil {
+			old.activity.close(ctx)
+		}
 		if old.endpoint != nil {
 			old.endpoint.close()
 		}

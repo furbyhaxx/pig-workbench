@@ -56,6 +56,7 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 	for _, name := range []string{"cd", "wb:cd"} {
 		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
 	}
+	ext.Shortcut("alt+w", "Show what Workbench is doing and how to inspect it.", a.activityShortcut)
 	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", Handler: a.toolsCommand})
 	ext.RegisterCommand("wb:jobs", sdk.CommandOptions{Description: "Inspect or control Workbench jobs.", Handler: a.jobsCommand})
 }
@@ -67,7 +68,7 @@ func (a *app) show(ctx sdk.Context) error {
 	}
 	info := s.location.Current()
 	_, settings := s.settings.Inspect()
-	text := fmt.Sprintf("Workbench\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d\nConfig revision: %d", s.id, s.generation, info.Cwd, info.Revision, settings.Revision)
+	text := fmt.Sprintf("Workbench\nActivity: %s\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d\nConfig revision: %d", activitySummary(s.activityItems()), s.id, s.generation, info.Cwd, info.Revision, settings.Revision)
 	if settings.Stale {
 		text += "\nConfiguration error: " + settings.Error
 	}

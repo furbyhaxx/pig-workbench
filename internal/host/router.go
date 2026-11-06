@@ -34,6 +34,11 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 		}
 		text, found := s.integrationsText(owner)
 		return nil, text, found
+	}, activity: func() []activityItem {
+		if s, ok := jobsSource(); ok && s != nil {
+			return s.activityItems()
+		}
+		return nil
 	}}); err != nil {
 		return nil, "", err
 	}

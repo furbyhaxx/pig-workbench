@@ -172,6 +172,9 @@ func Catalog() []Definition {
 		case "read.max-lines":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result lines, including framing; 5–2000."
+		case "activity.enabled", "activity.placement":
+			d.Application = "live"
+			d.Description = "The activity line: counts of running and failed jobs, a pending ask, live sessions, loaded skills and contributed items, as one row above or below the editor. Applied at session start."
 		case "projects.session-storage":
 			d.Application = "live"
 			d.Description = "`link` shares one session directory per recognised project through symlinked buckets at session start (SPEC-0012 §3.5); `off` never touches session storage. Undo with /workbench projects unlink-storage."

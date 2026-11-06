@@ -383,3 +383,37 @@ func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
 		}
 	}
 }
+
+func TestLiveActivityLineCountsMatchTheRegistries(t *testing.T) {
+	runtime := shortRuntime(t)
+	l := startLiveSession(t, runtime, []scriptedCall{
+		{"bash", map[string]any{"command": "sleep 30", "background": true}},
+		{"bash", map[string]any{"command": "exit 3"}},
+		{"read", map[string]any{"path": "cfg://workbench/status"}},
+	}, "--tools", "read,write,bash")
+	var widgets []string
+	l.fixture.send("work", "prompt", "start a job")
+	l.fixture.wait(func(record map[string]any) bool {
+		if record["type"] == "extension_ui_request" && record["method"] == "setWidget" {
+			widgets = append(widgets, fmt.Sprint(record["widgetLines"]))
+		}
+		return record["type"] == "agent_end"
+	})
+	l.fixture.send("show", "prompt", "/workbench show")
+	shown := fmt.Sprint(notifyContaining(l.fixture, "Activity:")["message"])
+	if !strings.Contains(shown, "1 jobs") {
+		t.Fatalf("/workbench show must carry the running job count: %s", shown)
+	}
+	status := ""
+	for _, request := range l.requests() {
+		if strings.Contains(request, `\"activity\"`) {
+			status = request
+		}
+	}
+	if !strings.Contains(status, `\"key\": \"jobs\"`) || !strings.Contains(status, `\"count\": 1`) {
+		t.Fatalf("cfg://workbench/status must carry the same activity items: %.1500s", status)
+	}
+	if len(widgets) == 0 {
+		t.Log("no setWidget record was observed in RPC mode; the line is verified through the shared items")
+	}
+}

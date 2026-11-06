@@ -16,6 +16,8 @@ type cfgProvider struct {
 	source func() (*config.Snapshot, config.Status)
 	// integrations serves cfg://workbench/integrations/: owners with no argument, one owner's registrations otherwise.
 	integrations func(owner string) (names []string, text string, ok bool)
+	// activity returns the activity-line items so headless callers read the same facts.
+	activity func() []activityItem
 }
 
 func (cfgProvider) Scheme() string { return "cfg" }
@@ -144,6 +146,9 @@ func (p cfgProvider) Read(ctx context.Context, request resource.ReadRequest) (re
 			"configRevision": status.Revision,
 			"read":           snapshot.Read(),
 			"warnings":       snapshot.Warnings(),
+		}
+		if p.activity != nil {
+			value.(map[string]any)["activity"] = p.activity()
 		}
 	case parts[0] == "workbench" && len(parts) == 3 && parts[1] == "integrations" && p.integrations != nil:
 		_, text, ok := p.integrations(parts[2])
