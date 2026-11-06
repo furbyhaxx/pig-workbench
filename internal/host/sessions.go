@@ -18,6 +18,7 @@ import (
 	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/messaging"
@@ -352,6 +353,9 @@ func (e *sessionEndpoint) Message(env messaging.Envelope) messaging.Receipt {
 	if !e.limiter.AllowMessage(env.From.SessionID, now, e.s.settingInt("sessions.rate-limit", 30)) {
 		return reject(messaging.RateLimited)
 	}
+	if strings.HasPrefix(env.Channel, "ext:") {
+		return e.deliverExtension(env)
+	}
 	e.mu.Lock()
 	e.known[env.From.SessionID] = true
 	e.log = append(e.log, loggedMessage{At: now, Peer: env.From.SessionID, Envelope: env})
@@ -529,6 +533,8 @@ type outbound struct {
 	Wake        string   `json:"wake"`
 	Progress    bool     `json:"progress"`
 	ReplyTo     string   `json:"replyTo"`
+	Channel     string   `json:"-"`
+	Owner       string   `json:"-"`
 	user        bool
 }
 
@@ -551,7 +557,7 @@ func (e *sessionEndpoint) send(ctx context.Context, target string, msg outbound)
 		}
 	}
 	e.mu.Lock()
-	from := messaging.Peer{EndpointID: e.id, SessionID: e.s.id, SessionName: e.record.SessionName, ProjectID: e.record.ProjectID, ProjectSlug: e.record.ProjectSlug}
+	from := messaging.Peer{Owner: msg.Owner, EndpointID: e.id, SessionID: e.s.id, SessionName: e.record.SessionName, ProjectID: e.record.ProjectID, ProjectSlug: e.record.ProjectSlug}
 	hop, conversation := 0, ""
 	if !msg.user && e.origin != nil && e.origin.peer == record.SessionID {
 		hop, conversation = e.origin.hop+1, e.origin.conversation
@@ -561,7 +567,7 @@ func (e *sessionEndpoint) send(ctx context.Context, target string, msg outbound)
 	if conversation == "" {
 		conversation = id
 	}
-	envelope := messaging.Envelope{ID: id, ConversationID: conversation, InReplyTo: msg.ReplyTo, Hop: hop, From: from, ToSessionID: record.SessionID, Subject: subject, Body: body, Attachments: msg.Attachments, Wake: msg.Wake, Progress: msg.Progress, ExpiresAt: time.Now().Add(time.Hour)}
+	envelope := messaging.Envelope{ID: id, ConversationID: conversation, InReplyTo: msg.ReplyTo, Hop: hop, From: from, ToSessionID: record.SessionID, Subject: subject, Body: body, Attachments: msg.Attachments, Channel: msg.Channel, Wake: msg.Wake, Progress: msg.Progress, ExpiresAt: time.Now().Add(time.Hour)}
 	if err := envelope.Validate(); err != nil {
 		return messaging.Receipt{}, err
 	}
@@ -607,5 +613,55 @@ func (e *sessionEndpoint) wait(ctx context.Context, from string, d time.Duration
 		return nil, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	}
+}
+
+// deliverExtension hands an ext:<owner> message to subscribers; it never wakes the agent or becomes a frame.
+func (e *sessionEndpoint) deliverExtension(env messaging.Envelope) messaging.Receipt {
+	data := api.SessionsMessageEvent{Owner: strings.TrimPrefix(env.Channel, "ext:"), FromID: env.From.SessionID, FromName: env.From.SessionName, MessageID: env.ID, Subject: env.Subject, Body: env.Body}
+	err := e.s.host.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: e.s.id, Generation: e.s.generation, EventID: e.s.generation + ":message:" + env.ID, Type: "sessions.message", Data: data})
+	if err != nil {
+		return messaging.Receipt{Status: messaging.Rejected, Reason: messaging.Busy, MessageID: env.ID, ConversationID: env.ConversationID}
+	}
+	return messaging.Receipt{Status: messaging.Accepted, Delivery: messaging.Delivered, MessageID: env.ID, ConversationID: env.ConversationID}
+}
+
+// sessionsService serves sessions.list and sessions.send for extensions.
+func (a *app) sessionsService(ctx context.Context, s *session, request api.Request) (any, *api.Error) {
+	if s.endpoint == nil {
+		return nil, &api.Error{Code: "unsupported", Message: errNoEndpoint.Error(), Outcome: "notApplied"}
+	}
+	switch request.Method {
+	case "sessions.list":
+		records, err := s.endpoint.peers(ctx)
+		if err != nil {
+			return nil, &api.Error{Code: "internal", Message: "the session registry is unavailable", Outcome: "notApplied"}
+		}
+		result := api.SessionsListResult{Sessions: []api.SessionInfo{}}
+		for _, record := range records {
+			result.Sessions = append(result.Sessions, api.SessionInfo{SessionID: record.SessionID, Name: record.SessionName, ProjectID: record.ProjectID, ProjectSlug: record.ProjectSlug, Cwd: record.Cwd, State: record.State, Model: record.Model})
+		}
+		return result, nil
+	default:
+		var params api.SessionsSendParams
+		if err := api.Decode(request.Params, &params); err != nil || params.Target == "" || params.Body == "" {
+			return nil, &api.Error{Code: "invalidRequest", Field: "params", Message: "sessions.send expects {target, channel, body}", Outcome: "notApplied"}
+		}
+		if request.From.Owner == "" {
+			return nil, &api.Error{Code: "permissionDenied", Message: "sessions.send requires a registered owner", Outcome: "notApplied"}
+		}
+		channel := params.Channel
+		switch {
+		case channel == "" || channel == "agent":
+			channel = "agent"
+		case channel == "ext:"+request.From.Owner:
+		default:
+			return nil, &api.Error{Code: "permissionDenied", Field: "params.channel", Message: "an extension may send only on agent or its own ext:<owner> channel", Outcome: "notApplied"}
+		}
+		receipt, err := s.endpoint.send(ctx, params.Target, outbound{Subject: params.Subject, Body: params.Body, Attachments: params.Attachments, Wake: params.Wake, Channel: channel, Owner: request.From.Owner, user: true})
+		if err != nil {
+			return nil, &api.Error{Code: "internal", Message: sanitizeProviderText(err.Error()), Outcome: "notApplied"}
+		}
+		return api.SessionsSendResult{Status: receipt.Status, Reason: receipt.Reason, Delivery: receipt.Delivery, MessageID: receipt.MessageID, ConversationID: receipt.ConversationID}, nil
 	}
 }

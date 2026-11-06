@@ -83,6 +83,9 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 			return nil, &api.Error{Code: "incompatibleVersion", Message: "Workbench supports protocol major 1"}
 		}
 		capabilities := slices.Clone(advertisedCapabilities)
+		if s.endpoint != nil {
+			capabilities = append(capabilities, "sessions")
+		}
 		if s.secrets.granted(request.From.Owner) {
 			capabilities = append(capabilities, "secrets")
 		}
@@ -112,6 +115,8 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		return a.contextFieldsSet(host, s, request)
 	case "snapshots.view", "snapshots.status", "snapshots.touched":
 		return a.snapshotsService(ctx, host, s, request)
+	case "sessions.list", "sessions.send":
+		return a.sessionsService(ctx, s, request)
 	case "secrets.redact":
 		return a.secretsRedact(s, request)
 	case "location.get":

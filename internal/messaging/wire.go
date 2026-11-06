@@ -54,22 +54,26 @@ type Peer struct {
 	SessionName string `json:"sessionName,omitempty"`
 	ProjectID   string `json:"projectId,omitempty"`
 	ProjectSlug string `json:"projectSlug,omitempty"`
+	// Owner names the extension that sent the message, if any.
+	Owner string `json:"owner,omitempty"`
 }
 
 // Envelope is one message between sessions.
 type Envelope struct {
-	ID             string    `json:"id"`
-	ConversationID string    `json:"conversationId"`
-	InReplyTo      string    `json:"inReplyTo,omitempty"`
-	Hop            int       `json:"hop"`
-	From           Peer      `json:"from"`
-	ToSessionID    string    `json:"toSessionId"`
-	Subject        string    `json:"subject,omitempty"`
-	Body           string    `json:"body"`
-	Attachments    []string  `json:"attachments,omitempty"`
-	Wake           string    `json:"wake,omitempty"`
-	Progress       bool      `json:"progress,omitempty"`
-	ExpiresAt      time.Time `json:"expiresAt,omitempty"`
+	ID             string   `json:"id"`
+	ConversationID string   `json:"conversationId"`
+	InReplyTo      string   `json:"inReplyTo,omitempty"`
+	Hop            int      `json:"hop"`
+	From           Peer     `json:"from"`
+	ToSessionID    string   `json:"toSessionId"`
+	Subject        string   `json:"subject,omitempty"`
+	Body           string   `json:"body"`
+	Attachments    []string `json:"attachments,omitempty"`
+	// Channel is "agent" (the default) or "ext:<owner>".
+	Channel   string    `json:"channel,omitempty"`
+	Wake      string    `json:"wake,omitempty"`
+	Progress  bool      `json:"progress,omitempty"`
+	ExpiresAt time.Time `json:"expiresAt,omitempty"`
 }
 
 // Validate checks the limits that hold regardless of who receives the envelope.

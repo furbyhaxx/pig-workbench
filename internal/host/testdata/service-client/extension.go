@@ -33,6 +33,45 @@ func Extension() *sdk.Extension {
 			old.Close()
 		}
 	})
+	ext.OnLoaded(func(ctx sdk.Context) {
+		_, _ = ext.Events().On(api.EventChannel, func(ctx sdk.Context, value any) error {
+			encoded, err := json.Marshal(value)
+			if err != nil || !strings.Contains(string(encoded), `"sessions.message"`) {
+				return nil
+			}
+			ctx.Notify(`{"sessionsMessage":`+string(encoded)+`}`, "info")
+			return nil
+		})
+	})
+	ext.Command("fixture-send", "Send an extension-channel message to another live session.", func(ctx sdk.Context, args string) error {
+		clientMu.Lock()
+		client := client
+		clientMu.Unlock()
+		if client == nil {
+			return errors.New("client not initialized")
+		}
+		endpoint, err := client.Discover(ctx, "sessions")
+		if err != nil {
+			return err
+		}
+		var listed api.SessionsListResult
+		if err := client.Call(ctx, endpoint, "sessions.list", map[string]any{}, &listed, nil); err != nil {
+			return err
+		}
+		var denied api.SessionsSendResult
+		err = client.Call(ctx, endpoint, "sessions.send", api.SessionsSendParams{Target: strings.TrimSpace(args), Channel: "ext:someone-else", Body: "must be refused"}, &denied, nil)
+		var protocol *api.Error
+		if !errors.As(err, &protocol) || protocol.Code != "permissionDenied" {
+			return fmt.Errorf("a foreign ext: channel was not refused: %v", err)
+		}
+		var sent api.SessionsSendResult
+		if err := client.Call(ctx, endpoint, "sessions.send", api.SessionsSendParams{Target: strings.TrimSpace(args), Channel: "ext:service-client", Body: "EXT-CHANNEL-BODY"}, &sent, nil); err != nil {
+			return err
+		}
+		output, _ := json.Marshal(map[string]any{"fixtureSend": "passed", "listed": len(listed.Sessions), "receipt": sent})
+		ctx.Notify(string(output), "info")
+		return nil
+	})
 	ext.OnSessionShutdown(func(sdk.Context, map[string]any) (any, error) {
 		clientMu.Lock()
 		old := client

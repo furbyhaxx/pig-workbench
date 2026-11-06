@@ -53,9 +53,10 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
 | `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set` | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
 | `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
+| `sessions` | `sessions.list`, `sessions.send` | — (advertised while session messaging is enabled) |
 | `secrets` | `secrets.redact` | — (advertised only to granted owners) |
 
-`sessions` is specified but not advertised.
+`sessions.list` returns the discoverable live sessions of the same user (no tokens). `sessions.send` takes `{target, channel, subject, body, attachments, wake}`. Channel `ext:<your owner>` delivers a `sessions.message` event (`api.SessionsMessageEvent`) on the event channel of the target session; it never wakes the agent and never becomes a frame. Channel `agent` delivers to the model as an untrusted frame attributed to you. The answer is the synchronous receipt (`accepted` with `woken`, `steered`, `delivered` or `queued`, or `rejected` with a reason). Sending on another owner's channel is `permissionDenied`.
 
 ## Redact your own inference requests
 

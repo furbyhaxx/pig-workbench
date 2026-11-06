@@ -4,6 +4,7 @@ package host
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -255,4 +256,44 @@ func TestLiveWaitingReceiverGetsTheMessageAsTheReadResult(t *testing.T) {
 		t.Fatal("the awaited message must keep its untrusted-data warning")
 	}
 	receiver.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+}
+
+func TestLiveExtensionChannelReachesTheOtherSessionsExtensionWithoutWakingIt(t *testing.T) {
+	runtime := shortRuntime(t)
+	t.Setenv("XDG_RUNTIME_DIR", runtime)
+	start := func() (*rpcFixture, *requestRecorder) {
+		root := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		recorder := &requestRecorder{}
+		server := recorder.serve(t)
+		t.Cleanup(server.Close)
+		writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+		return startRPCWithExtensions(t, root, true, []string{"service-client"}, "--model", "workbench-fixture/mock"), recorder
+	}
+	receiver, receiverRequests := start()
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	for id := range records {
+		receiverID = id
+	}
+	sender, _ := start()
+	waitForRecords(t, runtime, 2)
+	sender.send("send", "prompt", "/fixture-send "+receiverID[:8])
+	sender.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"fixtureSend":"passed"`)
+	})
+	got := receiver.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), "EXT-CHANNEL-BODY")
+	})
+	if !strings.Contains(fmt.Sprint(got["message"]), `"owner":"service-client"`) {
+		t.Fatalf("event lacks the owner: %v", got["message"])
+	}
+	time.Sleep(300 * time.Millisecond)
+	receiverRequests.mu.Lock()
+	defer receiverRequests.mu.Unlock()
+	if len(receiverRequests.bodies) != 0 {
+		t.Fatal("an extension-channel message must not start a turn")
+	}
 }
