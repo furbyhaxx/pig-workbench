@@ -519,3 +519,32 @@ func TestStructuralIdentitySurvivesShortValueOverlap(t *testing.T) {
 		t.Fatalf("argument = %#v, err %v", substituted, err)
 	}
 }
+
+func TestRedactMessagesHandlesPiGNativeToolCallAndCustomMessages(t *testing.T) {
+	guard, _, key := newTestGuard(t)
+	secret := "native-shape-secret-value"
+	placeholder := Placeholder(key, []byte(secret))
+	if err := guard.Learn([]byte(secret), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	messages := []any{
+		map[string]any{"role": "system", "content": "", "sections": map[string]any{"cwd": "<cwd>\n/work\n</cwd>"}},
+		map[string]any{"role": "custom", "customType": "pig-workbench.context", "content": "note " + secret, "display": true},
+		map[string]any{"role": "assistant", "content": []any{
+			map[string]any{"type": "toolCall", "id": "call-1", "name": "bash", "arguments": map[string]any{"command": "echo " + secret, "background": true}},
+		}, "stopReason": "toolUse"},
+		map[string]any{"role": "toolResult", "toolCallId": "call-1", "content": []any{map[string]any{"type": "text", "text": "out " + secret}}, "details": map[string]any{"cursor": float64(0)}},
+	}
+	out, err := RedactMessages(guard, messages)
+	if err != nil {
+		t.Fatalf("PiG's own message shapes must be accepted: %v", err)
+	}
+	encoded := mustJSON(t, out)
+	if strings.Contains(encoded, secret) {
+		t.Fatalf("the secret survived: %s", encoded)
+	}
+	call := out[2].(map[string]any)["content"].([]any)[0].(map[string]any)
+	if call["arguments"].(map[string]any)["command"] != "echo "+placeholder || call["name"] != "bash" || call["arguments"].(map[string]any)["background"] != true {
+		t.Fatalf("toolCall arguments must be redacted by value and keep their shape: %#v", call)
+	}
+}

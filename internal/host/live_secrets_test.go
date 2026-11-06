@@ -4,6 +4,7 @@ package host
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"os"
@@ -204,5 +205,22 @@ func TestLiveBrokenSecretsPolicySendsNothingToTheProvider(t *testing.T) {
 	}
 	if len(recorder.bodies) != 0 {
 		t.Fatalf("%d provider requests were sent while the secrets boundary was unavailable", len(recorder.bodies))
+	}
+}
+
+func TestLiveABackgroundBashCallDoesNotTriggerTheWithheldNotice(t *testing.T) {
+	l := startLiveSession(t, shortRuntime(t), []scriptedCall{{"bash", map[string]any{"command": "sleep 30", "background": true}}}, "--tools", "read,write,bash")
+	l.fixture.send("work", "prompt", "start a job")
+	var notices []string
+	l.fixture.wait(func(record map[string]any) bool {
+		if record["type"] == "extension_ui_request" && record["method"] == "notify" {
+			notices = append(notices, fmt.Sprint(record["message"]))
+		}
+		return record["type"] == "agent_end"
+	})
+	for _, notice := range notices {
+		if strings.Contains(notice, "Secrets boundary unavailable") {
+			t.Fatalf("a normal tool call must not trip the secrets boundary: %s", notice)
+		}
 	}
 }

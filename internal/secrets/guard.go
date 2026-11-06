@@ -322,17 +322,21 @@ func transformBlock(transform textOp, block map[string]any, path string) (map[st
 		return copied, nil
 	case opaqueBlockKind(kind):
 		return copyObject(block, path)
-	case kind == "tool_use":
+	case kind == "tool_use", kind == "toolCall":
+		argumentsKey := "input"
+		if kind == "toolCall" {
+			argumentsKey = "arguments"
+		}
 		copied, err := copyObject(block, path)
 		if err != nil {
 			return nil, err
 		}
-		if input, present := block["input"]; present {
-			transformed, err := transformValues(transform, input, joinPath(path, "input"))
+		if input, present := block[argumentsKey]; present {
+			transformed, err := transformValues(transform, input, joinPath(path, argumentsKey))
 			if err != nil {
 				return nil, err
 			}
-			copied["input"] = transformed
+			copied[argumentsKey] = transformed
 		}
 		return copied, nil
 	case kind == "tool_result":
