@@ -41,6 +41,7 @@ type Engine struct {
 	loader          TemplateLoader
 	filters         *exec.FilterSet
 	structures      *exec.ControlStructureSet
+	tests           *exec.TestSet
 	deadline        time.Duration
 	maxOutputBytes  int
 	maxIncludeDepth int
@@ -94,10 +95,16 @@ func New(options Options) (*Engine, error) {
 	if err := structures.Replace("for", strictForParser(forParser)); err != nil {
 		return nil, fmt.Errorf("register cancellable for control structure: %w", err)
 	}
+	tests := builtins.Tests.Update(exec.NewTestSet(map[string]exec.TestFunction{
+		"family": testFamily,
+		"glob":   testGlob,
+		"regex":  testRegex,
+	}))
 	return &Engine{
 		loader:          options.Loader,
 		filters:         filters,
 		structures:      structures,
+		tests:           tests,
 		deadline:        options.Deadline,
 		maxOutputBytes:  options.MaxOutputBytes,
 		maxIncludeDepth: options.MaxIncludeDepth,
@@ -180,7 +187,7 @@ func (e *Engine) evaluate(state *renderState, name string, input *exec.Context) 
 	environment := &exec.Environment{
 		Context:           exec.EmptyContext().Update(builtins.GlobalFunctions).Update(builtins.GlobalVariables),
 		Filters:           e.filters,
-		Tests:             builtins.Tests,
+		Tests:             e.tests,
 		ControlStructures: e.structures,
 		Methods:           builtins.Methods,
 	}
