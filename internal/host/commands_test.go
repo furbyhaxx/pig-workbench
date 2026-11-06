@@ -88,3 +88,18 @@ func mustTarget(t *testing.T, cwd, path, selector string) resource.Target {
 	}
 	return target
 }
+
+func TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb(t *testing.T) {
+	items, err := completeWorkbench("integrations ", []string{"integrations pig-web", "resources kb"})
+	if err != nil || len(items) != 1 || items[0].Value != "integrations pig-web" {
+		t.Fatalf("owners = %+v, %v", items, err)
+	}
+	items, err = completeWorkbench("res", []string{"integrations pig-web", "resources kb"})
+	if err != nil || len(items) != 1 || items[0].Value != "resources" {
+		t.Fatalf("a verb completes before its arguments: %+v, %v", items, err)
+	}
+	items, _ = completeWorkbench("resources k", []string{"resources kb", "resources file"})
+	if len(items) != 1 || items[0].Value != "resources kb" {
+		t.Fatalf("schemes = %+v", items)
+	}
+}

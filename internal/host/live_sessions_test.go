@@ -345,7 +345,7 @@ func TestLiveSessionsCommandSendsRedactsAndHonoursBlock(t *testing.T) {
 
 // TestLiveEveryCompletedCommandIsAcceptedByItsHandler keeps completion and dispatch from drifting apart.
 func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
-	items, err := workbenchCompletions("")
+	items, err := completeWorkbench("", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

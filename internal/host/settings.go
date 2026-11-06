@@ -13,7 +13,21 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
 
-func workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error) {
+// workbenchCompletions completes subcommands statically and owners and schemes from the live registries.
+func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error) {
+	var live []string
+	if s, err := a.current(); err == nil {
+		for _, owner := range s.integrationOwners() {
+			live = append(live, "integrations "+owner)
+		}
+		for _, scheme := range s.router.Schemes() {
+			live = append(live, "resources "+scheme)
+		}
+	}
+	return completeWorkbench(prefix, live)
+}
+
+func completeWorkbench(prefix string, live []string) ([]sdk.AutocompleteItem, error) {
 	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
@@ -37,6 +51,7 @@ func workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error) {
 			}
 		}
 	}
+	candidates = append(candidates, live...)
 	var result []sdk.AutocompleteItem
 	for _, value := range candidates {
 		if strings.HasPrefix(value, prefix) && !strings.Contains(strings.TrimPrefix(value, prefix), " ") {

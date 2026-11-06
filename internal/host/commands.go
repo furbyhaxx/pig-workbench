@@ -15,7 +15,7 @@ import (
 func (a *app) registerCommands(ext *sdk.Extension) {
 	ext.RegisterCommand("workbench", sdk.CommandOptions{
 		Description:            "Inspect Workbench state, settings, tools or working location.",
-		GetArgumentCompletions: workbenchCompletions,
+		GetArgumentCompletions: a.workbenchCompletions,
 		Handler: func(ctx sdk.Context, args string) error {
 			verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
 			switch verb {
