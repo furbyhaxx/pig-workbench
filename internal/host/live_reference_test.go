@@ -230,6 +230,14 @@ func TestLiveProviderMutationsWithoutConfirmation(t *testing.T) {
 		{"write", map[string]any{"path": "mut://fixture/partial", "content": "partial"}},
 		{"write", map[string]any{"path": "mut://fixture/unknown", "content": "uncertain"}},
 		{"bash", map[string]any{"command": "rm kb://sources/a.md"}},
+		{"bash", map[string]any{"command": "ls mut://fixture/"}},
+		{"bash", map[string]any{"command": "cat mut://fixture/a"}},
+		{"bash", map[string]any{"command": "mkdir mut://fixture/dir/nested"}},
+		{"bash", map[string]any{"command": "rm mut://fixture/dir"}},
+		{"bash", map[string]any{"command": "mkdir mut://fixture/missing/child"}},
+		{"write", map[string]any{"path": "mut://fixture/invalid", "content": "landed with corrupt receipt"}},
+		{"read", map[string]any{"path": "mut://fixture/unknown"}},
+		{"bash", map[string]any{"command": "cp mut://fixture/a kb://sources/c.md"}},
 	}
 	var script []scriptStep
 	for _, step := range steps {
@@ -244,7 +252,7 @@ func TestLiveProviderMutationsWithoutConfirmation(t *testing.T) {
 			t.Errorf("step %d: %s", i, results[i])
 		}
 	}
-	for i, want := range map[int]string{1: "staleRevision", 2: "original", 8: "updated", 9: "already exists", 10: "notApplied", 11: "partial", 12: "unknown", 13: "does not advertise"} {
+	for i, want := range map[int]string{1: "staleRevision", 2: "original", 8: "updated", 9: "already exists", 10: "notApplied", 11: "partial", 12: "unknown", 13: "does not advertise", 14: "dir", 15: "updated", 16: "committed", 17: "notApplied", 18: "notApplied", 19: "unknown", 20: "uncertain", 21: "cross-provider transfers"} {
 		if !strings.Contains(results[i], want) {
 			t.Errorf("step %d want %q: %s", i, want, results[i])
 		}

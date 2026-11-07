@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 
@@ -41,6 +42,21 @@ func executeMutation(request api.ResourceRequest) (any, *api.Error) {
 			return fail("notFound", "absent")
 		}
 		return api.ResourceResult{CanonicalURI: request.URI, Kind: node.kind, Revision: mutationRevision(node)}, nil
+	case "list":
+		if !exists || node.kind != "dir" {
+			return fail("notFound", "not a directory")
+		}
+		prefix := strings.TrimRight(request.URI, "/") + "/"
+		var entries []api.ResourceEntry
+		for uri, node := range mutationState.nodes {
+			rel := strings.TrimPrefix(uri, prefix)
+			if rel != uri && !strings.Contains(rel, "/") {
+				entries = append(entries, api.ResourceEntry{URI: uri, Name: rel, Kind: node.kind})
+			}
+		}
+		sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+		complete := true
+		return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Entries: entries, Complete: &complete}, nil
 	case "read":
 		if !exists {
 			return fail("notFound", "absent")

@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 25
+  revision: 26
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T16:14:39+01:00"
+  updated_at: "2026-11-07T16:18:10+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -86,6 +86,9 @@ document:
     - revision: 25
       reason: "Wire provider mutations without new permission prompts"
       changes: ["Recorded real-host write, mkdir, remove, move, copy and redirect execution", "Verified stale refusal, provider denial, partial and unknown outcomes"]
+    - revision: 26
+      reason: "Exercise the capable-provider verb and failure matrix"
+      changes: ["Verified ls/cat and every declared mutation verb", "Checked missing parents, nonempty directories, cross-provider refusal and malformed receipts"]
 ---
 
 # Scope and evidence
@@ -106,7 +109,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0006 §2–§4, §6–§7 | S1 D | Read, literal OR search and bounded context are exercised in [grep-context.log](evidence/grep-context.log); long-line windows are covered in [grep-long-lines.log](evidence/grep-long-lines.log) and [grep-long-lines-live.log](evidence/grep-long-lines-live.log). Provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log); provider grep and source pagination are in [provider-grep-live.log](evidence/provider-grep-live.log) and [provider-grep.log](evidence/provider-grep.log). | Explicit provider-file selection is covered by [provider-grep-files.log](evidence/provider-grep-files.log); oversized context preservation is covered by [grep-context-preserve.log](evidence/grep-context-preserve.log). Loop guard and supersession need implementation or evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead` exercises repeated refusal, partial reads and recovery ([instruction-barrier.log](evidence/instruction-barrier.log)); tagged batch sources and move destinations are covered in [tagged-instruction-union.log](evidence/tagged-instruction-union.log). | Remaining acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
-| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | Declared provider mutation verbs and redirects are exercised in [provider-mutations.log](evidence/provider-mutations.log). Redirects accept one static word, not general shell syntax. Dynamic shell-generated paths cannot always be recognized. |
+| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | Declared provider verbs, redirects and failure boundaries are exercised in [provider-verb-matrix.log](evidence/provider-verb-matrix.log). Redirects accept one static word, not general shell syntax. Dynamic shell-generated paths cannot always be recognized. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |
 | 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
 | 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. `TestActivityCountsFailedJobsAfterRealExit` checks one successful and one failed real process ([activity-failed.log](evidence/activity-failed.log)); real TUI placement has separate coverage. Click requires a fork host; configured shortcut is not applied. |

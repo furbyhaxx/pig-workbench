@@ -194,7 +194,7 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		contributions = append(contributions, struct {
 			kind, key  string
 			descriptor map[string]any
-		}{"resourceProvider", "mutations", map[string]any{"label": "Mutation fixture", "summary": "Revision-checked test resources", "schemes": []string{"mut"}, "capabilities": []string{"stat", "read", "write", "mkdir", "remove", "copy", "move"}, "selectorMode": "lines", "backing": "virtual", "scope": "session", "contentKinds": []string{"text"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": true}, "mutations": map[string]any{"revisionChecked": true, "retentionMs": 86400000, "durable": false}, "limits": map[string]any{}}})
+		}{"resourceProvider", "mutations", map[string]any{"label": "Mutation fixture", "summary": "Revision-checked test resources", "schemes": []string{"mut"}, "capabilities": []string{"stat", "read", "list", "write", "mkdir", "remove", "copy", "move"}, "selectorMode": "lines", "backing": "virtual", "scope": "session", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": true}, "mutations": map[string]any{"revisionChecked": true, "retentionMs": 86400000, "durable": false}, "limits": map[string]any{}}})
 	}
 	if root := os.Getenv("WORKBENCH_REFERENCE_DOCS"); root != "" {
 		contributions = append(contributions, struct {
