@@ -69,7 +69,7 @@ ls {"path": "session://self"}
 ls {"path": ".", "cursor": "…", "limit": 200}
 ```
 
-Lists containers supported by the selected provider. Entries have types (`file`, `dir`, `link`, `ctl`), a continuation cursor and an explicit `complete` flag in `Details`.
+Lists containers supported by the selected provider. Entries have types (`file`, `dir`, `link`, `ctl`), a continuation cursor and an explicit `complete` flag in `Details`. Contributed-provider cursors are bound to the resource, registration and descriptor revision; they expire on reload/replacement, after five minutes or when the bounded cache evicts them. Restart the listing after `staleRevision`.
 
 ## `grep`
 

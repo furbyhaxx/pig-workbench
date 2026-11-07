@@ -17,13 +17,16 @@ import (
 
 // contributedProvider routes one scheme to a registered resourceProvider owner.
 type contributedProvider struct {
-	scheme         string
-	canonical      string
-	registrationID string
-	owner          api.Identity
-	descriptor     resource.ProviderDescriptor
-	bus            *providerBus
-	project        func(context.Context) *api.Project
+	scheme             string
+	canonical          string
+	registrationID     string
+	descriptorRevision string
+	generation         string
+	cursors            *listingCursorStore
+	owner              api.Identity
+	descriptor         resource.ProviderDescriptor
+	bus                *providerBus
+	project            func(context.Context) *api.Project
 }
 
 func (p *contributedProvider) Scheme() string { return p.scheme }
@@ -112,16 +115,40 @@ func (p *contributedProvider) List(ctx context.Context, uri, cursor string, limi
 	if !p.descriptor.Has("list") {
 		return resource.Listing{}, resource.ErrUnsupported
 	}
-	result, err := p.execute(ctx, api.ResourceRequest{Operation: "list", RequestedURI: uri, URI: uri, Cursor: cursor, Limits: api.PageLimits{Lines: max(1, limit)}})
+	binding := cursorBinding{Registration: p.registrationID, Descriptor: p.descriptorRevision, Generation: p.generation, Instance: p.owner.Instance}
+	request := api.ResourceRequest{Operation: "list", RequestedURI: uri, URI: uri, Limits: api.PageLimits{Lines: max(1, limit)}}
+	if cursor != "" {
+		retained, err := p.cursors.get(cursor, binding, p.canonicalURI(uri), time.Now())
+		if err != nil {
+			return resource.Listing{}, err
+		}
+		request.Cursor, request.ExpectedRevision = retained.Raw, retained.Revision
+	}
+	result, err := p.execute(ctx, request)
 	if err != nil {
 		return resource.Listing{}, err
 	}
 	if len(result.Entries) > max(1, limit) {
 		return resource.Listing{}, fmt.Errorf("%s:// provider returned more entries than requested", p.canonical)
 	}
-	listing := resource.Listing{NextCursor: result.NextCursor, Complete: result.NextCursor == ""}
+	if request.ExpectedRevision != "" && result.Revision != request.ExpectedRevision {
+		return resource.Listing{}, errors.New("staleRevision: provider listing changed; restart listing")
+	}
+	if result.Complete != nil && *result.Complete && result.NextCursor != "" {
+		return resource.Listing{}, errors.New("provider returned a completed listing with a continuation cursor")
+	}
+	listing := resource.Listing{Complete: result.NextCursor == ""}
+	if result.NextCursor != "" {
+		listing.NextCursor, err = p.cursors.put(listingCursor{Binding: binding, Requested: p.canonicalURI(uri), Canonical: result.CanonicalURI, Raw: result.NextCursor, Revision: result.Revision}, time.Now())
+		if err != nil {
+			return resource.Listing{}, err
+		}
+	}
 	if result.Complete != nil && !*result.Complete {
 		listing.Complete = false
+	}
+	if !listing.Complete && listing.NextCursor == "" {
+		return resource.Listing{}, errors.New("provider returned an incomplete listing without a continuation cursor")
 	}
 	for _, entry := range result.Entries {
 		kind, err := entryKind(entry.Kind)
@@ -213,7 +240,7 @@ func installResourceProvider(s *session, registration contribution.Registration)
 	owner := api.Identity{Owner: registration.Owner, Instance: registration.Instance}
 	providers := make([]resource.Provider, 0, len(descriptor.Schemes))
 	for _, scheme := range descriptor.Schemes {
-		providers = append(providers, &contributedProvider{scheme: scheme, canonical: descriptor.Schemes[0], registrationID: registration.RegistrationID, owner: owner, descriptor: descriptor, bus: s.bus, project: s.projectIdentity})
+		providers = append(providers, &contributedProvider{scheme: scheme, canonical: descriptor.Schemes[0], registrationID: registration.RegistrationID, descriptorRevision: registration.DescriptorRevision, generation: registration.Generation, cursors: &s.listCursors, owner: owner, descriptor: descriptor, bus: s.bus, project: s.projectIdentity})
 	}
 	if err := s.router.RegisterContributed(providers); err != nil {
 		return nil, fmt.Errorf("%w: %v", errConsumerConflict, err)

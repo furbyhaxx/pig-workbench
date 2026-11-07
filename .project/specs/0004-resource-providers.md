@@ -5,37 +5,15 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-07T16:10:22+01:00"
+  updated_at: "2026-11-07T19:19:54+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Define the public Workbench extension APIs before implementation"
-      changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
-    - revision: 2
-      reason: "Align shared selectors with the detailed advanced-read contract"
-      changes: ["Specified raw and comma-list singleton semantics from donor parser and linked detailed behavior specs"]
-    - revision: 3
-      reason: "User defined session:// routes and removed session access restrictions"
-      changes: ["Added the session:// route grammar and project membership rule", "Removed cross-project consent and session-scope authorization"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Per-authority provider scopes (pig-web R4)", "Added fetchBackend contributions for http(s)"]
-    - revision: 5
-      reason: "SPEC-0012 project model and URI namespace; pig-web R7 and R8"
-      changes: ["Reserved scheme list per SPEC-0012 §5.1", "Entry kinds link and ctl; walking rules for recursive tools", "Builtin routes replaced by SPEC-0012 §5.3", "project in provider requests (R8)", "Fetch answers: locate to provider URIs, retention disclosure, egress upper bound, re-registration, fallback (R7)", "Removed per-authority scopes (withdrawn by pig-web)"]
-    - revision: 6
-      reason: "Reconcile pig-web M3 for the contract-freeze review"
-      changes: ["Defined required one-line resourceProvider summary for prompt and context catalogs"]
-    - revision: 7
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; router, selector, policy and fetch-backend contracts frozen, including the required 1-120 character resourceProvider summary"]
-    - revision: 8
-      reason: "User approved mutation wiring with no new permission prompts"
-      changes: ["Defined mkdir/copy and revision-checked mutation payloads", "Kept existing host policy without new confirmation gates", "Defined bounded receipt declarations and truthful outcome validation"]
-
+    - revision: 9
+      reason: "Implement safe contributed listing cursor bindings"
+      changes: ["Bound opaque tool cursor handles to registration/descriptor/resource identity without exposing backend payloads","Forwarded known listing revisions for consistent continuation","Verified resource mismatch, snapshot changes, reload expiry and bounded retention"]
 ---
 
 # 1. Purpose and architectural boundary
@@ -164,6 +142,12 @@ The response is `api.ResourceResult.receipt` with operationId, idempotencyKey, s
 Providers retain the identical-key/identical-payload receipt for their declared retention period, reject key reuse with different payloads, and state restart durability. Workbench has no general receipt lookup/retry service; after loss of a non-durable receipt the caller reconciles state. Stop admission rather than evict an unexpired idempotency guarantee. Providers enforce their backing-system authorization themselves, without Workbench inventing confirmation requirements.
 
 Migration: read-only descriptors and requests are unchanged. Previously all contributed mutations were refused; new mutable providers must supply the typed integrity declaration and return receipts. `edit` remains refused at registration until the snapshot commit backend exists; declaring write does not implicitly enable edit.
+
+## 6.2 Listing cursor implementation
+
+Model-facing listing cursors are private session-bound handles, not encoded producer payloads. They bind registration ID, descriptor revision, generation, instance and requested/canonical resource identity. A bounded cache retains at most 256 handles and 1 MiB of cursor data, with five-minute validity; eviction, expiry and mismatched bindings return staleRevision. Stable opaque handle generation preserves repeated-cursor detection without disclosing backend cursor contents. A returned listing revision is forwarded as ResourceRequest.expectedRevision on continuation; missing or changed subsequent revisions are rejected. Producers keep their own backend cursor format and snapshot checks.
+
+Migration: raw backend cursor strings no longer appear in tool output. Tool consumers must retain only the returned opaque handle and restart after staleRevision; readonly providers that report listing revisions receive the already specified optional expectedRevision field. No new permission or confirmation behavior is introduced.
 
 # 7. Hashline and provenance
 

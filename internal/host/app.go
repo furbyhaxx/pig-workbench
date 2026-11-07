@@ -32,6 +32,7 @@ type activeRequest struct {
 
 type session struct {
 	readHistory   readHistory
+	listCursors   listingCursorStore
 	editState     editState
 	presentations *presentationCatalog
 	contributions *contribution.Registry

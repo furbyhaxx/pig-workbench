@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 43
+  revision: 44
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T18:59:06+01:00"
+  updated_at: "2026-11-07T19:19:54+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 43
-      reason: "Complete the shared search glob dialect"
-      changes: ["Integrated maintained MIT doublestar/v4 v4.10.4 after latest release/API/supersession checks on 07.11.2026","Used matching only within the existing bounded root walk","Verified brace/class/doublestar parity and malformed-pattern refusal across local/provider searches"]
+    - revision: 44
+      reason: "Implement safe contributed listing cursor bindings"
+      changes: ["Bound opaque tool cursor handles to registration/descriptor/resource identity without exposing backend payloads","Forwarded known listing revisions for consistent continuation","Verified resource mismatch, snapshot changes, reload expiry and bounded retention"]
 ---
 
 # 1. Outcome

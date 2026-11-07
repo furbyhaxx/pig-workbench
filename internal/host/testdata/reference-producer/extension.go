@@ -84,30 +84,41 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 		}
 		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Size: int64(len(text)), Lines: strings.Count(text, "\n"), Revision: fmt.Sprintf("r%d", len(text))}, nil
 	case "list":
+		revision := "catalog-1"
+		if file := os.Getenv("WORKBENCH_REFERENCE_CATALOG_REVISION"); file != "" {
+			data, err := os.ReadFile(file)
+			if err != nil {
+				return nil, &api.Error{Code: "internal", Message: "catalog revision probe unavailable"}
+			}
+			revision = string(data)
+		}
+		if request.ExpectedRevision != "" && request.ExpectedRevision != revision {
+			return nil, &api.Error{Code: "staleRevision", Message: "catalog revision changed"}
+		}
 		if request.URI == "kb://paged/" || request.URI == "kb://paged" {
 			if request.Cursor == "" {
 				complete := false
-				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, NextCursor: "next", Entries: []api.ResourceEntry{{Name: "nested", URI: "kb://paged/nested/", Kind: "dir"}}}, nil
+				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Revision: revision, Complete: &complete, NextCursor: "next", Entries: []api.ResourceEntry{{Name: "nested", URI: "kb://paged/nested/", Kind: "dir"}}}, nil
 			}
 			if request.Cursor == "next" {
 				complete := true
-				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "a.md", URI: "kb://paged/a.md", Kind: "file"}, {Name: "other.txt", URI: "kb://paged/other.txt", Kind: "file"}, {Name: "cycle", URI: "kb://paged/cycle", Kind: "link", Target: "kb://paged/"}, {Name: "control", URI: "kb://paged/control", Kind: "ctl"}, {Name: "private.md", URI: "kb://paged/private.md", Kind: "file", NoWalk: true}, {Name: "expensive", URI: "kb://paged/expensive/", Kind: "dir", NoWalk: true}}}, nil
+				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Revision: revision, Complete: &complete, Entries: []api.ResourceEntry{{Name: "a.md", URI: "kb://paged/a.md", Kind: "file"}, {Name: "other.txt", URI: "kb://paged/other.txt", Kind: "file"}, {Name: "cycle", URI: "kb://paged/cycle", Kind: "link", Target: "kb://paged/"}, {Name: "control", URI: "kb://paged/control", Kind: "ctl"}, {Name: "private.md", URI: "kb://paged/private.md", Kind: "file", NoWalk: true}, {Name: "expensive", URI: "kb://paged/expensive/", Kind: "dir", NoWalk: true}}}, nil
 			}
 			return nil, &api.Error{Code: "invalidRequest", Message: "unknown cursor"}
 		}
 		if request.URI == "kb://paged/nested/" || request.URI == "kb://sources/nested/" {
 			complete := true
-			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "b.md", URI: request.URI + "b.md", Kind: "file"}}}, nil
+			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Revision: revision, Complete: &complete, Entries: []api.ResourceEntry{{Name: "b.md", URI: request.URI + "b.md", Kind: "file"}}}, nil
 		}
 		if request.URI == "git://fixture/" || request.URI == "git://fixture" {
 			complete := true
-			return api.ResourceResult{CanonicalURI: "git://fixture/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "main.go", URI: "git://fixture/main.go", Kind: "file", Size: int64(len(gitFile))}}}, nil
+			return api.ResourceResult{CanonicalURI: "git://fixture/", Kind: "dir", Revision: revision, Complete: &complete, Entries: []api.ResourceEntry{{Name: "main.go", URI: "git://fixture/main.go", Kind: "file", Size: int64(len(gitFile))}}}, nil
 		}
 		if request.URI != "kb://sources/" && request.URI != "kb://sources" {
 			return nil, &api.Error{Code: "notFound", Message: "no such directory"}
 		}
 		complete := true
-		return api.ResourceResult{CanonicalURI: "kb://sources/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{
+		return api.ResourceResult{CanonicalURI: "kb://sources/", Kind: "dir", Revision: revision, Complete: &complete, Entries: []api.ResourceEntry{
 			{Name: "nested", URI: "kb://sources/nested/", Kind: "dir"},
 			{Name: "a.md", URI: "kb://sources/a.md", Kind: "file", Size: int64(len(documents["kb://sources/a.md"]))},
 			{Name: "page.html", URI: "kb://sources/page.html", Kind: "file"},

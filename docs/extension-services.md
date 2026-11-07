@@ -68,6 +68,8 @@ An extension that calls a model itself bypasses Workbench's hooks. If the user l
 
 Resource and fetch requests use the project of the tool's captured Workbench location. A concurrent `cd` does not change the project binding between operations in a read batch or search traversal. Mutation location revisions use the same captured binding.
 
+Provider listing replies keep their own opaque backend cursors. Workbench returns private session-bound handles to tools, binding registration, descriptor revision and resource identity without exposing backend cursor contents. Handles expire after five minutes or bounded-cache eviction (256 entries / 1 MiB). A retained listing revision is sent back as `ResourceRequest.expectedRevision`; providers must reject changed snapshots. Reload/replacement, wrong-resource and expired handles fail `staleRevision`, never empty success.
+
 ## Provider mutation outcomes
 
 Existing-resource mutations carry `expectedRevision`; new resources carry `mustNotExist`, and copy/move destinations carry `destinationMustNotExist`. Writes are limited to 32 KiB of content and the 64 KiB encoded control envelope. No recursive operations, implicit parent creation or cross-provider transfers are supported. `write` and scheme-command redirects share dispatch; `rm`, `mv`, `cp` and `mkdir` map to remove, move, copy and mkdir.
