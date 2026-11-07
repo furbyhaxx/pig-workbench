@@ -72,6 +72,17 @@ func (s *session) integrationsText(owner string) (string, bool) {
 			found = true
 		}
 	}
+	for _, call := range s.presentationData.summaries(owner) {
+		state := call.Phase
+		if call.Outcome != "" {
+			state += "/" + call.Outcome
+		}
+		fmt.Fprintf(&out, "%s  presentation call %s  %s r%d  %s\n", call.Owner, call.CallID, state, call.Revision, call.Tool)
+		if call.Diagnostic != "" {
+			fmt.Fprintf(&out, "  %s\n", call.Diagnostic)
+		}
+		found = true
+	}
 	if !found {
 		if owner != "" {
 			return "", false

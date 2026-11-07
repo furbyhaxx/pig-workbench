@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 57
+  revision: 58
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-08T00:06:20+01:00"
+  updated_at: "2026-11-08T00:37:02+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 57
-      reason: "Apply effective display controls to cached renderers without I/O"
-      changes: ["Applied enabled/density/preview/metric visibility and preserved explicit zero preview", "Cached effective values per config revision and retained truthful raw/host-error fallback", "Counted actual preview lines instead of blocks", "Kept unsupported target/nested/custom consumers registered-only and refreshed provisional captures"]
+    - revision: 58
+      reason: "Retain monotonic presentation state outside repeated rendering"
+      changes: ["Captured actual streamed/final snapshots and context history by opaque call identity", "Prevented stale running and conflicting final regression with visible diagnostics", "Bounded immutable snapshot/layout caches and preserved raw fallback", "Verified actual streamed conflict retention and full host integration"]
 ---
 
 # 1. Outcome

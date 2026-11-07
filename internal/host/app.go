@@ -31,49 +31,51 @@ type activeRequest struct {
 }
 
 type session struct {
-	readHistory   readHistory
-	listCursors   listingCursorStore
-	editState     editState
-	presentations *presentationCatalog
-	contributions *contribution.Registry
-	contextFrames *contextFrameState
-	jobs          *jobs.Manager
-	jobMeta       jobMetadataStore
-	snapshots     *hashline.Store
-	viewsMu       sync.Mutex
-	pendingViews  map[string][]pendingView
-	runningCalls  map[string]string
-	guideInjected map[string]string
-	jobRegistry   *jobs.Registry
-	jobOwner      *jobs.OwnerHandle
-	requestsMu    sync.Mutex
-	requests      map[string]activeRequest
-	unsubscribe   func()
-	id            string
-	generation    string
-	supervisor    *lifecycle.Supervisor
-	location      *location.Manager
-	settings      *config.Manager
-	secrets       *secretsBoundary
-	router        *resource.Router
-	skills        *skillState
-	promptText    string
-	promptEpoch   string
-	promptErr     string
-	scratch       string
-	projects      *project.Registry
-	host          sdk.Context
-	bus           *providerBus
-	fetch         *fetchRouter
-	status        *statusBoard
-	docs          *docsCatalog
-	producers     *producerRegistry
-	endpoint      *sessionEndpoint
-	activity      *activityLine
-	installedMu   sync.Mutex
-	installed     map[string]func()
-	projectMu     sync.Mutex
-	projectCache  projectIdentityCache
+	readHistory         readHistory
+	listCursors         listingCursorStore
+	editState           editState
+	presentations       *presentationCatalog
+	presentationData    presentationCache
+	presentationLayouts presentationLayouts
+	contributions       *contribution.Registry
+	contextFrames       *contextFrameState
+	jobs                *jobs.Manager
+	jobMeta             jobMetadataStore
+	snapshots           *hashline.Store
+	viewsMu             sync.Mutex
+	pendingViews        map[string][]pendingView
+	runningCalls        map[string]string
+	guideInjected       map[string]string
+	jobRegistry         *jobs.Registry
+	jobOwner            *jobs.OwnerHandle
+	requestsMu          sync.Mutex
+	requests            map[string]activeRequest
+	unsubscribe         func()
+	id                  string
+	generation          string
+	supervisor          *lifecycle.Supervisor
+	location            *location.Manager
+	settings            *config.Manager
+	secrets             *secretsBoundary
+	router              *resource.Router
+	skills              *skillState
+	promptText          string
+	promptEpoch         string
+	promptErr           string
+	scratch             string
+	projects            *project.Registry
+	host                sdk.Context
+	bus                 *providerBus
+	fetch               *fetchRouter
+	status              *statusBoard
+	docs                *docsCatalog
+	producers           *producerRegistry
+	endpoint            *sessionEndpoint
+	activity            *activityLine
+	installedMu         sync.Mutex
+	installed           map[string]func()
+	projectMu           sync.Mutex
+	projectCache        projectIdentityCache
 }
 
 type app struct {
@@ -102,12 +104,15 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventContextWithSystem, a.redactContext)
 	ext.OnEvent("user_bash", a.userBash)
 	ext.OnToolResult(a.redactResult)
+	ext.OnToolResult(a.capturePresentationFinal)
 	ext.OnToolResult(a.confirmRead)
+	ext.OnEvent(sdk.EventToolExecutionUpdate, a.capturePresentationUpdate)
 	ext.OnEvent("before_agent_start", a.contextFrames)
 	ext.OnEvent("before_provider_request", a.spliceLatePrompt)
 	ext.OnEvent("before_provider_request", a.redactProviderRequest)
 	ext.OnEvent("context", a.confirmContextFrames)
 	ext.OnEvent("context", a.projectReadContext)
+	ext.OnEvent("context", a.preloadPresentationHistory)
 	ext.OnEvent("tool_call", a.substituteCall)
 	ext.OnEvent("tool_call", a.toolInstructions)
 	ext.OnEvent("tool_call", a.trackCall)

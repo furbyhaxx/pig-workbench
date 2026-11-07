@@ -1,0 +1,38 @@
+=== RUN   TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails
+--- PASS: TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails (0.01s)
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000
+--- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning (1.45s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1 (0.05s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000 (1.40s)
+=== RUN   TestPresentationCacheNeverResurrectsSettledOrConflictingFinals
+--- PASS: TestPresentationCacheNeverResurrectsSettledOrConflictingFinals (0.00s)
+=== RUN   TestPresentationCacheOwnsValidatedDataAndSeparatesCalls
+--- PASS: TestPresentationCacheOwnsValidatedDataAndSeparatesCalls (0.00s)
+=== RUN   TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails
+--- PASS: TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails (0.01s)
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000
+--- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning (1.46s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1 (0.04s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000 (1.42s)
+=== RUN   TestPresentationCacheNeverResurrectsSettledOrConflictingFinals
+--- PASS: TestPresentationCacheNeverResurrectsSettledOrConflictingFinals (0.00s)
+=== RUN   TestPresentationCacheOwnsValidatedDataAndSeparatesCalls
+--- PASS: TestPresentationCacheOwnsValidatedDataAndSeparatesCalls (0.00s)
+=== RUN   TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails
+--- PASS: TestRendererUsesRetainedLifecycleAcrossWidthAndBadLaterDetails (0.00s)
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1
+=== RUN   TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000
+--- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning (1.45s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/1 (0.05s)
+    --- PASS: TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning/60000 (1.40s)
+=== RUN   TestPresentationCacheNeverResurrectsSettledOrConflictingFinals
+--- PASS: TestPresentationCacheNeverResurrectsSettledOrConflictingFinals (0.00s)
+=== RUN   TestPresentationCacheOwnsValidatedDataAndSeparatesCalls
+--- PASS: TestPresentationCacheOwnsValidatedDataAndSeparatesCalls (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	5.402s

@@ -11,6 +11,18 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 )
 
+func TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict(t *testing.T) {
+	results := runScriptedWith(t, t.TempDir(), "web_search,read", "", []string{"reference-producer"},
+		func([]string) scriptedCall { return scriptedCall{"web_search", map[string]any{"query": "lifecycle"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "cfg://workbench/integrations/reference-producer"}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[1], "presentation call scripted-0  settled/failed r3") || !strings.Contains(results[1], "conflicting final") {
+		t.Fatalf("actual streamed lifecycle did not retain final/conflict state: %v", results)
+	}
+}
+
 func TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues(t *testing.T) {
 	t.Setenv("WORKBENCH_REFERENCE_OBSERVE_DISPLAY", "1")
 	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})

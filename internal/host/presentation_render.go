@@ -33,15 +33,15 @@ func rawPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRe
 	return fitPresentationLines(lines, width, 40)
 }
 
-func renderPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay) []string {
-	snapshot, err := decodeToolSnapshot(descriptor, result.Details)
-	if err != nil {
+func renderPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay, record presentationRecord) []string {
+	if !record.valid {
 		diagnostic := ""
 		if result.Details != nil {
 			diagnostic = "presentation unavailable; showing raw result"
 		}
 		return rawPresentationResult(descriptor, result, width, render.IsError, diagnostic)
 	}
+	snapshot := record.snapshot
 	metrics := make([]presentation.Metric, 0, len(snapshot.Metrics))
 	for _, metric := range snapshot.Metrics {
 		if display.metrics[metric.ID] {
@@ -85,6 +85,9 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 	}
 	if snapshot.Error != nil {
 		lines = append(lines, snapshot.Error.Code+": "+snapshot.Error.Message)
+	}
+	if record.diagnostic != "" {
+		lines = append(lines, record.diagnostic)
 	}
 	if options.IsPartial || render.IsPartial {
 		lines = append(lines, "partial output")

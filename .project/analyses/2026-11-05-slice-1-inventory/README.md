@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 49
+  revision: 50
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T00:06:20+01:00"
+  updated_at: "2026-11-08T00:37:02+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 49
-      reason: "Apply effective display controls to cached renderers without I/O"
-      changes: ["Applied enabled/density/preview/metric visibility and preserved explicit zero preview", "Cached effective values per config revision and retained truthful raw/host-error fallback", "Counted actual preview lines instead of blocks", "Kept unsupported target/nested/custom consumers registered-only and refreshed provisional captures"]
+    - revision: 50
+      reason: "Retain monotonic presentation state outside repeated rendering"
+      changes: ["Captured actual streamed/final snapshots and context history by opaque call identity", "Prevented stale running and conflicting final regression with visible diagnostics", "Bounded immutable snapshot/layout caches and preserved raw fallback", "Verified actual streamed conflict retention and full host integration"]
 ---
 
 # Scope and evidence
@@ -106,7 +106,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 |---|---|---|
 | §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Actual reference rendering data, owner-scoped settings.get, dynamic catalog and dormant overrides pass. Renderer application and absent-producer semantic replay remain 17.8.10.7/9. |
 | §8.2 opt-in ownership and visible conflicts | OPEN | Host-source ownership verification passes [unit](evidence/presentation-ownership-unit.log) and [actual foreign-claim refusal](evidence/presentation-ownership-live.log) cases. First-use/appliesAfterReload late-claim, restoration and withdrawal paths pass [unit](evidence/presentation-resolver-limits-unit.log) cases; actual seam/reload regressions remain green ([evidence](evidence/presentation-resolver-limits-live.log)). |
-| §8.3 host error and monotonic final state | PARTIAL | Host-error rendering constrains claimed success. No per-call settled/revision tracker prevents later stale updates; 17.8.10.8 owns this gap. |
+| §8.3 host error and monotonic final state | PASS (captured lifecycle) | Host-error truth, stale running updates, final conflict diagnostics and nonterminal final fallback pass [unit/cache](evidence/presentation-lifecycle-cache-unit.log) and [actual streamed update](evidence/presentation-lifecycle-cache-live.log) tests. |
 | §8.4 incomplete success vs partial-commit failure | PASS (semantic headers) | Plain lifecycle/host-error/typed snapshot tests distinguish completeness, outcome and effects. |
 | §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.8/9, not inferred from one search card. |
 | §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.10. |
@@ -114,7 +114,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Enabled/density/preview/metric controls now apply live through revision-keyed caches ([unit rendering](evidence/effective-display-rendering-unit.log), [actual settings/event](evidence/effective-display-settings-live.log), [full integration](evidence/effective-display-full-integration.log)); other controls remain registered-only. settings.get/catalog also pass [unit](evidence/display-settings-get-unit.log) and [actual host](evidence/display-settings-get-live.log) cases; grouped editing is implemented with provisional captures awaiting user review; monotonic snapshot lifecycle, replay and recorded-target/host-metric work remain 17.8.10.8–10. |
 | §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.9 owns actual evidence. |
 | §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
-| §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.8. |
+| §5 hot render path | PASS (identified retained calls) | Stream/final/context hooks validate on data change; repeated width/settings renders use bounded immutable snapshots/layouts. Historical misses bootstrap once; unidentified cards validate independently rather than borrowing another call's state. Full integration passes ([evidence](evidence/presentation-lifecycle-full-integration.log)). |
 | §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.10. |
 
 These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred rich-panel polish. None is silently moved to Slice 3.

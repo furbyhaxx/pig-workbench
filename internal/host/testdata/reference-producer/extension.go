@@ -383,6 +383,32 @@ func Extension() *sdk.Extension {
 	ext.RegisterTool(sdk.ToolDefinition{Name: "web_search", Label: "web_search", Description: "Search the reference fixture web index.", Parameters: sdk.Schema{"type": "object", "properties": map[string]any{"query": map[string]any{"type": "string"}}, "required": []string{"query"}}, Execute: func(ctx sdk.Context, params map[string]any) (any, error) {
 		query, _ := params["query"].(string)
 		details := map[string]any{"workbenchPresentation": map[string]any{"version": 1, "revision": 1, "phase": "settled", "outcome": "succeeded", "title": "Web search", "target": map[string]any{"kind": "label", "value": query}, "complete": true, "metrics": []any{map[string]any{"id": "results", "value": 1, "unit": "count"}}, "blocks": []any{map[string]any{"kind": "table", "table": map[string]any{"columns": []any{map[string]any{"id": "title", "label": "Title", "cell": "text"}, map[string]any{"id": "url", "label": "URL", "cell": "uri"}}, "rows": []any{[]any{map[string]any{"kind": "text", "value": "Fixture result"}, map[string]any{"kind": "uri", "value": "https://fixture.test/page"}}}}}}}}
+		if query == "lifecycle" {
+			base := details["workbenchPresentation"].(map[string]any)
+			update := func(revision int, phase, outcome string) error {
+				view := map[string]any{}
+				for key, value := range base {
+					view[key] = value
+				}
+				view["revision"], view["phase"] = revision, phase
+				if outcome == "" {
+					delete(view, "outcome")
+				} else {
+					view["outcome"] = outcome
+				}
+				return ctx.OnUpdate(sdk.ToolResult{Content: "streamed fixture", Details: map[string]any{"workbenchPresentation": view}})
+			}
+			for _, stage := range []struct {
+				revision       int
+				phase, outcome string
+			}{{1, "running", ""}, {3, "settled", "failed"}, {4, "running", ""}, {4, "settled", "succeeded"}} {
+				if err := update(stage.revision, stage.phase, stage.outcome); err != nil {
+					return nil, err
+				}
+			}
+			base["revision"], base["outcome"] = 3, "failed"
+			return sdk.ToolResult{Content: "fixture final failure", Details: details, IsError: true}, nil
+		}
 		return sdk.ToolResult{Content: "1 result: Fixture result https://fixture.test/page", Details: details}, nil
 	}})
 	ext.RegisterTool(sdk.ToolDefinition{Name: "web_view", Label: "web_view", Description: "Show a stored source with edit anchors.", Parameters: sdk.Schema{"type": "object", "properties": map[string]any{"uri": map[string]any{"type": "string"}, "mode": map[string]any{"type": "string"}}, "required": []string{"uri"}}, Execute: func(ctx sdk.Context, params map[string]any) (any, error) {

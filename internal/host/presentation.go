@@ -176,6 +176,7 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 	}
 	s.presentations.recordResolution(toolName, entry)
 	cache := &displayCache{}
+	layouts := &s.presentationLayouts
 	return &sdk.ToolRenderers{
 		Call: func(_ sdk.Context, args map[string]any, _ sdk.ToolRenderContext, width int) ([]string, error) {
 			display, err := cache.get(s, entry)
@@ -191,7 +192,17 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			}
 			descriptor := entry.descriptor
 			descriptor.DefaultDisplay.Density, descriptor.DefaultDisplay.PreviewLines = display.density, display.preview
-			return renderPresentationResult(descriptor, result, options, render, width, display), nil
+			record := s.presentationView(entry, toolName, render.ToolCallID, result.Details, false)
+			if !record.valid {
+				return renderPresentationResult(descriptor, result, options, render, width, display, record), nil
+			}
+			key := presentationLayoutKey{call: toolName + "\x00" + entry.owner + "\x00" + entry.key + "\x00" + render.ToolCallID, data: record.sequence, settings: display.revision, width: width, expanded: options.Expanded, partial: options.IsPartial, hostPartial: render.IsPartial, hostError: render.IsError}
+			if render.DurationMs != nil {
+				key.duration, key.durationKnown = *render.DurationMs, true
+			}
+			return layouts.render(key, func() []string {
+				return renderPresentationResult(descriptor, result, options, render, width, display, record)
+			}), nil
 		},
 	}
 }
