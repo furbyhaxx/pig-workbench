@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 44
+  revision: 45
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T19:19:54+01:00"
+  updated_at: "2026-11-07T19:38:23+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 44
-      reason: "Implement safe contributed listing cursor bindings"
-      changes: ["Bound opaque tool cursor handles to registration/descriptor/resource identity without exposing backend payloads","Forwarded known listing revisions for consistent continuation","Verified resource mismatch, snapshot changes, reload expiry and bounded retention"]
+    - revision: 45
+      reason: "Preserve provider total and coverage facts without invented defaults"
+      changes: ["Preserved unknown total omission and known-empty zero through actual SDK persistence","Rejected negative/impossible coverage and unrepresentable continuation spans before rendering","Kept native directory cursor and remaining resource anchors open"]
 ---
 
 # 1. Outcome

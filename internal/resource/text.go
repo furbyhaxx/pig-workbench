@@ -33,7 +33,7 @@ func RenderText(ctx context.Context, canonical, requested string, data []byte, s
 		return Page{}, err
 	}
 	page.TotalLines = len(lines)
-	page.ResourceComplete = page.SelectionComplete && len(ranges) == 1 && ranges[0].Start == 1 && ranges[0].End == len(lines)
+	page.ResourceComplete = page.SelectionComplete && (len(lines) == 0 || len(ranges) == 1 && ranges[0].Start == 1 && ranges[0].End == len(lines))
 	return page, nil
 }
 
@@ -43,10 +43,22 @@ func RenderSpans(ctx context.Context, canonical, requested string, spans []Range
 	if budget.Bytes <= 0 || budget.Lines <= 0 {
 		return Page{}, errors.New("read budget must be positive")
 	}
+	if totalLines < 0 {
+		return Page{}, errors.New("provider total lines must be nonnegative")
+	}
 	count := 0
 	for i, span := range spans {
+		if span.End == int(^uint(0)>>1) {
+			return Page{}, errors.New("provider line cannot represent its continuation")
+		}
 		if span.Start < 1 || span.End < span.Start || i > 0 && span.Start <= spans[i-1].End {
 			return Page{}, errors.New("provider shown ranges must be ordered, disjoint and positive")
+		}
+		if totalLines > 0 && span.End > totalLines {
+			return Page{}, errors.New("provider ranges exceed its known total")
+		}
+		if span.End-span.Start+1 > len(lines)-count {
+			return Page{}, errors.New("provider ranges exceed supplied source lines")
 		}
 		count += span.End - span.Start + 1
 	}
@@ -69,6 +81,7 @@ func RenderSpans(ctx context.Context, canonical, requested string, spans []Range
 		return Page{}, err
 	}
 	page.TotalLines = totalLines
+	page.UnknownTotal = totalLines == 0
 	return page, nil
 }
 

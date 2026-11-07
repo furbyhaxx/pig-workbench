@@ -40,6 +40,8 @@ var documents = map[string]string{
 	"kb://paged/a.md":          "paged alpha\n",
 	"kb://paged/nested/b.md":   "paged bravo\n",
 	"kb://paged/other.txt":     "not markdown\n",
+	"kb://totals/unknown":      "source with unknown total\n",
+	"kb://totals/empty":        "",
 }
 
 func execute(request api.ResourceRequest) (any, *api.Error) {
@@ -128,6 +130,10 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 		if !ok {
 			return nil, &api.Error{Code: "notFound", Message: "no such source"}
 		}
+		if text == "" {
+			zero := 0
+			return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Revision: "empty", Page: &api.TextPage{TotalLines: &zero, SelectionComplete: true, ResourceComplete: true}}, nil
+		}
 		lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
 		start, end := 1, len(lines)
 		if request.Selector != nil && len(request.Selector.Ranges) == 1 {
@@ -144,10 +150,30 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 		if os.Getenv("WORKBENCH_REFERENCE_INCOMPLETE_PAGE") == "1" {
 			end = min(end, start+1)
 		}
-		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Revision: fmt.Sprintf("r%d", len(text)), Page: &api.TextPage{
-			Text: strings.Join(lines[start-1:end], "\n") + "\n", ShownRanges: []api.LineRange{{Start: start, End: end}}, TotalLines: &total,
+		var knownTotal *int = &total
+		if request.URI == "kb://totals/unknown" {
+			knownTotal = nil
+		}
+		page := &api.TextPage{
+			Text: strings.Join(lines[start-1:end], "\n") + "\n", ShownRanges: []api.LineRange{{Start: start, End: end}}, TotalLines: knownTotal,
 			SelectionComplete: end == desiredEnd, ResourceComplete: start == 1 && end == total,
-		}}, nil
+		}
+		switch os.Getenv("WORKBENCH_REFERENCE_BAD_COVERAGE") {
+		case "zero":
+			bad := 0
+			page.TotalLines = &bad
+		case "negative":
+			bad := -1
+			page.TotalLines = &bad
+		case "gap":
+			page.ShownRanges = []api.LineRange{{Start: 2, End: len(lines) + 1}}
+		case "overflow":
+			max := int(^uint(0) >> 1)
+			page.ShownRanges = []api.LineRange{{Start: max, End: max}}
+			page.TotalLines = nil
+			page.ResourceComplete = false
+		}
+		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Revision: fmt.Sprintf("r%d", len(text)), Page: page}, nil
 	default:
 		return nil, &api.Error{Code: "unsupported", Message: "operation is not provided"}
 	}

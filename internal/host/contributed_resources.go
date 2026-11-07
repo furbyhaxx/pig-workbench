@@ -209,11 +209,30 @@ func (p *contributedProvider) Read(ctx context.Context, request resource.ReadReq
 	if result.Page.TotalLines != nil {
 		total = *result.Page.TotalLines
 	}
+	if result.Page.TotalLines != nil && total == 0 && len(lines) != 0 {
+		return resource.ReadResult{}, errors.New("provider reported nonempty source with a known zero total")
+	}
+	if result.Page.ResourceComplete {
+		if !result.Page.SelectionComplete {
+			return resource.ReadResult{}, errors.New("provider reported complete source with an incomplete selection")
+		}
+		end := 0
+		for _, span := range spans {
+			if span.Start != end+1 {
+				return resource.ReadResult{}, errors.New("provider complete-source coverage contains gaps")
+			}
+			end = span.End
+		}
+		if result.Page.TotalLines != nil && end != total {
+			return resource.ReadResult{}, errors.New("provider complete-source coverage differs from its known total")
+		}
+	}
 	page, err := resource.RenderSpans(ctx, result.CanonicalURI, request.Requested, spans, lines, total, selection.Raw, budget)
 	if err != nil {
 		return resource.ReadResult{}, fmt.Errorf("%s:// provider page is inconsistent: %w", p.canonical, err)
 	}
 	page.Revision = result.Revision
+	page.UnknownTotal = result.Page.TotalLines == nil
 	page.Handler = "provider:" + p.owner.Owner
 	page.SelectionComplete = page.SelectionComplete && result.Page.SelectionComplete
 	page.ResourceComplete = page.SelectionComplete && result.Page.ResourceComplete

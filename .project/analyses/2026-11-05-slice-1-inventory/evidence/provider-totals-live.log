@@ -1,0 +1,38 @@
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow
+--- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource (4.04s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero (1.36s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative (0.85s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap (0.88s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow (0.95s)
+=== RUN   TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero
+--- PASS: TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero (0.99s)
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow
+--- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource (3.44s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero (0.97s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative (0.87s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap (0.83s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow (0.77s)
+=== RUN   TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero
+--- PASS: TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero (0.86s)
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap
+=== RUN   TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow
+--- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource (3.36s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero (0.79s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative (0.78s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap (0.92s)
+    --- PASS: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow (0.87s)
+=== RUN   TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero
+--- PASS: TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero (0.83s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	14.554s

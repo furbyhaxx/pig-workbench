@@ -39,6 +39,7 @@ type Page struct {
 	ShownRanges       []Range  `json:"shownRanges"`
 	FullyShownRanges  []Range  `json:"fullyShownRanges"`
 	TotalLines        int      `json:"totalLines"`
+	UnknownTotal      bool     `json:"-"`
 	SelectionComplete bool     `json:"selectionComplete"`
 	ResourceComplete  bool     `json:"resourceComplete"`
 	Continuation      string   `json:"continuation,omitempty"`
