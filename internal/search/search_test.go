@@ -73,6 +73,83 @@ func TestGrepProviderPagesAndHonoursBoundaries(t *testing.T) {
 	}
 }
 
+func TestLocalSearchHonoursNestedGitignoreAndExplicitRoots(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, ".gitignore", "ignored/\n*.log\n!keep.log\n")
+	write(t, root, "a.txt", "needle\n")
+	write(t, root, "hidden.log", "needle\n")
+	write(t, root, "keep.log", "needle\n")
+	write(t, root, "ignored/secret.txt", "needle\n")
+	write(t, root, "nested/.gitignore", "!nested.log\n/drop.txt\n")
+	write(t, root, "nested/nested.log", "needle\n")
+	write(t, root, "nested/drop.txt", "needle\n")
+	found, err := Grep(t.Context(), Options{Root: root, Patterns: []string{"needle"}, Literal: true})
+	if err != nil || len(found.Matches) != 3 {
+		t.Fatalf("grep did not honor ignores and nested negation: %+v %v", found, err)
+	}
+	for _, match := range found.Matches {
+		if strings.Contains(match.Path, "hidden") || strings.Contains(match.Path, "secret") || strings.Contains(match.Path, "drop") {
+			t.Fatalf("ignored match leaked: %+v", match)
+		}
+	}
+	files, err := Find(t.Context(), root, "*", nil, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range files.Entries {
+		if strings.Contains(entry.Path, "hidden") || strings.Contains(entry.Path, "secret") || strings.Contains(entry.Path, "drop") {
+			t.Fatalf("ignored find result: %+v", entry)
+		}
+	}
+	excludedFiles, err := Find(t.Context(), root, "*", []string{"keep.log"}, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range excludedFiles.Entries {
+		if filepath.Base(entry.Path) == "keep.log" {
+			t.Fatal("find ignored its file exclusion")
+		}
+	}
+	for _, explicit := range []string{filepath.Join(root, "hidden.log"), filepath.Join(root, "ignored")} {
+		result, err := Grep(t.Context(), Options{Root: explicit, Patterns: []string{"needle"}, Literal: true})
+		if err != nil || len(result.Matches) != 1 {
+			t.Fatalf("explicit root inaccessible: %s %+v %v", explicit, result, err)
+		}
+	}
+	nested, err := Grep(t.Context(), Options{Root: filepath.Join(root, "nested"), Patterns: []string{"needle"}, Literal: true})
+	if err != nil || len(nested.Matches) != 1 || !strings.HasSuffix(nested.Matches[0].Path, "nested.log") {
+		t.Fatalf("explicit subdirectory lost ancestor/nested rules: %+v %v", nested, err)
+	}
+}
+
+func TestIgnoreFilesAreBoundedAndNeverFollowSymlinks(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	path := write(t, root, "source.txt", "needle\n")
+	write(t, root, ".gitignore", strings.Repeat("#", (1<<20)+1))
+	if _, err := Grep(t.Context(), Options{Root: root, Patterns: []string{"needle"}}); err == nil || !strings.Contains(err.Error(), "1 MiB") {
+		t.Fatalf("oversized ignore file was not bounded: %v", err)
+	}
+	if got, err := Grep(t.Context(), Options{Root: path, Patterns: []string{"needle"}}); err != nil || len(got.Matches) != 1 {
+		t.Fatalf("explicit file blocked by ignored policy source: %+v %v", got, err)
+	}
+	if err := os.Remove(filepath.Join(root, ".gitignore")); err != nil {
+		t.Fatal(err)
+	}
+	outside := write(t, t.TempDir(), "outside-ignore", "source.txt\n")
+	if err := os.Symlink(outside, filepath.Join(root, ".gitignore")); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if _, err := Find(t.Context(), root, "*", nil, 100); err == nil || !strings.Contains(err.Error(), "not regular") {
+		t.Fatalf("ignore symlink was followed: %v", err)
+	}
+}
+
 func TestGrepBoundsAndHonesty(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "a.go", "package a\n// Needle one\nfunc A() {}\n")

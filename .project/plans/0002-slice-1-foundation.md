@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 41
+  revision: 42
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T18:27:33+01:00"
+  updated_at: "2026-11-07T18:45:58+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 41
-      reason: "Bind provider routing to captured tool locations"
-      changes: ["Reproduced project drift during a real concurrent cd", "Kept resource/search/fetch and mutation routing facts bound to the admitted location"]
+    - revision: 42
+      reason: "Honor nested repository ignore rules before live evaluation"
+      changes: ["Integrated boyter/gocodewalker v1.5.1 go-gitignore (MIT) after checking the latest stable release and active maintained fork on 07.11.2026","Recorded its current fnmatch transitive dependency and BSD-2-Clause notice; used no full go-git module","Verified nested negation, explicit roots and bounded non-symlink ignore-file reads"]
 ---
 
 # 1. Outcome

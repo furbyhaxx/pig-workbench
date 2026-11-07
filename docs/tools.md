@@ -79,6 +79,8 @@ grep {"pattern": "needle", "ignoreCase": true, "glob": "*.go", "exclude": ["vend
 grep {"patterns": ["TODO", "FIXME"], "literal": true}
 ```
 
+Local `grep` and `find` honor repository and nested `.gitignore` rules, including negation. Explicitly named file roots remain searchable. Ignore files must be regular files and share a 1 MiB parsing budget; unsupported or unsafe ignore inputs fail rather than silently widening the search.
+
 `patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. `context` emits up to ten source lines on either side of each match, marked separately from matching lines. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match, file or output limit reports `complete: false` — never a silent "that is all". Long matching lines are shown as UTF-8-safe windows with their original byte column and window start; this makes the result incomplete. Requested context that cannot fit is reduced first, preserving matching lines where possible and marking the result incomplete. Registered provider directory roots are walked with depth, entry, time and source-byte limits. Links, control files and `noWalk` subtrees are skipped; incomplete, changing or oversized provider files are reported as skipped rather than searched partially. Explicit provider-file targets and line selectors keep source coordinates; directory roots do not accept line selectors. Provider files are read within source limits before selected lines are searched.
 
 ## `find`

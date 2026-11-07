@@ -13,7 +13,7 @@ import (
 func (a *app) registerSearchTools(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "grep", Label: "grep",
-		Description:   "Search file contents at a local path or registered provider file/directory. Line selectors are accepted only for explicit files. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Relative paths resolve against the Workbench location. Binary, oversized and incomplete provider files are skipped and listed in Details; hitting a bound reports complete:false instead of pretending the results are exhaustive.",
+		Description:   "Search file contents at a local path or registered provider file/directory. Line selectors are accepted only for explicit files. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Relative paths resolve against the Workbench location. Local traversal honors nested .gitignore rules; explicitly named file roots remain searchable. Binary, oversized and incomplete provider files are skipped and listed in Details; hitting a bound reports complete:false instead of pretending the results are exhaustive.",
 		PromptSnippet: "Search file contents with exact matches and honest limits.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"pattern":    map[string]any{"type": "string", "minLength": 1, "description": "Regular expression, or one literal when literal is true."},
@@ -34,7 +34,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "find", Label: "find",
-		Description:   "Walk a local directory or registered provider root for file names matching a glob pattern. Links and noWalk subtrees are not followed, control files and .git are skipped, exclusions apply, and bounds report complete:false.",
+		Description:   "Walk a local directory or registered provider root for file names matching a glob pattern. Links and noWalk subtrees are not followed, control files and .git are skipped, local .gitignore rules and exclusions apply, and bounds report complete:false.",
 		PromptSnippet: "Find files by name glob under a directory.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"pattern"}, "properties": map[string]any{
 			"pattern": map[string]any{"type": "string", "minLength": 1, "description": "File-name glob, e.g. *.go."},

@@ -104,6 +104,35 @@ func TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd(t *testing.T) {
 	}
 }
 
+func TestLiveSearchHonoursGitignoreAndExplicitFileTargets(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "ignored"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for path, body := range map[string]string{".gitignore": "ignored/\n*.log\n!keep.log\n", "keep.log": "needle kept\n", "hidden.log": "needle hidden\n", "ignored/secret.txt": "needle ignored\n"} {
+		if err := os.WriteFile(filepath.Join(root, path), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results := runScripted(t, root, "grep,find",
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": ".", "pattern": "needle"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": ".", "pattern": "*.log"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "hidden.log", "pattern": "needle"}}
+		},
+	)
+	if len(results) != 3 || !strings.Contains(results[0], "needle kept") || strings.Contains(results[0], "needle hidden") || strings.Contains(results[0], "needle ignored") || !strings.Contains(results[1], "keep.log") || strings.Contains(results[1], "hidden.log") || !strings.Contains(results[2], "needle hidden") {
+		t.Fatalf("live ignore/explicit semantics: %v", results)
+	}
+}
+
 func TestLiveProviderGuidesAndContinuationRespectReadBudgets(t *testing.T) {
 	for _, lines := range []int{5, 20} {
 		t.Run(fmt.Sprint(lines), func(t *testing.T) {

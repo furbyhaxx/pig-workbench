@@ -102,6 +102,10 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 			return Result{}, errors.New("grep line selectors require a file, not a directory")
 		}
 	}
+	ignores, err := newIgnoreTree(ctx, options.Root)
+	if err != nil {
+		return Result{}, err
+	}
 	result := Result{Complete: true}
 	remainingBytes, remainingLines := 48<<10, 1900
 	err = filepath.WalkDir(options.Root, func(path string, entry fs.DirEntry, err error) error {
@@ -118,10 +122,20 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if entry.IsDir() {
-			if path != options.Root && (entry.Name() == ".git" || excluded(path, options.Exclude)) {
+		if entry.IsDir() && path != options.Root && (entry.Name() == ".git" || excluded(path, options.Exclude)) {
+			return fs.SkipDir
+		}
+		ignored, err := ignores.visit(ctx, path, entry)
+		if err != nil {
+			return err
+		}
+		if ignored {
+			if entry.IsDir() {
 				return fs.SkipDir
 			}
+			return nil
+		}
+		if entry.IsDir() {
 			return nil
 		}
 		if !entry.Type().IsRegular() {
@@ -136,7 +150,7 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 				return nil
 			}
 		}
-		if excluded(path, options.Exclude) {
+		if path != options.Root && excluded(path, options.Exclude) {
 			return nil
 		}
 		if result.FilesScanned >= limits.MaxFiles {
@@ -624,8 +638,12 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 	if limit <= 0 {
 		limit = 200
 	}
+	ignores, err := newIgnoreTree(ctx, root)
+	if err != nil {
+		return FindResult{}, err
+	}
 	result := FindResult{Complete: true}
-	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, fs.ErrPermission) {
 				if entry != nil && entry.IsDir() {
@@ -638,13 +656,20 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if path == root {
-			return nil
+		if path != root && entry.IsDir() && (entry.Name() == ".git" || excluded(path, exclude)) {
+			return fs.SkipDir
 		}
-		if entry.IsDir() {
-			if entry.Name() == ".git" || excluded(path, exclude) {
+		ignored, err := ignores.visit(ctx, path, entry)
+		if err != nil {
+			return err
+		}
+		if ignored {
+			if entry.IsDir() {
 				return fs.SkipDir
 			}
+			return nil
+		}
+		if entry.IsDir() || path != root && excluded(path, exclude) {
 			return nil
 		}
 		result.Scanned++
