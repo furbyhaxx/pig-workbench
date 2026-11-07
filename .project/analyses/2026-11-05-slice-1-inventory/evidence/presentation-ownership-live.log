@@ -1,0 +1,26 @@
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (1.17s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (0.87s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.04s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.67s)
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (0.67s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (0.91s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.08s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.66s)
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (0.63s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (0.88s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.09s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.65s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	11.357s

@@ -118,7 +118,7 @@ func receiptResult(receipt contribution.Receipt) map[string]any {
 	}
 }
 
-func (a *app) registerContribution(_ context.Context, s *session, request api.Request) (any, *api.Error) {
+func (a *app) registerContribution(ctx context.Context, s *session, request api.Request) (any, *api.Error) {
 	var params registrationParams
 	if err := api.Decode(request.Params, &params); err != nil || len(params.Descriptor) == 0 || !bytes.HasPrefix(bytes.TrimSpace(params.Descriptor), []byte("{")) {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params", Message: "register requires kind, key and an object descriptor", Outcome: "notApplied"}
@@ -127,6 +127,16 @@ func (a *app) registerContribution(_ context.Context, s *session, request api.Re
 	consumer, ok := contributionConsumers[kind]
 	if !ok {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params.kind", Message: "unknown contribution kind", Outcome: "notApplied"}
+	}
+	if kind == contribution.KindToolPresentation {
+		descriptor, err := presentation.DecodeDescriptor(params.Descriptor)
+		if err != nil {
+			return nil, contributionProtocolError(err)
+		}
+		tools, _ := ctx.Value(presentationToolsKey{}).([]sdk.ToolInfo)
+		if failure := verifyPresentationOwner(tools, request.From.Owner, descriptor.ToolNames); failure != nil {
+			return nil, failure
+		}
 	}
 	if params.PreviousRevision != "" || request.RegistrationID != "" {
 		return a.replaceContribution(s, request, params, consumer)

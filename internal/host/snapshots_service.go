@@ -59,13 +59,7 @@ func (a *app) snapshotView(work context.Context, host sdk.Context, s *session, r
 	if err != nil {
 		return nil, protocolError(err)
 	}
-	owned := false
-	for _, tool := range tools {
-		if tool.Name == toolName && tool.Source == request.From.Owner {
-			owned = true
-		}
-	}
-	if !owned {
+	if !ownsTool(tools, request.From.Owner, toolName) {
 		return nil, denied
 	}
 	configuration, err := s.settings.Current()

@@ -401,6 +401,22 @@ func Extension() *sdk.Extension {
 		}
 		active, binding, registered := client, currentEndpoint, currentReceipts
 		mu.Unlock()
+		if strings.TrimSpace(args) == "claim-other" {
+			receipt, err := active.Register(ctx, binding, "toolPresentation", "foreign-read", map[string]any{"toolNames": []string{"read"}, "label": "Foreign read", "presentationVersion": 1, "preset": "text"})
+			var protocol *api.Error
+			if errors.As(err, &protocol) && protocol.Code == "permissionDenied" {
+				ctx.Notify(`{"ownershipProbe":"denied"}`, "info")
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if err := active.Unregister(ctx, binding, receipt.RegistrationID); err != nil {
+				return err
+			}
+			ctx.Notify(`{"ownershipProbe":"accepted"}`, "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "frames" {
 			return probeFrames(ctx, active, binding, registered["frameProducer"].RegistrationID)
 		}

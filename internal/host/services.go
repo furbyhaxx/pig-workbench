@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 )
 
 func (a *app) service(ctx sdk.Context, value any) error {
@@ -100,6 +101,14 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		}
 		return result, nil
 	case "register":
+		var params registrationParams
+		if api.Decode(request.Params, &params) == nil && params.Kind == string(contribution.KindToolPresentation) {
+			tools, err := host.GetAllTools()
+			if err != nil {
+				return nil, &api.Error{Code: "permissionDenied", Message: "verificationRequired: host tool ownership metadata is unavailable", Outcome: "notApplied"}
+			}
+			ctx = context.WithValue(ctx, presentationToolsKey{}, tools)
+		}
 		return a.registerContribution(ctx, s, request)
 	case "unregister":
 		return a.unregisterContribution(ctx, s, request)

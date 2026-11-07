@@ -25,10 +25,14 @@ func presentationSession(t *testing.T) *session {
 	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog()}
 }
 
+func presentationTestContext() context.Context {
+	return context.WithValue(context.Background(), presentationToolsKey{}, []sdk.ToolInfo{{Name: "build_run", Source: "build-tools"}, {Name: "web_search", Source: "pig-web"}})
+}
+
 func registerPresentation(t *testing.T, a *app, s *session, owner, instance, key, descriptor string) map[string]any {
 	t.Helper()
 	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": key, "descriptor": json.RawMessage(descriptor)})
-	result, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: owner, Instance: instance}, Params: params})
+	result, failure := a.registerContribution(presentationTestContext(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: owner, Instance: instance}, Params: params})
 	if failure != nil {
 		t.Fatalf("register: %v", failure)
 	}
@@ -113,8 +117,8 @@ func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
 		t.Fatalf("idempotent register = %#v, then %#v", first, again)
 	}
 	params, _ := json.Marshal(map[string]any{"kind": "toolPresentation", "key": "other", "descriptor": json.RawMessage(buildPresentationDescriptor)})
-	_, failure := a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: "other-tools", Instance: "i-2"}, Params: params})
-	if failure == nil || failure.Code != "conflict" {
+	_, failure := a.registerContribution(presentationTestContext(), s, api.Request{Method: "register", Generation: "generation", From: api.Identity{Owner: "other-tools", Instance: "i-2"}, Params: params})
+	if failure == nil || failure.Code != "permissionDenied" {
 		t.Fatalf("tool ownership conflict = %v", failure)
 	}
 	if _, ok := s.presentations.lookup("build_run"); !ok {

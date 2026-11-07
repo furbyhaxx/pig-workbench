@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 50
+  revision: 51
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T21:34:15+01:00"
+  updated_at: "2026-11-07T21:57:15+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 50
-      reason: "Reject contradictory reply envelopes before classifying mutation outcomes"
-      changes: ["Shared bounded strict reply decoding across control/provider callers", "Rejected empty success, mixed result/error and unsafe unknown retry claims", "Verified a committed mutation with a malformed notApplied reply remains unknown"]
+    - revision: 51
+      reason: "Verify presentation claims against actual host tool ownership"
+      changes: ["Reproduced a producer claiming another extension tool", "Checked all claimed names before registration/replacement", "Kept verification failures dialog-free and tool execution unchanged"]
 ---
 
 # 1. Outcome
