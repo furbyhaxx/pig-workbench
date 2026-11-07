@@ -576,6 +576,85 @@ func TestLiveEditAnOlderTagRecoversAgainstTheNewestSnapshot(t *testing.T) {
 	}
 }
 
+func TestLiveTaggedBatchRequiresEveryTargetsInstructions(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "nested"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for path, text := range map[string]string{"a.txt": "first\n", "nested/b.txt": "second\n", "nested/AGENTS.md": strings.Repeat("nested instruction\n", 250)} {
+		if err := os.WriteFile(filepath.Join(root, path), []byte(text), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	patch := func(results []string) scriptedCall {
+		return scriptedCall{"edit", map[string]any{"hashline": "[a.txt#" + tagOf(t, results[0]) + "]\nPUT 1.=1:\n+changed first\n[nested/b.txt#" + tagOf(t, results[1]) + "]\nPUT 1.=1:\n+changed second\n"}}
+	}
+	results := runScripted(t, root, "read,edit",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "a.txt"}} },
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "nested/b.txt"}} },
+		patch,
+		func([]string) scriptedCall {
+			for path, want := range map[string]string{"a.txt": "first\n", "nested/b.txt": "second\n"} {
+				got, err := os.ReadFile(filepath.Join(root, path))
+				if err != nil || string(got) != want {
+					t.Errorf("blocked batch changed %s: %q %v", path, got, err)
+				}
+			}
+			return scriptedCall{"read", map[string]any{"path": "nested/AGENTS.md"}}
+		},
+		patch,
+	)
+	if len(results) != 5 || !strings.Contains(results[2], "incompleteInstruction") || !strings.Contains(results[4], "changed") {
+		t.Fatalf("tagged batch did not enforce nested instruction prerequisite: %v", results)
+	}
+	for path, want := range map[string]string{"a.txt": "changed first\n", "nested/b.txt": "changed second\n"} {
+		got, err := os.ReadFile(filepath.Join(root, path))
+		if err != nil || string(got) != want {
+			t.Fatalf("%s: %q %v", path, got, err)
+		}
+	}
+}
+
+func TestLiveTaggedMoveRequiresDestinationInstructions(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "nested"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte("first\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "nested", "AGENTS.md"), []byte(strings.Repeat("nested instruction\n", 250)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	patch := func(results []string) scriptedCall {
+		return scriptedCall{"edit", map[string]any{"hashline": "[a.txt#" + tagOf(t, results[0]) + "]\nMV nested/new.txt\n"}}
+	}
+	results := runScripted(t, root, "read,edit",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "a.txt"}} },
+		patch,
+		func([]string) scriptedCall {
+			if _, err := os.Stat(filepath.Join(root, "nested", "new.txt")); !os.IsNotExist(err) {
+				t.Errorf("blocked move created destination: %v", err)
+			}
+			return scriptedCall{"read", map[string]any{"path": "nested/AGENTS.md"}}
+		},
+		patch,
+	)
+	if len(results) != 4 || !strings.Contains(results[1], "incompleteInstruction") || !strings.Contains(results[3], "nested/new.txt") {
+		t.Fatalf("tagged move did not enforce destination instructions: %v", results)
+	}
+	got, err := os.ReadFile(filepath.Join(root, "nested", "new.txt"))
+	if err != nil || string(got) != "first\n" {
+		t.Fatalf("move did not complete after instructions were read: %q %v", got, err)
+	}
+}
+
 func TestLiveBlockCutPastesIntoAnotherFileThroughARegister(t *testing.T) {
 	root := t.TempDir()
 	a := filepath.Join(root, "a.go")

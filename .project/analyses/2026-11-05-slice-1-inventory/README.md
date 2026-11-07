@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 20
+  revision: 21
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T09:44:32+01:00"
+  updated_at: "2026-11-07T09:49:38+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -71,6 +71,9 @@ document:
     - revision: 20
       reason: "Exercise grep on provider directory roots"
       changes: ["Recorded paginated traversal and source-revision tests", "Kept explicit provider-file targets and selectors open"]
+    - revision: 21
+      reason: "Verify instruction prerequisites for tagged batch targets"
+      changes: ["Recorded multi-file and move-destination tests with no pre-prerequisite mutations"]
 ---
 
 # Scope and evidence
@@ -89,7 +92,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
 | 0006 §2–§4, §6–§7 | S1 D | Read, literal OR search and bounded context are exercised in [grep-context.log](evidence/grep-context.log); long-line windows are covered in [grep-long-lines.log](evidence/grep-long-lines.log) and [grep-long-lines-live.log](evidence/grep-long-lines-live.log). Provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log); provider grep and source pagination are in [provider-grep-live.log](evidence/provider-grep-live.log) and [provider-grep.log](evidence/provider-grep.log). | Explicit provider-file grep targets and selectors remain open; oversized requested context may still omit a match. Loop guard and supersession need implementation or evidence. |
-| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead` exercises repeated refusal, partial reads and recovery ([instruction-barrier.log](evidence/instruction-barrier.log)). | Full mutation paths and remaining acceptance cases need reconciliation. |
+| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead` exercises repeated refusal, partial reads and recovery ([instruction-barrier.log](evidence/instruction-barrier.log)); tagged batch sources and move destinations are covered in [tagged-instruction-union.log](evidence/tagged-instruction-union.log). | Remaining acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one static word; full provider routing and general redirect syntax are not implemented. Dynamic shell-generated paths cannot always be recognized. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |

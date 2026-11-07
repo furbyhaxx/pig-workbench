@@ -99,19 +99,42 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 	}
 	input, _ := data["input"].(map[string]any)
 	targetPath, _ := input["path"].(string)
-	facts := map[string]any{"workbenchToolContext": true}
+	paths := []string{}
 	if targetPath != "" {
-		target, err := resource.ParsePath(s.location.Current().Cwd, targetPath, "")
-		if err != nil {
-			return nil, nil
-		}
-		if target.Scheme == "file" {
-			path := target.Path
-			if info, err := os.Stat(path); err != nil || !info.IsDir() {
-				path = filepath.Dir(path)
+		paths = append(paths, targetPath)
+	}
+	if patch, ok := input["hashline"].(string); ok && patch != "" {
+		if document, err := hashline.Parse(patch); err == nil && len(document.Sections) <= 32 {
+			for _, section := range document.Sections {
+				paths = append(paths, section.Path)
+				for _, op := range section.Ops {
+					if op.Kind == hashline.MV {
+						paths = append(paths, op.Dest)
+					}
+				}
 			}
-			facts["workbenchInstructionTarget"] = path
 		}
+	}
+	facts := map[string]any{"workbenchToolContext": true}
+	var targets []string
+	seen := make(map[string]bool)
+	cwd := s.location.Current().Cwd
+	for _, name := range paths {
+		target, err := resource.ParsePath(cwd, name, "")
+		if err != nil || target.Scheme != "file" {
+			continue
+		}
+		path := target.Path
+		if info, err := os.Stat(path); err != nil || !info.IsDir() {
+			path = filepath.Dir(path)
+		}
+		if !seen[path] {
+			seen[path] = true
+			targets = append(targets, path)
+		}
+	}
+	if len(targets) > 0 {
+		facts["workbenchInstructionTargets"] = targets
 	}
 	result, err := a.contextFrames(ctx, facts)
 	if err != nil {

@@ -170,16 +170,27 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	validating, _ := validate.Value.(bool)
 	privateRoot := ""
 	if enabled.Value == true {
-		target := current.Cwd
-		if path, ok := data["workbenchInstructionTarget"].(string); ok {
-			target = path
+		targets, _ := data["workbenchInstructionTargets"].([]string)
+		if len(targets) == 0 {
+			targets = []string{current.Cwd}
 		}
-		selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })
-		if err != nil {
-			return nil, err
+		seen := make(map[string]bool)
+		for _, target := range targets {
+			selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })
+			if err != nil {
+				return nil, err
+			}
+			if activePrivate != "" {
+				privateRoot = activePrivate
+			}
+			for _, fact := range selected {
+				key := fact.source + "/" + fact.resource
+				if !seen[key] {
+					seen[key] = true
+					facts = append(facts, fact)
+				}
+			}
 		}
-		privateRoot = activePrivate
-		facts = append(facts, selected...)
 	}
 	state := s.contextFrames
 	state.mu.Lock()

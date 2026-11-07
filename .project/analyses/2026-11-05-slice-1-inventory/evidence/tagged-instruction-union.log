@@ -1,0 +1,32 @@
+=== RUN   TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead
+--- PASS: TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead (0.90s)
+=== RUN   TestLiveMutationIsBlockedOnceWhenNewInstructionsApply
+--- PASS: TestLiveMutationIsBlockedOnceWhenNewInstructionsApply (0.79s)
+=== RUN   TestLiveTaggedBatchRequiresEveryTargetsInstructions
+--- PASS: TestLiveTaggedBatchRequiresEveryTargetsInstructions (0.87s)
+=== RUN   TestLiveTaggedMoveRequiresDestinationInstructions
+--- PASS: TestLiveTaggedMoveRequiresDestinationInstructions (0.84s)
+=== RUN   TestLiveBlockCutPastesIntoAnotherFileThroughARegister
+--- PASS: TestLiveBlockCutPastesIntoAnotherFileThroughARegister (0.80s)
+=== RUN   TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead
+--- PASS: TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead (0.86s)
+=== RUN   TestLiveMutationIsBlockedOnceWhenNewInstructionsApply
+--- PASS: TestLiveMutationIsBlockedOnceWhenNewInstructionsApply (0.84s)
+=== RUN   TestLiveTaggedBatchRequiresEveryTargetsInstructions
+--- PASS: TestLiveTaggedBatchRequiresEveryTargetsInstructions (0.85s)
+=== RUN   TestLiveTaggedMoveRequiresDestinationInstructions
+--- PASS: TestLiveTaggedMoveRequiresDestinationInstructions (0.81s)
+=== RUN   TestLiveBlockCutPastesIntoAnotherFileThroughARegister
+--- PASS: TestLiveBlockCutPastesIntoAnotherFileThroughARegister (0.79s)
+=== RUN   TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead
+--- PASS: TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead (0.87s)
+=== RUN   TestLiveMutationIsBlockedOnceWhenNewInstructionsApply
+--- PASS: TestLiveMutationIsBlockedOnceWhenNewInstructionsApply (0.83s)
+=== RUN   TestLiveTaggedBatchRequiresEveryTargetsInstructions
+--- PASS: TestLiveTaggedBatchRequiresEveryTargetsInstructions (0.89s)
+=== RUN   TestLiveTaggedMoveRequiresDestinationInstructions
+--- PASS: TestLiveTaggedMoveRequiresDestinationInstructions (0.86s)
+=== RUN   TestLiveBlockCutPastesIntoAnotherFileThroughARegister
+--- PASS: TestLiveBlockCutPastesIntoAnotherFileThroughARegister (0.80s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	13.624s
