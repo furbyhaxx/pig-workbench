@@ -18,7 +18,7 @@ func startInRoot(t *testing.T, root string, calls []scriptedCall) (*rpcFixture, 
 	server := recorder.serve(t)
 	t.Cleanup(server.Close)
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
-	return startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write,ls"), recorder
+	return startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write,ls,bash"), recorder
 }
 
 func storedSessionID(t *testing.T, root string) string {
@@ -64,9 +64,13 @@ func TestLiveStoredSessionTitleRequiresConfirmation(t *testing.T) {
 		{"read", map[string]any{"path": uri}},
 		{"write", map[string]any{"path": uri, "content": "Approved title"}},
 		{"read", map[string]any{"path": uri}},
+		{"bash", map[string]any{"command": "DeclinedRedirect > " + uri}},
+		{"read", map[string]any{"path": uri}},
+		{"bash", map[string]any{"command": "ApprovedRedirect > " + uri}},
+		{"read", map[string]any{"path": uri}},
 	})
 	second.send("rename", "prompt", "Change the stored session title.")
-	for _, decision := range []bool{false, true} {
+	for _, decision := range []bool{false, true, false, true} {
 		event := second.wait(func(event map[string]any) bool {
 			return event["type"] == "extension_ui_request" && event["method"] == "confirm"
 		})
@@ -82,7 +86,7 @@ func TestLiveStoredSessionTitleRequiresConfirmation(t *testing.T) {
 	recorder.mu.Lock()
 	defer recorder.mu.Unlock()
 	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
-	if len(results) != 4 || !strings.Contains(results[0], "declined") || !strings.Contains(results[1], "Original title") || !strings.Contains(results[2], "title set") || !strings.Contains(results[3], "Approved title") {
+	if len(results) != 8 || !strings.Contains(results[0], "declined") || !strings.Contains(results[1], "Original title") || !strings.Contains(results[2], "title set") || !strings.Contains(results[3], "Approved title") || !strings.Contains(results[4], "declined") || !strings.Contains(results[5], "Approved title") || !strings.Contains(results[6], "title set") || !strings.Contains(results[7], "ApprovedRedirect") {
 		t.Fatalf("confirmation did not guard title changes: %v", results)
 	}
 }

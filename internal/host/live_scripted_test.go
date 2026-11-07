@@ -213,6 +213,20 @@ func TestLiveSummaryRespectsReadBudget(t *testing.T) {
 	}
 }
 
+func TestLiveSchemeRedirectUsesControlWrite(t *testing.T) {
+	results := runScripted(t, t.TempDir(), "bash,read",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "Updated > session://self/title"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "session://self/title"}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[1], "Updated") {
+		t.Fatalf("control redirect did not update the title: %v", results)
+	}
+}
+
 func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
 	root := t.TempDir()
 	jobID := ""

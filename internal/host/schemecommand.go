@@ -114,18 +114,6 @@ func (a *app) runSchemeCommand(ctx context.Context, s *session, cmd schemeComman
 		return page.Content, nil
 	case "mkdir", "rm", "mv", "cp":
 		return "", fmt.Errorf("%s is not supported by this scheme yet", cmd.verb)
-	case "redirect":
-		target, err := resource.ParsePath("/", cmd.paths[0], "")
-		if err != nil {
-			return "", err
-		}
-		if target.Scheme != "job" {
-			return "", fmt.Errorf("redirect to %s:// is not a supported form", target.Scheme)
-		}
-		if err := (jobProvider{}).jobAction(s, target.URI, cmd.text); err != nil {
-			return "", err
-		}
-		return "", nil
 	default:
 		return "", errors.New("unsupported scheme command")
 	}
@@ -133,7 +121,7 @@ func (a *app) runSchemeCommand(ctx context.Context, s *session, cmd schemeComman
 
 // dispatchSchemeCommand runs a G8.20 command in-process when it targets a registered
 // non-locatable scheme, and reports whether it handled the command.
-func (a *app) dispatchSchemeCommand(ctx context.Context, s *session, command string) (bool, any, error) {
+func (a *app) dispatchSchemeCommand(ctx sdk.Context, work context.Context, s *session, command string) (bool, any, error) {
 	schemes := []string{}
 	for _, scheme := range s.router.Schemes() {
 		if !s.router.Locatable(scheme) {
@@ -147,7 +135,23 @@ func (a *app) dispatchSchemeCommand(ctx context.Context, s *session, command str
 	if !handled {
 		return false, nil, nil
 	}
-	text, err := a.runSchemeCommand(ctx, s, parsed)
+	if parsed.verb == "redirect" {
+		target, err := resource.ParsePath("/", parsed.paths[0], "")
+		if err != nil {
+			return true, nil, err
+		}
+		if target.Selection.Explicit {
+			return true, nil, errors.New("redirect takes a whole path, not a line selector")
+		}
+		_, release, err := s.location.Acquire(ctx.ToolCallID(), true)
+		if err != nil {
+			return true, nil, err
+		}
+		defer release()
+		result, err := a.writeControl(ctx, work, s, target, parsed.text)
+		return true, result, err
+	}
+	text, err := a.runSchemeCommand(work, s, parsed)
 	if err != nil {
 		return true, nil, err
 	}

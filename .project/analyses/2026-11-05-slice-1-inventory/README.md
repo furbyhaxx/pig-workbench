@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 9
+  revision: 10
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-07T08:09:18+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "User approved the remaining five specifications"
       changes: ["Removed the resolved approval blocker while retaining implementation and acceptance gaps"]
+    - revision: 10
+      reason: "Verify scheme redirects against the shared control write policy"
+      changes: ["Recorded real-host self-title redirect and stored-title confirmation behavior", "Retained other scheme commands and general redirect syntax as open"]
 ---
 
 # Scope and evidence
@@ -58,7 +61,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode` and `TestLiveGrepAcceptsLiteralPatternList` exercise local reads and literal OR search. | Grep context is accepted but ignored; grep/find treat provider URIs as local paths. Loop guard and supersession need explicit evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | Project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
-| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths; redirects only route to `job://`. Provider approval parity is unproven. |
+| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. `TestLiveSchemeRedirectUsesControlWrite` and `TestLiveStoredSessionTitleRequiresConfirmation` exercise control redirects and confirmation parity ([control-redirect.log](evidence/control-redirect.log)). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one literal word; full provider routing and general redirect syntax are not implemented. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |
 | 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
 | 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. `TestActivityCountsFailedJobsAfterRealExit` checks one successful and one failed real process ([activity-failed.log](evidence/activity-failed.log)); real TUI placement has separate coverage. Click requires a fork host; configured shortcut is not applied. |

@@ -31,7 +31,7 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 **Unfinished Slice 1:**
 
 - `grep` accepts `context` but does not emit surrounding lines; `grep` and `find` do not search provider URIs. The project-private instruction class is not wired.
-- For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. Redirects currently target `job://` only; `rm`, `mv`, `cp` and `mkdir` are rejected. Provider mutation authorization and full scheme-command routing remain open.
+- For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. A single-word `value > URI` dispatches supported control writes with the same confirmation rules as `write`; it is not general shell redirection. `rm`, `mv`, `cp` and `mkdir` are rejected. Provider mutation authorization and full scheme-command routing remain open.
 - `prompt.delivery = "auto"` retains PiG's prompt; `force` opts in to `builtin/workbench` only when instructions are enabled. The live prompt A/B evaluation and full real-agent transcript await authorization for provider spend. The `prompt.template` setting is not applied.
 - All fourteen specifications are approved, but implementation and acceptance remain incomplete. The [acceptance inventory](.project/analyses/2026-11-05-slice-1-inventory/README.md) distinguishes observed tests from incomplete rows.
 - Windows messaging, session storage and registry have compile-level coverage only; some required platform security operations fail closed. Stored-session title confirmation has been tested through PiG's RPC dialog path, not visually in a TUI. Real session-reply hop limiting has been exercised with a local scripted provider.

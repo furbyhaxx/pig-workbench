@@ -114,49 +114,8 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	if hasExpectedRevision && target.Scheme != "file" {
 		return nil, errors.New("expectedRevision is supported only for local files; the control write was not performed")
 	}
-	if target.Scheme == "skill" {
-		if err := work.Err(); err != nil {
-			return nil, err
-		}
-		if err := (skillProvider{}).unload(s, target.URI, input.Content); err != nil {
-			return nil, err
-		}
-		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI}}, nil
-	}
-	if target.Scheme == "agent" {
-		message, receipt, err := a.agentWrite(work, s, target.URI, input.Content)
-		if err != nil {
-			return nil, err
-		}
-		return sdk.ToolResult{Content: message + "\n", Details: map[string]any{"uri": target.URI, "receipt": receipt}}, nil
-	}
-	if target.Scheme == "session" {
-		if err := work.Err(); err != nil {
-			return nil, err
-		}
-		var message string
-		var err error
-		if strings.HasSuffix(strings.TrimRight(target.URI, "/"), "/title") {
-			message, err = a.writeSessionTitle(ctx, s, target.URI, input.Content)
-		} else {
-			message, err = a.instructionsControl(ctx, target.URI, input.Content)
-		}
-		if err != nil {
-			return nil, err
-		}
-		return sdk.ToolResult{Content: message + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
-	}
-	if target.Scheme == "job" {
-		if err := work.Err(); err != nil {
-			return nil, err
-		}
-		if err := (jobProvider{}).jobAction(s, target.URI, input.Content); err != nil {
-			return nil, err
-		}
-		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
-	}
 	if target.Scheme != "file" {
-		return nil, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+		return a.writeControl(ctx, work, s, target, input.Content)
 	}
 	if err := work.Err(); err != nil {
 		return nil, err
@@ -209,6 +168,44 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	receipt := fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(input.Content), target.URI, revision)
 	s.rememberWritten(ctx.ToolCallID(), epoch, target, []byte(input.Content), receipt)
 	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision}}, nil
+}
+
+func (a *app) writeControl(ctx sdk.Context, work context.Context, s *session, target resource.Target, content string) (sdk.ToolResult, error) {
+	if err := work.Err(); err != nil {
+		return sdk.ToolResult{}, err
+	}
+	switch target.Scheme {
+	case "skill":
+		if err := (skillProvider{}).unload(s, target.URI, content); err != nil {
+			return sdk.ToolResult{}, err
+		}
+		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI}}, nil
+	case "agent":
+		message, receipt, err := a.agentWrite(work, s, target.URI, content)
+		if err != nil {
+			return sdk.ToolResult{}, err
+		}
+		return sdk.ToolResult{Content: message + "\n", Details: map[string]any{"uri": target.URI, "receipt": receipt}}, nil
+	case "session":
+		var message string
+		var err error
+		if strings.HasSuffix(strings.TrimRight(target.URI, "/"), "/title") {
+			message, err = a.writeSessionTitle(ctx, s, target.URI, content)
+		} else {
+			message, err = a.instructionsControl(ctx, target.URI, content)
+		}
+		if err != nil {
+			return sdk.ToolResult{}, err
+		}
+		return sdk.ToolResult{Content: message + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
+	case "job":
+		if err := (jobProvider{}).jobAction(s, target.URI, content); err != nil {
+			return sdk.ToolResult{}, err
+		}
+		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
+	default:
+		return sdk.ToolResult{}, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+	}
 }
 
 func readExisting(path string) (os.FileInfo, string, error) {

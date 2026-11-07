@@ -108,7 +108,7 @@ The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `wri
 
 A job also outlives the runtime that started it when that runtime dies without shutting down. To keep such a job from becoming an unsupervised process, each runtime claims a liveness lock for its generation under `$XDG_STATE_HOME/pig-workbench/jobs/`, records the pid and kernel start time of every job it starts, and the next start terminates the process groups whose owner lock is free — after rechecking the recorded pid against its start time, so a recycled pid is never signalled. Records of a live runtime are left untouched, including another session's.
 
-`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. Standalone `ls` and `cat` are routed for non-locatable scheme paths; redirects currently work only for `job://`. Scheme-path `rm`, `mv`, `cp` and `mkdir` are unconditionally refused, and pipes and compounds are rejected. Full provider-directed scheme-command dispatch and job panels remain pending.
+`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. Standalone `ls` and `cat` are routed for non-locatable scheme paths. The limited form `value > URI` sends one unquoted word as content to the same supported control targets as `write`, including its confirmation rules; it is not general shell redirection. Scheme-path `rm`, `mv`, `cp` and `mkdir` are unconditionally refused, and pipes and compounds are rejected. Full provider-directed scheme-command dispatch and job panels remain pending.
 
 ## `ask_user`
 
