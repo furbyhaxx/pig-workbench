@@ -44,6 +44,21 @@ func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T
 	}
 }
 
+func TestLiveReadRepetitionThresholdControlsHints(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("retained source\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var steps []scriptStep
+	for range 2 {
+		steps = append(steps, func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "source.txt"}} })
+	}
+	results := runScriptedConfig(t, root, "read", "[read]\nloop-hint-after=2\n", steps...)
+	if len(results) != 2 || strings.Contains(results[0], "Repeated read") || !strings.Contains(results[1], "Repeated read") || !strings.Contains(results[1], "retained source") {
+		t.Fatalf("configured repetition threshold not applied: %v", results)
+	}
+}
+
 func TestLiveRepetitionHintStaysWithinReadBudget(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "large.txt"), []byte(strings.Repeat("source line with enough text to consume the page\n", 100)), 0600); err != nil {

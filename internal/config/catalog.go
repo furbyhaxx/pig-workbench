@@ -169,6 +169,9 @@ func Catalog() []Definition {
 		case "read.max-bytes":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result bytes, including framing; 1024–51200."
+		case "read.loop-hint-after":
+			d.Application = "live"
+			d.Description = "Add a repetition hint after this many identical canonical/revision/view/selection reads; source remains present."
 		case "read.concurrency":
 			d.Description = "Validated but not applied; multi-read currently runs serially."
 		case "read.summarize.enabled":

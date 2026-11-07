@@ -34,6 +34,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		keys   []string
 		verify func(*testing.T)
 	}{
+		{"read-repetition", []string{"read.loop-hint-after"}, TestLiveReadRepetitionThresholdControlsHints},
 		{"read-budgets", []string{"read.max-bytes", "read.max-lines"}, TestLiveSummaryRespectsReadBudget},
 		{"summaries", []string{"read.summarize.enabled", "read.summarize.min-total-lines"}, TestSummaryViewHonoursSettings},
 		{"edit-mode", []string{"edit.mode"}, TestLiveEditModeRestrictsAcceptedSyntax},

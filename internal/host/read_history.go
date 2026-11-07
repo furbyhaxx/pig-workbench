@@ -23,7 +23,7 @@ type readHistory struct {
 	sequence uint64
 }
 
-func (h *readHistory) hint(target resource.Target, page resource.ReadResult) string {
+func (h *readHistory) hint(target resource.Target, page resource.ReadResult, threshold int) string {
 	if page.Facts.Revision == "" || page.Facts.CanonicalURI == "" {
 		return ""
 	}
@@ -59,10 +59,10 @@ func (h *readHistory) hint(target resource.Target, page resource.ReadResult) str
 	h.sequence++
 	count := 1
 	if prior.signature == signature {
-		count = min(3, prior.count+1)
+		count = min(10000, prior.count+1)
 	}
 	h.entries[uri] = readCounter{signature: signature, count: count, sequence: h.sequence}
-	if count < 3 {
+	if count < threshold {
 		return ""
 	}
 	return repetitionHint

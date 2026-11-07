@@ -23,7 +23,7 @@ max-lines = 400
 
 `version` may be omitted for version 1; saves add it. Unknown versions are refused. Documents use TOML 1.0 syntax and are limited to 1 MiB. Unknown keys are reported, retained and inactive.
 
-`read.max-bytes` (1024–51200) and `read.max-lines` (5–2000) bound each complete read result, including framing. Each read captures one immutable configuration revision and reports it in Details. `read.summarize.enabled` and `read.summarize.min-total-lines` control declaration summaries for eligible local code reads.
+`read.max-bytes` (1024–51200) and `read.max-lines` (5–2000) bound each complete read result, including framing. Each read captures one immutable configuration revision and reports it in Details. `read.summarize.enabled` and `read.summarize.min-total-lines` control declaration summaries for eligible local code reads. `read.loop-hint-after` (1–10000, default 3) sets when repeated identical canonical/revision/view/selection reads gain a hint; content is never suppressed.
 
 `trust.rules` (user/runtime only; entries `allow <absolute dir>` or `deny <absolute dir>`, managed with `/workbench trust`) and `projects.session-storage` (`link`, the default, or `off`) are live too. With `link`, a session start in a directory that belongs to a recognised project converts PiG's per-directory session bucket into a symlink to `<agent>/projects/<id>/sessions/`, so `/resume` lists every checkout's sessions. The conversion is journaled and resumes after a crash, never moves a file a running session has open, and waits (with a notice) while another live session uses the same directory or the bucket is on another filesystem. `/workbench projects unlink-storage` restores real directories. A custom `--session-dir` is never touched.
 

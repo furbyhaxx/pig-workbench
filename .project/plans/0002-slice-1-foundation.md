@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 38
+  revision: 39
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T17:56:35+01:00"
+  updated_at: "2026-11-07T18:09:05+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 38
-      reason: "Implement safe read supersession before live evaluation"
-      changes: ["Projected proven older partial reads to same-revision full-read pointers", "Preserved stored JSONL, annotations and tool provenance", "Passed full race-enabled host integration and repeated safety cases"]
+    - revision: 39
+      reason: "Apply the existing read repetition threshold setting"
+      changes: ["Wired read.loop-hint-after into immutable per-read configuration", "Verified configured/default behavior and the complete live-setting consumer catalog"]
 ---
 
 # 1. Outcome

@@ -141,6 +141,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	if s.snapshots != nil {
 		epoch = s.snapshots.Epoch()
 	}
+	threshold := intValue(configuration, "read.loop-hint-after", 3)
 	policy := configuration.Read()
 	budget := resource.Budget{Bytes: policy.MaxBytes, Lines: policy.MaxLines}
 	var content strings.Builder
@@ -170,7 +171,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 				facts = append(facts, summary.Facts)
 				s.skills.noteTouch(target.Path)
 				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)
-				text := summary.Content + s.readHistory.hint(target, summary)
+				text := summary.Content + s.readHistory.hint(target, summary, threshold)
 				content.WriteString(text)
 				budget.Bytes -= len(text)
 				budget.Lines -= strings.Count(text, "\n") + 1
@@ -191,7 +192,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			failedCount++
 		} else {
-			text = page.Content + s.readHistory.hint(target, page)
+			text = page.Content + s.readHistory.hint(target, page, threshold)
 			if len(targets) == 1 {
 				projection = readProof(page)
 			}
