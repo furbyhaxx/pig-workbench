@@ -19,6 +19,8 @@ Selectors: `:N` (onward), `:A-B`, `:A+C`, `:-N` (tail), comma lists, and `:raw` 
 
 For a multi-read, one failing target does not turn the whole result into an error: the successful content stays valid, `Details.failedTargets` counts the failures, and the per-resource error is kept in `Details.resources[]`. The tool result is an error only when every target failed.
 
+A later complete same-revision source read can replace an earlier partial single-resource read's source block in model context with a provenance pointer. Stored session history is unchanged; annotations stay intact. Derived, summary, clipped, redacted or otherwise unproved source blocks do not authorize this projection.
+
 The third identical normalized read at the same revision adds a repetition hint without suppressing content. Changing the selection, view or revision resets the counter; unknown revisions do not produce hints.
 
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, total lines, shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.

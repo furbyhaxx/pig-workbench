@@ -9,6 +9,41 @@ import (
 	"testing"
 )
 
+func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte(lines(20)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "source.txt:1-2"}} },
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "source.txt"}} },
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "superseded by read scripted-1") || strings.Contains(results[0], "1:line 1") || !strings.Contains(results[1], "20:line 20") {
+		t.Fatalf("projection did not reach actual provider context: %v", results)
+	}
+	files, err := filepath.Glob(filepath.Join(root, "sessions", "**", "*.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) == 0 {
+		files, _ = filepath.Glob(filepath.Join(root, "sessions", "*.jsonl"))
+	}
+	if len(files) == 0 {
+		t.Fatal("no persisted history to verify")
+	}
+	var history strings.Builder
+	for _, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		history.Write(data)
+	}
+	if strings.Contains(history.String(), "superseded by read") || !strings.Contains(history.String(), "1:line 1") {
+		t.Fatal("context projection changed persisted history")
+	}
+}
+
 func TestLiveRepetitionHintStaysWithinReadBudget(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "large.txt"), []byte(strings.Repeat("source line with enough text to consume the page\n", 100)), 0600); err != nil {

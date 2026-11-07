@@ -106,6 +106,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent("before_provider_request", a.spliceLatePrompt)
 	ext.OnEvent("before_provider_request", a.redactProviderRequest)
 	ext.OnEvent("context", a.confirmContextFrames)
+	ext.OnEvent("context", a.projectReadContext)
 	ext.OnEvent("tool_call", a.substituteCall)
 	ext.OnEvent("tool_call", a.toolInstructions)
 	ext.OnEvent("tool_call", a.trackCall)

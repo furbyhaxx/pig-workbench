@@ -147,6 +147,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	facts := make([]any, 0, len(targets))
 	complete := true
 	failedCount := 0
+	var projection *readProjection
 	for _, target := range targets {
 		if err := work.Err(); err != nil {
 			return nil, err
@@ -191,6 +192,9 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			failedCount++
 		} else {
 			text = page.Content + s.readHistory.hint(target, page)
+			if len(targets) == 1 {
+				projection = readProof(page)
+			}
 			s.skills.noteTouch(target.Path)
 			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 			if guide, ok := s.firstTouchGuide(target.Scheme); ok {
@@ -223,6 +227,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			"failedTargets":    failedCount,
 			"locationRevision": captured.Revision,
 			"configRevision":   configuration.Revision(),
+			"readProjection":   projection,
 		},
 		IsError: allFailed,
 	}, nil
