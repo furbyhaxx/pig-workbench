@@ -5,9 +5,9 @@ document:
   title: "Workbench answers to pig-web's M0.4 inputs (M1–M6)"
   description: "Current service and safety answers for pig-web, with seam evidence and open Slice 1 gates"
   status: "open"
-  revision: 3
+  revision: 4
   created_at: "2026-11-05T17:25:00+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-07T16:32:35+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "User approved the five remaining specifications"
       changes: ["Recorded contract approval without claiming implementation or slice exit"]
+    - revision: 4
+      reason: "Wire declared provider mutations without new permission prompts"
+      changes: ["Updated search and mutation support for consumers", "Linked the current full baseline evidence and retained the live-provider gate"]
 ---
 
 # Status
@@ -42,9 +45,11 @@ Workbench's reference-extension seam gate has passed with a real PiG host and a 
 # Consumer limits
 
 - `snapshots.view`, `snapshots.status` and `snapshots.touched` are advertised; editable snapshot views currently support local files only.
-- Contributed resource providers are read-only. `read` and `ls` use them; `grep` and `find` do not currently traverse their URIs. Mutation capabilities are refused at registration.
+- Contributed providers support bounded `read`, `ls`, `grep` and `find`. Providers can declare write/mkdir/remove/copy/move with stable revisions, compare-and-swap, a retention/durability declaration and typed receipts (SPEC-0004 rev 8). Workbench adds no new confirmation or permission prompts; providers enforce backing rules and commit-time preconditions. Provider `edit` stays refused until its snapshot backend exists. See [mutation authoring](../../docs/extension-services.md#provider-mutation-outcomes).
 - A shared-bus timeout cannot preempt an uncooperative listener. A mutating call with unknown outcome must be reconciled, not blindly retried.
 - Windows messaging, session storage and registry have compile-level coverage only. Activity click and the rich questionnaire panel are later host/UI work.
+
+At implementation `eb55bf7`, fresh full race-enabled unit and actual PiG integration runs passed. The exact `just check`, `just race` and `just integration` gates passed at `733298a`; [current evidence](../analyses/2026-11-05-slice-1-inventory/README.md) includes all ownership rows and explicit remaining limits. No billed inference was used.
 
 # Next handoff
 

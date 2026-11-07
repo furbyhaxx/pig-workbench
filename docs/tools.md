@@ -51,6 +51,8 @@ write {"path": "notes.md", "content": "text", "expectedRevision": "<revision fro
 
 Creates or fully replaces one local file. A supplied `expectedRevision` must match the file's current digest or the write is refused with `staleRevision`. The replacement is atomic (same-directory temporary file, flush, rename), an existing file keeps its mode, a new file is created `0600`, and the parent directory must already exist. Line selectors are rejected; use `edit` for partial changes.
 
+Declared writable provider resources also accept `write`, with a 32 KiB content limit and the encoded 64 KiB control-envelope limit. Workbench captures the current revision (or absence) and the provider rechecks it at commit; an explicit `expectedRevision` must match. Results report committed, notApplied, partial or unknown, never automatic retries. There are no new permission or confirmation prompts for contributed mutations.
+
 Control writes also support `job://<id>/stdin|ctl`, `skill://` unload, `agent://<id>/inbox`, `session://<id>/title` and `session://self/instructions/ctl`. They use the corresponding action's policy and confirmation rules. An `expectedRevision` on a control write is rejected before the action; it is not silently ignored.
 
 ## `ls`
