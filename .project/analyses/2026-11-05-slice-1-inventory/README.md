@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 39
+  revision: 40
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T21:09:49+01:00"
+  updated_at: "2026-11-07T21:23:33+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 39
-      reason: "Preserve native directory snapshot continuation integrity"
-      changes: ["Bounded native cursor use to canonical directories and visible entry snapshots","Rejected wrong roots, inserted/removed entries and stale last names","Used descriptor-checked nonblocking directory admission and preserved scratch containment"]
+    - revision: 40
+      reason: "Audit exact protocol anchors and expose missing lifecycle/settings behavior"
+      changes: ["Recorded actual passing control/registry/reference suites", "Tracked cancellation, strict provider replies, progress and dormant settings as open", "Kept foreign/fused evidence separate from isolated Go results"]
 ---
 
 # Scope and evidence
@@ -62,14 +62,14 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0004 §10.5 core trees | PARTIAL | Stored-session/title, scratch, job, skill, cfg, artifact and reference-doc tests run. by-project/worktree tree acceptance is explicitly Slice 2, not an implementation waiver for core routes. |
 | 0004 §10.6 source/derived seen state and alias edit refusal | PASS | TestLargeLineNeverBecomesSeen, TestRenderSpansValidatesProviderPages and live reference edit refusal; full edit matrix is 17.8.4.1. |
 | 0004 §10.7 mutation outcomes | PARTIAL | Live provider verb/failure matrix passes; cancel/idempotency/disconnect anchor reconciliation remains 17.8.3.1. |
-| 0004 §10.8 bounded slow/noisy providers | OPEN | Descriptor concurrency is validated but not enforced in the adapter; owner admission and unregister/drain are 17.8.3.3. Renderers do no provider calls. |
+| 0004 §10.8 bounded slow/noisy providers | OPEN | Descriptor concurrency is validated but not enforced in the adapter; owner admission and unregister/drain are 17.8.4. Renderers do no provider calls. |
 | 0004 §10.9 invalidation/revalidation | PARTIAL | File reads recompute source digests; syntax cache keys include source content. Explicit provider lifecycle and watch-loss reconciliation remain 17.8.3.1/3.3. |
 | 0004 §10.10 direct/bus semantics and host forms | PARTIAL | Local provider and real bus tests pass. Foreign-runtime/fused evidence is not implied by a Go isolated run; 17.8.3.1 owns the exact host matrix. |
 | 0004 §11 fetch routing/policy/fallback | PARTIAL | Builtin HTTP redirect/media/policy tests and reference fetch/locate run. Full backend policy toggles/fallback matrix remains protocol/config reconciliation. |
 | 0006 §8.1 selector goldens and bounded bytes | PASS (source) | Selector, raw-byte, continuation and large-line tests pass. Aggregate guide/continuation framing passes in [read-guide-budgets.log](evidence/read-guide-budgets.log). |
 | 0006 §8.2 literal punctuation and view chains | PASS (local/core) | Literal/query/port parser cases pass; archive/binary format adapters remain Slice 2. |
 | 0006 §8.3 summary coordinates/seen | PASS | Summary and source coverage tests pass; summaries are ineligible as superseding complete source. |
-| 0006 §8.4 representative/malformed/oversize/cancel matrix | PARTIAL | Local source, directory, provider and static-HTTP fixtures pass, including aggregate guide/continuation bounds; provider lifecycle remains 17.8.3.3. |
+| 0006 §8.4 representative/malformed/oversize/cancel matrix | PARTIAL | Local source, directory, provider and static-HTTP fixtures pass, including aggregate guide/continuation bounds; provider lifecycle remains 17.8.4. |
 | 0006 §8.5–§8.7 rich adapters/notebooks/media | DEFERRED | PLAN-0001 assigns these adapters to later slices; they are not advertised as implemented. |
 | 0006 §8.8 direct/codemode/provider bounds and batches | OPEN | Live direct/codemode and guide/continuation budget tests pass; captured-project routing passes in [captured-provider-project.log](evidence/captured-provider-project.log). |
 | 0006 §8.9 static URL policy/no billed question answering | PASS | Builtin HTTP and reference backend tests pass without inference spend. |
@@ -78,6 +78,25 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0006 §6 search ignores and glob dialect | PASS | Nested .gitignore/negation and explicit-root semantics pass [real-host](evidence/search-ignore-live.log) and [safety](evidence/search-ignore-safety.log) tests. Brace/class/doublestar dialect parity and invalid-pattern safety pass [unit](evidence/search-glob-unit.log) and [real-host](evidence/search-glob-live.log) regressions. |
 | 0006 §6 listing/search output details | PASS (covered modes) | Bounded ls/find output and explicit hidden-entry facts pass [safety](evidence/list-output-safety.log), [actual PiG](evidence/list-output-live.log) and [find path-byte](evidence/find-output-bytes.log) cases. Unicode literal byte columns pass [scanner](evidence/literal-case-columns-unit.log) and [actual PiG](evidence/literal-case-columns-live.log) regressions. Filename-only output passes [scanner](evidence/grep-files-only-unit.log) and [actual PiG](evidence/grep-files-only-live.log) tests without retaining source/context. |
 | 0012 §5.3 captured routing facts | PASS | Original current-location routing fails under concurrent cd ([repro](evidence/captured-provider-project-repro.log)); captured resource/search/fetch contexts and mutation revisions pass repeated real-host tests ([evidence](evidence/captured-provider-project.log)). |
+
+# Exact local protocol anchors
+
+SPEC-0001 §7 bullets are audited independently of representative discovery success. Current observed suites are [protocol-anchors-unit.log](evidence/protocol-anchors-unit.log) and [protocol-anchors-live.log](evidence/protocol-anchors-live.log).
+
+| Anchor | Status | Evidence and precise remaining work |
+|---|---|---|
+| §7.1 discovery/load order/absence/version/duplicates/reload/session switch | PASS (stock isolated Go) | Actual service-failure/discovery, before-Workbench producer, reference reload and session replacement/resume cases pass. Fused/foreign host forms remain §7.3/8. |
+| §7.2 identical/changed/colliding/atomic replace/stale handles | PASS (covered registry paths) | Registry/contribution unit tests and live stale-generation/reload cases pass; active-operation withdrawal still requires 17.8.4. |
+| §7.3 foreign-runtime JSON equivalence | OPEN | Go JSON contract tests do not prove another supported extension runtime. Actual foreign/fused coverage is 17.8.3.5. |
+| §7.4 nested control/provider/progress and owned shutdown | PARTIAL | Real nested reference calls/reloads pass. Provider progress has no consumer (17.8.3.6); provider admission/drain is 17.8.4. |
+| §7.5 deadline/cancel/failure/unknown mutation outcome | OPEN | Current mutation failure/partial/unknown receipts pass. Provider Serve does not apply operation deadlines or explicit cancellation; control Client does not send cancel after abort or preserve known replies after Emit failure. Work is 17.8.4.2 and 17.8.3.4. |
+| §7.6 response/envelope/counters/duplicate IDs/lost notifications | PARTIAL | Request/reply size and malformed control tests pass. Provider reply branch validation is incomplete (17.8.3.3); no dedicated progress/counter/lost-event evidence is implied by those tests. |
+| §7.7 absent-producer replay and dormant settings | OPEN | Raw retained result fallback exists, but settings.get has no dispatcher and dynamic presentation settings persistence/dormancy is not implemented. Presentation reconciliation in 17.8.3.2 owns this gap. |
+| §7.8 cancellation-after-abort, late replies, isolated/fused | OPEN | Direct owner-scoped control cancellation and late-reply unit checks pass; actual busy provider cancellation and both host forms still require 17.8.4.2 and 17.8.3.5. |
+| §7.9 reload hang consistency | PARTIAL | Two real reloads and independent consumer rediscovery pass. Shared-bus/host preemption limits stay explicit; no deterministic never-returning host reload was established by those runs. |
+| §8 collaboration services | PARTIAL | Snapshots, conditional secrets, context fields, fetch/status/docs/frames and two-session extension messaging have actual consumer evidence; full settings and lifecycle anchors remain open above. |
+
+No provider mutation permission prompt is introduced by this reconciliation. General operation.status is conditional on admitting deferred work; synchronous provider mutations currently return receipts directly and require state reconciliation after unknown outcomes, per SPEC-0004 §6.1. The specification wording must be reconciled rather than inventing an advertised operation lookup.
 
 # Baseline gates
 
