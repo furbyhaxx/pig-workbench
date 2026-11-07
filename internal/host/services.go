@@ -126,6 +126,8 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		return a.unregisterContribution(ctx, s, request)
 	case "describe":
 		return a.describeContributions(ctx, s, request)
+	case "settings.get":
+		return a.displaySettingsGet(s, request)
 	case "status.update":
 		return a.statusUpdate(host, s, request)
 	case "frames.publish":

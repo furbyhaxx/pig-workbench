@@ -401,6 +401,15 @@ func Extension() *sdk.Extension {
 		}
 		active, binding, registered := client, currentEndpoint, currentReceipts
 		mu.Unlock()
+		if strings.TrimSpace(args) == "display-settings" {
+			var settings api.DisplaySettings
+			if err := active.Call(ctx, binding, "settings.get", map[string]any{}, &settings, &api.CallOptions{RegistrationID: registered["toolPresentation"].RegistrationID}); err != nil {
+				return err
+			}
+			encoded, _ := json.Marshal(map[string]any{"displaySettings": settings})
+			ctx.Notify(string(encoded), "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "withdraw-presentation" {
 			if err := active.Unregister(ctx, binding, registered["toolPresentation"].RegistrationID); err != nil {
 				return err

@@ -90,15 +90,15 @@ func mustTarget(t *testing.T, cwd, path, selector string) resource.Target {
 }
 
 func TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb(t *testing.T) {
-	items, err := completeWorkbench("integrations ", []string{"integrations pig-web", "resources kb"})
+	items, err := completeWorkbench("integrations ", []string{"integrations pig-web", "resources kb"}, config.Catalog())
 	if err != nil || len(items) != 1 || items[0].Value != "integrations pig-web" {
 		t.Fatalf("owners = %+v, %v", items, err)
 	}
-	items, err = completeWorkbench("res", []string{"integrations pig-web", "resources kb"})
+	items, err = completeWorkbench("res", []string{"integrations pig-web", "resources kb"}, config.Catalog())
 	if err != nil || len(items) != 1 || items[0].Value != "resources" {
 		t.Fatalf("a verb completes before its arguments: %+v, %v", items, err)
 	}
-	items, _ = completeWorkbench("resources k", []string{"resources kb", "resources file"})
+	items, _ = completeWorkbench("resources k", []string{"resources kb", "resources file"}, config.Catalog())
 	if len(items) != 1 || items[0].Value != "resources kb" {
 		t.Fatalf("schemes = %+v", items)
 	}

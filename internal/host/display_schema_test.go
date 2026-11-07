@@ -6,9 +6,38 @@ import (
 	"strings"
 	"testing"
 
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
+
+func TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields(t *testing.T) {
+	a := &app{}
+	s := presentationSession(t)
+	receipt := registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	request := api.Request{Method: "settings.get", Generation: "generation", RegistrationID: receipt["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
+	result, failure := a.dispatchService(t.Context(), sdk.Context{}, s, request)
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	settings := result.(api.DisplaySettings)
+	if settings.Owner != "build-tools" || settings.Key != "build_run" || settings.Fields["density"].Value != "normal" || settings.ConfigRevision == 0 {
+		t.Fatalf("display settings response: %+v", settings)
+	}
+	if _, exists := settings.Fields["secrets.enabled"]; exists {
+		t.Fatal("execution policy leaked through display settings")
+	}
+	a.session = s
+	items, err := a.workbenchCompletions("settings show tools.build-tools.build_run.den")
+	if err != nil || len(items) != 1 || items[0].Value != "settings show tools.build-tools.build_run.density" {
+		t.Fatalf("dynamic completion missing: %+v %v", items, err)
+	}
+	request.From.Owner = "foreign"
+	if _, failure := a.dispatchService(t.Context(), sdk.Context{}, s, request); failure == nil || failure.Code != "notFound" {
+		t.Fatalf("foreign owner read another producer's settings: %v", failure)
+	}
+}
 
 func TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes(t *testing.T) {
 	a := &app{}

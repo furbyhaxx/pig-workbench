@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 46
+  revision: 47
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T22:46:54+01:00"
+  updated_at: "2026-11-07T23:00:26+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 46
-      reason: "Activate stable presentation schemas without claiming unapplied rendering"
-      changes: ["Registered producer defaults and bounded typed custom fields by owner/key", "Preserved dormant overrides and rolled back incompatible descriptor replacements", "Reported schema-only values as registered until rendering is integrated", "Verified actual host withdrawal/re-registration and preserved explicit zero preview defaults"]
+    - revision: 47
+      reason: "Expose bounded owner-scoped display settings queries and dynamic inspection"
+      changes: ["Added typed settings.get with display-only values/provenance and stable identity", "Included dynamic schemas in catalog inspection and completion", "Verified real host queries while preserving registered/not-yet-applied status"]
 ---
 
 # Scope and evidence
@@ -91,7 +91,7 @@ SPEC-0001 §7 bullets are audited independently of representative discovery succ
 | §7.4 nested control/provider/progress and owned shutdown | PARTIAL | Real nested reference calls/reloads pass. Provider progress has no consumer (17.8.3.6); provider admission/drain is 17.8.4. |
 | §7.5 deadline/cancel/failure/unknown mutation outcome | OPEN | Current mutation failure/partial/unknown receipts pass. Provider Serve does not apply operation deadlines or explicit cancellation; control Client does not send cancel after abort or preserve known replies after Emit failure. Work is 17.8.4.2 and 17.8.3.4; malformed reply outcome safety now has actual committed-effect evidence. |
 | §7.6 response/envelope/counters/duplicate IDs/lost notifications | PARTIAL | Request/reply size and malformed control tests pass. Strict provider/control reply branch validation passes [unit](evidence/provider-reply-validation-unit.log) and [actual committed-mutation wire](evidence/provider-reply-validation-live.log) tests; no dedicated progress/counter/lost-event evidence is implied by those tests. |
-| §7.7 absent-producer replay and dormant settings | OPEN | Raw retained result fallback exists, but settings.get has no dispatcher and dynamic presentation settings persistence/dormancy is not implemented. Presentation reconciliation in 17.8.3.2 owns this gap. |
+| §7.7 absent-producer replay and dormant settings | PARTIAL | Stable schemas/dormant overrides and settings.get now pass actual-host cases; guarded absent-producer semantic replay and renderer application remain open in the presentation implementation group. |
 | §7.8 cancellation-after-abort, late replies, isolated/fused | OPEN | Direct owner-scoped control cancellation and late-reply unit checks pass; actual busy provider cancellation and both host forms still require 17.8.4.2 and 17.8.3.5. |
 | §7.9 reload hang consistency | PARTIAL | Two real reloads and independent consumer rediscovery pass. Shared-bus/host preemption limits stay explicit; no deterministic never-returning host reload was established by those runs. |
 | §8 collaboration services | PARTIAL | Snapshots, conditional secrets, context fields, fetch/status/docs/frames and two-session extension messaging have actual consumer evidence; full settings and lifecycle anchors remain open above. |
@@ -104,18 +104,18 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 
 | Anchor | Status | Evidence and remaining work |
 |---|---|---|
-| §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Real reference tool data and typed URI rendering pass. Settings catalog integration and absent-producer/dormant replay still require 17.8.10.3/4/6. |
+| §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Actual reference rendering data, owner-scoped settings.get, dynamic catalog and dormant overrides pass. Renderer application and absent-producer semantic replay remain 17.8.10.7/9. |
 | §8.2 opt-in ownership and visible conflicts | OPEN | Host-source ownership verification passes [unit](evidence/presentation-ownership-unit.log) and [actual foreign-claim refusal](evidence/presentation-ownership-live.log) cases. First-use/appliesAfterReload late-claim, restoration and withdrawal paths pass [unit](evidence/presentation-resolver-limits-unit.log) cases; actual seam/reload regressions remain green ([evidence](evidence/presentation-resolver-limits-live.log)). |
-| §8.3 host error and monotonic final state | PARTIAL | Host-error rendering constrains claimed success. No per-call settled/revision tracker prevents later stale updates; 17.8.10.5 owns this gap. |
+| §8.3 host error and monotonic final state | PARTIAL | Host-error rendering constrains claimed success. No per-call settled/revision tracker prevents later stale updates; 17.8.10.8 owns this gap. |
 | §8.4 incomplete success vs partial-commit failure | PASS (semantic headers) | Plain lifecycle/host-error/typed snapshot tests distinguish completeness, outcome and effects. |
-| §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.5/6, not inferred from one search card. |
-| §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.7. |
-| §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.6/7. |
-| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Values report registered, not applied/live; settings.get/commands and rendering remain 17.8.10.5–8. |
-| §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.6 owns actual evidence. |
+| §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.8/9, not inferred from one search card. |
+| §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.10. |
+| §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.9/10. |
+| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Values report registered, not applied/live; settings.get/catalog now pass [unit](evidence/display-settings-get-unit.log) and [actual host](evidence/display-settings-get-live.log) cases; grouped editing, application and render lifecycle remain 17.8.10.6–10. |
+| §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.9 owns actual evidence. |
 | §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
-| §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.5. |
-| §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.7. |
+| §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.8. |
+| §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.10. |
 
 These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred rich-panel polish. None is silently moved to Slice 3.
 

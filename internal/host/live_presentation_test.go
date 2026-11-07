@@ -3,10 +3,43 @@
 package host
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/furbyhaxx/pig-workbench/api"
 )
+
+func TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues(t *testing.T) {
+	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})
+	key := "tools.reference-producer.web_search.density"
+	settingsNotice(t, fixture, "set", `set runtime `+key+` "compact"`)
+	fixture.send("get", "prompt", "/reference display-settings")
+	event := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"displaySettings"`)
+	})
+	var output struct {
+		DisplaySettings api.DisplaySettings `json:"displaySettings"`
+	}
+	if err := json.Unmarshal([]byte(event["message"].(string)), &output); err != nil {
+		t.Fatal(err)
+	}
+	field := output.DisplaySettings.Fields["density"]
+	if output.DisplaySettings.Owner != "reference-producer" || output.DisplaySettings.Key != "web_search" || field.Value != "compact" || field.Scope != "runtime" || field.Application != "registered" {
+		t.Fatalf("effective display query: %+v", output)
+	}
+	if _, present := output.DisplaySettings.Fields["secrets.enabled"]; present {
+		t.Fatal("execution policy appeared in display query")
+	}
+	fixture.send("catalog", "prompt", "/workbench settings catalog tools.reference-producer.web_search")
+	catalog := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"catalog"`)
+	})
+	if !strings.Contains(fmt.Sprint(catalog["message"]), key) {
+		t.Fatalf("dynamic schema missing from catalog: %+v", catalog)
+	}
+}
 
 func TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys(t *testing.T) {
 	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})

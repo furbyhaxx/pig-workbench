@@ -32,7 +32,7 @@ func presentationSession(t *testing.T) *session {
 	if err := settings.Load(t.Context(), false); err != nil {
 		t.Fatal(err)
 	}
-	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog(), settings: settings}
+	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog(), settings: settings, router: resource.NewRouter()}
 }
 
 func presentationTestContext() context.Context {

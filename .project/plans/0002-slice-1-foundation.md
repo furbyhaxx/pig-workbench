@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 54
+  revision: 55
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T22:46:54+01:00"
+  updated_at: "2026-11-07T23:00:26+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 54
-      reason: "Activate stable presentation schemas without claiming unapplied rendering"
-      changes: ["Registered producer defaults and bounded typed custom fields by owner/key", "Preserved dormant overrides and rolled back incompatible descriptor replacements", "Reported schema-only values as registered until rendering is integrated", "Verified actual host withdrawal/re-registration and preserved explicit zero preview defaults"]
+    - revision: 55
+      reason: "Expose bounded owner-scoped display settings queries and dynamic inspection"
+      changes: ["Added typed settings.get with display-only values/provenance and stable identity", "Included dynamic schemas in catalog inspection and completion", "Verified real host queries while preserving registered/not-yet-applied status"]
 ---
 
 # 1. Outcome

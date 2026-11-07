@@ -16,7 +16,11 @@ import (
 // workbenchCompletions completes subcommands statically and owners and schemes from the live registries.
 func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error) {
 	var live []string
+	catalog := config.Catalog()
 	if s, err := a.current(); err == nil {
+		if snapshot, _ := s.settings.Inspect(); snapshot != nil {
+			catalog = snapshot.Catalog()
+		}
 		for _, owner := range s.integrationOwners() {
 			live = append(live, "integrations "+owner)
 		}
@@ -24,15 +28,15 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 			live = append(live, "resources "+scheme)
 		}
 	}
-	return completeWorkbench(prefix, live)
+	return completeWorkbench(prefix, live, catalog)
 }
 
-func completeWorkbench(prefix string, live []string) ([]sdk.AutocompleteItem, error) {
+func completeWorkbench(prefix string, live []string, catalog []config.Definition) ([]sdk.AutocompleteItem, error) {
 	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
 	}
-	for _, definition := range config.Catalog() {
+	for _, definition := range catalog {
 		candidates = append(candidates, "settings show "+definition.Key, "settings catalog "+definition.Key)
 		for _, scope := range []string{"user", "project", "runtime"} {
 			if scope == "project" && definition.Project == config.DenyProject {
@@ -113,8 +117,13 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 		}
 		return notifyJSON(ctx, output)
 	case "catalog":
+		snapshot, _ := s.settings.Inspect()
+		catalog := config.Catalog()
+		if snapshot != nil {
+			catalog = snapshot.Catalog()
+		}
 		var definitions []config.Definition
-		for _, definition := range config.Catalog() {
+		for _, definition := range catalog {
 			if strings.HasPrefix(definition.Key, rest) {
 				definitions = append(definitions, definition)
 			}

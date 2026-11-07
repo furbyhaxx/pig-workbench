@@ -47,7 +47,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | Capability | Methods | Contribution kind |
 |---|---|---|
 | `location` | `location.get` | — |
-| `presentation` | `register`, `unregister`, `describe` | `toolPresentation` (SPEC-0003 §2) |
+| `presentation` | `register`, `unregister`, `describe`, `settings.get` | `toolPresentation` (SPEC-0003 §2) |
 | `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`, declared mutations) | `resourceProvider` (SPEC-0004 §2) |
 | `fetch` | Workbench → you: `fetch` | `fetchBackend` (SPEC-0004 §11) |
 | `status` | `status.update` | `statusSegment` (SPEC-0009 §9) |
@@ -72,6 +72,12 @@ Resource and fetch requests use the project of the tool's captured Workbench loc
 Provider listing replies keep their own opaque backend cursors. Workbench returns private session-bound handles to tools, binding registration, descriptor revision and resource identity without exposing backend cursor contents. Handles expire after five minutes or bounded-cache eviction (256 entries / 1 MiB). A retained listing revision is sent back as `ResourceRequest.expectedRevision`; providers must reject changed snapshots. Reload/replacement, wrong-resource and expired handles fail `staleRevision`, never empty success.
 
 Presentation registration cross-checks every claimed tool against host source attribution. Unknown or mismatched ownership returns `permissionDenied` with `verificationRequired`, without a dialog or any change to tool execution. The shared bus remains unauthenticated between already-loaded extensions; this check prevents accidental claims, not hostile code impersonation. Because the host caches renderer selection on first use, registration/replacement/withdrawal replies expose `appliesAfterReload`, and `/workbench integrations` retains pending withdrawal diagnostics. Workbench never triggers reload automatically or calls foreign renderer markers as callbacks.
+
+## Query display settings
+
+`settings.get` requires your own active presentation `registrationId` and empty params. It returns `api.DisplaySettings`: stable owner/key, config revision, reload applicability and declared display fields with scope/file provenance and application status. It does not expose producer execution configuration or another owner's registration. The reply is bounded to 48 KiB. `registered` still means renderer integration is pending, not applied.
+
+Dynamic fields also appear in `/workbench settings catalog tools.` and command completions. Removed fields remain unavailable in the user-facing catalog rather than being erased.
 
 ## Provider mutation outcomes
 

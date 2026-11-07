@@ -13,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
 
 // sessionPair starts an idle receiver B and returns the shared runtime directory and B's endpoint record.
@@ -462,7 +464,7 @@ func TestLiveSessionsCommandSendsRedactsAndHonoursBlock(t *testing.T) {
 
 // TestLiveEveryCompletedCommandIsAcceptedByItsHandler keeps completion and dispatch from drifting apart.
 func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
-	items, err := completeWorkbench("", nil)
+	items, err := completeWorkbench("", nil, config.Catalog())
 	if err != nil {
 		t.Fatal(err)
 	}
