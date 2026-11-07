@@ -68,6 +68,39 @@ func TestLocalProviderContainment(t *testing.T) {
 	}
 }
 
+func TestLocalProviderReadRefusesSymlinkEscape(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "scratch")
+	provider, err := NewLocalProvider(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(outside, []byte("outside data\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	page, err := provider.Read(context.Background(), ReadRequest{URI: "local://escape", Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err == nil || strings.Contains(page.Content, "outside data") {
+		t.Fatalf("scratch read escaped root: page=%+v err=%v", page, err)
+	}
+	if err := os.Symlink(filepath.Dir(outside), filepath.Join(root, "outside-dir")); err != nil {
+		t.Fatal(err)
+	}
+	page, err = provider.Read(context.Background(), ReadRequest{URI: "local://outside-dir/outside.txt", Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err == nil || strings.Contains(page.Content, "outside data") {
+		t.Fatalf("scratch read followed an escaping directory: page=%+v err=%v", page, err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "inside"), []byte("inside data\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	page, err = provider.Read(context.Background(), ReadRequest{URI: "local://inside", Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err != nil || !strings.Contains(page.Content, "inside data") || page.Facts.CanonicalURI != "local://inside" || strings.Contains(page.Content, root) {
+		t.Fatalf("confined read failed or leaked backing path: page=%+v err=%v", page, err)
+	}
+}
+
 func TestFileProviderListingIsDeterministic(t *testing.T) {
 	root := t.TempDir()
 	for _, name := range []string{"b.txt", "A.txt", "z/c.txt"} {

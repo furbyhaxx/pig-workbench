@@ -251,6 +251,40 @@ func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
 	}
 }
 
+func TestLiveLocalReadCannotEscapeScratch(t *testing.T) {
+	root := t.TempDir()
+	cache := filepath.Join(root, "cache")
+	t.Setenv("XDG_CACHE_HOME", cache)
+	outside := filepath.Join(root, "outside.txt")
+	if err := os.WriteFile(outside, []byte("must-not-escape\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read",
+		func([]string) scriptedCall {
+			dir := filepath.Join(cache, "pig-workbench", "scratch")
+			entries, err := os.ReadDir(dir)
+			if err != nil || len(entries) != 1 {
+				t.Errorf("scratch session missing: entries=%v err=%v", entries, err)
+			} else {
+				scratch := filepath.Join(dir, entries[0].Name())
+				if err := os.Symlink(outside, filepath.Join(scratch, "escape")); err != nil {
+					t.Errorf("create symlink: %v", err)
+				}
+				if err := os.WriteFile(filepath.Join(scratch, "inside"), []byte("safe scratch data\n"), 0600); err != nil {
+					t.Errorf("create scratch file: %v", err)
+				}
+			}
+			return scriptedCall{"read", map[string]any{"path": "local://escape"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "local://inside"}}
+		},
+	)
+	if len(results) != 2 || strings.Contains(results[0], "must-not-escape") || !strings.Contains(results[1], "safe scratch data") || strings.Contains(results[1], cache) {
+		t.Fatalf("scratch confinement failed: %v", results)
+	}
+}
+
 func TestLiveGrepEmitsRequestedContext(t *testing.T) {
 	root := t.TempDir()
 	project := filepath.Join(root, "project")

@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // OutStore owns spilled tool outputs for one session.
@@ -181,10 +183,23 @@ func (p *LocalProvider) Read(ctx context.Context, request ReadRequest) (ReadResu
 	if err != nil {
 		return ReadResult{}, err
 	}
-	page, err := ReadFile(ctx, Target{Requested: request.URI, Scheme: "file", Path: path, URI: request.URI, Selection: request.Selector}, request.Budget)
+	rel, err := filepath.Rel(p.root, path)
 	if err != nil {
 		return ReadResult{}, err
 	}
-	page.CanonicalURI = "local://" + strings.TrimPrefix(filepath.ToSlash(path), filepath.ToSlash(p.root))
+	root, err := os.OpenRoot(p.root)
+	if err != nil {
+		return ReadResult{}, err
+	}
+	defer root.Close()
+	file, opened, err := fileio.OpenRegularInRoot(root, rel)
+	if err != nil {
+		return ReadResult{}, err
+	}
+	defer file.Close()
+	page, err := readOpened(ctx, Target{Requested: request.URI, Selection: request.Selector}, request.Budget, file, opened, request.URI)
+	if err != nil {
+		return ReadResult{}, err
+	}
 	return ReadResult{Content: page.Content, Facts: page}, nil
 }

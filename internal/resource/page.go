@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -61,6 +62,11 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 		return page, err
 	}
 	defer f.Close()
+	return readOpened(ctx, target, budget, f, opened, FileURI(canonical))
+}
+
+func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, opened os.FileInfo, canonicalURI string) (Page, error) {
+	page := Page{RequestedURI: target.Requested, CoordinateSpace: "source-lines", ShownRanges: []Range{}, FullyShownRanges: []Range{}}
 	digest, total, retained, err := inspect(ctx, f)
 	if err != nil {
 		return page, err
@@ -70,7 +76,7 @@ func ReadFile(ctx context.Context, target Target, budget Budget) (Page, error) {
 			page.Tag = normalized.Tag
 		}
 	}
-	page.CanonicalURI = FileURI(canonical)
+	page.CanonicalURI = canonicalURI
 	page.Revision = hex.EncodeToString(digest[:])
 	page.TotalLines = total
 	ranges, err := target.Selection.Resolve(total, true)
