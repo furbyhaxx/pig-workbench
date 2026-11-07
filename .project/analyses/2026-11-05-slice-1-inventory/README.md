@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 29
+  revision: 30
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T18:05:20+01:00"
+  updated_at: "2026-11-07T18:17:55+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 29
-      reason: "Reconcile exact resource acceptance instead of representative smoke tests"
-      changes: ["Recorded scoped pass/open/deferred status for each resource anchor", "Tracked concrete budget, cursor, totals, routing and search defects before live evaluation"]
+    - revision: 30
+      reason: "Verify bounded guide and continuation framing"
+      changes: ["Closed the aggregate read-guide budget defect", "Kept the remaining resource and protocol anchors explicitly open"]
 ---
 
 # Scope and evidence
@@ -66,12 +66,12 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0004 §10.9 invalidation/revalidation | PARTIAL | File reads recompute source digests; syntax cache keys include source content. Explicit provider lifecycle and watch-loss reconciliation remain 17.8.3.1/3.3. |
 | 0004 §10.10 direct/bus semantics and host forms | PARTIAL | Local provider and real bus tests pass. Foreign-runtime/fused evidence is not implied by a Go isolated run; 17.8.3.1 owns the exact host matrix. |
 | 0004 §11 fetch routing/policy/fallback | PARTIAL | Builtin HTTP redirect/media/policy tests and reference fetch/locate run. Full backend policy toggles/fallback matrix remains protocol/config reconciliation. |
-| 0006 §8.1 selector goldens and bounded bytes | PASS (source) | Selector, raw-byte, continuation and large-line tests pass. Aggregate guide/continuation framing needs 17.8.2.5. |
+| 0006 §8.1 selector goldens and bounded bytes | PASS (source) | Selector, raw-byte, continuation and large-line tests pass. Aggregate guide/continuation framing passes in [read-guide-budgets.log](evidence/read-guide-budgets.log). |
 | 0006 §8.2 literal punctuation and view chains | PASS (local/core) | Literal/query/port parser cases pass; archive/binary format adapters remain Slice 2. |
 | 0006 §8.3 summary coordinates/seen | PASS | Summary and source coverage tests pass; summaries are ineligible as superseding complete source. |
-| 0006 §8.4 representative/malformed/oversize/cancel matrix | PARTIAL | Local source, directory, provider and static-HTTP fixtures pass; explicit bounds/lifecycle defects stay in 17.8.2.5 and 17.8.3.3. |
+| 0006 §8.4 representative/malformed/oversize/cancel matrix | PARTIAL | Local source, directory, provider and static-HTTP fixtures pass, including aggregate guide/continuation bounds; provider lifecycle remains 17.8.3.3. |
 | 0006 §8.5–§8.7 rich adapters/notebooks/media | DEFERRED | PLAN-0001 assigns these adapters to later slices; they are not advertised as implemented. |
-| 0006 §8.8 direct/codemode/provider bounds and batches | OPEN | Live direct/codemode tests pass; large first-touch guides, incomplete-provider framing and captured-project routing require 17.8.2.5/6. |
+| 0006 §8.8 direct/codemode/provider bounds and batches | OPEN | Live direct/codemode and guide/continuation budget tests pass; captured-project routing still requires 17.8.2.6. |
 | 0006 §8.9 static URL policy/no billed question answering | PASS | Builtin HTTP and reference backend tests pass without inference spend. |
 | 0006 §8.10 performance | OPEN | Fresh bounded-memory/cache/listing measurements remain 17.8.7.3; remote/archive benchmarks depend on deferred backends. |
 | 0006 §7 repetition and supersession | PASS (implemented safety path) | Repeated read and history-preserving projection tests pass; the existing threshold setting must be wired in 17.8.2.4. |

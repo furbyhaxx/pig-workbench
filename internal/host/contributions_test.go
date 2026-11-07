@@ -189,6 +189,11 @@ func TestFirstTouchGuideIsInjectedOncePerRevision(t *testing.T) {
 	if _, again := s.firstTouchGuide("kb"); again {
 		t.Fatal("the guide was injected twice in one session revision")
 	}
+	provider.descriptor.GuideRevision = "changed-guide"
+	provider.descriptor.Guide = "Updated guide at the same registration"
+	if guide, ok := s.firstTouchGuide("kb"); !ok || !strings.Contains(guide, "Updated guide") {
+		t.Fatalf("guide revision did not refresh delivery: %q %v", guide, ok)
+	}
 	provider.registrationID = "reg-2"
 	if _, ok := s.firstTouchGuide("kb"); !ok {
 		t.Fatal("re-registration did not re-inject the guide")

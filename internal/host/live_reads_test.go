@@ -3,6 +3,7 @@
 package host
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,6 +42,19 @@ func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T
 	}
 	if strings.Contains(history.String(), "superseded by read") || !strings.Contains(history.String(), "1:line 1") {
 		t.Fatal("context projection changed persisted history")
+	}
+}
+
+func TestLiveProviderGuidesAndContinuationRespectReadBudgets(t *testing.T) {
+	for _, lines := range []int{5, 20} {
+		t.Run(fmt.Sprint(lines), func(t *testing.T) {
+			t.Setenv("WORKBENCH_REFERENCE_LONG_GUIDE", "1")
+			t.Setenv("WORKBENCH_REFERENCE_INCOMPLETE_PAGE", "1")
+			results := runScriptedWith(t, t.TempDir(), "read", fmt.Sprintf("[read]\nmax-bytes=1024\nmax-lines=%d\n", lines), []string{"reference-producer"}, func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "kb://sources/a.md"}} })
+			if len(results) != 1 || len(results[0]) > 1024 || strings.Count(results[0], "\n")+1 > lines || !strings.Contains(results[0], "alpha one") || !strings.Contains(results[0], "docs://workbench/schemes/kb") || !strings.Contains(results[0], "continue") {
+				t.Fatalf("unbounded guide or lost source/continuation: %v", results)
+			}
+		})
 	}
 }
 

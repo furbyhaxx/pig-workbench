@@ -3,6 +3,7 @@ package host
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"strings"
 	"sync"
 
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -10,7 +11,7 @@ import (
 
 const repetitionHint = "\nRepeated read: unchanged resource, revision and selection. Use a different range/view or the continuation in Details if you need more.\n"
 
-const readHintReserve = len(repetitionHint)
+const readHintReserve = len(repetitionHint) + 2
 
 type readCounter struct {
 	signature [32]byte
@@ -21,6 +22,17 @@ type readHistory struct {
 	mu       sync.Mutex
 	entries  map[string]readCounter
 	sequence uint64
+}
+
+func appendReadNote(text, note string) string {
+	if note == "" {
+		return text
+	}
+	note = strings.TrimSpace(note)
+	if strings.HasSuffix(text, "\n") {
+		return text + note
+	}
+	return text + "; " + note
 }
 
 func (h *readHistory) hint(target resource.Target, page resource.ReadResult, threshold int) string {

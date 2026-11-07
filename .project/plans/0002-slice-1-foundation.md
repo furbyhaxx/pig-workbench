@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 39
+  revision: 40
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T18:09:05+01:00"
+  updated_at: "2026-11-07T18:17:55+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 39
-      reason: "Apply the existing read repetition threshold setting"
-      changes: ["Wired read.loop-hint-after into immutable per-read configuration", "Verified configured/default behavior and the complete live-setting consumer catalog"]
+    - revision: 40
+      reason: "Bound first-touch guide framing and preserve minimum-size reads"
+      changes: ["Deferred oversized guides to their docs URI without clipping source", "Verified incomplete provider pages at 1024 bytes and 5/20 lines", "Refreshed guide delivery when guideRevision changes"]
 ---
 
 # 1. Outcome

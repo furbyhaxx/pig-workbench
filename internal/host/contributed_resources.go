@@ -238,7 +238,7 @@ func (s *session) firstTouchGuide(scheme string) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	revision := provider.registrationID + ":" + provider.descriptor.Summary
+	revision := provider.registrationID + ":" + provider.descriptor.GuideRevision + ":" + provider.descriptor.Summary
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
 	if s.guideInjected == nil {

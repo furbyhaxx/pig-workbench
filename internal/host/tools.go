@@ -158,7 +158,13 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			continue
 		}
-		pageBudget := resource.Budget{Bytes: budget.Bytes - readHintReserve, Lines: budget.Lines - 2}
+		guidePointer := ""
+		guideReserve := 0
+		if provider, ok := s.contributedDescriptor(target.Scheme); ok {
+			guidePointer = "Provider guide: read docs://workbench/schemes/" + provider.canonical
+			guideReserve = len(guidePointer) + 2
+		}
+		pageBudget := resource.Budget{Bytes: budget.Bytes - readHintReserve - guideReserve, Lines: budget.Lines}
 		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, pageBudget)
 		if err == nil && target.Scheme != "file" {
 			// Non-local providers already applied their own budget.
@@ -171,7 +177,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 				facts = append(facts, summary.Facts)
 				s.skills.noteTouch(target.Path)
 				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)
-				text := summary.Content + s.readHistory.hint(target, summary, threshold)
+				text := appendReadNote(summary.Content, s.readHistory.hint(target, summary, threshold))
 				content.WriteString(text)
 				budget.Bytes -= len(text)
 				budget.Lines -= strings.Count(text, "\n") + 1
@@ -192,14 +198,18 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			failedCount++
 		} else {
-			text = page.Content + s.readHistory.hint(target, page, threshold)
+			text = appendReadNote(page.Content, s.readHistory.hint(target, page, threshold))
 			if len(targets) == 1 {
 				projection = readProof(page)
 			}
 			s.skills.noteTouch(target.Path)
 			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 			if guide, ok := s.firstTouchGuide(target.Scheme); ok {
-				text += "\n\n" + guide
+				if len(text)+len(guide)+2 <= budget.Bytes && strings.Count(text, "\n")+strings.Count(guide, "\n")+3 <= budget.Lines {
+					text += "\n\n" + guide
+				} else {
+					text = appendReadNote(text, guidePointer)
+				}
 			}
 			facts = append(facts, page.Facts)
 			complete = complete && page.Facts.SelectionComplete

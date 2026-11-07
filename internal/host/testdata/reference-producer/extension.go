@@ -101,9 +101,13 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 			return nil, &api.Error{Code: "invalidRequest", Message: "selection starts beyond EOF"}
 		}
 		total := len(lines)
+		desiredEnd := end
+		if os.Getenv("WORKBENCH_REFERENCE_INCOMPLETE_PAGE") == "1" {
+			end = min(end, start+1)
+		}
 		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Revision: fmt.Sprintf("r%d", len(text)), Page: &api.TextPage{
 			Text: strings.Join(lines[start-1:end], "\n") + "\n", ShownRanges: []api.LineRange{{Start: start, End: end}}, TotalLines: &total,
-			SelectionComplete: true, ResourceComplete: start == 1 && end == total,
+			SelectionComplete: end == desiredEnd, ResourceComplete: start == 1 && end == total,
 		}}, nil
 	default:
 		return nil, &api.Error{Code: "unsupported", Message: "operation is not provided"}
@@ -179,12 +183,16 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 	}
 	endpoint := discovered
 	receipts := make(map[string]api.Receipt)
+	guide := "Use `ls kb://sources/` to browse stored sources."
+	if os.Getenv("WORKBENCH_REFERENCE_LONG_GUIDE") == "1" {
+		guide = strings.Repeat("provider guide line\n", 100)
+	}
 	contributions := []struct {
 		kind, key  string
 		descriptor map[string]any
 	}{
 		{"toolPresentation", "web_search", map[string]any{"toolNames": []string{"web_search"}, "label": "Web search", "presentationVersion": 1, "preset": "search", "defaultDisplay": map[string]any{"density": "normal", "previewLines": 6}, "callFields": []any{map[string]any{"pointer": "/query", "label": "query", "format": "plain"}}, "metricDefinitions": []any{map[string]any{"id": "results", "label": "results", "unit": "count"}}}},
-		{"resourceProvider", "kb", map[string]any{"label": "Knowledge base", "summary": "Stored web sources and research notes", "schemes": []string{"kb"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls kb://sources/` to browse stored sources.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
+		{"resourceProvider", "kb", map[string]any{"label": "Knowledge base", "summary": "Stored web sources and research notes", "schemes": []string{"kb"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": guide, "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"fetchBackend", "web", map[string]any{"label": "Reference reader", "match": []any{map[string]any{"host": "fixture.test"}}, "capabilities": []string{"fetch", "locate"}, "egress": "none", "retention": "user"}},
 		{"resourceProvider", "git", map[string]any{"label": "Git objects", "summary": "Read-only files of a repository at a revision", "schemes": []string{"git"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls git://fixture/` to browse the fixture repository.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"statusSegment", "web", map[string]any{"label": "web", "priority": 10, "maxColumns": 24}},
