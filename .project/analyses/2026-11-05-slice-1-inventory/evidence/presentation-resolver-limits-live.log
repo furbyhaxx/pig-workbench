@@ -1,0 +1,20 @@
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (1.98s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (1.05s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.18s)
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (0.80s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (1.04s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.08s)
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (0.72s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (0.90s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.03s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	10.832s

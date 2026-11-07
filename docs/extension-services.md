@@ -71,7 +71,7 @@ Resource and fetch requests use the project of the tool's captured Workbench loc
 
 Provider listing replies keep their own opaque backend cursors. Workbench returns private session-bound handles to tools, binding registration, descriptor revision and resource identity without exposing backend cursor contents. Handles expire after five minutes or bounded-cache eviction (256 entries / 1 MiB). A retained listing revision is sent back as `ResourceRequest.expectedRevision`; providers must reject changed snapshots. Reload/replacement, wrong-resource and expired handles fail `staleRevision`, never empty success.
 
-Presentation registration cross-checks every claimed tool against host source attribution. Unknown or mismatched ownership returns `permissionDenied` with `verificationRequired`, without a dialog or any change to tool execution. The shared bus remains unauthenticated between already-loaded extensions; this check prevents accidental claims, not hostile code impersonation.
+Presentation registration cross-checks every claimed tool against host source attribution. Unknown or mismatched ownership returns `permissionDenied` with `verificationRequired`, without a dialog or any change to tool execution. The shared bus remains unauthenticated between already-loaded extensions; this check prevents accidental claims, not hostile code impersonation. Because the host caches renderer selection on first use, registration/replacement/withdrawal replies expose `appliesAfterReload`, and `/workbench integrations` retains pending withdrawal diagnostics. Workbench never triggers reload automatically or calls foreign renderer markers as callbacks.
 
 ## Provider mutation outcomes
 

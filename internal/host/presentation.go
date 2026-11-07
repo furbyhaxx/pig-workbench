@@ -1,9 +1,11 @@
 package host
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,20 +17,23 @@ import (
 type presentationRegistration struct {
 	registrationID string
 	owner          string
+	key            string
+	signature      [32]byte
 	descriptor     presentation.Descriptor
 }
 
 type presentationCatalog struct {
-	mu     sync.RWMutex
-	byTool map[string]presentationRegistration
-	byID   map[string]presentationRegistration
+	mu       sync.RWMutex
+	byTool   map[string]presentationRegistration
+	byID     map[string]presentationRegistration
+	resolved map[string]presentationRegistration
 }
 
 func newPresentationCatalog() *presentationCatalog {
-	return &presentationCatalog{byTool: make(map[string]presentationRegistration), byID: make(map[string]presentationRegistration)}
+	return &presentationCatalog{byTool: make(map[string]presentationRegistration), byID: make(map[string]presentationRegistration), resolved: make(map[string]presentationRegistration)}
 }
 
-func (c *presentationCatalog) add(registrationID, owner string, descriptor presentation.Descriptor) error {
+func (c *presentationCatalog) add(registrationID, owner, key string, descriptor presentation.Descriptor) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, name := range descriptor.ToolNames {
@@ -36,7 +41,11 @@ func (c *presentationCatalog) add(registrationID, owner string, descriptor prese
 			return fmt.Errorf("tool %q already has presentation owner %q", name, existing.owner)
 		}
 	}
-	entry := presentationRegistration{registrationID: registrationID, owner: owner, descriptor: descriptor}
+	encoded, _ := json.Marshal(struct {
+		Owner, Key string
+		Descriptor presentation.Descriptor
+	}{owner, key, descriptor})
+	entry := presentationRegistration{registrationID: registrationID, owner: owner, key: key, signature: sha256.Sum256(encoded), descriptor: descriptor}
 	for _, name := range descriptor.ToolNames {
 		c.byTool[name] = entry
 	}
@@ -57,6 +66,58 @@ func (c *presentationCatalog) remove(registrationID string) {
 		}
 	}
 	delete(c.byID, registrationID)
+}
+
+func (c *presentationCatalog) resolve(tool string) (presentationRegistration, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.byTool[tool]
+	if _, answered := c.resolved[tool]; !answered {
+		c.resolved[tool] = entry
+	}
+	return entry, ok
+}
+
+func (c *presentationCatalog) appliesAfterReload(id string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if entry, ok := c.byID[id]; ok {
+		for _, tool := range entry.descriptor.ToolNames {
+			if resolved, answered := c.resolved[tool]; answered && resolved.signature != entry.signature {
+				return true
+			}
+		}
+	}
+	for tool, resolved := range c.resolved {
+		if resolved.registrationID == id {
+			current := c.byTool[tool]
+			if current.signature != resolved.signature {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type presentationChange struct{ Tool, Owner, Key, Change string }
+
+func (c *presentationCatalog) changes() []presentationChange {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	var changes []presentationChange
+	for tool, resolved := range c.resolved {
+		current, exists := c.byTool[tool]
+		if current.signature == resolved.signature {
+			continue
+		}
+		if exists {
+			changes = append(changes, presentationChange{Tool: tool, Owner: current.owner, Key: current.key, Change: "changed"})
+		} else {
+			changes = append(changes, presentationChange{Tool: tool, Owner: resolved.owner, Key: resolved.key, Change: "withdrawn"})
+		}
+	}
+	sort.Slice(changes, func(i, j int) bool { return changes[i].Tool < changes[j].Tool })
+	return changes
 }
 
 func (c *presentationCatalog) lookup(tool string) (presentationRegistration, bool) {
@@ -81,7 +142,7 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 	if err != nil {
 		return next()
 	}
-	entry, ok := s.presentations.lookup(toolName)
+	entry, ok := s.presentations.resolve(toolName)
 	if !ok {
 		return next()
 	}

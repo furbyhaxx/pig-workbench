@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 43
+  revision: 44
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T21:57:15+01:00"
+  updated_at: "2026-11-07T22:08:52+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 43
-      reason: "Verify presentation claims against actual host tool ownership"
-      changes: ["Reproduced a producer claiming another extension tool", "Checked all claimed names before registration/replacement", "Kept verification failures dialog-free and tool execution unchanged"]
+    - revision: 44
+      reason: "Report renderer first-use cache limits without triggering reload"
+      changes: ["Tracked the descriptor actually answered at resolver first use", "Reported late claims/replacements/withdrawals in receipts and inspection", "Preserved pending owner discovery and cleared false pending state after descriptor restoration"]
 ---
 
 # Scope and evidence
@@ -105,7 +105,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | Anchor | Status | Evidence and remaining work |
 |---|---|---|
 | §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Real reference tool data and typed URI rendering pass. Settings catalog integration and absent-producer/dormant replay still require 17.8.10.3/4/6. |
-| §8.2 opt-in ownership and visible conflicts | OPEN | Host-source ownership verification passes [unit](evidence/presentation-ownership-unit.log) and [actual foreign-claim refusal](evidence/presentation-ownership-live.log) cases. First-use/appliesAfterReload tracking remains 17.8.10.2. |
+| §8.2 opt-in ownership and visible conflicts | OPEN | Host-source ownership verification passes [unit](evidence/presentation-ownership-unit.log) and [actual foreign-claim refusal](evidence/presentation-ownership-live.log) cases. First-use/appliesAfterReload late-claim, restoration and withdrawal paths pass [unit](evidence/presentation-resolver-limits-unit.log) cases; actual seam/reload regressions remain green ([evidence](evidence/presentation-resolver-limits-live.log)). |
 | §8.3 host error and monotonic final state | PARTIAL | Host-error rendering constrains claimed success. No per-call settled/revision tracker prevents later stale updates; 17.8.10.5 owns this gap. |
 | §8.4 incomplete success vs partial-commit failure | PASS (semantic headers) | Plain lifecycle/host-error/typed snapshot tests distinguish completeness, outcome and effects. |
 | §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.5/6, not inferred from one search card. |
@@ -113,7 +113,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.6/7. |
 | §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | There is no dynamic display override store or settings.get dispatcher; renderers use producer defaultDisplay directly. Work is 17.8.10.3/4. |
 | §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.6 owns actual evidence. |
-| §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver closures capture the first descriptor; no resolved-name registry reports late changes. Workbench never calls foreign renderer markers, but notification/invalidation behavior needs 17.8.10.1. |
+| §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
 | §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.5. |
 | §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.7. |
 

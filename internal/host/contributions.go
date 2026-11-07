@@ -83,7 +83,7 @@ func installPresentation(s *session, registration contribution.Registration) (fu
 	if err != nil {
 		return nil, err
 	}
-	if err := s.presentations.add(registration.RegistrationID, registration.Owner, descriptor); err != nil {
+	if err := s.presentations.add(registration.RegistrationID, registration.Owner, registration.Key, descriptor); err != nil {
 		return nil, fmt.Errorf("%w: %v", errConsumerConflict, err)
 	}
 	return func() { s.presentations.remove(registration.RegistrationID) }, nil
@@ -108,8 +108,9 @@ func (s *session) withdrawInstalled(registrationID string) {
 	}
 }
 
-func receiptResult(receipt contribution.Receipt) map[string]any {
+func (s *session) receiptResult(receipt contribution.Receipt) map[string]any {
 	return map[string]any{
+		"appliesAfterReload": receipt.Kind == contribution.KindToolPresentation && s.presentations.appliesAfterReload(receipt.RegistrationID),
 		"registrationId":     receipt.RegistrationID,
 		"descriptorRevision": receipt.DescriptorRevision,
 		"kind":               receipt.Kind,
@@ -146,7 +147,7 @@ func (a *app) registerContribution(ctx context.Context, s *session, request api.
 		return nil, contributionProtocolError(err)
 	}
 	if receipt.Idempotent {
-		return receiptResult(receipt), nil
+		return s.receiptResult(receipt), nil
 	}
 	registration, err := s.contributions.Get(request.From, receipt.RegistrationID)
 	if err != nil {
@@ -162,7 +163,7 @@ func (a *app) registerContribution(ctx context.Context, s *session, request api.
 	if kind == contribution.KindResourceProvider {
 		a.emitResourcesChanged(s, receipt.RegistrationID, "registered")
 	}
-	return receiptResult(receipt), nil
+	return s.receiptResult(receipt), nil
 }
 
 func (a *app) replaceContribution(s *session, request api.Request, params registrationParams, consumer contributionConsumer) (any, *api.Error) {
@@ -181,7 +182,7 @@ func (a *app) replaceContribution(s *session, request api.Request, params regist
 		return nil, contributionProtocolError(err)
 	}
 	if receipt.Idempotent {
-		return receiptResult(receipt), nil
+		return s.receiptResult(receipt), nil
 	}
 	s.withdrawInstalled(request.RegistrationID)
 	replaced, err := s.contributions.Get(request.From, request.RegistrationID)
@@ -193,7 +194,7 @@ func (a *app) replaceContribution(s *session, request api.Request, params regist
 			if contribution.Kind(params.Kind) == contribution.KindResourceProvider {
 				a.emitResourcesChanged(s, request.RegistrationID, "replaced")
 			}
-			return receiptResult(receipt), nil
+			return s.receiptResult(receipt), nil
 		}
 	}
 	// Restore the previous descriptor so a failed install never leaves the owner unregistered.
@@ -222,7 +223,7 @@ func (a *app) unregisterContribution(_ context.Context, s *session, request api.
 	if lookupErr == nil && current.Kind == contribution.KindResourceProvider {
 		a.emitResourcesChanged(s, request.RegistrationID, "unregistered")
 	}
-	return map[string]any{"registrationId": request.RegistrationID, "removed": true}, nil
+	return map[string]any{"registrationId": request.RegistrationID, "removed": true, "appliesAfterReload": s.presentations.appliesAfterReload(request.RegistrationID)}, nil
 }
 
 func (a *app) describeContributions(_ context.Context, s *session, request api.Request) (any, *api.Error) {
@@ -255,6 +256,7 @@ func (a *app) describeContributions(_ context.Context, s *session, request api.R
 			"kind":               registration.Kind,
 			"key":                registration.Key,
 			"descriptor":         registration.Descriptor,
+			"appliesAfterReload": registration.Kind == contribution.KindToolPresentation && s.presentations.appliesAfterReload(registration.RegistrationID),
 		})
 	}
 	if offset > len(filtered) {

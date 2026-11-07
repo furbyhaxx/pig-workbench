@@ -37,6 +37,7 @@ type Receipt struct {
 	Kind               string `json:"kind"`
 	Key                string `json:"key"`
 	Idempotent         bool   `json:"idempotent"`
+	AppliesAfterReload bool   `json:"appliesAfterReload"`
 }
 
 // Project is the calling session's project identity; absent in the global project.

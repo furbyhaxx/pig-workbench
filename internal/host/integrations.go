@@ -10,11 +10,14 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 )
 
-// integrationOwners lists the extensions that hold live registrations.
+// integrationOwners lists live contributors and pending cached presentation owners.
 func (s *session) integrationOwners() []string {
 	seen := map[string]bool{}
 	for _, registration := range s.contributions.List() {
 		seen[registration.Owner] = true
+	}
+	for _, change := range s.presentations.changes() {
+		seen[change.Owner] = true
 	}
 	owners := make([]string, 0, len(seen))
 	for owner := range seen {
@@ -49,6 +52,9 @@ func (s *session) integrationsText(owner string) (string, bool) {
 		}
 		found = true
 		fmt.Fprintf(&out, "%s  %s  %s  rev %s", registration.Owner, registration.Kind, registration.Key, shortID(registration.DescriptorRevision))
+		if registration.Kind == contribution.KindToolPresentation && s.presentations.appliesAfterReload(registration.RegistrationID) {
+			out.WriteString("  appliesAfterReload")
+		}
 		if summary := descriptorSummary(registration); summary != "" {
 			fmt.Fprintf(&out, "  %s", noticeText(summary, 120))
 		}
@@ -58,6 +64,12 @@ func (s *session) integrationsText(owner string) (string, bool) {
 			if err == nil {
 				fmt.Fprintf(&out, "  %s\n", pretty)
 			}
+		}
+	}
+	for _, change := range s.presentations.changes() {
+		if change.Change == "withdrawn" && (owner == "" || owner == change.Owner) {
+			fmt.Fprintf(&out, "%s  toolPresentation  %s  withdrawn  appliesAfterReload  %s\n", change.Owner, change.Key, change.Tool)
+			found = true
 		}
 	}
 	if !found {

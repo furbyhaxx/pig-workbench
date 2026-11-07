@@ -108,6 +108,56 @@ func TestToolPresentationRegistrationDrivesTheResolver(t *testing.T) {
 	}
 }
 
+func TestLatePresentationClaimsAndWithdrawalsReportReloadLimits(t *testing.T) {
+	a := &app{}
+	s := presentationSession(t)
+	a.session = s
+	if got := a.resolveToolRenderer("build_run", func() *sdk.ToolRenderers { return nil }); got != nil {
+		t.Fatal("unregistered tool was claimed")
+	}
+	receipt := registerPresentation(t, a, s, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	if receipt["appliesAfterReload"] != true {
+		t.Fatalf("late claim hid resolver cache limitation: %+v", receipt)
+	}
+	text, ok := s.integrationsText("build-tools")
+	if !ok || !strings.Contains(text, "appliesAfterReload") {
+		t.Fatalf("inspection hid pending claim: %q", text)
+	}
+	other := presentationSession(t)
+	a.session = other
+	early := registerPresentation(t, a, other, "build-tools", "i-1", "build_run", buildPresentationDescriptor)
+	if early["appliesAfterReload"] == true {
+		t.Fatal("early claim was incorrectly delayed")
+	}
+	if a.resolveToolRenderer("build_run", func() *sdk.ToolRenderers { return nil }) == nil {
+		t.Fatal("early claim was not resolved")
+	}
+	changedDescriptor := strings.Replace(buildPresentationDescriptor, `"label":"Build"`, `"label":"Changed"`, 1)
+	params, _ := json.Marshal(registrationParams{Kind: "toolPresentation", Key: "build_run", Descriptor: json.RawMessage(changedDescriptor), PreviousRevision: early["descriptorRevision"].(string)})
+	changed, failure := a.registerContribution(presentationTestContext(), other, api.Request{Method: "register", RegistrationID: early["registrationId"].(string), Generation: "generation", From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: params})
+	if failure != nil || changed.(map[string]any)["appliesAfterReload"] != true {
+		t.Fatalf("changed cached descriptor was not marked: %+v %v", changed, failure)
+	}
+	params, _ = json.Marshal(registrationParams{Kind: "toolPresentation", Key: "build_run", Descriptor: json.RawMessage(buildPresentationDescriptor), PreviousRevision: changed.(map[string]any)["descriptorRevision"].(string)})
+	restored, failure := a.registerContribution(presentationTestContext(), other, api.Request{Method: "register", RegistrationID: early["registrationId"].(string), Generation: "generation", From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: params})
+	if failure != nil || restored.(map[string]any)["appliesAfterReload"] == true {
+		t.Fatalf("restoring cached descriptor retained a false pending claim: %+v %v", restored, failure)
+	}
+	request := api.Request{Method: "unregister", Generation: "generation", RegistrationID: early["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
+	withdrawn, failure := a.dispatchService(context.Background(), sdk.Context{}, other, request)
+	if failure != nil || withdrawn.(map[string]any)["appliesAfterReload"] != true {
+		t.Fatalf("withdrawal hid cached renderer: %+v %v", withdrawn, failure)
+	}
+	owners := other.integrationOwners()
+	if len(owners) != 1 || owners[0] != "build-tools" {
+		t.Fatalf("pending owner disappeared from inspection/completion: %v", owners)
+	}
+	text, ok = other.integrationsText("build-tools")
+	if !ok || !strings.Contains(text, "withdrawn") || !strings.Contains(text, "appliesAfterReload") {
+		t.Fatalf("inspection erased pending withdrawal: %q", text)
+	}
+}
+
 func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
 	a := &app{}
 	s := presentationSession(t)
