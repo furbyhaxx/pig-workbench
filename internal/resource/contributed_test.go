@@ -36,6 +36,19 @@ func TestParseProviderDescriptor(t *testing.T) {
 	}
 }
 
+func TestMutationDescriptorRequiresRevisionChecksAndRetention(t *testing.T) {
+	valid := strings.Replace(kbDescriptor, `"capabilities":["stat","read","list"]`, `"capabilities":["stat","read","list","write","mkdir","copy","move","remove"],"mutations":{"revisionChecked":true,"retentionMs":60000,"durable":false}`, 1)
+	valid = strings.Replace(valid, `"compareAndSwap":false`, `"compareAndSwap":true`, 1)
+	if _, err := ParseProviderDescriptor([]byte(valid)); err != nil {
+		t.Fatal(err)
+	}
+	for _, payload := range []string{strings.Replace(valid, `"revisionChecked":true`, `"revisionChecked":false`, 1), strings.Replace(valid, `"retentionMs":60000`, `"retentionMs":0`, 1), strings.Replace(valid, `"compareAndSwap":true`, `"compareAndSwap":false`, 1), strings.Replace(valid, `"durable":false`, `"durable":false,"confirm":true`, 1)} {
+		if _, err := ParseProviderDescriptor([]byte(payload)); !errors.Is(err, ErrInvalidDescriptor) {
+			t.Fatalf("invalid mutation descriptor accepted: %s %v", payload, err)
+		}
+	}
+}
+
 func TestRegisterContributedIsAtomic(t *testing.T) {
 	router := NewRouter()
 	if err := router.RegisterBuiltin(FileProvider{}); err != nil {

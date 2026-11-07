@@ -22,13 +22,13 @@ import (
 func (a *app) registerWriteAndList(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "write", Label: "write",
-		Description:   "Create or fully replace a local file; use edit for partial changes. Relative paths resolve against the Workbench location. For local files, expectedRevision requires an unchanged file, content is written atomically, existing modes are preserved, and directories are not created. Control writes also support job:// stdin and ctl, skill:// unload, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl; their own policy and confirmation rules apply.",
+		Description:   "Create or fully replace a local file or declared writable provider resource; use edit for local partial changes. Relative paths resolve against the Workbench location. For local files, expectedRevision requires an unchanged file, content is written atomically, existing modes are preserved, and directories are not created. Control writes also support job:// stdin and ctl, skill:// unload, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl; their own policy and confirmation rules apply.",
 		PromptSnippet: "Create or fully replace one file, optionally guarded by the revision you read.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path", "content"}, "properties": map[string]any{
-			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file, file:// URI or supported control URI."},
+			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file, writable provider URI or supported control URI."},
 			"content":          map[string]any{"type": "string", "description": "Exact complete new content."},
 			"raw":              map[string]any{"type": "boolean", "description": "Write literal content without interpreting copied tagged-read formatting."},
-			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "For local files, require the revision reported by read; refused when the file changed."},
+			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Require the revision reported by read for a local file or writable provider resource; refused when it changed."},
 		}},
 		Execute: a.write,
 	})
@@ -110,6 +110,9 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	if target.Selection.Explicit {
 		return nil, errors.New("write takes a whole path, not a line selector")
+	}
+	if _, contributed := s.contributedDescriptor(target.Scheme); contributed {
+		return a.mutateProvider(work, s, target, "write", "", &input.Content, input.ExpectedRevision)
 	}
 	if hasExpectedRevision && target.Scheme != "file" {
 		return nil, errors.New("expectedRevision is supported only for local files; the control write was not performed")
@@ -204,7 +207,7 @@ func (a *app) writeControl(ctx sdk.Context, work context.Context, s *session, ta
 		}
 		return sdk.ToolResult{Content: "job action applied to " + target.URI + "\n", Details: map[string]any{"uri": target.URI, "applied": true}}, nil
 	default:
-		return sdk.ToolResult{}, fmt.Errorf("write supports local files and job://, skill://, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl actions only; %s:// does not accept writes here and nothing was sent to its provider", target.Scheme)
+		return a.mutateProvider(work, s, target, "write", "", &content, "")
 	}
 }
 

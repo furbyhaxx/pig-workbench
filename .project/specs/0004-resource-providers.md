@@ -5,9 +5,9 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "approved"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-07T16:10:22+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; router, selector, policy and fetch-backend contracts frozen, including the required 1-120 character resourceProvider summary"]
+    - revision: 8
+      reason: "User approved mutation wiring with no new permission prompts"
+      changes: ["Defined mkdir/copy and revision-checked mutation payloads", "Kept existing host policy without new confirmation gates", "Defined bounded receipt declarations and truthful outcome validation"]
 
 ---
 
@@ -49,12 +52,12 @@ Register kind `resourceProvider` with:
 | key, label, description | Stable owner-scoped identity and inspection text |
 | summary | Required nonempty plain-text one-line summary, at most 120 Unicode characters; no control characters or terminal sequences. Used for each declared scheme in prompt/context catalogs (SPEC-0014 §3.4); never inferred from a guide or fetched resource |
 | schemes | One canonical lowercase scheme and optional aliases |
-| capabilities | stat, read, list, search, locate, write, edit, remove, move, watch as supported |
+| capabilities | stat, read, list, search, locate, write, edit, remove, move, copy, mkdir, watch as supported |
 | selectorMode | lines, provider or none |
 | backing | file, virtual, remote or device |
 | scope | session, project, user or external; operation may narrow further. |
 | contentKinds | text, binary, image, container |
-| mutations | Operation-specific side-effect class and required policy; immutable providers omit these |
+| mutations | `{revisionChecked:true, retentionMs:30000..86400000, durable:boolean}`; required for mutations, omitted for immutable providers. Stable revisions and compareAndSwap are required. This is an integrity declaration, not a user permission prompt |
 | snapshots | stableRevision, rangedRead, compareAndSwap and expiry capabilities |
 | guide, guideRevision | Optional first-touch usage guide (SPEC-0001 §8, SPEC-0012 §5.5) |
 | display | Default preset/view labels and URI completion hints |
@@ -149,6 +152,18 @@ Mutation receipt:
 Status is committed, notApplied, partial or unknown. Retrying an idempotency key with identical payload returns retained receipt; different payload is conflict. Provider must state retention/durability guarantees; without durable idempotency, timeout-after-write is outcomeUnknown and requires reconciliation, not automatic retry. A cancellation after commit returns committed with cancellation notice, not notApplied.
 
 Cross-provider move/transaction is unsupported unless an explicit coordinator can give truthful partial outcomes. No all-or-nothing claim from sequential rename/write calls.
+
+## 6.1 Implemented mutation wire contract
+
+`resource.execute.operation` supports `write`, `mkdir`, `remove`, `copy` and `move` only when declared. Workbench adds no new confirmation or permission dialog: existing host/tool policy and the provider's own backing permissions remain in force. The router-issued authorization reference is correlation metadata, not a security token against other loaded extensions.
+
+`api.ResourceRequest.mutation` carries `idempotencyKey`, `authorizationRef`, `locationRevision`, optional `expectedRevision`, `mustNotExist`, `destinationUri`, `destinationMustNotExist`, and `content` (write only, up to 32 KiB, subject to the encoded 64 KiB envelope). Workbench creates fresh operation/key references, preflights canonical targets and current revisions, and never retries. Existing-resource operations carry the preflight revision; explicit `write.expectedRevision` must match it. Creation requires absence. Providers enforce these preconditions at commit, including absent copy/move destinations. Copy is file-only; remove requires a file or empty directory; mkdir requires an existing parent; no recursive operations or cross-provider transfers. Links and control resources are not ordinary mutation targets. Existing builtin control handlers retain their own contracts.
+
+The response is `api.ResourceResult.receipt` with operationId, idempotencyKey, status, canonicalUri, effects (uri/status and optional before/after revisions), changedResources and optional warnings. Correlation and target sets must match; committed moves identify both endpoints and committed copies identify the destination. A missing, contradictory or malformed receipt after dispatch is `unknown`. Explicit provider errors with outcome `notApplied` remain notApplied; other failed calls are unknown. Known committed receipts survive cancellation or transport failure after their delivery. No automatic retry or rollback follows partial/unknown outcomes.
+
+Providers retain the identical-key/identical-payload receipt for their declared retention period, reject key reuse with different payloads, and state restart durability. Workbench has no general receipt lookup/retry service; after loss of a non-durable receipt the caller reconciles state. Stop admission rather than evict an unexpired idempotency guarantee. Providers enforce their backing-system authorization themselves, without Workbench inventing confirmation requirements.
+
+Migration: read-only descriptors and requests are unchanged. Previously all contributed mutations were refused; new mutable providers must supply the typed integrity declaration and return receipts. `edit` remains refused at registration until the snapshot commit backend exists; declaring write does not implicitly enable edit.
 
 # 7. Hashline and provenance
 

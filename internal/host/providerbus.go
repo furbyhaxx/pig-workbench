@@ -94,24 +94,25 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 	}
 	request := api.ProviderRequest{Version: 1, ID: hex.EncodeToString(token[:]), SessionID: b.sessionID, Generation: b.generation, From: b.identity, To: to, RegistrationID: registrationID, Method: method, Params: encoded, TimeoutMS: max(1, int(budget/time.Millisecond))}
 	if frame, err := json.Marshal(request); err != nil || len(frame) > api.ControlBytes {
-		return &providerError{protocol: &api.Error{Code: "limitExceeded", Message: fmt.Sprintf("provider request exceeds %d bytes", api.ControlBytes)}}
+		return &providerError{protocol: &api.Error{Code: "limitExceeded", Message: fmt.Sprintf("provider request exceeds %d bytes", api.ControlBytes), Outcome: "notApplied"}}
 	}
 	pending := &providerPending{to: to}
 	b.mu.Lock()
 	b.pending[request.ID] = pending
 	b.mu.Unlock()
 	defer func() { b.mu.Lock(); delete(b.pending, request.ID); b.mu.Unlock() }()
-	if err := events.Events().Emit(api.ProviderRequestChannel, request); err != nil {
-		return fmt.Errorf("emit provider request: %w", err)
-	}
-	if err := ctx.Err(); err != nil {
-		return err
-	}
+	emitErr := events.Events().Emit(api.ProviderRequestChannel, request)
 	b.mu.Lock()
 	replies := append([]api.Reply(nil), pending.replies...)
 	b.mu.Unlock()
 	switch len(replies) {
 	case 0:
+		if emitErr != nil {
+			return fmt.Errorf("emit provider request: %w", emitErr)
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		return errProviderUnavailable
 	case 1:
 	default:

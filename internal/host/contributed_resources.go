@@ -207,10 +207,8 @@ func installResourceProvider(s *session, registration contribution.Registration)
 	if err != nil {
 		return nil, err
 	}
-	for _, capability := range []string{"write", "edit", "remove", "move"} {
-		if descriptor.Has(capability) {
-			return nil, fmt.Errorf("%w: mutating provider capability %q is not routed by this Workbench version; register a read-only provider", errUnsupportedContribution, capability)
-		}
+	if descriptor.Has("edit") {
+		return nil, fmt.Errorf("%w: provider snapshot editing is not routed; omit edit", errUnsupportedContribution)
 	}
 	owner := api.Identity{Owner: registration.Owner, Instance: registration.Instance}
 	providers := make([]resource.Provider, 0, len(descriptor.Schemes))

@@ -18,7 +18,7 @@ var ErrInvalidDescriptor = errors.New("invalid resource provider descriptor")
 var schemePattern = regexp.MustCompile(`^[a-z][a-z0-9+.-]{0,31}$`)
 
 // Provider capabilities SPEC-0004 §2 names.
-var providerCapabilities = []string{"stat", "read", "list", "search", "locate", "write", "edit", "remove", "move", "watch"}
+var providerCapabilities = []string{"stat", "read", "list", "search", "locate", "write", "edit", "remove", "move", "copy", "mkdir", "watch"}
 
 // ProviderLimits are a contributed provider's declared ceilings.
 type ProviderLimits struct {
@@ -42,6 +42,13 @@ type ProviderGuide struct {
 	Markdown string `json:"markdown"`
 }
 
+// MutationPolicy declares provider-enforced preconditions and receipt retention.
+type MutationPolicy struct {
+	RevisionChecked bool `json:"revisionChecked"`
+	RetentionMS     int  `json:"retentionMs"`
+	Durable         bool `json:"durable"`
+}
+
 // ProviderDescriptor is one validated resourceProvider registration.
 type ProviderDescriptor struct {
 	Label         string            `json:"label"`
@@ -53,7 +60,7 @@ type ProviderDescriptor struct {
 	Backing       string            `json:"backing"`
 	Scope         string            `json:"scope"`
 	ContentKinds  []string          `json:"contentKinds"`
-	Mutations     json.RawMessage   `json:"mutations,omitempty"`
+	Mutations     *MutationPolicy   `json:"mutations,omitempty"`
 	Snapshots     ProviderSnapshots `json:"snapshots"`
 	Guide         string            `json:"guide,omitempty"`
 	Guides        []ProviderGuide   `json:"guides,omitempty"`
@@ -132,12 +139,15 @@ func ParseProviderDescriptor(data []byte) (ProviderDescriptor, error) {
 	if capabilities["edit"] && (!d.Snapshots.StableRevision || !capabilities["read"]) {
 		return invalid("edit requires read and stable revisions")
 	}
-	for _, mutation := range []string{"write", "edit", "remove", "move"} {
-		if capabilities[mutation] && len(d.Mutations) == 0 {
-			return invalid("mutating capability %q requires a mutations declaration", mutation)
-		}
+	mutating := false
+	for _, mutation := range []string{"write", "edit", "remove", "move", "copy", "mkdir"} {
+		mutating = mutating || capabilities[mutation]
 	}
-	if len(d.Mutations) != 0 && !capabilities["write"] && !capabilities["remove"] && !capabilities["move"] {
+	if mutating {
+		if d.Mutations == nil || !d.Mutations.RevisionChecked || d.Mutations.RetentionMS < 30000 || d.Mutations.RetentionMS > 86400000 || !d.Snapshots.StableRevision || !d.Snapshots.CompareAndSwap {
+			return invalid("mutations require revisionChecked, stableRevision, compareAndSwap and retentionMs between 30000 and 86400000")
+		}
+	} else if d.Mutations != nil {
 		return invalid("mutations are declared for an immutable provider")
 	}
 	if !slices.Contains([]string{"lines", "provider", "none"}, d.SelectorMode) {

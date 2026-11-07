@@ -47,7 +47,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 |---|---|---|
 | `location` | `location.get` | — |
 | `presentation` | `register`, `unregister`, `describe` | `toolPresentation` (SPEC-0003 §2) |
-| `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`) | `resourceProvider` (SPEC-0004 §2), read-only |
+| `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`, declared mutations) | `resourceProvider` (SPEC-0004 §2) |
 | `fetch` | Workbench → you: `fetch` | `fetchBackend` (SPEC-0004 §11) |
 | `status` | `status.update` | `statusSegment` (SPEC-0009 §9) |
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
@@ -65,6 +65,12 @@ An extension that calls a model itself bypasses Workbench's hooks. If the user l
 - Any failure (disabled detection, unavailable key or vault, text too large for the 64 KiB envelope) is an error that never echoes your input. Withhold the inference; absence of the service is not permission to send plaintext.
 - The owner name is a claim on a shared bus, not an authenticated identity: the grant guards against misrouting, not against a hostile extension.
 - Placeholders are never resolved back to values through this service.
+
+## Provider mutation outcomes
+
+Existing-resource mutations carry `expectedRevision`; new resources carry `mustNotExist`, and copy/move destinations carry `destinationMustNotExist`. Writes are limited to 32 KiB of content and the 64 KiB encoded control envelope. No recursive operations, implicit parent creation or cross-provider transfers are supported. `write` and scheme-command redirects share dispatch; `rm`, `mv`, `cp` and `mkdir` map to remove, move, copy and mkdir.
+
+Return an `api.MutationReceipt` identifying the operation/key, canonical target, per-target effects and changed resources. Status is committed, notApplied, partial or unknown. A malformed or lost receipt is unknown; an explicit notApplied error is preserved. Workbench never retries automatically. Retain identical-key/identical-payload receipts for the declared period (30 s–24 h); reject different payloads under the same key and disclose restart durability. Do not evict unexpired guarantees to admit new work. The authorization reference is router-issued correlation, not a security boundary between loaded extensions.
 
 ## Make your tool output editable
 
@@ -93,7 +99,7 @@ stop, err := client.Serve(ext, func(ctx sdk.Context, req api.ProviderRequest) (a
 
 - Identical registration is idempotent. A changed descriptor needs `register` with `registrationId` and `params.previousRevision`; a failed replacement restores the previous descriptor.
 - Registrations, scheme claims and context-field claims are exclusive per generation. Reserved and retired schemes, overlapping frame source prefixes and second presentation owners for one tool fail `conflict` or `invalidRequest`.
-- Resource providers are read-only in this version: descriptors advertising `write`, `edit`, `remove` or `move` are refused `unsupported`, and Workbench's `edit`/`write` never send anything to a contributed provider. Reads go through Workbench's selector grammar and pager; your page reports `shownRanges`, optional `totalLines` and completeness, and Workbench checks the line count before rendering. `find` walks paged provider listings within depth, entry and time bounds; directory entries may set `noWalk: true` to exclude expensive subtrees unless explicitly selected. Links and control files are never followed. `grep` does not yet traverse contributed provider roots.
+- Providers may declare `write`, `mkdir`, `remove`, `copy` and `move` with `mutations: {revisionChecked:true, retentionMs:60000, durable:false}` and stableRevision/compareAndSwap support. Workbench dispatches typed `ResourceRequest.Mutation` preconditions and validates `ResourceResult.Receipt`, without new permission or confirmation prompts. Providers enforce revisions, absent destinations, nonrecursive semantics and backing-system permissions at commit. `edit` remains refused until provider snapshot editing is implemented. Reads go through Workbench's selector grammar and pager; your page reports `shownRanges`, optional `totalLines` and completeness, and Workbench checks the line count before rendering. `find` walks paged provider listings within depth, entry and time bounds; directory entries may set `noWalk: true` to exclude expensive subtrees unless explicitly selected. Links and control files are never followed. `grep` traverses bounded provider directories and explicit files with source-coordinate selectors.
 - Fetch backends: the most specific rule wins (exact host, longer `*.suffix`, `*`, then longer `pathPrefix`, then registration order). Answer with `body` or `locate` (a URI of your own resource provider). A 4xx status is final; unavailability, errors or a third-party egress you did not declare fall back to the builtin static reader with a notice.
 - Frame producers publish under their registered dotted key as source prefix, always with data authority. `followUp` wake is not granted; `nextBoundary` is steered into the running turn, `nextPrompt`/`beforePrompt` arrive with the next prompt. Frames bind to the current branch and context epoch.
 - `context.fields.set` binds `knowledge_cutoff` to the current model; a mismatched model fails `staleRevision` and a model change hides the value until you set it again.

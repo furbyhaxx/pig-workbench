@@ -183,8 +183,6 @@ func (a *app) runSchemeCommand(ctx context.Context, s *session, cmd schemeComman
 			return "", err
 		}
 		return page.Content, nil
-	case "mkdir", "rm", "mv", "cp":
-		return "", fmt.Errorf("%s is not supported by this scheme yet", cmd.verb)
 	default:
 		return "", errors.New("unsupported scheme command")
 	}
@@ -205,6 +203,24 @@ func (a *app) dispatchSchemeCommand(ctx sdk.Context, work context.Context, s *se
 	}
 	if !handled {
 		return false, nil, nil
+	}
+	if parsed.verb == "rm" || parsed.verb == "mv" || parsed.verb == "cp" || parsed.verb == "mkdir" {
+		target, err := resource.ParsePath("/", parsed.paths[0], "")
+		if err != nil {
+			return true, nil, err
+		}
+		_, release, err := s.location.Acquire(ctx.ToolCallID(), true)
+		if err != nil {
+			return true, nil, err
+		}
+		defer release()
+		operation := map[string]string{"rm": "remove", "mv": "move", "cp": "copy", "mkdir": "mkdir"}[parsed.verb]
+		destination := ""
+		if len(parsed.paths) == 2 {
+			destination = parsed.paths[1]
+		}
+		result, err := a.mutateProvider(work, s, target, operation, destination, nil, "")
+		return true, result, err
 	}
 	if parsed.verb == "redirect" {
 		target, err := resource.ParsePath("/", parsed.paths[0], "")

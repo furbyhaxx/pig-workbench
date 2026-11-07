@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 24
+  revision: 25
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T10:06:32+01:00"
+  updated_at: "2026-11-07T16:14:39+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -83,6 +83,9 @@ document:
     - revision: 24
       reason: "Rerun full gates after approved-contract implementation"
       changes: ["Recorded successful check, race and integration at 9126aff", "Retained the initial stale refusal-text assertion failure and its correction"]
+    - revision: 25
+      reason: "Wire provider mutations without new permission prompts"
+      changes: ["Recorded real-host write, mkdir, remove, move, copy and redirect execution", "Verified stale refusal, provider denial, partial and unknown outcomes"]
 ---
 
 # Scope and evidence
@@ -97,13 +100,13 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0001 §8 | S1 C + consumer | `TestLiveReferenceProducerSeams` exercises registered contributions and consumers. | Each collaboration method and conditional grant still needs an explicit acceptance mapping. |
 | 0002 all | S1 F | `TestLiveResumeDoesNotResendDeliveredContextFrames` checks resume delivery. | Branch, compaction, trust and projection cases are not all established by that run. |
 | 0003 §2–§6, §10 | S1 F, B | `TestLiveReferenceProducerSeams` exercises reference presentation. | Plain-state and width cases require complete row reconciliation. |
-| 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration. Full policy and mutation acceptance is not established. |
+| 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Declared mutations now execute without new prompts ([provider-mutations.log](evidence/provider-mutations.log)); provider snapshot editing remains refused. Full acceptance mapping is still open. |
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
 | 0006 §2–§4, §6–§7 | S1 D | Read, literal OR search and bounded context are exercised in [grep-context.log](evidence/grep-context.log); long-line windows are covered in [grep-long-lines.log](evidence/grep-long-lines.log) and [grep-long-lines-live.log](evidence/grep-long-lines-live.log). Provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log); provider grep and source pagination are in [provider-grep-live.log](evidence/provider-grep-live.log) and [provider-grep.log](evidence/provider-grep.log). | Explicit provider-file selection is covered by [provider-grep-files.log](evidence/provider-grep-files.log); oversized context preservation is covered by [grep-context-preserve.log](evidence/grep-context-preserve.log). Loop guard and supersession need implementation or evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead` exercises repeated refusal, partial reads and recovery ([instruction-barrier.log](evidence/instruction-barrier.log)); tagged batch sources and move destinations are covered in [tagged-instruction-union.log](evidence/tagged-instruction-union.log). | Remaining acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
-| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one static word; full provider routing and general redirect syntax are not implemented. Dynamic shell-generated paths cannot always be recognized. |
+| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | Declared provider mutation verbs and redirects are exercised in [provider-mutations.log](evidence/provider-mutations.log). Redirects accept one static word, not general shell syntax. Dynamic shell-generated paths cannot always be recognized. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |
 | 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
 | 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. `TestActivityCountsFailedJobsAfterRealExit` checks one successful and one failed real process ([activity-failed.log](evidence/activity-failed.log)); real TUI placement has separate coverage. Click requires a fork host; configured shortcut is not applied. |
@@ -129,6 +132,6 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
-- G8.20 provider mutations and general redirect syntax are not complete. SPEC-0004 does not define the concrete mutation-policy declaration or `mkdir`/`copy` provider operations; enabling external mutations awaits a reviewed revision including authorization and receipt guarantees. The task list retains them; no acceptance row above should be read as a waiver.
+- Declared provider mutations are wired without new permission prompts under SPEC-0004 revision 8. Provider hashline editing remains unavailable; the full ownership-row evidence mapping and slice exit remain open. Redirects implement a static-word form, not general shell redirection.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

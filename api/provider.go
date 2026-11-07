@@ -68,14 +68,15 @@ type PageLimits struct {
 
 // ResourceRequest is the `resource.execute` payload (SPEC-0004 §4).
 type ResourceRequest struct {
-	OperationID  string     `json:"operationId"`
-	Operation    string     `json:"operation"`
-	RequestedURI string     `json:"requestedUri"`
-	URI          string     `json:"uri"`
-	Selector     *Selector  `json:"selector,omitempty"`
-	Cursor       string     `json:"cursor,omitempty"`
-	Limits       PageLimits `json:"limits"`
-	Project      *Project   `json:"project,omitempty"`
+	OperationID  string            `json:"operationId"`
+	Operation    string            `json:"operation"`
+	RequestedURI string            `json:"requestedUri"`
+	URI          string            `json:"uri"`
+	Selector     *Selector         `json:"selector,omitempty"`
+	Cursor       string            `json:"cursor,omitempty"`
+	Limits       PageLimits        `json:"limits"`
+	Project      *Project          `json:"project,omitempty"`
+	Mutation     *ResourceMutation `json:"mutation,omitempty"`
 }
 
 // ResourceEntry is one typed listing row.
@@ -100,15 +101,16 @@ type TextPage struct {
 
 // ResourceResult is a provider's answer to stat, read or list.
 type ResourceResult struct {
-	CanonicalURI string          `json:"canonicalUri"`
-	Kind         string          `json:"kind"`
-	Revision     string          `json:"revision,omitempty"`
-	Size         int64           `json:"size,omitempty"`
-	Lines        int             `json:"lines,omitempty"`
-	Page         *TextPage       `json:"page,omitempty"`
-	Entries      []ResourceEntry `json:"entries,omitempty"`
-	NextCursor   string          `json:"nextCursor,omitempty"`
-	Complete     *bool           `json:"complete,omitempty"`
+	CanonicalURI string           `json:"canonicalUri"`
+	Kind         string           `json:"kind"`
+	Revision     string           `json:"revision,omitempty"`
+	Size         int64            `json:"size,omitempty"`
+	Lines        int              `json:"lines,omitempty"`
+	Page         *TextPage        `json:"page,omitempty"`
+	Entries      []ResourceEntry  `json:"entries,omitempty"`
+	NextCursor   string           `json:"nextCursor,omitempty"`
+	Complete     *bool            `json:"complete,omitempty"`
+	Receipt      *MutationReceipt `json:"receipt,omitempty"`
 }
 
 // FetchRequest asks a fetch backend for one URL (SPEC-0004 §11).

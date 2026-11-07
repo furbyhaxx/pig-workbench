@@ -42,6 +42,9 @@ var documents = map[string]string{
 }
 
 func execute(request api.ResourceRequest) (any, *api.Error) {
+	if strings.HasPrefix(request.URI, "mut://") {
+		return executeMutation(request)
+	}
 	switch request.Operation {
 	case "stat":
 		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" || request.URI == "git://fixture/" || request.URI == "git://fixture" || request.URI == "kb://paged/" || request.URI == "kb://paged" || request.URI == "kb://paged/nested/" {
@@ -186,6 +189,12 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		{"resourceProvider", "git", map[string]any{"label": "Git objects", "summary": "Read-only files of a repository at a revision", "schemes": []string{"git"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls git://fixture/` to browse the fixture repository.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"statusSegment", "web", map[string]any{"label": "web", "priority": 10, "maxColumns": 24}},
 		{"frameProducer", "reference.research", map[string]any{"label": "Research notices", "kinds": []string{"notice", "info"}, "contextFields": []any{map[string]any{"source": "session.model", "field": "knowledge_cutoff"}}}},
+	}
+	if os.Getenv("WORKBENCH_MUTATION_FIXTURE") == "1" {
+		contributions = append(contributions, struct {
+			kind, key  string
+			descriptor map[string]any
+		}{"resourceProvider", "mutations", map[string]any{"label": "Mutation fixture", "summary": "Revision-checked test resources", "schemes": []string{"mut"}, "capabilities": []string{"stat", "read", "write", "mkdir", "remove", "copy", "move"}, "selectorMode": "lines", "backing": "virtual", "scope": "session", "contentKinds": []string{"text"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": true}, "mutations": map[string]any{"revisionChecked": true, "retentionMs": 86400000, "durable": false}, "limits": map[string]any{}}})
 	}
 	if root := os.Getenv("WORKBENCH_REFERENCE_DOCS"); root != "" {
 		contributions = append(contributions, struct {

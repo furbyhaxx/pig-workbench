@@ -1,0 +1,20 @@
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.80s)
+=== RUN   TestLiveProviderMutationsWithoutConfirmation
+--- PASS: TestLiveProviderMutationsWithoutConfirmation (1.04s)
+=== RUN   TestLiveControlWriteRejectsRevisionBeforeSideEffect
+--- PASS: TestLiveControlWriteRejectsRevisionBeforeSideEffect (2.83s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.02s)
+=== RUN   TestLiveProviderMutationsWithoutConfirmation
+--- PASS: TestLiveProviderMutationsWithoutConfirmation (1.04s)
+=== RUN   TestLiveControlWriteRejectsRevisionBeforeSideEffect
+--- PASS: TestLiveControlWriteRejectsRevisionBeforeSideEffect (2.84s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.10s)
+=== RUN   TestLiveProviderMutationsWithoutConfirmation
+--- PASS: TestLiveProviderMutationsWithoutConfirmation (1.19s)
+=== RUN   TestLiveControlWriteRejectsRevisionBeforeSideEffect
+--- PASS: TestLiveControlWriteRejectsRevisionBeforeSideEffect (2.84s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	16.714s

@@ -213,6 +213,44 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 
 // TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
 // extension load order must not matter.
+func TestLiveProviderMutationsWithoutConfirmation(t *testing.T) {
+	t.Setenv("WORKBENCH_MUTATION_FIXTURE", "1")
+	steps := []scriptedCall{
+		{"write", map[string]any{"path": "mut://fixture/a", "content": "original\n"}},
+		{"write", map[string]any{"path": "mut://fixture/a", "content": "wrong\n", "expectedRevision": "stale"}},
+		{"read", map[string]any{"path": "mut://fixture/a"}},
+		{"bash", map[string]any{"command": "cp mut://fixture/a mut://fixture/b"}},
+		{"bash", map[string]any{"command": "mv mut://fixture/b mut://fixture/c"}},
+		{"bash", map[string]any{"command": "mkdir mut://fixture/dir"}},
+		{"bash", map[string]any{"command": "rm mut://fixture/c"}},
+		{"bash", map[string]any{"command": "updated > mut://fixture/a"}},
+		{"read", map[string]any{"path": "mut://fixture/a"}},
+		{"bash", map[string]any{"command": "cp mut://fixture/a mut://fixture/dir"}},
+		{"write", map[string]any{"path": "mut://fixture/deny", "content": "denied"}},
+		{"write", map[string]any{"path": "mut://fixture/partial", "content": "partial"}},
+		{"write", map[string]any{"path": "mut://fixture/unknown", "content": "uncertain"}},
+		{"bash", map[string]any{"command": "rm kb://sources/a.md"}},
+	}
+	var script []scriptStep
+	for _, step := range steps {
+		script = append(script, func([]string) scriptedCall { return step })
+	}
+	results := runScriptedWith(t, t.TempDir(), "read,write,bash", "", []string{"reference-producer"}, script...)
+	if len(results) != len(steps) {
+		t.Fatalf("results=%v", results)
+	}
+	for _, i := range []int{0, 3, 4, 5, 6, 7} {
+		if !strings.Contains(results[i], "committed") {
+			t.Errorf("step %d: %s", i, results[i])
+		}
+	}
+	for i, want := range map[int]string{1: "staleRevision", 2: "original", 8: "updated", 9: "already exists", 10: "notApplied", 11: "partial", 12: "unknown", 13: "does not advertise"} {
+		if !strings.Contains(results[i], want) {
+			t.Errorf("step %d want %q: %s", i, want, results[i])
+		}
+	}
+}
+
 func TestLiveGrepExplicitProviderFileAndLineSelection(t *testing.T) {
 	results := runScriptedWith(t, t.TempDir(), "grep", "", []string{"reference-producer"},
 		func([]string) scriptedCall {
