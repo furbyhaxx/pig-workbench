@@ -5,120 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 36
+  revision: 37
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T16:32:35+01:00"
+  updated_at: "2026-11-07T17:44:36+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User split delivery into three slices: foundation, feature-complete, completion"
-      changes: ["Absorbed PLAN-0001 M0 remainder (M0.1 decisions, M0.4 freeze) and M1", "Pulled the foundation of every later milestone forward so each public seam runs", "Defined the pig-web co-load gate as the slice exit"]
-    - revision: 2
-      reason: "User defined foundation: everything fully working on its final implementation, only depth deferred; decided D5.b and D5.d"
-      changes: ["Foundation rule rewritten: no stubs, no unwired parts, no interim implementations", "All ten tools, all commands of founded features and the core URI set in this slice", "D5.b adopted, D5.d rejected (SPEC-0005 rev 8)"]
-    - revision: 3
-      reason: "External plan review (2026-11-03): eight findings, all confirmed"
-      changes: ["builtin/workbench instead of the removed builtin/pig", "Project identity (E1) split from session-storage adoption (E2), which now follows the endpoint registry and has its own gate", "G8.20 scheme commands owned by Phase H", "Mode and host matrix (§6); ask_user headless result is interactionUnavailable", "Commands /workbench skills, sessions, projects unlink-storage added", "Skills, all six context frames and G5.2 relocation validation in scope", "Bus acceptance scoped to cooperative listeners", "Phase A produces a reconciled decision/probe/dependency ledger", "Requirement ownership moved to PLAN-0001 §9"]
-    - revision: 4
-      reason: "User approved the default-prompt A/B run; model-aware prompts moved to Slice 3"
-      changes: ["Exit 4 approved", "Family adapters point to PLAN-0004 C6"]
-    - revision: 5
-      reason: "User approved pig-web M1 and M2 contract choices"
-      changes: ["Recorded opt-in secrets.redact for trusted extension inference", "Recorded owner-scoped session.model fields", "Reconciled pig-web M3–M6 with explicit validation gaps", "Assigned both approvals to their owning Slice 1 phases; freeze remains pending"]
-    - revision: 6
-      reason: "Implementation resumed after the user rejected documentation-only progress"
-      changes: ["Recorded the wired local read/location runtime and live verification", "Kept every phase exit and the full slice explicitly incomplete", "Recorded the configuration dependency approval needed for strict TOML validation"]
-    - revision: 7
-      reason: "User granted standing dependency approval conditioned on current-version and supersession checks"
-      changes: ["Recorded verified dependencies and license notices", "Implemented scoped scalar TOML configuration, source-safe validation, merge/conflict handling, trust rechecks and private atomic saves", "Wired settings commands and live read budgets; verified separate-process writers and real-host reload/scope behavior", "Added the documented consumer client and exercised it from a separate extension", "Retained incomplete Slice 1 exits explicitly"]
-    - revision: 8
-      reason: "Parallel single-unit delegation for the remaining Slice 1 engines"
-      changes: ["Recorded ten in-flight units and the six correctly refused mis-sized briefs", "Recorded every lead API decision that unblocked a unit", "Retained the no-stubs rule: ask_user and other tools stay unregistered until their full path exists"]
-    - revision: 9
-      reason: "Consolidated the committed engine inventory and remaining one-unit completions"
-      changes: ["Recorded which engines are wired versus tested-but-unwired", "Recorded the exact unit that unblocks each remaining feature"]
-    - revision: 10
-      reason: "Resume checkpoint: integrated pending worktrees, current-source edit recovery, HTTP/HTML, presentation registration and full gates"
-      changes: ["Recorded green check/race/integration evidence at 14d7fb3 plus later commits", "Recorded the create-only write race fix, current-source relocation and presence of all ten tools", "Retained every open phase exit and the real pig-web co-load blocker explicitly"]
-    - revision: 11
-      reason: "User clarified that pig-web builds on Slice 1 seams, not the reverse"
-      changes: ["Replaced the real co-load exit with a pig-web-shaped reference-extension seam gate", "Assigned real co-load verification to pig-web and retained the slice-exit commit handoff", "Recorded current service verification and the unresolved host reload probe"]
-    - revision: 12
-      reason: "Resolved the reproduced reload hang inside Workbench instead of deferring it upstream"
-      changes: ["Status updates use the active service-request context", "Restored live acceptance for two successive reloads and six unique registrations", "Recorded green repeated reload and full quality gates"]
-    - revision: 13
-      reason: "Phase A ledger reconciled with probe results and owners"
-      changes: ["Rewrote A0 with status, evidence and owner for every row", "Closed the messaging, title and resumed-cwd probe rows and left one native-resolver coverage gap", "Recorded the Slice 1 inventory and probe analyses"]
-    - revision: 14
-      reason: "User approved nine specifications for Slice 1; five stay draft"
-      changes: ["Recorded the approval state and revision numbers in A1", "Named the five specifications still awaiting approval"]
-    - revision: 15
-      reason: "Reconcile current evidence and expose open Slice 1 work"
-      changes: ["Replaced stale checkpoints with the current implementation and verified baseline", "Recorded incomplete search, scheme commands and private instructions", "Kept the approval, inference and downstream co-load boundaries explicit"]
-    - revision: 16
-      reason: "Verify activity failure counts against real jobs"
-      changes: ["Added a race-enabled test for successful and failed child processes", "Removed the closed activity-count evidence gap"]
-    - revision: 17
-      reason: "Exercise multi and preview questionnaires in a real host"
-      changes: ["Recorded native RPC dialog answers and visible preview evidence"]
-    - revision: 18
-      reason: "Exercise stored-session title confirmation"
-      changes: ["Verified both decline and acceptance through real PiG RPC confirmation dialogs"]
-    - revision: 19
-      reason: "Exercise agent replies at the hop limit"
-      changes: ["Recorded a real two-session reply preserving its conversation and stopping automatic wake at hop one"]
-    - revision: 20
-      reason: "User approved the five remaining specifications"
-      changes: ["Recorded approval revisions for SPEC-0003/0006/0007/0008/0011", "Kept implementation gaps and the live-provider spend decision open"]
-    - revision: 21
-      reason: "Route limited redirects through the shared control write policy"
-      changes: ["Enabled single-word redirects to supported control URIs with the same confirmation behavior as write", "Retained remaining G8.20 routing and shell semantics as open work"]
-    - revision: 22
-      reason: "Emit bounded grep context"
-      changes: ["Recorded actual before and after lines with distinct match markers", "Retained oversized-line windowing and provider-root search as open work"]
-    - revision: 23
-      reason: "Route find through bounded provider listings"
-      changes: ["Added paginated provider traversal with noWalk, link and control-file safeguards", "Kept local scratch traversal and provider grep as explicit remaining work"]
-    - revision: 24
-      reason: "Confine scratch reads to their session root"
-      changes: ["Fixed a reproduced outside-scratch symlink read", "Kept safe scratch listing and stat as separate remaining work"]
-    - revision: 25
-      reason: "Confine scratch listings and enable provider traversal"
-      changes: ["Preserved local URI identity and bounded scratch directory enumeration", "Verified recursive search refuses escaping links"]
-    - revision: 26
-      reason: "Integrate trusted project-private instructions"
-      changes: ["Delivered and pinned user-owned private notes for trusted project identities", "Verified cross-project isolation, changes and withdrawal", "Recorded the remaining truncated-steering mutation prerequisite"]
-    - revision: 27
-      reason: "Preserve grep matches on oversized source lines"
-      changes: ["Added bounded UTF-8-safe line windows with explicit coordinates", "Retained context budget omissions and provider grep as open work"]
-    - revision: 28
-      reason: "Enforce the truncated-instruction mutation prerequisite"
-      changes: ["Block edit, write, bash and job input until applicable incomplete instructions are fully delivered", "Verify partial reads and revision-aware recovery in a real host"]
-    - revision: 29
-      reason: "Recognize static shell words without executing compositions"
-      changes: ["Added the maintained mvdan.cc/sh/v3 v3.14.1 BSD-3-Clause parser; module proxy and upstream checked 07.11.2026 and no supersession notice found", "Verified quoted and escaped URI routing and refused shell composition"]
-    - revision: 30
-      reason: "Search bounded provider directory roots"
-      changes: ["Walked paginated provider listings and revision-checked source pages", "Kept explicit provider-file targets and selectors open"]
-    - revision: 31
-      reason: "Enforce instruction barriers across tagged edits"
-      changes: ["Unioned target instructions for tagged batches and move destinations before mutation", "Verified blocked batches do not mutate and recover after complete reads"]
-    - revision: 32
-      reason: "Search explicit provider files with line selectors"
-      changes: ["Preserved source coordinates for explicit file and range searches", "Refused line selectors on directory roots"]
-    - revision: 33
-      reason: "Preserve grep matches ahead of oversized context"
-      changes: ["Reduced surrounding context before dropping a matching line", "Kept output bounds and explicit incompleteness"]
-    - revision: 34
-      reason: "Verify the updated implementation baseline"
-      changes: ["Recorded green check, race and integration at 9126aff", "Named the remaining external-mutation contract decision and live-provider authorization"]
-    - revision: 35
-      reason: "User approved provider wiring without new permission prompts"
-      changes: ["Routed declared provider writes and G8.20 mutations with revision checks and truthful receipts", "Verified mutations through a real headless PiG run with no confirmation layer"]
-    - revision: 36
-      reason: "Verify the no-new-prompts mutation baseline"
-      changes: ["Recorded full fresh unit/integration evidence and all ownership rows", "Passed exact check, race and integration recipes at 733298a"]
+    - revision: 37
+      reason: "Close missing local read repetition behavior before live evaluation"
+      changes: ["Added revision/view/selection-aware repetition hints without suppressing source", "Verified small-budget behavior through real PiG", "Kept supersession and remaining exact-anchor reconciliation open"]
 ---
 
 # 1. Outcome
@@ -139,6 +34,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **Current status (07.11.2026):** Slice 1 is implemented in substantial part but is **not complete**. All fourteen specifications have been approved; acceptance and the slice exit remain open. The authoritative row-by-row inventory is [ANA-2026-11-05-slice-1-inventory](../analyses/2026-11-05-slice-1-inventory/README.md); its representative passing tests are not a claim that every acceptance anchor passes.
 - **Observed baseline:** at `733298a`, `just check`, `just race` and `just integration` passed on Linux with scripted inference after provider mutation wiring, alongside fresh uncached verbose unit/integration runs and all 24 ownership-row test mappings. Three repeated targeted race runs passed for lifecycle draining, watcher joins, crash reclamation, session-end cleanup and reference-producer reload. Logs are retained in the inventory's `evidence/`. These gates must be repeated after the remaining implementation changes.
 - **Available:** the ten tools, local locations, scoped settings, core resources, hashline editing, jobs, secrets boundary, frames and instructions, prompt/skills, session messaging and the v1 contribution seams are wired in varying degrees. See the product README and the inventory for the exact current surface and its limitations.
+- **Local acceptance reconciliation:** Third-identical-result read hints are implemented with bounded output and revision/view/selection reset (`TestLiveRepeatedReadHintPreservesSourceAndResetsOnRevision`, `TestLiveRepetitionHintStaysWithinReadBudget`). Read-context supersession and exact-anchor reconciliation across the remaining domains are still open; live evaluation is not the next ready gate.
 - **Unfinished Slice 1:** `grep` searches bounded provider-directory roots and explicit files with line selectors. Long matching lines use explicit bounded windows, and oversized context is reduced before dropping a matching line. `find` walks bounded paginated providers including confined `local://` scratch. Scratch reads and listings use root-confined descriptors. Scheme-command `rm`, `mv`, `cp` and `mkdir` now dispatch declared provider mutations without new permission prompts. Direct write and redirects share provider integrity checks; redirects accept one static word, not general shell redirection. Provider snapshot editing remains unadvertised. The shell parser recognizes static quoted/escaped URI paths, but cannot always identify dynamically constructed paths. Trusted project-private notes enter the frame and pin lifecycle; truncated instruction views block mutations until their current source is fully delivered, including tagged batch targets and move destinations. The task list retains the remaining behaviors and acceptance tests; none is moved to depth by this checkpoint.
 - **Evidence and approval gaps:** `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real two-session reply and hop limit with scripted inference. `TestLiveStoredSessionTitleRequiresConfirmation` exercises decline and acceptance through PiG RPC confirmation dialogs, not a visual TUI. `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi and preview answers in real PiG RPC dialogs with scripted inference. `TestActivityCountsFailedJobsAfterRealExit` verifies activity failure counts against real child processes. Windows messaging, session storage and registry have compile-level coverage only. The real-provider A/B and full agent transcript require user authorization for inference spend. Prompt takeover remains force-only and also requires instructions enabled.
 - **Intentionally deferred:** activity-item click requires the fork host and `activity.shortcut` is not applied; broadcast, coordinator, by-project trees and rich questionnaire chrome belong to later slices. The reference-extension seam gate passed; the real pig-web co-load remains pig-web's gate, and no slice-exit commit exists yet.

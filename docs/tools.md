@@ -19,6 +19,8 @@ Selectors: `:N` (onward), `:A-B`, `:A+C`, `:-N` (tail), comma lists, and `:raw` 
 
 For a multi-read, one failing target does not turn the whole result into an error: the successful content stays valid, `Details.failedTargets` counts the failures, and the per-resource error is kept in `Details.resources[]`. The tool result is an error only when every target failed.
 
+The third identical normalized read at the same revision adds a repetition hint without suppressing content. Changing the selection, view or revision resets the counter; unknown revisions do not produce hints.
+
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, total lines, shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.
 
 Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.

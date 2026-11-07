@@ -156,7 +156,8 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			continue
 		}
-		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, budget)
+		pageBudget := resource.Budget{Bytes: budget.Bytes - readHintReserve, Lines: budget.Lines - 2}
+		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, pageBudget)
 		if err == nil && target.Scheme != "file" {
 			// Non-local providers already applied their own budget.
 			page.Facts.RequestedURI = target.Requested
@@ -164,11 +165,11 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 		if err == nil {
 			if summary, ok, summaryErr := a.summaryView(work, target, configuration); summaryErr != nil {
 				return nil, summaryErr
-			} else if ok && len(summary.Content) <= budget.Bytes && strings.Count(summary.Content, "\n")+1 <= budget.Lines {
+			} else if ok && len(summary.Content) <= pageBudget.Bytes && strings.Count(summary.Content, "\n")+1 <= pageBudget.Lines {
 				facts = append(facts, summary.Facts)
 				s.skills.noteTouch(target.Path)
 				s.rememberRead(ctx.ToolCallID(), epoch, target, summary)
-				text := summary.Content
+				text := summary.Content + s.readHistory.hint(target, summary)
 				content.WriteString(text)
 				budget.Bytes -= len(text)
 				budget.Lines -= strings.Count(text, "\n") + 1
@@ -189,7 +190,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 			complete = false
 			failedCount++
 		} else {
-			text = page.Content
+			text = page.Content + s.readHistory.hint(target, page)
 			s.skills.noteTouch(target.Path)
 			s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 			if guide, ok := s.firstTouchGuide(target.Scheme); ok {
