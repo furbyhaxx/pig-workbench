@@ -104,6 +104,19 @@ func TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd(t *testing.T) {
 	}
 }
 
+func TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "unicode.txt"), []byte("İ NEEDLE\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "grep", func([]string) scriptedCall {
+		return scriptedCall{"grep", map[string]any{"path": "unicode.txt", "pattern": "needle", "literal": true, "ignoreCase": true}}
+	})
+	if len(results) != 1 || !strings.Contains(results[0], ":1:4: İ NEEDLE") {
+		t.Fatalf("literal grep did not retain original byte column: %v", results)
+	}
+}
+
 func TestLiveSearchGlobDialectAcrossLocalAndProviderRoots(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "src", "nested"), 0700); err != nil {

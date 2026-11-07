@@ -402,12 +402,12 @@ func compilePatterns(options Options) ([]*regexp.Regexp, []string, error) {
 			}
 			return nil, nil, errors.New("regex pattern is empty")
 		}
-		if options.Literal {
-			if options.IgnoreCase {
-				pattern = strings.ToLower(pattern)
-			}
+		if options.Literal && !options.IgnoreCase {
 			literals = append(literals, pattern)
 			continue
+		}
+		if options.Literal {
+			pattern = regexp.QuoteMeta(pattern)
 		}
 		if options.IgnoreCase {
 			pattern = "(?i)" + pattern
@@ -487,7 +487,7 @@ func scanBytes(ctx context.Context, path string, data []byte, options Options, e
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		column := hit(line, expressions, literals, options.IgnoreCase)
+		column := hit(line, expressions, literals)
 		if column == 0 {
 			continue
 		}
@@ -520,18 +520,14 @@ func scanBytes(ctx context.Context, path string, data []byte, options Options, e
 	return matches, nil
 }
 
-func hit(line string, expressions []*regexp.Regexp, literals []string, ignoreCase bool) int {
-	haystack := line
-	if ignoreCase {
-		haystack = strings.ToLower(line)
-	}
+func hit(line string, expressions []*regexp.Regexp, literals []string) int {
 	for _, expression := range expressions {
 		if location := expression.FindStringIndex(line); location != nil {
 			return location[0] + 1
 		}
 	}
 	for _, literal := range literals {
-		if index := strings.Index(haystack, literal); index >= 0 {
+		if index := strings.Index(line, literal); index >= 0 {
 			return index + 1
 		}
 	}

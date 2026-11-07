@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 46
+  revision: 47
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T20:38:28+01:00"
+  updated_at: "2026-11-07T20:43:40+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 46
-      reason: "Bound listing and local find output before live evaluation"
-      changes: ["Bounded ls content and retained metadata with lossless resumable pages","Exposed includeHidden with its preserved true default and effective result facts","Bounded local find path bytes and reused listing limits for scheme commands","Passed full host integration plus repeated pagination/hidden-policy safety tests"]
+    - revision: 47
+      reason: "Keep Unicode case-insensitive literal columns in source coordinates"
+      changes: ["Reproduced byte-column drift after lowercasing multibyte prefixes", "Matched quoted literals against original source using RE2 Unicode folding", "Verified local/provider scanner parity and actual PiG output"]
 ---
 
 # 1. Outcome

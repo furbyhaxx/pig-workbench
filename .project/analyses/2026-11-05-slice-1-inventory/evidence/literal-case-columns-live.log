@@ -1,0 +1,8 @@
+=== RUN   TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn
+--- PASS: TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn (1.34s)
+=== RUN   TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn
+--- PASS: TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn (0.80s)
+=== RUN   TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn
+--- PASS: TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn (0.75s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.911s

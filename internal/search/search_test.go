@@ -217,6 +217,23 @@ func TestFindBoundsActualPathBytes(t *testing.T) {
 	}
 }
 
+func TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns(t *testing.T) {
+	root := t.TempDir()
+	for i, prefix := range []string{"İ ", "K "} {
+		path := write(t, root, fmt.Sprintf("unicode-%d.txt", i), prefix+"NEEDLE\n")
+		options := Options{Root: path, Patterns: []string{"needle"}, Literal: true, IgnoreCase: true}
+		local, err := Grep(t.Context(), options)
+		if err != nil || len(local.Matches) != 1 || local.Matches[0].Column != len(prefix)+1 {
+			t.Fatalf("literal byte column changed after case folding: %+v %v", local, err)
+		}
+		options.Root = resource.FileURI(path)
+		remote, err := GrepProvider(t.Context(), resource.FileProvider{}, options)
+		if err != nil || len(remote.Matches) != 1 || remote.Matches[0].Column != len(prefix)+1 {
+			t.Fatalf("provider byte column changed: %+v %v", remote, err)
+		}
+	}
+}
+
 func TestGrepBoundsAndHonesty(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "a.go", "package a\n// Needle one\nfunc A() {}\n")
