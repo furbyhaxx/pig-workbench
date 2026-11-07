@@ -1,0 +1,14 @@
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (1.59s)
+=== RUN   TestLiveGroupedDisplaySettingsEditResetAndInspection
+--- PASS: TestLiveGroupedDisplaySettingsEditResetAndInspection (0.64s)
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.71s)
+=== RUN   TestLiveGroupedDisplaySettingsEditResetAndInspection
+--- PASS: TestLiveGroupedDisplaySettingsEditResetAndInspection (0.73s)
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.64s)
+=== RUN   TestLiveGroupedDisplaySettingsEditResetAndInspection
+--- PASS: TestLiveGroupedDisplaySettingsEditResetAndInspection (0.69s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	6.039s

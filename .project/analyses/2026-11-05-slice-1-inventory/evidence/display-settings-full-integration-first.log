@@ -1,0 +1,86 @@
+--- FAIL: TestLiveListingCursorRejectsOtherRootsAndChangedRevisions (0.93s)
+    live_cursors_test.go:38: listing has no cursor: operation is unsupported for this resource scheme
+    live_cursors_test.go:33: script ran 1 of 4 steps; results: ["operation is unsupported for this resource scheme"]
+--- FAIL: TestLiveListingCursorExpiresAfterReload (0.83s)
+    live_cursors_test.go:73: extension error: map[error:register toolPresentation/web_search: permissionDenied: verificationRequired: the presentation owner must match host tool source attribution event:command extensionPath:command:reference type:extension_error]
+--- FAIL: TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd (15.02s)
+    live_reads_test.go:75: read never reached provider barrier
+    live_services_test.go:145: RPC did not shut down after stdin closed
+--- FAIL: TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText (0.80s)
+    live_reads_test.go:121: filesOnly leaked source or coordinates: [/tmp/TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText1954792499/001/source.txt
+         operation is unsupported for this resource scheme]
+--- FAIL: TestLiveSearchGlobDialectAcrossLocalAndProviderRoots (0.79s)
+    live_reads_test.go:163: glob dialect mismatch: [/tmp/TestLiveSearchGlobDialectAcrossLocalAndProviderRoots1087150165/001/src/a.go
+        /tmp/TestLiveSearchGlobDialectAcrossLocalAndProviderRoots1087150165/001/src/nested/b.md
+         /tmp/TestLiveSearchGlobDialectAcrossLocalAndProviderRoots1087150165/001/src/a.go:1:1: needle go
+        /tmp/TestLiveSearchGlobDialectAcrossLocalAndProviderRoots1087150165/001/src/nested/b.md:1:1: needle markdown
+         operation is unsupported for this resource scheme operation is unsupported for this resource scheme]
+--- FAIL: TestLiveProviderGuidesAndContinuationRespectReadBudgets (1.58s)
+    --- FAIL: TestLiveProviderGuidesAndContinuationRespectReadBudgets/5 (0.75s)
+        live_reads_test.go:203: unbounded guide or lost source/continuation: [operation is unsupported for this resource scheme]
+    --- FAIL: TestLiveProviderGuidesAndContinuationRespectReadBudgets/20 (0.82s)
+        live_reads_test.go:203: unbounded guide or lost source/continuation: [operation is unsupported for this resource scheme]
+--- FAIL: TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit (0.81s)
+    live_reference_test.go:228: contradictory provider reply produced a safe-retry claim: [mut:// does not advertise write; nothing was dispatched operation is unsupported for this resource scheme]
+--- FAIL: TestLiveProviderMutationsWithoutConfirmation (1.28s)
+    live_reference_test.go:268: step 0: mut:// does not advertise write; nothing was dispatched
+    live_reference_test.go:268: step 3: Job 560da9229d31e4570000000000000001: exited
+        cp: cannot stat 'mut://fixture/a': No such file or directory
+    live_reference_test.go:268: step 4: Job 560da9229d31e4570000000000000002: exited
+        mv: cannot stat 'mut://fixture/b': No such file or directory
+    live_reference_test.go:268: step 5: Job 560da9229d31e4570000000000000003: exited
+        mkdir: cannot create directory ‘mut://fixture/dir’: No such file or directory
+    live_reference_test.go:268: step 6: Job 560da9229d31e4570000000000000004: exited
+        rm: cannot remove 'mut://fixture/c': No such file or directory
+    live_reference_test.go:268: step 7: Job 560da9229d31e4570000000000000005: exited
+        /bin/bash: line 1: mut://fixture/a: No such file or directory
+    live_reference_test.go:273: step 2 want "original": operation is unsupported for this resource scheme
+    live_reference_test.go:273: step 10 want "notApplied": mut:// does not advertise write; nothing was dispatched
+    live_reference_test.go:273: step 19 want "unknown": mut:// does not advertise write; nothing was dispatched
+    live_reference_test.go:273: step 20 want "uncertain": operation is unsupported for this resource scheme
+    live_reference_test.go:273: step 21 want "cross-provider transfers": Job 560da9229d31e457000000000000000d: exited
+        cp: cannot stat 'mut://fixture/a': No such file or directory
+    live_reference_test.go:273: step 1 want "staleRevision": expectedRevision is supported only for local files; the control write was not performed
+    live_reference_test.go:273: step 9 want "already exists": Job 560da9229d31e4570000000000000006: exited
+        cp: cannot stat 'mut://fixture/a': No such file or directory
+    live_reference_test.go:273: step 11 want "partial": mut:// does not advertise write; nothing was dispatched
+    live_reference_test.go:273: step 12 want "unknown": mut:// does not advertise write; nothing was dispatched
+    live_reference_test.go:273: step 13 want "does not advertise": Job 560da9229d31e4570000000000000007: exited
+        rm: cannot remove 'kb://sources/a.md': No such file or directory
+    live_reference_test.go:273: step 18 want "notApplied": Job 560da9229d31e457000000000000000c: exited
+        mkdir: cannot create directory ‘mut://fixture/missing/child’: No such file or directory
+    live_reference_test.go:273: step 17 want "notApplied": Job 560da9229d31e457000000000000000b: exited
+        rm: cannot remove 'mut://fixture/dir': No such file or directory
+    live_reference_test.go:273: step 8 want "updated": operation is unsupported for this resource scheme
+    live_reference_test.go:273: step 15 want "updated": Job 560da9229d31e4570000000000000009: exited
+        cat: 'mut://fixture/a': No such file or directory
+    live_reference_test.go:273: step 16 want "committed": Job 560da9229d31e457000000000000000a: exited
+        mkdir: cannot create directory ‘mut://fixture/dir/nested’: No such file or directory
+--- FAIL: TestLiveGrepExplicitProviderFileAndLineSelection (0.86s)
+    live_reference_test.go:291: provider file selector coordinates are incorrect: [operation is unsupported for this resource scheme operation is unsupported for this resource scheme operation is unsupported for this resource scheme]
+--- FAIL: TestLiveGrepWalksPaginatedProvider (0.84s)
+    live_reference_test.go:305: provider grep missed paginated results or followed a noWalk entry: [operation is unsupported for this resource scheme operation is unsupported for this resource scheme]
+--- FAIL: TestLiveFindWalksPaginatedProvider (0.85s)
+    live_reference_test.go:324: provider walk failed: [operation is unsupported for this resource scheme operation is unsupported for this resource scheme]
+--- FAIL: TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead (0.83s)
+    live_scripted_test.go:761: result carries no tag:
+        snapshots.view failed: invalidRequest: discover Workbench before making service requests
+    live_scripted_test.go:764: script ran 1 of 3 steps; results: ["snapshots.view failed: invalidRequest: discover Workbench before making service requests"]
+--- FAIL: TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut (0.97s)
+    live_scripted_test.go:791: result carries no tag:
+        snapshots.view failed: invalidRequest: discover Workbench before making service requests
+    live_scripted_test.go:786: script ran 1 of 2 steps; results: ["snapshots.view failed: invalidRequest: discover Workbench before making service requests"]
+--- FAIL: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource (3.53s)
+    --- FAIL: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/zero (0.92s)
+        live_totals_test.go:19: contradictory source coverage was emitted: [operation is unsupported for this resource scheme]
+    --- FAIL: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/negative (0.89s)
+        live_totals_test.go:19: contradictory source coverage was emitted: [operation is unsupported for this resource scheme]
+    --- FAIL: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/gap (0.86s)
+        live_totals_test.go:19: contradictory source coverage was emitted: [operation is unsupported for this resource scheme]
+    --- FAIL: TestLiveProviderContradictoryCoverageNeverReachesTheModelAsSource/overflow (0.86s)
+        live_totals_test.go:19: contradictory source coverage was emitted: [operation is unsupported for this resource scheme]
+--- FAIL: TestLiveProviderUnknownTotalsRemainAbsentAndKnownEmptyRemainsZero (0.82s)
+    live_totals_test.go:78: did not verify both live result shapes: map[]
+FAIL
+FAIL	github.com/furbyhaxx/pig-workbench/internal/host	250.952s
+FAIL

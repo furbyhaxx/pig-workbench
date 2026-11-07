@@ -2,12 +2,43 @@ package host
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/creachadair/tomledit/parser"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
+
+func (a *app) displayChangeEvents(s *session, revision uint64, keys []string) ([]api.Event, *api.Error) {
+	var events []api.Event
+	for _, registration := range s.contributions.List() {
+		if registration.Kind != contribution.KindToolPresentation {
+			continue
+		}
+		prefix := parser.Key(displayNamespace(registration.Owner, registration.Key))
+		changed := len(keys) == 0
+		for _, key := range keys {
+			parts, err := parser.ParseKey(key)
+			if err == nil && prefix.IsPrefixOf(parts) {
+				changed = true
+			}
+		}
+		if !changed {
+			continue
+		}
+		result, failure := a.displaySettingsGet(s, api.Request{RegistrationID: registration.RegistrationID, From: api.Identity{Owner: registration.Owner, Instance: registration.Instance}, Params: json.RawMessage(`{}`)})
+		if failure != nil {
+			return nil, failure
+		}
+		values := map[string]any{}
+		for name, field := range result.(api.DisplaySettings).Fields {
+			values[name] = field.Value
+		}
+		events = append(events, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:display-settings:%d:%s", s.generation, revision, registration.RegistrationID), Type: "settings.changed", RegistrationID: registration.RegistrationID, Data: api.DisplaySettingsChanged{Owner: registration.Owner, Key: registration.Key, ConfigRevision: revision, Values: values}})
+	}
+	return events, nil
+}
 
 func (a *app) displaySettingsGet(s *session, request api.Request) (any, *api.Error) {
 	if request.RegistrationID == "" {

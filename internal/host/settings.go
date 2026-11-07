@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/creachadair/tomledit/parser"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
@@ -32,11 +33,26 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 }
 
 func completeWorkbench(prefix string, live []string, catalog []config.Definition) ([]sdk.AutocompleteItem, error) {
-	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
+	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings tools", "settings tools show", "settings tools set", "settings tools reset", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
 	}
 	for _, definition := range catalog {
+		parts, _ := parser.ParseKey(definition.Key)
+		if len(parts) == 4 && parts[0] == "tools" {
+			owner, key, field := commandIdentifier(parts[1]), commandIdentifier(parts[2]), commandIdentifier(parts[3])
+			candidates = append(candidates, "settings tools "+owner, "settings tools "+owner+" "+key, "settings tools show "+owner+" "+key)
+			for _, scope := range []string{"user", "project", "runtime"} {
+				set := "settings tools set " + scope + " " + owner + " " + key + " " + field
+				candidates = append(candidates, set, "settings tools reset "+scope+" "+owner+" "+key+" "+field)
+				if definition.Kind == config.Boolean {
+					candidates = append(candidates, set+" true", set+" false")
+				}
+				for _, choice := range definition.Choices {
+					candidates = append(candidates, set+" "+strconv.Quote(choice))
+				}
+			}
+		}
 		candidates = append(candidates, "settings show "+definition.Key, "settings catalog "+definition.Key)
 		for _, scope := range []string{"user", "project", "runtime"} {
 			if scope == "project" && definition.Project == config.DenyProject {
@@ -57,8 +73,14 @@ func completeWorkbench(prefix string, live []string, catalog []config.Definition
 	}
 	candidates = append(candidates, live...)
 	var result []sdk.AutocompleteItem
+	seen := map[string]bool{}
 	for _, value := range candidates {
-		if strings.HasPrefix(value, prefix) && !strings.Contains(strings.TrimPrefix(value, prefix), " ") {
+		if seen[value] || !strings.HasPrefix(value, prefix) {
+			continue
+		}
+		_, tail, err := commandFields(strings.TrimPrefix(value, prefix), 1)
+		if err == nil && tail == "" {
+			seen[value] = true
 			result = append(result, sdk.AutocompleteItem{Value: value, Label: value})
 		}
 	}
@@ -100,6 +122,8 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 	verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
 	rest = strings.TrimSpace(rest)
 	switch verb {
+	case "tools":
+		return a.displaySettingsCommand(ctx, work, s, rest)
 	case "", "show":
 		snapshot, status := s.settings.Inspect()
 		output := map[string]any{"settings": status}
@@ -189,5 +213,15 @@ func (a *app) settingsChanged(ctx sdk.Context, s *session, revision uint64, keys
 	event := api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:settings:%d", s.generation, revision), Type: "settings.changed", Data: map[string]any{"configRevision": revision, "changed": keys}}
 	if err := ctx.Events().Emit(api.EventChannel, event); err != nil {
 		ctx.Notify("Configuration is applied, but its change notification failed; inspect settings to reconcile.", "warning")
+	}
+	events, failure := a.displayChangeEvents(s, revision, keys)
+	if failure != nil {
+		ctx.Notify("Display settings saved, but display notification data is unavailable; query settings.get to reconcile.", "warning")
+		return
+	}
+	for _, event := range events {
+		if err := ctx.Events().Emit(api.EventChannel, event); err != nil {
+			ctx.Notify("Display settings saved, but notification failed; query settings.get to reconcile.", "warning")
+		}
 	}
 }

@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 47
+  revision: 48
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T23:00:26+01:00"
+  updated_at: "2026-11-07T23:36:27+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 47
-      reason: "Expose bounded owner-scoped display settings queries and dynamic inspection"
-      changes: ["Added typed settings.get with display-only values/provenance and stable identity", "Included dynamic schemas in catalog inspection and completion", "Verified real host queries while preserving registered/not-yet-applied status"]
+    - revision: 48
+      reason: "Add scoped grouped display commands and retain reviewable captures"
+      changes: ["Verified grouped inspect/set/reset, quoted identifiers, completions and display-only change events", "Captured the provisional plain TUI at four widths and 16 rows without inference", "Fixed the reference producer to keep independent contributions available when --tools hides its presented tool", "Passed the full host integration rerun; layout review and renderer application remain open"]
 ---
 
 # Scope and evidence
@@ -118,6 +118,12 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.10. |
 
 These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred rich-panel polish. None is silently moved to Slice 3.
+
+# Provisional grouped display settings view
+
+The plain `/workbench settings tools` surface has actual RPC scoped edit/reset and display-only settings.changed evidence: [unit](evidence/display-settings-commands-unit.log), [live](evidence/display-settings-commands-live.log). The new TUI view is **awaiting user layout review**, not approved chrome. Short-height (16-row) captures: [36 columns](evidence/display-settings-tui/w36.txt), [57](evidence/display-settings-tui/w57.txt), [80](evidence/display-settings-tui/w80.txt), [140](evidence/display-settings-tui/w140.txt); ANSI counterparts are alongside them. Captures use an isolated fixture model with an unreachable local endpoint and slash commands only; no inference was requested.
+
+The first full integration run failed because source ownership verification correctly refused a presented tool hidden by the CLI --tools selection, and the reference fixture aborted its unrelated registrations ([first run](evidence/display-settings-full-integration-first.log)). The fixture now skips only that unavailable presentation after host metadata confirms the tool is absent, retaining resources/fetch/frames; ownership policy is not bypassed. The full suite then passed ([rerun](evidence/display-settings-full-integration-rerun.log)).
 
 # Baseline gates
 

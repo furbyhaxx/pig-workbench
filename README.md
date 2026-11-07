@@ -30,7 +30,7 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 
 **Unfinished Slice 1:**
 
-- Typed presentation preferences persist by owner/stable key and survive withdrawal, but currently report `registered`; renderer application and the dedicated tools-settings interface are not yet complete.
+- Typed presentation preferences persist by owner/stable key and survive withdrawal. `/workbench settings tools` groups and edits them, but they still report `registered` until renderer application is integrated; the new plain settings view awaits layout review.
 
 - Long grep matching lines use bounded windows; oversized context is reduced and marked incomplete. Searches still stop at their output and source limits.
 - For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. A static-word `value > URI` dispatches supported control writes with the same confirmation rules as `write`; quotes and escapes are recognized, but it is not general shell redirection and dynamically constructed paths cannot always be recognized. `rm`, `mv`, `cp` and `mkdir` route to providers that declare those operations, without new permission prompts. Cross-provider transfers and recursive operations are refused; contributed hashline editing remains unavailable.

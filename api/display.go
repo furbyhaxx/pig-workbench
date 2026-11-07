@@ -8,6 +8,14 @@ type DisplayValue struct {
 	Application string `json:"application"`
 }
 
+// DisplaySettingsChanged is display-only data carried by a registration-bound settings.changed event.
+type DisplaySettingsChanged struct {
+	Owner          string         `json:"owner"`
+	Key            string         `json:"key"`
+	ConfigRevision uint64         `json:"configRevision"`
+	Values         map[string]any `json:"values"`
+}
+
 // DisplaySettings is the owner-scoped settings.get reply for one presentation registration.
 type DisplaySettings struct {
 	RegistrationID     string                  `json:"registrationId"`

@@ -278,6 +278,17 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 	for _, c := range contributions {
 		receipt, err := active.Register(ctx, endpoint, c.kind, c.key, c.descriptor)
 		if err != nil {
+			var protocol *api.Error
+			if c.kind == "toolPresentation" && errors.As(err, &protocol) && protocol.Code == "permissionDenied" {
+				tools, lookupErr := ctx.GetAllTools()
+				present := false
+				for _, tool := range tools {
+					present = present || tool.Name == "web_search"
+				}
+				if lookupErr == nil && !present {
+					continue
+				}
+			}
 			return fmt.Errorf("register %s/%s: %w", c.kind, c.key, err)
 		}
 		key := c.kind
@@ -324,6 +335,29 @@ func Extension() *sdk.Extension {
 			} else {
 				lockObserved.Store(true)
 			}
+			return nil
+		})
+	})
+	ext.OnLoaded(func(sdk.Context) {
+		if os.Getenv("WORKBENCH_REFERENCE_OBSERVE_DISPLAY") != "1" {
+			return
+		}
+		_, _ = ext.Events().On(api.EventChannel, func(ctx sdk.Context, value any) error {
+			encoded, err := json.Marshal(value)
+			if err != nil {
+				return err
+			}
+			var event api.Event
+			if json.Unmarshal(encoded, &event) != nil || event.Type != "settings.changed" || event.RegistrationID == "" {
+				return nil
+			}
+			payload, _ := json.Marshal(event.Data)
+			var change api.DisplaySettingsChanged
+			if json.Unmarshal(payload, &change) != nil || change.Owner != "reference-producer" {
+				return nil
+			}
+			out, _ := json.Marshal(map[string]any{"displayChanged": change, "registrationId": event.RegistrationID})
+			ctx.Notify(string(out), "info")
 			return nil
 		})
 	})

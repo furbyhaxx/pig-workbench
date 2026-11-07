@@ -11,6 +11,45 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 )
 
+func TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues(t *testing.T) {
+	t.Setenv("WORKBENCH_REFERENCE_OBSERVE_DISPLAY", "1")
+	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})
+	fixture.send("set", "prompt", "/workbench settings tools set runtime reference-producer web_search density \"compact\"")
+	event := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"displayChanged"`)
+	})
+	var output struct {
+		DisplayChanged api.DisplaySettingsChanged `json:"displayChanged"`
+		RegistrationID string                     `json:"registrationId"`
+	}
+	if err := json.Unmarshal([]byte(event["message"].(string)), &output); err != nil {
+		t.Fatal(err)
+	}
+	if output.RegistrationID == "" || output.DisplayChanged.Owner != "reference-producer" || output.DisplayChanged.Key != "web_search" || output.DisplayChanged.ConfigRevision == 0 || output.DisplayChanged.Values["density"] != "compact" {
+		t.Fatalf("display event not bound to saved value: %+v", output)
+	}
+	if _, exists := output.DisplayChanged.Values["secrets.enabled"]; exists {
+		t.Fatal("execution setting exposed through display event")
+	}
+}
+
+func TestLiveGroupedDisplaySettingsEditResetAndInspection(t *testing.T) {
+	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})
+	fixture.command("set", "/workbench settings tools set runtime reference-producer web_search density \"compact\"")
+	fixture.send("show", "prompt", "/workbench settings tools reference-producer web_search")
+	event := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"toolDisplay"`)
+	})
+	if !strings.Contains(fmt.Sprint(event["message"]), `"compact"`) || !strings.Contains(fmt.Sprint(event["message"]), `"runtime"`) {
+		t.Fatalf("grouped settings lost value/source: %+v", event)
+	}
+	fixture.command("reset", "/workbench settings tools reset runtime reference-producer web_search density")
+	entry := settingsNotice(t, fixture, "after-reset", "show tools.reference-producer.web_search.density")["entry"].(map[string]any)
+	if entry["value"] != "normal" || entry["scope"] != "defaults" {
+		t.Fatalf("scoped reset erased or hid producer default: %+v", entry)
+	}
+}
+
 func TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues(t *testing.T) {
 	fixture := startRPCWithExtensions(t, t.TempDir(), true, []string{"reference-producer"})
 	key := "tools.reference-producer.web_search.density"

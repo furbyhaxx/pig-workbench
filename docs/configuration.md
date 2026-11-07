@@ -35,7 +35,16 @@ Settings marked `unavailable` are retained and validated but do not control thei
 
 Presentation descriptors register typed values under `tools.<owner>.<stable-key>.<field>`; TOML quoting preserves dots in owner/key names as literal segments. Producer defaults sit below user, trusted-project and runtime overrides. Withdrawal keeps overrides and marks the schema unavailable; re-registration reuses the stable identity. Descriptor type changes must use a new key or an explicit migration.
 
-These dynamic entries currently report `registered`, not `live`: storage and generic inspection/editing are available, but full renderer application and the dedicated tools-settings interface are still being integrated. Do not infer applied rendering from a successful save.
+These dynamic entries currently report `registered`, not `live`: storage, grouped inspection and scoped editing are available, but full renderer application is still being integrated. Do not infer applied rendering from a successful save.
+
+```text
+/workbench settings tools
+/workbench settings tools reference-producer web_search
+/workbench settings tools set runtime reference-producer web_search density "compact"
+/workbench settings tools reset runtime reference-producer web_search density
+```
+
+Owner/key identifiers may be quoted; the TOML value tail is parsed separately. Inspection includes live and dormant schemas with effective value/source. TUI uses a compact plain view; RPC uses structured notification data. Saves and reset reuse the normal conflict-safe/scoped configuration path and recheck project trust; no confirmation dialog is added. Registration-bound `settings.changed` events contain display values only.
 
 ## Inspect and change
 
