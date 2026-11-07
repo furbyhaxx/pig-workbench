@@ -73,7 +73,7 @@ func (m *Manager) Load(ctx context.Context, trusted bool) error {
 	defer release()
 	documents, err := m.readLayers(trusted)
 	if err == nil {
-		_, err = m.publish(ctx, documents)
+		_, err = m.publish(ctx, documents, nil)
 	}
 	if err != nil {
 		m.recordError(err)
@@ -126,7 +126,7 @@ func (m *Manager) readLayers(trusted bool) (map[Scope]*document, error) {
 	return layers, nil
 }
 
-func (m *Manager) publish(ctx context.Context, documents map[Scope]*document) (*Snapshot, error) {
+func (m *Manager) publish(ctx context.Context, documents map[Scope]*document, retainedError error) (*Snapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (m *Manager) publish(ctx context.Context, documents map[Scope]*document) (*
 	if revision >= 1<<53 {
 		return nil, errors.New("configuration revision exhausted")
 	}
-	candidate, err := compose(documents, revision)
+	candidate, err := compose(documents, revision, m.definitions)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (m *Manager) publish(ctx context.Context, documents map[Scope]*document) (*
 	}
 	m.mu.Lock()
 	m.current = candidate
-	m.lastErr = nil
+	m.lastErr = retainedError
 	m.mu.Unlock()
 	return candidate, nil
 }
@@ -267,7 +267,7 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 		candidate.canonical = current.canonical
 		layers[scope] = candidate
 	}
-	if _, err := compose(layers, base.revision); err != nil {
+	if _, err := compose(layers, base.revision, m.definitions); err != nil {
 		return result, err
 	}
 	stillTrusted, err := isTrusted()
@@ -312,7 +312,7 @@ func (m *Manager) Save(ctx context.Context, scope Scope, base *Snapshot, edits [
 	}
 	reconcileContext, reconcileCancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer reconcileCancel()
-	snapshot, err := m.publish(reconcileContext, layers)
+	snapshot, err := m.publish(reconcileContext, layers, nil)
 	if err != nil {
 		m.recordError(err)
 		return result, err

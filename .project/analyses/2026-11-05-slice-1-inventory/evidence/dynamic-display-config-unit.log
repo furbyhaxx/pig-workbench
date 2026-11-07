@@ -1,0 +1,20 @@
+=== RUN   TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues
+--- PASS: TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues (0.01s)
+=== RUN   TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration
+--- PASS: TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration (0.01s)
+=== RUN   TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides
+--- PASS: TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides (0.02s)
+=== RUN   TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues
+--- PASS: TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues (0.02s)
+=== RUN   TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration
+--- PASS: TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration (0.01s)
+=== RUN   TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides
+--- PASS: TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides (0.02s)
+=== RUN   TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues
+--- PASS: TestDynamicDefinitionsCannotWidenScopeAndDoNotReadUntrustedProjectValues (0.01s)
+=== RUN   TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration
+--- PASS: TestDynamicWithdrawalDoesNotRepairAnUnrelatedStaleConfiguration (0.01s)
+=== RUN   TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides
+--- PASS: TestDynamicDisplayDefinitionsPreserveQuotedKeysAndDormantOverrides (0.02s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/config	1.127s

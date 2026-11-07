@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 44
+  revision: 45
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T22:08:52+01:00"
+  updated_at: "2026-11-07T22:29:46+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 44
-      reason: "Report renderer first-use cache limits without triggering reload"
-      changes: ["Tracked the descriptor actually answered at resolver first use", "Reported late claims/replacements/withdrawals in receipts and inspection", "Preserved pending owner discovery and cleared false pending state after descriptor restoration"]
+    - revision: 45
+      reason: "Add typed dynamic display namespaces to the existing safe config engine"
+      changes: ["Preserved quoted owner/key segments through conflict checks and round-trip edits", "Verified precedence, reset, dormant overrides and rejected type reinterpretation", "Kept schema withdrawal from clearing unrelated stale-file errors", "Producer activation and settings commands remain the next implementation leaves"]
 ---
 
 # Scope and evidence
@@ -111,7 +111,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.5/6, not inferred from one search card. |
 | §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.7. |
 | §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.6/7. |
-| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | There is no dynamic display override store or settings.get dispatcher; renderers use producer defaultDisplay directly. Work is 17.8.10.3/4. |
+| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation and settings.get/commands remain 17.8.10.4/5; renderers still use producer defaults until integrated. |
 | §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.6 owns actual evidence. |
 | §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
 | §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.5. |

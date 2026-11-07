@@ -28,6 +28,7 @@ type Snapshot struct {
 	documents map[Scope]*document
 	warnings  []string
 	read      ReadPolicy
+	catalog   []Definition
 }
 
 // Revision identifies the published configuration within this session generation.
@@ -46,7 +47,7 @@ func (s *Snapshot) Get(key string) (Entry, bool) {
 // Entries returns independent entries in catalog order.
 func (s *Snapshot) Entries() []Entry {
 	result := make([]Entry, 0, len(s.values))
-	for _, definition := range Catalog() {
+	for _, definition := range s.catalog {
 		entry, ok := s.Get(definition.Key)
 		if ok {
 			result = append(result, entry)
@@ -64,9 +65,10 @@ func (s *Snapshot) Warnings() []string {
 	return result
 }
 
-func compose(documents map[Scope]*document, revision uint64) (*Snapshot, error) {
+func compose(documents map[Scope]*document, revision uint64, definitions map[string]Definition) (*Snapshot, error) {
 	snapshot := &Snapshot{revision: revision, values: make(map[string]Entry), documents: documents}
-	catalog := Catalog()
+	catalog := orderedDefinitions(definitions)
+	snapshot.catalog = catalog
 	for _, definition := range catalog {
 		snapshot.values[definition.Key] = Entry{Key: definition.Key, Value: cloneValue(definition.Default), Scope: Defaults, Application: definition.Application}
 	}

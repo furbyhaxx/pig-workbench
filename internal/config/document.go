@@ -196,7 +196,11 @@ func encodeValue(value any) (parser.Value, error) {
 
 func editDocument(doc *document, edits []Edit) ([]byte, error) {
 	for _, edit := range edits {
-		parts := strings.Split(edit.Key, ".")
+		parts, err := parser.ParseKey(edit.Key)
+		if err != nil {
+			return nil, errors.New("invalid configuration key")
+		}
+
 		entry := doc.ast.First(parts...)
 		if edit.Reset {
 			if entry != nil {

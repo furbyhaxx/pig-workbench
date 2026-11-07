@@ -3,7 +3,8 @@ package config
 import (
 	"errors"
 	"reflect"
-	"strings"
+
+	"github.com/creachadair/tomledit/parser"
 )
 
 func verifyRoundTrip(original, candidate *document, edits []Edit) error {
@@ -54,7 +55,8 @@ func uneditedTree(tree map[string]any, edits []Edit) map[string]any {
 	}
 	delete(result, "version")
 	for _, edit := range edits {
-		remove(result, strings.Split(edit.Key, "."))
+		parts, _ := parser.ParseKey(edit.Key)
+		remove(result, parts)
 	}
 	return result
 }

@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 52
+  revision: 53
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T22:08:52+01:00"
+  updated_at: "2026-11-07T22:29:46+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 52
-      reason: "Report renderer first-use cache limits without triggering reload"
-      changes: ["Tracked the descriptor actually answered at resolver first use", "Reported late claims/replacements/withdrawals in receipts and inspection", "Preserved pending owner discovery and cleared false pending state after descriptor restoration"]
+    - revision: 53
+      reason: "Add typed dynamic display namespaces to the existing safe config engine"
+      changes: ["Preserved quoted owner/key segments through conflict checks and round-trip edits", "Verified precedence, reset, dormant overrides and rejected type reinterpretation", "Kept schema withdrawal from clearing unrelated stale-file errors", "Producer activation and settings commands remain the next implementation leaves"]
 ---
 
 # 1. Outcome
