@@ -1,0 +1,486 @@
+=== RUN   TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem
+--- PASS: TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem (0.00s)
+=== RUN   TestActivityCountsFailedJobsAfterRealExit
+--- PASS: TestActivityCountsFailedJobsAfterRealExit (0.00s)
+=== RUN   TestActivityLineStripsTerminalSequencesFromProducerLabels
+--- PASS: TestActivityLineStripsTerminalSequencesFromProducerLabels (0.00s)
+=== RUN   TestNoticesFitAndStripUntrustedControls
+=== RUN   TestNoticesFitAndStripUntrustedControls/36
+=== RUN   TestNoticesFitAndStripUntrustedControls/57
+=== RUN   TestNoticesFitAndStripUntrustedControls/80
+=== RUN   TestNoticesFitAndStripUntrustedControls/140
+--- PASS: TestNoticesFitAndStripUntrustedControls (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/36 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/57 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/80 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/140 (0.00s)
+=== RUN   TestMultiReadPartialFailureIsNotAToolError
+--- PASS: TestMultiReadPartialFailureIsNotAToolError (0.00s)
+=== RUN   TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb
+--- PASS: TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb (0.00s)
+=== RUN   TestFetchBackendSelectionPrefersMostSpecificRule
+--- PASS: TestFetchBackendSelectionPrefersMostSpecificRule (0.00s)
+=== RUN   TestFetchBackendDescriptorValidation
+--- PASS: TestFetchBackendDescriptorValidation (0.00s)
+=== RUN   TestStatusSegmentRenderFitsAndNamesSeverity
+--- PASS: TestStatusSegmentRenderFitsAndNamesSeverity (0.00s)
+=== RUN   TestFrameProducerDescriptorRejectsInternalAndUnknownFields
+--- PASS: TestFrameProducerDescriptorRejectsInternalAndUnknownFields (0.00s)
+=== RUN   TestToolPresentationRegistrationDrivesTheResolver
+--- PASS: TestToolPresentationRegistrationDrivesTheResolver (0.00s)
+=== RUN   TestToolPresentationRegistrationIsIdempotentAndConflictSafe
+--- PASS: TestToolPresentationRegistrationIsIdempotentAndConflictSafe (0.00s)
+=== RUN   TestDescribeContributionsIsFilteredAndPaged
+--- PASS: TestDescribeContributionsIsFilteredAndPaged (0.00s)
+=== RUN   TestPresentationHeaderShortensTargetsToWidth
+--- PASS: TestPresentationHeaderShortensTargetsToWidth (0.00s)
+=== RUN   TestFirstTouchGuideIsInjectedOncePerRevision
+--- PASS: TestFirstTouchGuideIsInjectedOncePerRevision (0.00s)
+=== RUN   TestFrameBaselineResumeKeepsDeliveredFactsOnTheBranch
+--- PASS: TestFrameBaselineResumeKeepsDeliveredFactsOnTheBranch (0.00s)
+=== RUN   TestFrameBaselineOmitsFramesFromAnotherBranch
+--- PASS: TestFrameBaselineOmitsFramesFromAnotherBranch (0.00s)
+=== RUN   TestFrameBaselineIgnoresCancelledAndFollowsLatestState
+--- PASS: TestFrameBaselineIgnoresCancelledAndFollowsLatestState (0.00s)
+=== RUN   TestFrameBaselineDropsFramesSummarizedByCompaction
+--- PASS: TestFrameBaselineDropsFramesSummarizedByCompaction (0.00s)
+=== RUN   TestInstructionUpdateContextSettingControlsDiff
+--- PASS: TestInstructionUpdateContextSettingControlsDiff (0.00s)
+=== RUN   TestIncompleteInstructionRequiresCurrentFullyDeliveredSource
+--- PASS: TestIncompleteInstructionRequiresCurrentFullyDeliveredSource (0.00s)
+=== RUN   TestBeforePromptRequiresAllSixContextFrames
+--- PASS: TestBeforePromptRequiresAllSixContextFrames (0.00s)
+=== RUN   TestPinsFollowTheActiveBranchOnly
+--- PASS: TestPinsFollowTheActiveBranchOnly (0.00s)
+=== RUN   TestPinnableClassRefusesSteeringAndNamesAmbiguity
+--- PASS: TestPinnableClassRefusesSteeringAndNamesAmbiguity (0.00s)
+=== RUN   TestLiveAskUsesNativeRPCAndReturnsUserChoice
+--- PASS: TestLiveAskUsesNativeRPCAndReturnsUserChoice (0.90s)
+=== RUN   TestLiveAskMultiAndPreviewThroughNativeDialogs
+--- PASS: TestLiveAskMultiAndPreviewThroughNativeDialogs (0.84s)
+=== RUN   TestLiveUnansweredAskIsPendingAfterRestartAndNeverAnsweredByDefault
+--- PASS: TestLiveUnansweredAskIsPendingAfterRestartAndNeverAnsweredByDefault (1.13s)
+=== RUN   TestLiveAskFreeformAndSecretReturnTheResultShape
+--- PASS: TestLiveAskFreeformAndSecretReturnTheResultShape (0.91s)
+=== RUN   TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer
+--- PASS: TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer (1.16s)
+=== RUN   TestLiveAskInPrintModeIsUnavailable
+--- PASS: TestLiveAskInPrintModeIsUnavailable (0.77s)
+=== RUN   TestLiveTaggedAndExactEditUseObservedSource
+--- PASS: TestLiveTaggedAndExactEditUseObservedSource (0.82s)
+=== RUN   TestLiveTaggedEditRelocatesAcrossExternalChange
+--- PASS: TestLiveTaggedEditRelocatesAcrossExternalChange (0.90s)
+=== RUN   TestLiveResumeDoesNotResendDeliveredContextFrames
+--- PASS: TestLiveResumeDoesNotResendDeliveredContextFrames (1.09s)
+=== RUN   TestLiveCompactionResendsContextFactsOnce
+--- PASS: TestLiveCompactionResendsContextFactsOnce (0.89s)
+=== RUN   TestLiveHTTPReadUsesBuiltinStaticReader
+--- PASS: TestLiveHTTPReadUsesBuiltinStaticReader (0.99s)
+=== RUN   TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity
+=== RUN   TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity/trusted=false
+=== RUN   TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity/trusted=true
+--- PASS: TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity (1.85s)
+    --- PASS: TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity/trusted=false (0.96s)
+    --- PASS: TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity/trusted=true (0.89s)
+=== RUN   TestLivePrivateNotesUpdateAndPinnedNotesWithdrawOnProjectChange
+--- PASS: TestLivePrivateNotesUpdateAndPinnedNotesWithdrawOnProjectChange (0.86s)
+=== RUN   TestLivePrivateNotesFollowExplicitlyTrustedProjectChange
+--- PASS: TestLivePrivateNotesFollowExplicitlyTrustedProjectChange (0.80s)
+=== RUN   TestLiveInstructionSettingsControlFramesAndPointerValidation
+=== RUN   TestLiveInstructionSettingsControlFramesAndPointerValidation/enabled-validate
+=== RUN   TestLiveInstructionSettingsControlFramesAndPointerValidation/enabled-no-validation
+=== RUN   TestLiveInstructionSettingsControlFramesAndPointerValidation/disabled
+--- PASS: TestLiveInstructionSettingsControlFramesAndPointerValidation (2.39s)
+    --- PASS: TestLiveInstructionSettingsControlFramesAndPointerValidation/enabled-validate (0.81s)
+    --- PASS: TestLiveInstructionSettingsControlFramesAndPointerValidation/enabled-no-validation (0.77s)
+    --- PASS: TestLiveInstructionSettingsControlFramesAndPointerValidation/disabled (0.81s)
+=== RUN   TestLiveChangedInstructionsArriveAsADiffAgainstTheDeliveredView
+--- PASS: TestLiveChangedInstructionsArriveAsADiffAgainstTheDeliveredView (0.80s)
+=== RUN   TestLivePinnedBacklogStaysDeliveredAndPoliciesHold
+--- PASS: TestLivePinnedBacklogStaysDeliveredAndPoliciesHold (0.96s)
+=== RUN   TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn
+--- PASS: TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn (0.94s)
+=== RUN   TestLiveInstructionChangedAcrossCompactionArrivesAsOneFullView
+--- PASS: TestLiveInstructionChangedAcrossCompactionArrivesAsOneFullView (0.87s)
+=== RUN   TestLiveBacklogShowsAMissingPointerTarget
+--- PASS: TestLiveBacklogShowsAMissingPointerTarget (0.75s)
+=== RUN   TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead
+--- PASS: TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead (0.90s)
+=== RUN   TestLiveMutationIsBlockedOnceWhenNewInstructionsApply
+--- PASS: TestLiveMutationIsBlockedOnceWhenNewInstructionsApply (0.86s)
+=== RUN   TestLiveFramesAndInstructionRulesCommands
+--- PASS: TestLiveFramesAndInstructionRulesCommands (0.78s)
+=== RUN   TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule
+--- PASS: TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule (0.87s)
+=== RUN   TestLiveBackgroundJobStdinAndCompletion
+--- PASS: TestLiveBackgroundJobStdinAndCompletion (0.81s)
+=== RUN   TestLiveCrashReclaimsOrphanedJob
+    live_jobs_test.go:170: orphan reclaimed 136ms after the next session started
+--- PASS: TestLiveCrashReclaimsOrphanedJob (45.29s)
+=== RUN   TestLiveConfiguredJobTimeoutApplies
+--- PASS: TestLiveConfiguredJobTimeoutApplies (3.93s)
+=== RUN   TestLiveSessionEndTerminatesJobs
+--- PASS: TestLiveSessionEndTerminatesJobs (0.88s)
+=== RUN   TestProbeIdleWakeStartsTurn
+--- PASS: TestProbeIdleWakeStartsTurn (0.99s)
+=== RUN   TestProbeBusyWakeSteers
+--- PASS: TestProbeBusyWakeSteers (0.83s)
+=== RUN   TestProbeSessionTitleT1
+--- PASS: TestProbeSessionTitleT1 (0.70s)
+=== RUN   TestProbeSessionInfoT2
+--- PASS: TestProbeSessionInfoT2 (0.90s)
+=== RUN   TestProbeSessionInfoBranchT3
+    live_probes_test.go:219: title after fork before the rename: map[entries:9 file:/tmp/TestProbeSessionInfoBranchT31752393993/001/sessions/2026-11-07T15-21-13-482Z_01a1b699-780a-72b7-be9d-9b62c7635f12.jsonl probe:title read:<nil> sessionInfoEntries:0]
+    live_probes_test.go:223: session_info is branch-scoped: after forking before the rename the title reads <nil>
+--- PASS: TestProbeSessionInfoBranchT3 (0.96s)
+=== RUN   TestProbeResumedCwdAcrossSymlinkedBuckets
+    live_probes_test.go:292: resumed in /tmp/TestProbeResumedCwdAcrossSymlinkedBuckets2142842147/001/work/clone: map[cwd:/tmp/TestProbeResumedCwdAcrossSymlinkedBuckets2142842147/001/work/repo probe:cwd sessionFile:/tmp/TestProbeResumedCwdAcrossSymlinkedBuckets2142842147/001/agent/sessions/--tmp-TestProbeResumedCwdAcrossSymlinkedBuckets2142842147-001-work-clone--/2026-11-07T15-21-14-240Z_01a1b699-7b00-7722-9eeb-870d192e8da5.jsonl sessionName:shared session]
+--- PASS: TestProbeResumedCwdAcrossSymlinkedBuckets (0.92s)
+=== RUN   TestProbeNativeCredentialExpansion
+    live_probes_test.go:357: /literal/v1/chat/completions Authorization="[REDACTED]" X-Probe=""
+    live_probes_test.go:357: /env/v1/chat/completions Authorization="[REDACTED]" X-Probe=""
+    live_probes_test.go:357: /command/v1/chat/completions Authorization="[REDACTED]" X-Probe=""
+--- PASS: TestProbeNativeCredentialExpansion (0.04s)
+=== RUN   TestProbeIdleStateTransitions
+--- PASS: TestProbeIdleStateTransitions (0.92s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (1.39s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.70s)
+=== RUN   TestLiveReferenceProducerFrameRules
+--- PASS: TestLiveReferenceProducerFrameRules (0.87s)
+=== RUN   TestLiveProviderMutationsWithoutConfirmation
+--- PASS: TestLiveProviderMutationsWithoutConfirmation (2.23s)
+=== RUN   TestLiveGrepExplicitProviderFileAndLineSelection
+--- PASS: TestLiveGrepExplicitProviderFileAndLineSelection (1.37s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (1.19s)
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (1.06s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.68s)
+=== RUN   TestLiveIntegrationsAndResourcesCommandsListTheContributions
+--- PASS: TestLiveIntegrationsAndResourcesCommandsListTheContributions (0.71s)
+=== RUN   TestLiveStoredSearchKeyIsRedactedInJobLogs
+--- PASS: TestLiveStoredSearchKeyIsRedactedInJobLogs (3.07s)
+=== RUN   TestLivePromptSettingsControlTakeover
+=== RUN   TestLivePromptSettingsControlTakeover/force
+=== RUN   TestLivePromptSettingsControlTakeover/disabled
+=== RUN   TestLivePromptSettingsControlTakeover/auto
+--- PASS: TestLivePromptSettingsControlTakeover (2.54s)
+    --- PASS: TestLivePromptSettingsControlTakeover/force (0.78s)
+    --- PASS: TestLivePromptSettingsControlTakeover/disabled (0.86s)
+    --- PASS: TestLivePromptSettingsControlTakeover/auto (0.90s)
+=== RUN   TestLiveSummaryRespectsReadBudget
+=== RUN   TestLiveSummaryRespectsReadBudget/lines
+=== RUN   TestLiveSummaryRespectsReadBudget/bytes
+--- PASS: TestLiveSummaryRespectsReadBudget (1.71s)
+    --- PASS: TestLiveSummaryRespectsReadBudget/lines (0.92s)
+    --- PASS: TestLiveSummaryRespectsReadBudget/bytes (0.79s)
+=== RUN   TestLiveSchemeCommandRefusesQuotedComposition
+--- PASS: TestLiveSchemeCommandRefusesQuotedComposition (0.79s)
+=== RUN   TestLiveQuotedSchemeCommandDoesNotRunComposedShell
+--- PASS: TestLiveQuotedSchemeCommandDoesNotRunComposedShell (0.74s)
+=== RUN   TestLiveSchemeRedirectUsesControlWrite
+--- PASS: TestLiveSchemeRedirectUsesControlWrite (0.84s)
+=== RUN   TestLiveControlWriteRejectsRevisionBeforeSideEffect
+--- PASS: TestLiveControlWriteRejectsRevisionBeforeSideEffect (2.83s)
+=== RUN   TestLiveFindWalksScratchWithoutFollowingLinks
+--- PASS: TestLiveFindWalksScratchWithoutFollowingLinks (11.86s)
+=== RUN   TestLiveLocalReadCannotEscapeScratch
+--- PASS: TestLiveLocalReadCannotEscapeScratch (11.36s)
+=== RUN   TestLiveGrepEmitsRequestedContext
+--- PASS: TestLiveGrepEmitsRequestedContext (0.80s)
+=== RUN   TestLiveGrepKeepsMatchWhenContextIsOversized
+--- PASS: TestLiveGrepKeepsMatchWhenContextIsOversized (0.75s)
+=== RUN   TestLiveGrepContextHonoursOutputBudget
+--- PASS: TestLiveGrepContextHonoursOutputBudget (0.79s)
+=== RUN   TestLiveGrepReportsWindowAroundLongLineMatch
+--- PASS: TestLiveGrepReportsWindowAroundLongLineMatch (0.80s)
+=== RUN   TestLiveGrepAcceptsLiteralPatternList
+--- PASS: TestLiveGrepAcceptsLiteralPatternList (0.92s)
+=== RUN   TestLiveEditRefusesLinesTheModelNeverSaw
+--- PASS: TestLiveEditRefusesLinesTheModelNeverSaw (0.82s)
+=== RUN   TestLiveEditModeRestrictsAcceptedSyntax
+=== RUN   TestLiveEditModeRestrictsAcceptedSyntax/hashline
+=== RUN   TestLiveEditModeRestrictsAcceptedSyntax/replace
+--- PASS: TestLiveEditModeRestrictsAcceptedSyntax (1.54s)
+    --- PASS: TestLiveEditModeRestrictsAcceptedSyntax/hashline (0.76s)
+    --- PASS: TestLiveEditModeRestrictsAcceptedSyntax/replace (0.78s)
+=== RUN   TestLiveEditSeenGuardCanBeDisabledByUser
+--- PASS: TestLiveEditSeenGuardCanBeDisabledByUser (0.89s)
+=== RUN   TestLiveEditRelocatesOnlyWhenTheTargetIsUnambiguous
+--- PASS: TestLiveEditRelocatesOnlyWhenTheTargetIsUnambiguous (1.00s)
+=== RUN   TestLiveEditAnOlderTagRecoversAgainstTheNewestSnapshot
+--- PASS: TestLiveEditAnOlderTagRecoversAgainstTheNewestSnapshot (1.06s)
+=== RUN   TestLiveTaggedBatchRequiresEveryTargetsInstructions
+--- PASS: TestLiveTaggedBatchRequiresEveryTargetsInstructions (1.02s)
+=== RUN   TestLiveTaggedMoveRequiresDestinationInstructions
+--- PASS: TestLiveTaggedMoveRequiresDestinationInstructions (0.89s)
+=== RUN   TestLiveBlockCutPastesIntoAnotherFileThroughARegister
+--- PASS: TestLiveBlockCutPastesIntoAnotherFileThroughARegister (0.79s)
+=== RUN   TestLiveEditRefusesALineTheReadBudgetCutInHalf
+--- PASS: TestLiveEditRefusesALineTheReadBudgetCutInHalf (0.79s)
+=== RUN   TestLiveBlockReplaceUsesSyntaxBoundariesAndRefusesAnUnanchoredLine
+--- PASS: TestLiveBlockReplaceUsesSyntaxBoundariesAndRefusesAnUnanchoredLine (0.84s)
+=== RUN   TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead
+--- PASS: TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead (0.84s)
+=== RUN   TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut
+--- PASS: TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut (0.82s)
+=== RUN   TestLiveProviderRequestsNeverCarryAKnownSecret
+--- PASS: TestLiveProviderRequestsNeverCarryAKnownSecret (2.83s)
+=== RUN   TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder
+--- PASS: TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder (0.80s)
+=== RUN   TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted
+--- PASS: TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted (0.84s)
+=== RUN   TestLiveBrokenSecretsPolicySendsNothingToTheProvider
+--- PASS: TestLiveBrokenSecretsPolicySendsNothingToTheProvider (3.01s)
+=== RUN   TestLiveABackgroundBashCallDoesNotTriggerTheWithheldNotice
+--- PASS: TestLiveABackgroundBashCallDoesNotTriggerTheWithheldNotice (2.89s)
+=== RUN   TestLiveServiceFailuresRPC
+--- PASS: TestLiveServiceFailuresRPC (0.39s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (1.20s)
+=== RUN   TestLiveSessionEndpointSettingsAtStartup
+=== RUN   TestLiveSessionEndpointSettingsAtStartup/disabled
+=== RUN   TestLiveSessionEndpointSettingsAtStartup/hidden
+=== RUN   TestLiveSessionEndpointSettingsAtStartup/default
+--- PASS: TestLiveSessionEndpointSettingsAtStartup (2.51s)
+    --- PASS: TestLiveSessionEndpointSettingsAtStartup/disabled (0.85s)
+    --- PASS: TestLiveSessionEndpointSettingsAtStartup/hidden (0.83s)
+    --- PASS: TestLiveSessionEndpointSettingsAtStartup/default (0.83s)
+=== RUN   TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes
+--- PASS: TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes (2.09s)
+=== RUN   TestLiveAgentReplyIncrementsHopAndStopsWake
+--- PASS: TestLiveAgentReplyIncrementsHopAndStopsWake (2.63s)
+=== RUN   TestLiveBusyReceiverIsSteeredNotWoken
+--- PASS: TestLiveBusyReceiverIsSteeredNotWoken (5.13s)
+=== RUN   TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider
+--- PASS: TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider (1.88s)
+=== RUN   TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking
+--- PASS: TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking (1.48s)
+=== RUN   TestLiveWaitingReceiverGetsTheMessageAsTheReadResult
+--- PASS: TestLiveWaitingReceiverGetsTheMessageAsTheReadResult (2.45s)
+=== RUN   TestLiveExtensionChannelReachesTheOtherSessionsExtensionWithoutWakingIt
+--- PASS: TestLiveExtensionChannelReachesTheOtherSessionsExtensionWithoutWakingIt (2.04s)
+=== RUN   TestLiveSessionsCommandSendsRedactsAndHonoursBlock
+--- PASS: TestLiveSessionsCommandSendsRedactsAndHonoursBlock (1.83s)
+=== RUN   TestLiveEveryCompletedCommandIsAcceptedByItsHandler
+--- PASS: TestLiveEveryCompletedCommandIsAcceptedByItsHandler (0.75s)
+=== RUN   TestLiveActivitySettingsControlWidget
+=== RUN   TestLiveActivitySettingsControlWidget/above
+=== RUN   TestLiveActivitySettingsControlWidget/below
+=== RUN   TestLiveActivitySettingsControlWidget/disabled
+--- PASS: TestLiveActivitySettingsControlWidget (4.36s)
+    --- PASS: TestLiveActivitySettingsControlWidget/above (1.26s)
+    --- PASS: TestLiveActivitySettingsControlWidget/below (1.15s)
+    --- PASS: TestLiveActivitySettingsControlWidget/disabled (1.95s)
+=== RUN   TestLiveActivityLineCountsMatchTheRegistries
+    live_sessions_test.go:633: no setWidget record was observed in RPC mode; the line is verified through the shared items
+--- PASS: TestLiveActivityLineCountsMatchTheRegistries (2.81s)
+=== RUN   TestLiveACrashedSessionsRecordIsPrunedByTheNextStart
+--- PASS: TestLiveACrashedSessionsRecordIsPrunedByTheNextStart (1.38s)
+=== RUN   TestLiveStoredSessionTitleRequiresConfirmation
+--- PASS: TestLiveStoredSessionTitleRequiresConfirmation (1.15s)
+=== RUN   TestLiveStoredSessionsAreListedReadAndTitled
+--- PASS: TestLiveStoredSessionsAreListedReadAndTitled (1.11s)
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets/lines
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets/bytes
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/summaries
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/summaries/read.summarize.enabled
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/summaries/read.summarize.min-total-lines
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode/hashline
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode/replace
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/edit-seen
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/instructions
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/enabled-validate
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/enabled-no-validation
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/disabled
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/instruction-context
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/job-timeout
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/ask-timeout
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/disabled
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/hidden
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/default
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/messaging
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/hops
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/secrets
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/secrets-grants
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/trust
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/storage
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/activity
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/activity/above
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/activity/below
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/activity/disabled
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/prompt
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/force
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/disabled
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/auto
+=== RUN   TestLiveCatalogSettingsHaveBehavioralConsumers/skills
+--- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers (24.12s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets (1.61s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets/lines (0.81s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/read-budgets/bytes (0.80s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/summaries (0.16s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/summaries/read.summarize.enabled (0.00s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/summaries/read.summarize.min-total-lines (0.00s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode (1.51s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode/hashline (0.74s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/edit-mode/replace (0.77s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/edit-seen (0.85s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/instructions (2.63s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/enabled-validate (0.78s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/enabled-no-validation (0.94s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/instructions/disabled (0.91s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/instruction-context (0.00s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/job-timeout (3.85s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/ask-timeout (1.12s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint (2.15s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/disabled (0.73s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/hidden (0.70s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/endpoint/default (0.72s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/messaging (0.00s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/hops (1.33s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/secrets (0.00s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/secrets-grants (0.04s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/trust (0.81s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/storage (0.72s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/activity (4.36s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/activity/above (1.26s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/activity/below (1.16s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/activity/disabled (1.94s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/prompt (2.34s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/force (0.73s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/disabled (0.84s)
+        --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/prompt/auto (0.77s)
+    --- PASS: TestLiveCatalogSettingsHaveBehavioralConsumers/skills (0.65s)
+=== RUN   TestLiveSkillsListingBudgetChangesTheCommandOutput
+--- PASS: TestLiveSkillsListingBudgetChangesTheCommandOutput (0.63s)
+=== RUN   TestLiveSettingsScopesAndReload
+--- PASS: TestLiveSettingsScopesAndReload (0.77s)
+=== RUN   TestLiveSessionStorageIsSharedThenUnlinked
+--- PASS: TestLiveSessionStorageIsSharedThenUnlinked (1.05s)
+=== RUN   TestLiveSessionStorageCanBeDisabled
+--- PASS: TestLiveSessionStorageCanBeDisabled (0.79s)
+=== RUN   TestLiveAnotherLiveSessionInTheDirectoryDefersConversion
+--- PASS: TestLiveAnotherLiveSessionInTheDirectoryDefersConversion (1.01s)
+=== RUN   TestLiveTwoCheckoutsShareSessionsAndTheCatalogListsEachOnce
+--- PASS: TestLiveTwoCheckoutsShareSessionsAndTheCatalogListsEachOnce (1.47s)
+=== RUN   TestLiveReadLocationAndCodemode
+--- PASS: TestLiveReadLocationAndCodemode (1.22s)
+=== RUN   TestLiveWriteRevisionAndLs
+--- PASS: TestLiveWriteRevisionAndLs (0.92s)
+=== RUN   TestLiveSessionResources
+--- PASS: TestLiveSessionResources (0.81s)
+=== RUN   TestWebSearchRendersTypedURICellsAtEveryWidth
+--- PASS: TestWebSearchRendersTypedURICellsAtEveryWidth (0.00s)
+=== RUN   TestPresentationHostileTerminalBytesNeverReachTheRow
+--- PASS: TestPresentationHostileTerminalBytesNeverReachTheRow (0.00s)
+=== RUN   TestPresentationPlainRowPerLifecycleState
+--- PASS: TestPresentationPlainRowPerLifecycleState (0.00s)
+=== RUN   TestPresentationUnusableDetailsKeepTheRawResult
+--- PASS: TestPresentationUnusableDetailsKeepTheRawResult (0.00s)
+=== RUN   TestProjectIdentityUsesTheParentProject
+--- PASS: TestProjectIdentityUsesTheParentProject (0.00s)
+=== RUN   TestPromptOverrideStaysOffUnlessForced
+--- PASS: TestPromptOverrideStaysOffUnlessForced (0.00s)
+=== RUN   TestWalkReplaceChangesOnlyTheExactServedPrompt
+--- PASS: TestWalkReplaceChangesOnlyTheExactServedPrompt (0.00s)
+=== RUN   TestPromptEpochIsStableForTheSameText
+--- PASS: TestPromptEpochIsStableForTheSameText (0.00s)
+=== RUN   TestPromptEpochChangesWhenTheToolListChanges
+--- PASS: TestPromptEpochChangesWhenTheToolListChanges (0.00s)
+=== RUN   TestRenderErrorDoesNotReplaceTheHostPrompt
+--- PASS: TestRenderErrorDoesNotReplaceTheHostPrompt (0.00s)
+=== RUN   TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch
+--- PASS: TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch (0.00s)
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/duplicate_effects
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/wrong_correlation
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/missing_destination
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/unexpected_resource
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/not_applied_with_effects
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/unknown_reported_committed
+--- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/duplicate_effects (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/wrong_correlation (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/missing_destination (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/unexpected_resource (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/not_applied_with_effects (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/unknown_reported_committed (0.00s)
+=== RUN   TestSchemeCommandParsesQuotedAndEscapedStaticPaths
+--- PASS: TestSchemeCommandParsesQuotedAndEscapedStaticPaths (0.00s)
+=== RUN   TestSchemeCommandAcceptsStandaloneVerbsOnly
+--- PASS: TestSchemeCommandAcceptsStandaloneVerbsOnly (0.00s)
+=== RUN   TestSessionScratchKeysDoNotCollide
+--- PASS: TestSessionScratchKeysDoNotCollide (0.00s)
+=== RUN   TestSecretsBoundaryCreatesKeyAndRedactsDetectedTokens
+--- PASS: TestSecretsBoundaryCreatesKeyAndRedactsDetectedTokens (0.00s)
+=== RUN   TestSecretsBoundaryRecoversWithoutRestartAfterAFailedBuild
+--- PASS: TestSecretsBoundaryRecoversWithoutRestartAfterAFailedBuild (0.00s)
+=== RUN   TestSecretsBoundaryHonoursTheEnabledSetting
+--- PASS: TestSecretsBoundaryHonoursTheEnabledSetting (0.00s)
+=== RUN   TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery
+--- PASS: TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery (0.00s)
+=== RUN   TestSecretsBoundaryLearnsNamedEnvironmentAndEnvFilesUpToTheRepositoryRoot
+--- PASS: TestSecretsBoundaryLearnsNamedEnvironmentAndEnvFilesUpToTheRepositoryRoot (0.00s)
+=== RUN   TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral
+--- PASS: TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral (0.00s)
+=== RUN   TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates
+--- PASS: TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates (0.00s)
+=== RUN   TestRedactResultPatchesBlocksAndKeepsOpaqueOnes
+--- PASS: TestRedactResultPatchesBlocksAndKeepsOpaqueOnes (0.00s)
+=== RUN   TestRedactResultWithholdsOutputWhenTheBoundaryFails
+--- PASS: TestRedactResultWithholdsOutputWhenTheBoundaryFails (0.00s)
+=== RUN   TestSeenStateSurvivesRedactionOfTheDeliveredBlock
+--- PASS: TestSeenStateSurvivesRedactionOfTheDeliveredBlock (0.00s)
+=== RUN   TestUserBashSubstitutesPlaceholdersAndRedactsOutput
+--- PASS: TestUserBashSubstitutesPlaceholdersAndRedactsOutput (0.00s)
+=== RUN   TestRedactContextCleansTheSystemMessageAndOtherMessages
+--- PASS: TestRedactContextCleansTheSystemMessageAndOtherMessages (0.00s)
+=== RUN   TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure
+--- PASS: TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure (0.04s)
+=== RUN   TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning
+--- PASS: TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning (0.00s)
+=== RUN   TestDiscoveryAndLocation
+--- PASS: TestDiscoveryAndLocation (0.00s)
+=== RUN   TestCancellationIsOwnerScoped
+--- PASS: TestCancellationIsOwnerScoped (0.00s)
+=== RUN   TestCfgProviderExposesSettings
+--- PASS: TestCfgProviderExposesSettings (0.00s)
+=== RUN   TestArtifactProviderResolvesProjectTree
+--- PASS: TestArtifactProviderResolvesProjectTree (0.00s)
+=== RUN   TestCfgProviderServesIntegrationsPerOwner
+--- PASS: TestCfgProviderServesIntegrationsPerOwner (0.00s)
+=== RUN   TestDedupeByIDKeepsTheFirstOfEachSession
+--- PASS: TestDedupeByIDKeepsTheFirstOfEachSession (0.00s)
+=== RUN   TestShortIDsOfSessionsStartedTogetherDiffer
+--- PASS: TestShortIDsOfSessionsStartedTogetherDiffer (0.00s)
+=== RUN   TestSessionMessageSettingsAffectDelivery
+--- PASS: TestSessionMessageSettingsAffectDelivery (0.00s)
+=== RUN   TestSkillReadLoadsAndUnloadDeclines
+--- PASS: TestSkillReadLoadsAndUnloadDeclines (0.00s)
+=== RUN   TestReadVisibilityRequiresIntactDeliveredBlock
+--- PASS: TestReadVisibilityRequiresIntactDeliveredBlock (0.00s)
+=== RUN   TestAnnotationOrderCannotChangeSeenVisibility
+--- PASS: TestAnnotationOrderCannotChangeSeenVisibility (0.00s)
+=== RUN   TestSummaryViewHonoursSettings
+=== RUN   TestSummaryViewHonoursSettings/read.summarize.enabled
+=== RUN   TestSummaryViewHonoursSettings/read.summarize.min-total-lines
+--- PASS: TestSummaryViewHonoursSettings (0.01s)
+    --- PASS: TestSummaryViewHonoursSettings/read.summarize.enabled (0.00s)
+    --- PASS: TestSummaryViewHonoursSettings/read.summarize.min-total-lines (0.00s)
+=== RUN   TestSummaryViewFoldsBodiesOnly
+--- PASS: TestSummaryViewFoldsBodiesOnly (0.24s)
+=== RUN   TestDecideTrustNearestRuleWinsAndDenyBeatsAllowAtEqualDepth
+--- PASS: TestDecideTrustNearestRuleWinsAndDenyBeatsAllowAtEqualDepth (0.00s)
+=== RUN   TestExistingRevisionIncludesBytesBeyondSnapshotLimit
+--- PASS: TestExistingRevisionIncludesBytesBeyondSnapshotLimit (0.02s)
+=== RUN   TestAtomicWriteFileRefusesRacingDestination
+--- PASS: TestAtomicWriteFileRefusesRacingDestination (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	223.301s
