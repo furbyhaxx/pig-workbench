@@ -1,0 +1,14 @@
+=== RUN   TestLiveGrepKeepsMatchWhenContextIsOversized
+--- PASS: TestLiveGrepKeepsMatchWhenContextIsOversized (0.81s)
+=== RUN   TestLiveGrepContextHonoursOutputBudget
+--- PASS: TestLiveGrepContextHonoursOutputBudget (0.97s)
+=== RUN   TestLiveGrepKeepsMatchWhenContextIsOversized
+--- PASS: TestLiveGrepKeepsMatchWhenContextIsOversized (0.83s)
+=== RUN   TestLiveGrepContextHonoursOutputBudget
+--- PASS: TestLiveGrepContextHonoursOutputBudget (0.90s)
+=== RUN   TestLiveGrepKeepsMatchWhenContextIsOversized
+--- PASS: TestLiveGrepKeepsMatchWhenContextIsOversized (0.77s)
+=== RUN   TestLiveGrepContextHonoursOutputBudget
+--- PASS: TestLiveGrepContextHonoursOutputBudget (0.81s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	6.110s

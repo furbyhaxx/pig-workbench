@@ -27,15 +27,16 @@ type ContextLine struct {
 
 // Match is one exact source match.
 type Match struct {
-	Path        string        `json:"path"`
-	Revision    string        `json:"revision,omitempty"`
-	Line        int           `json:"line"`
-	Column      int           `json:"column"`
-	Text        string        `json:"text"`
-	Windowed    bool          `json:"windowed,omitempty"`
-	WindowStart int           `json:"windowStart,omitempty"`
-	Before      []ContextLine `json:"before,omitempty"`
-	After       []ContextLine `json:"after,omitempty"`
+	Path             string        `json:"path"`
+	Revision         string        `json:"revision,omitempty"`
+	Line             int           `json:"line"`
+	Column           int           `json:"column"`
+	Text             string        `json:"text"`
+	Windowed         bool          `json:"windowed,omitempty"`
+	WindowStart      int           `json:"windowStart,omitempty"`
+	ContextTruncated bool          `json:"contextTruncated,omitempty"`
+	Before           []ContextLine `json:"before,omitempty"`
+	After            []ContextLine `json:"after,omitempty"`
 }
 
 // Result reports what was searched and whether the bound was reached.
@@ -174,6 +175,16 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 func appendMatches(result *Result, matches []Match, limit int, remainingBytes, remainingLines *int) bool {
 	for _, match := range matches {
 		bytes, lines := matchBudget(match)
+		for (bytes > *remainingBytes || lines > *remainingLines) && len(match.Before)+len(match.After) > 0 {
+			if len(match.Before) >= len(match.After) {
+				match.Before = match.Before[1:]
+			} else {
+				match.After = match.After[:len(match.After)-1]
+			}
+			match.ContextTruncated = true
+			result.Complete = false
+			bytes, lines = matchBudget(match)
+		}
 		if len(result.Matches) >= limit || bytes > *remainingBytes || lines > *remainingLines {
 			result.Complete = false
 			return false

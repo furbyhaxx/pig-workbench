@@ -382,6 +382,19 @@ func TestLiveGrepEmitsRequestedContext(t *testing.T) {
 	}
 }
 
+func TestLiveGrepKeepsMatchWhenContextIsOversized(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "context.txt"), []byte(strings.Repeat("x", 100000)+"\nneedle\nafter\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "grep", func([]string) scriptedCall {
+		return scriptedCall{"grep", map[string]any{"pattern": "needle", "path": "context.txt", "context": 1}}
+	})
+	if len(results) != 1 || len(results[0]) > 50<<10 || !strings.Contains(results[0], ":2:1: needle") || !strings.Contains(results[0], "context truncated") {
+		t.Fatalf("oversized context hid the match or its truncation: %v", results)
+	}
+}
+
 func TestLiveGrepContextHonoursOutputBudget(t *testing.T) {
 	root := t.TempDir()
 	project := filepath.Join(root, "project")
@@ -394,7 +407,7 @@ func TestLiveGrepContextHonoursOutputBudget(t *testing.T) {
 	results := runScripted(t, root, "grep", func([]string) scriptedCall {
 		return scriptedCall{"grep", map[string]any{"pattern": "needle", "path": project, "context": 2}}
 	})
-	if len(results) != 1 || len(results[0]) > 50<<10 || !strings.Contains(results[0], "results truncated") {
+	if len(results) != 1 || len(results[0]) > 50<<10 || !strings.Contains(results[0], "results incomplete") {
 		t.Fatalf("context exceeded the budget or hid truncation: %v bytes, %v results", len(strings.Join(results, "")), len(results))
 	}
 }

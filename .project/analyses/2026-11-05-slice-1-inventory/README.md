@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 22
+  revision: 23
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T09:53:29+01:00"
+  updated_at: "2026-11-07T09:56:16+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -77,6 +77,9 @@ document:
     - revision: 22
       reason: "Search provider files with line selectors"
       changes: ["Recorded real-host explicit file and source-coordinate selection tests"]
+    - revision: 23
+      reason: "Preserve matches when grep context exceeds its output budget"
+      changes: ["Recorded real-host bounded context reduction without hiding matching lines"]
 ---
 
 # Scope and evidence
@@ -94,7 +97,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration. Full policy and mutation acceptance is not established. |
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
-| 0006 §2–§4, §6–§7 | S1 D | Read, literal OR search and bounded context are exercised in [grep-context.log](evidence/grep-context.log); long-line windows are covered in [grep-long-lines.log](evidence/grep-long-lines.log) and [grep-long-lines-live.log](evidence/grep-long-lines-live.log). Provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log); provider grep and source pagination are in [provider-grep-live.log](evidence/provider-grep-live.log) and [provider-grep.log](evidence/provider-grep.log). | Explicit provider-file selection is covered by [provider-grep-files.log](evidence/provider-grep-files.log); oversized requested context may still omit a match. Loop guard and supersession need implementation or evidence. |
+| 0006 §2–§4, §6–§7 | S1 D | Read, literal OR search and bounded context are exercised in [grep-context.log](evidence/grep-context.log); long-line windows are covered in [grep-long-lines.log](evidence/grep-long-lines.log) and [grep-long-lines-live.log](evidence/grep-long-lines-live.log). Provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log); provider grep and source pagination are in [provider-grep-live.log](evidence/provider-grep-live.log) and [provider-grep.log](evidence/provider-grep.log). | Explicit provider-file selection is covered by [provider-grep-files.log](evidence/provider-grep-files.log); oversized context preservation is covered by [grep-context-preserve.log](evidence/grep-context-preserve.log). Loop guard and supersession need implementation or evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead` exercises repeated refusal, partial reads and recovery ([instruction-barrier.log](evidence/instruction-barrier.log)); tagged batch sources and move destinations are covered in [tagged-instruction-union.log](evidence/tagged-instruction-union.log). | Remaining acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. Control redirects and confirmation parity are in [control-redirect.log](evidence/control-redirect.log); quoted-path routing and refusal of shell composition are in [scheme-parser-live.log](evidence/scheme-parser-live.log). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one static word; full provider routing and general redirect syntax are not implemented. Dynamic shell-generated paths cannot always be recognized. |
@@ -121,6 +124,6 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
-- G8.20 provider mutations, general redirect syntax and oversized grep context are not complete. The task list retains them; no acceptance row above should be read as a waiver.
+- G8.20 provider mutations and general redirect syntax are not complete. The task list retains them; no acceptance row above should be read as a waiver.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

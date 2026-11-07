@@ -128,6 +128,9 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	var body strings.Builder
 	for _, match := range result.Matches {
 		path := plainLine(match.Path)
+		if match.ContextTruncated {
+			body.WriteString("… surrounding context truncated\n")
+		}
 		for _, line := range match.Before {
 			_, _ = fmt.Fprintf(&body, "%s-%d- %s\n", path, line.Line, plainLine(line.Text))
 		}
