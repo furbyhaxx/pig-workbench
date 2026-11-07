@@ -83,6 +83,8 @@ Local `grep` and `find` honor repository and nested `.gitignore` rules, includin
 
 `patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. `context` emits up to ten source lines on either side of each match, marked separately from matching lines. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match, file or output limit reports `complete: false` — never a silent "that is all". Long matching lines are shown as UTF-8-safe windows with their original byte column and window start; this makes the result incomplete. Requested context that cannot fit is reduced first, preserving matching lines where possible and marking the result incomplete. Registered provider directory roots are walked with depth, entry, time and source-byte limits. Links, control files and `noWalk` subtrees are skipped; incomplete, changing or oversized provider files are reported as skipped rather than searched partially. Explicit provider-file targets and line selectors keep source coordinates; directory roots do not accept line selectors. Provider files are read within source limits before selected lines are searched.
 
+Search globs (including exclusions) support `*`, `?`, character classes such as `[ab]`, brace alternatives such as `*.{go,md}`, and `**` as a whole path component. Use `/` separators on every platform. Patterns without `/` match names at any walked depth; slash patterns also match paths relative to the explicit root. `**/*.go` includes root-level files. Malformed patterns fail before traversal; glob syntax never expands the search root.
+
 ## `find`
 
 ```text

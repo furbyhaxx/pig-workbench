@@ -13,6 +13,7 @@ require (
 require (
 	codeberg.org/readeck/go-readability/v2 v2.1.3
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2
+	github.com/bmatcuk/doublestar/v4 v4.10.4
 	github.com/boyter/gocodewalker v1.5.1
 	github.com/nikolalohinski/gonja/v2 v2.9.1
 	github.com/odvcencio/gotreesitter v0.56.0

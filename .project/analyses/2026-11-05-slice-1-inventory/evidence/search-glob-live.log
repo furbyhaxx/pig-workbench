@@ -1,0 +1,8 @@
+=== RUN   TestLiveSearchGlobDialectAcrossLocalAndProviderRoots
+--- PASS: TestLiveSearchGlobDialectAcrossLocalAndProviderRoots (1.37s)
+=== RUN   TestLiveSearchGlobDialectAcrossLocalAndProviderRoots
+--- PASS: TestLiveSearchGlobDialectAcrossLocalAndProviderRoots (0.85s)
+=== RUN   TestLiveSearchGlobDialectAcrossLocalAndProviderRoots
+--- PASS: TestLiveSearchGlobDialectAcrossLocalAndProviderRoots (0.89s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	4.131s

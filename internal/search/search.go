@@ -79,6 +79,9 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 	if len(options.Patterns) == 0 {
 		return Result{}, errors.New("search needs at least one pattern")
 	}
+	if err := validateGlobs(options.Glob, options.Exclude); err != nil {
+		return Result{}, err
+	}
 	limits := options.Limits
 	if limits.MaxMatches <= 0 {
 		limits.MaxMatches = 200
@@ -122,7 +125,7 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if entry.IsDir() && path != options.Root && (entry.Name() == ".git" || excluded(path, options.Exclude)) {
+		if entry.IsDir() && path != options.Root && (entry.Name() == ".git" || excluded(options.Root, path, options.Exclude)) {
 			return fs.SkipDir
 		}
 		ignored, err := ignores.visit(ctx, path, entry)
@@ -141,16 +144,10 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		if !entry.Type().IsRegular() {
 			return nil
 		}
-		if options.Glob != "" {
-			matched, err := filepath.Match(options.Glob, entry.Name())
-			if err != nil {
-				return fmt.Errorf("%w: glob %q", ErrInvalidPattern, options.Glob)
-			}
-			if !matched {
-				return nil
-			}
+		if options.Glob != "" && !matchGlob(options.Glob, options.Root, path, entry.Name()) {
+			return nil
 		}
-		if path != options.Root && excluded(path, options.Exclude) {
+		if path != options.Root && excluded(options.Root, path, options.Exclude) {
 			return nil
 		}
 		if result.FilesScanned >= limits.MaxFiles {
@@ -225,10 +222,8 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 	if options.Root == "" || len(options.Patterns) == 0 {
 		return Result{}, errors.New("search needs a root and at least one pattern")
 	}
-	if options.Glob != "" {
-		if _, err := filepath.Match(options.Glob, "probe"); err != nil {
-			return Result{}, fmt.Errorf("%w: glob %q", ErrInvalidPattern, options.Glob)
-		}
+	if err := validateGlobs(options.Glob, options.Exclude); err != nil {
+		return Result{}, err
 	}
 	limits := options.Limits
 	if limits.MaxMatches <= 0 {
@@ -249,17 +244,14 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 	result := Result{Complete: true}
 	remainingBytes, remainingLines, sourceBudget := 48<<10, 1900, int64(16<<20)
 	visit := func(entry resource.Entry, _ int) (resource.WalkAction, error) {
-		if entry.Name == ".git" || excluded(entry.URI, options.Exclude) {
+		if entry.Name == ".git" || excluded(options.Root, entry.URI, options.Exclude) {
 			return resource.WalkSkipDir, nil
 		}
 		if entry.Kind != resource.EntryFile || entry.NoWalk {
 			return resource.WalkContinue, nil
 		}
-		if options.Glob != "" {
-			matched, _ := filepath.Match(options.Glob, entry.Name)
-			if !matched {
-				return resource.WalkContinue, nil
-			}
+		if options.Glob != "" && !matchGlob(options.Glob, options.Root, entry.URI, entry.Name) {
+			return resource.WalkContinue, nil
 		}
 		if result.FilesScanned >= limits.MaxFiles || sourceBudget <= 0 {
 			result.Complete = false
@@ -554,21 +546,6 @@ func looksBinary(data []byte) bool {
 	return strings.IndexByte(string(probe), 0) >= 0
 }
 
-func excluded(path string, patterns []string) bool {
-	base := filepath.Base(path)
-	for _, pattern := range patterns {
-		if matched, err := filepath.Match(pattern, base); err == nil && matched {
-			return true
-		}
-		if strings.Contains(pattern, "/") {
-			if matched, err := filepath.Match(pattern, path); err == nil && matched {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // FindEntry is one walked path.
 type FindEntry struct {
 	Path string `json:"path"`
@@ -588,8 +565,8 @@ func FindProvider(ctx context.Context, provider resource.Provider, root, pattern
 	if pattern == "" {
 		return FindResult{}, errors.New("find pattern is empty")
 	}
-	if _, err := filepath.Match(pattern, "probe"); err != nil {
-		return FindResult{}, fmt.Errorf("%w: glob %q", ErrInvalidPattern, pattern)
+	if err := validateGlobs(pattern, exclude); err != nil {
+		return FindResult{}, err
 	}
 	if limit <= 0 {
 		limit = 200
@@ -597,17 +574,13 @@ func FindProvider(ctx context.Context, provider resource.Provider, root, pattern
 	result := FindResult{}
 	remaining := 48 << 10
 	walk, err := resource.Walk(ctx, provider, root, func(entry resource.Entry, _ int) (resource.WalkAction, error) {
-		if entry.Name == ".git" || excluded(entry.URI, exclude) {
+		if entry.Name == ".git" || excluded(root, entry.URI, exclude) {
 			return resource.WalkSkipDir, nil
 		}
 		if entry.Kind == resource.EntryDir {
 			return resource.WalkContinue, nil
 		}
-		matched, err := filepath.Match(pattern, entry.Name)
-		if err != nil {
-			return resource.WalkStop, err
-		}
-		if !matched {
+		if !matchGlob(pattern, root, entry.URI, entry.Name) {
 			return resource.WalkContinue, nil
 		}
 		if len(result.Entries) >= limit || len(entry.URI)+1 > remaining {
@@ -632,8 +605,8 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 	if pattern == "" {
 		return FindResult{}, errors.New("find pattern is empty")
 	}
-	if _, err := filepath.Match(pattern, "probe"); err != nil {
-		return FindResult{}, fmt.Errorf("%w: glob %q", ErrInvalidPattern, pattern)
+	if err := validateGlobs(pattern, exclude); err != nil {
+		return FindResult{}, err
 	}
 	if limit <= 0 {
 		limit = 200
@@ -656,7 +629,7 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if path != root && entry.IsDir() && (entry.Name() == ".git" || excluded(path, exclude)) {
+		if path != root && entry.IsDir() && (entry.Name() == ".git" || excluded(root, path, exclude)) {
 			return fs.SkipDir
 		}
 		ignored, err := ignores.visit(ctx, path, entry)
@@ -669,15 +642,11 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 			}
 			return nil
 		}
-		if entry.IsDir() || path != root && excluded(path, exclude) {
+		if entry.IsDir() || path != root && excluded(root, path, exclude) {
 			return nil
 		}
 		result.Scanned++
-		matched, matchErr := filepath.Match(pattern, entry.Name())
-		if matchErr != nil {
-			return fmt.Errorf("%w: glob %q", ErrInvalidPattern, pattern)
-		}
-		if !matched {
+		if !matchGlob(pattern, root, path, entry.Name()) {
 			return nil
 		}
 		if len(result.Entries) >= limit {

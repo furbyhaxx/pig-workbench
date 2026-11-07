@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 32
+  revision: 33
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T18:45:58+01:00"
+  updated_at: "2026-11-07T18:59:06+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 32
-      reason: "Honor nested repository ignore rules before live evaluation"
-      changes: ["Integrated boyter/gocodewalker v1.5.1 go-gitignore (MIT) after checking the latest stable release and active maintained fork on 07.11.2026","Recorded its current fnmatch transitive dependency and BSD-2-Clause notice; used no full go-git module","Verified nested negation, explicit roots and bounded non-symlink ignore-file reads"]
+    - revision: 33
+      reason: "Complete the shared search glob dialect"
+      changes: ["Integrated maintained MIT doublestar/v4 v4.10.4 after latest release/API/supersession checks on 07.11.2026","Used matching only within the existing bounded root walk","Verified brace/class/doublestar parity and malformed-pattern refusal across local/provider searches"]
 ---
 
 # Scope and evidence
@@ -75,7 +75,8 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0006 §8.9 static URL policy/no billed question answering | PASS | Builtin HTTP and reference backend tests pass without inference spend. |
 | 0006 §8.10 performance | OPEN | Fresh bounded-memory/cache/listing measurements remain 17.8.7.3; remote/archive benchmarks depend on deferred backends. |
 | 0006 §7 repetition and supersession | PASS (implemented safety path) | Repeated read and history-preserving projection tests pass; the existing threshold setting must be wired in 17.8.2.4. |
-| 0006 §6 search ignores and glob dialect | PARTIAL | Nested .gitignore/negation and explicit-root semantics pass [real-host](evidence/search-ignore-live.log) and [safety](evidence/search-ignore-safety.log) tests. Glob dialect reconciliation remains 17.8.2.8. |
+| 0006 §6 search ignores and glob dialect | PASS | Nested .gitignore/negation and explicit-root semantics pass [real-host](evidence/search-ignore-live.log) and [safety](evidence/search-ignore-safety.log) tests. Brace/class/doublestar dialect parity and invalid-pattern safety pass [unit](evidence/search-glob-unit.log) and [real-host](evidence/search-glob-live.log) regressions. |
+| 0006 §6 listing/search output details | OPEN | Bounded ls/find output, explicit hidden-entry facts, Unicode literal byte columns and filename-only output are tracked as 17.8.2.11–13. |
 | 0012 §5.3 captured routing facts | PASS | Original current-location routing fails under concurrent cd ([repro](evidence/captured-provider-project-repro.log)); captured resource/search/fetch contexts and mutation revisions pass repeated real-host tests ([evidence](evidence/captured-provider-project.log)). |
 
 # Baseline gates

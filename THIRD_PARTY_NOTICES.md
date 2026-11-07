@@ -2,6 +2,34 @@
 
 Runtime dependencies are version-matched through Go modules. Latest release and maintenance/supersession checks were performed against the Go module proxy and upstream repositories on 03.11.2026 and rechecked on 05.11.2026. No upstream deprecation or replacement notice was found for these selected projects; gofrs/flock is the maintained successor to theckman/go-flock.
 
+## github.com/bmatcuk/doublestar/v4 v4.10.4
+
+Source: https://github.com/bmatcuk/doublestar. Latest stable release, source API and active maintenance were checked on 07.11.2026; no deprecation or replacement notice was found. Only matching/validation is used; the library never walks the filesystem on Workbench's behalf.
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2014 Bob Matcuk
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## github.com/boyter/gocodewalker v1.5.1 — go-gitignore
 
 Source: https://github.com/boyter/gocodewalker. Only its maintained fork of `denormal/go-gitignore` is imported. Stable version v1.5.1 and active upstream maintenance were checked on 07.11.2026; no supersession notice was found. The subpackage is MIT, copyright Denormal Limited; the module is MIT, copyright Ben Boyter.

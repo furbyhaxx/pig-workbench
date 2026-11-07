@@ -150,6 +150,54 @@ func TestIgnoreFilesAreBoundedAndNeverFollowSymlinks(t *testing.T) {
 	}
 }
 
+func TestSearchGlobDialectIsSharedByLocalAndProviderWalks(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a.go", "b.md", "c.txt", "nested/d.go", "nested/deep/e.md", "nested/f.txt"} {
+		write(t, root, name, "needle\n")
+	}
+	for pattern, want := range map[string]int{"*.{go,md}": 4, "**/*.{go,md}": 4, "nested/**/[de]*.{go,md}": 2, "nested/*.go": 1} {
+		t.Run(pattern, func(t *testing.T) {
+			found, err := Find(t.Context(), root, pattern, nil, 100)
+			if err != nil || len(found.Entries) != want {
+				t.Fatalf("local find: %+v %v want=%d", found, err, want)
+			}
+			remote, err := FindProvider(t.Context(), resource.FileProvider{}, resource.FileURI(root), pattern, nil, 100)
+			if err != nil || len(remote.Entries) != want {
+				t.Fatalf("provider find: %+v %v want=%d", remote, err, want)
+			}
+			options := Options{Root: root, Patterns: []string{"needle"}, Literal: true, Glob: pattern}
+			matches, err := Grep(t.Context(), options)
+			if err != nil || len(matches.Matches) != want {
+				t.Fatalf("local grep: %+v %v want=%d", matches, err, want)
+			}
+			options.Root = resource.FileURI(root)
+			other, err := GrepProvider(t.Context(), resource.FileProvider{}, options)
+			if err != nil || len(other.Matches) != want {
+				t.Fatalf("provider grep: %+v %v want=%d", other, err, want)
+			}
+		})
+	}
+	for _, bad := range []string{"[", "*.{go,md"} {
+		if _, err := Find(t.Context(), root, bad, nil, 100); !errors.Is(err, ErrInvalidPattern) {
+			t.Fatalf("bad glob accepted: %q %v", bad, err)
+		}
+	}
+	if _, err := Find(t.Context(), root, "*", []string{"["}, 100); !errors.Is(err, ErrInvalidPattern) {
+		t.Fatalf("malformed exclusion accepted: %v", err)
+	}
+	outside, err := Find(t.Context(), root, "../**/*.go", nil, 100)
+	if err != nil || len(outside.Entries) != 0 {
+		t.Fatalf("glob escaped the named root: %+v %v", outside, err)
+	}
+	filtered, err := Find(t.Context(), root, "**/*", []string{"nested/**"}, 100)
+	if err != nil || len(filtered.Entries) != 3 {
+		t.Fatalf("recursive exclusion not applied: %+v %v", filtered, err)
+	}
+}
+
 func TestGrepBoundsAndHonesty(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "a.go", "package a\n// Needle one\nfunc A() {}\n")

@@ -104,6 +104,35 @@ func TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd(t *testing.T) {
 	}
 }
 
+func TestLiveSearchGlobDialectAcrossLocalAndProviderRoots(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "src", "nested"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{"src/a.go": "needle go\n", "src/nested/b.md": "needle markdown\n", "src/nested/c.txt": "needle excluded\n"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results := runScriptedWith(t, root, "grep,find", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "src", "pattern": "**/*.{go,md}"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "src", "pattern": "needle", "glob": "**/[ab].{go,md}"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "kb://sources/", "pattern": "**/*.{go,md}"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/", "pattern": "alpha|bravo", "glob": "**/*.{go,md}"}}
+		},
+	)
+	if len(results) != 4 || !strings.Contains(results[0], "a.go") || !strings.Contains(results[0], "b.md") || strings.Contains(results[0], "c.txt") || !strings.Contains(results[1], "needle go") || !strings.Contains(results[1], "needle markdown") || strings.Contains(results[1], "needle excluded") || !strings.Contains(results[2], "kb://sources/nested/b.md") || !strings.Contains(results[3], "bravo") || !strings.Contains(results[3], "alpha") {
+		t.Fatalf("glob dialect mismatch: %v", results)
+	}
+}
+
 func TestLiveSearchHonoursGitignoreAndExplicitFileTargets(t *testing.T) {
 	root := t.TempDir()
 	if err := os.Mkdir(filepath.Join(root, ".git"), 0700); err != nil {
