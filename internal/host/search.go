@@ -23,7 +23,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"path":       map[string]any{"type": "string", "description": "Local file/directory or provider URI; default is the Workbench location."},
 			"glob":       map[string]any{"type": "string", "description": "File glob with *, ?, [class], {alternatives} and ** path components; use / separators."},
 			"exclude":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "File or directory name globs to skip."},
-			"filesOnly":  map[string]any{"type": "boolean", "description": "Return only the first match per file."},
+			"filesOnly":  map[string]any{"type": "boolean", "description": "Return distinct matching file paths without source text or context."},
 			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Number of surrounding source lines before and after each match."},
 			"limit":      map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum matches (default 200)."},
 		}, "oneOf": []any{
@@ -127,8 +127,21 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	var body strings.Builder
+	var paths []string
+	if input.FilesOnly {
+		paths = make([]string, 0, len(result.Matches))
+	}
+	seenPaths := make(map[string]bool)
 	for _, match := range result.Matches {
 		path := plainLine(match.Path)
+		if input.FilesOnly {
+			if !seenPaths[match.Path] {
+				body.WriteString(path + "\n")
+				paths = append(paths, match.Path)
+				seenPaths[match.Path] = true
+			}
+			continue
+		}
 		if match.ContextTruncated {
 			body.WriteString("… surrounding context truncated\n")
 		}
@@ -150,7 +163,13 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	if len(result.Skipped) > 0 {
 		_, _ = fmt.Fprintf(&body, "skipped %d unreadable, binary or oversized file(s)\n", len(result.Skipped))
 	}
-	return sdk.ToolResult{Content: body.String(), Details: map[string]any{"matches": result.Matches, "filesScanned": result.FilesScanned, "complete": result.Complete, "skipped": result.Skipped, "locationRevision": captured.Revision}}, nil
+	details := map[string]any{"filesScanned": result.FilesScanned, "complete": result.Complete, "skipped": result.Skipped, "locationRevision": captured.Revision}
+	if input.FilesOnly {
+		details["paths"] = paths
+	} else {
+		details["matches"] = result.Matches
+	}
+	return sdk.ToolResult{Content: body.String(), Details: details}, nil
 }
 
 type findParams struct {

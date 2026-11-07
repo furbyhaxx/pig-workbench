@@ -104,6 +104,24 @@ func TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd(t *testing.T) {
 	}
 }
 
+func TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("needle private source text\nneedle repeated\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScriptedWith(t, root, "grep", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "source.txt", "pattern": "needle", "filesOnly": true, "context": 2}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/a.md", "pattern": "alpha", "filesOnly": true}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "source.txt") || strings.Contains(results[0], "private source text") || strings.Contains(results[0], ":1:") || strings.Count(results[1], "kb://sources/a.md") != 1 || strings.Contains(results[1], "alpha") {
+		t.Fatalf("filesOnly leaked source or coordinates: %v", results)
+	}
+}
+
 func TestLiveCaseInsensitiveLiteralGrepKeepsSourceByteColumn(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "unicode.txt"), []byte("İ NEEDLE\n"), 0600); err != nil {

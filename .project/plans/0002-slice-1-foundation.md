@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 47
+  revision: 48
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T20:43:40+01:00"
+  updated_at: "2026-11-07T20:48:43+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 47
-      reason: "Keep Unicode case-insensitive literal columns in source coordinates"
-      changes: ["Reproduced byte-column drift after lowercasing multibyte prefixes", "Matched quoted literals against original source using RE2 Unicode folding", "Verified local/provider scanner parity and actual PiG output"]
+    - revision: 48
+      reason: "Make filename-only grep output honor its public contract"
+      changes: ["Returned distinct paths without source/context or line coordinates", "Avoided retaining or windowing source text for filesOnly", "Verified shared scanner and actual local/provider tool behavior"]
 ---
 
 # 1. Outcome

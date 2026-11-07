@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 37
+  revision: 38
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T20:43:40+01:00"
+  updated_at: "2026-11-07T20:48:43+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 37
-      reason: "Keep Unicode case-insensitive literal columns in source coordinates"
-      changes: ["Reproduced byte-column drift after lowercasing multibyte prefixes", "Matched quoted literals against original source using RE2 Unicode folding", "Verified local/provider scanner parity and actual PiG output"]
+    - revision: 38
+      reason: "Make filename-only grep output honor its public contract"
+      changes: ["Returned distinct paths without source/context or line coordinates", "Avoided retaining or windowing source text for filesOnly", "Verified shared scanner and actual local/provider tool behavior"]
 ---
 
 # Scope and evidence
@@ -76,7 +76,7 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0006 §8.10 performance | OPEN | Fresh bounded-memory/cache/listing measurements remain 17.8.7.3; remote/archive benchmarks depend on deferred backends. |
 | 0006 §7 repetition and supersession | PASS (implemented safety path) | Repeated read and history-preserving projection tests pass; the existing threshold setting must be wired in 17.8.2.4. |
 | 0006 §6 search ignores and glob dialect | PASS | Nested .gitignore/negation and explicit-root semantics pass [real-host](evidence/search-ignore-live.log) and [safety](evidence/search-ignore-safety.log) tests. Brace/class/doublestar dialect parity and invalid-pattern safety pass [unit](evidence/search-glob-unit.log) and [real-host](evidence/search-glob-live.log) regressions. |
-| 0006 §6 listing/search output details | OPEN | Bounded ls/find output and explicit hidden-entry facts pass [safety](evidence/list-output-safety.log), [actual PiG](evidence/list-output-live.log) and [find path-byte](evidence/find-output-bytes.log) cases. Unicode literal byte columns pass [scanner](evidence/literal-case-columns-unit.log) and [actual PiG](evidence/literal-case-columns-live.log) regressions. Filename-only output remains 17.8.2.13. |
+| 0006 §6 listing/search output details | PASS (covered modes) | Bounded ls/find output and explicit hidden-entry facts pass [safety](evidence/list-output-safety.log), [actual PiG](evidence/list-output-live.log) and [find path-byte](evidence/find-output-bytes.log) cases. Unicode literal byte columns pass [scanner](evidence/literal-case-columns-unit.log) and [actual PiG](evidence/literal-case-columns-live.log) regressions. Filename-only output passes [scanner](evidence/grep-files-only-unit.log) and [actual PiG](evidence/grep-files-only-live.log) tests without retaining source/context. |
 | 0012 §5.3 captured routing facts | PASS | Original current-location routing fails under concurrent cd ([repro](evidence/captured-provider-project-repro.log)); captured resource/search/fetch contexts and mutation revisions pass repeated real-host tests ([evidence](evidence/captured-provider-project.log)). |
 
 # Baseline gates

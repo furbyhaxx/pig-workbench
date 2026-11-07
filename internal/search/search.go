@@ -163,9 +163,6 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 			return err
 		}
 		result.FilesScanned += scanned
-		if options.FilesOnly && len(matches) > 0 {
-			matches = matches[:1]
-		}
 		if !appendMatches(&result, matches, limits.MaxMatches, &remainingBytes, &remainingLines) {
 			return fs.SkipAll
 		}
@@ -491,6 +488,10 @@ func scanBytes(ctx context.Context, path string, data []byte, options Options, e
 		if column == 0 {
 			continue
 		}
+		if options.FilesOnly {
+			matches = append(matches, Match{Path: path, Line: index + 1, Column: column})
+			break
+		}
 		match := Match{Path: path, Line: index + 1, Column: column, Text: strings.TrimSuffix(line, "\r")}
 		const windowBytes = 8192
 		if len(match.Text) > windowBytes {
@@ -513,7 +514,7 @@ func scanBytes(ctx context.Context, path string, data []byte, options Options, e
 			match.After = append(match.After, ContextLine{Line: i + 1, Text: strings.TrimSuffix(lines[i], "\r")})
 		}
 		matches = append(matches, match)
-		if options.FilesOnly || len(matches) >= matchLimit {
+		if len(matches) >= matchLimit {
 			break
 		}
 	}

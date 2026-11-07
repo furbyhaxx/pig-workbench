@@ -234,6 +234,19 @@ func TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns(t *testing.T) {
 	}
 }
 
+func TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows(t *testing.T) {
+	root := t.TempDir()
+	path := write(t, root, "large.txt", strings.Repeat("x", 100000)+" needle\nprivate trailing context\n")
+	result, err := Grep(t.Context(), Options{Root: path, Patterns: []string{"needle"}, FilesOnly: true, Limits: Limits{Context: 10}})
+	if err != nil || !result.Complete || len(result.Matches) != 1 {
+		t.Fatalf("filename-only search was truncated by source formatting: %+v %v", result, err)
+	}
+	match := result.Matches[0]
+	if match.Path != path || match.Text != "" || len(match.Before) != 0 || len(match.After) != 0 || match.Windowed {
+		t.Fatalf("filename-only result retained source: %+v", match)
+	}
+}
+
 func TestGrepBoundsAndHonesty(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "a.go", "package a\n// Needle one\nfunc A() {}\n")
