@@ -1,0 +1,332 @@
+=== RUN   TestDecodeDescriptor
+--- PASS: TestDecodeDescriptor (0.00s)
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/trailing_json
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_cadence_version
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/unknown_field
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/duplicate_tool
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_tool_name
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_details_path
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_metric_unit
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/duplicate_metric
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_setting_type
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/bad_enum_default
+=== RUN   TestDecodeDescriptorRejectsInvalidContracts/unknown_preset
+--- PASS: TestDecodeDescriptorRejectsInvalidContracts (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/trailing_json (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_cadence_version (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/unknown_field (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/duplicate_tool (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_tool_name (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_details_path (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_metric_unit (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/duplicate_metric (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_setting_type (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/bad_enum_default (0.00s)
+    --- PASS: TestDecodeDescriptorRejectsInvalidContracts/unknown_preset (0.00s)
+=== RUN   TestDecodeFailedBuildSample
+--- PASS: TestDecodeFailedBuildSample (0.00s)
+=== RUN   TestDecodeDetailsWithProducerFields
+--- PASS: TestDecodeDetailsWithProducerFields (0.00s)
+=== RUN   TestDecodeSearchTableURICell
+--- PASS: TestDecodeSearchTableURICell (0.00s)
+=== RUN   TestDecodeZeroMetricAndAbsentFields
+--- PASS: TestDecodeZeroMetricAndAbsentFields (0.00s)
+=== RUN   TestDecodeRejectsControlSequences
+=== RUN   TestDecodeRejectsControlSequences/escape_in_text_block
+=== RUN   TestDecodeRejectsControlSequences/bell_in_title
+=== RUN   TestDecodeRejectsControlSequences/escape_in_summary
+=== RUN   TestDecodeRejectsControlSequences/carriage_return_in_error_message
+=== RUN   TestDecodeRejectsControlSequences/escape_in_diff_line
+=== RUN   TestDecodeRejectsControlSequences/del_in_cell_value
+=== RUN   TestDecodeRejectsControlSequences/escape_in_retained_child_snapshot
+=== RUN   TestDecodeRejectsControlSequences/notice_body
+--- PASS: TestDecodeRejectsControlSequences (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/escape_in_text_block (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/bell_in_title (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/escape_in_summary (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/carriage_return_in_error_message (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/escape_in_diff_line (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/del_in_cell_value (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/escape_in_retained_child_snapshot (0.00s)
+    --- PASS: TestDecodeRejectsControlSequences/notice_body (0.00s)
+=== RUN   TestDecodeRejectsExecutableLookingFields
+=== RUN   TestDecodeRejectsExecutableLookingFields/shell_script
+=== RUN   TestDecodeRejectsExecutableLookingFields/template
+=== RUN   TestDecodeRejectsExecutableLookingFields/kit_node_graph
+=== RUN   TestDecodeRejectsExecutableLookingFields/block_command
+=== RUN   TestDecodeRejectsExecutableLookingFields/embedded_image_data
+=== RUN   TestDecodeRejectsExecutableLookingFields/dropped_image_bytes
+=== RUN   TestDecodeRejectsExecutableLookingFields/uri_cell_with_path
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_block_kind
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_cell_kind
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_outcome
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_phase
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_unit
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_effects
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_target_kind
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_hunk_line_kind
+=== RUN   TestDecodeRejectsExecutableLookingFields/unknown_diff_operation
+=== RUN   TestDecodeRejectsExecutableLookingFields/wrong_block_payload
+--- PASS: TestDecodeRejectsExecutableLookingFields (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/shell_script (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/template (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/kit_node_graph (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/block_command (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/embedded_image_data (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/dropped_image_bytes (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/uri_cell_with_path (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_block_kind (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_cell_kind (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_outcome (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_phase (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_unit (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_effects (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_target_kind (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_hunk_line_kind (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/unknown_diff_operation (0.00s)
+    --- PASS: TestDecodeRejectsExecutableLookingFields/wrong_block_payload (0.00s)
+=== RUN   TestDecodeSettledOutcome
+--- PASS: TestDecodeSettledOutcome (0.00s)
+=== RUN   TestDecodeRejectsDuplicateAndNullMembers
+--- PASS: TestDecodeRejectsDuplicateAndNullMembers (0.00s)
+=== RUN   TestDecodeRejectsMalformedIdentity
+--- PASS: TestDecodeRejectsMalformedIdentity (0.00s)
+=== RUN   TestDecodeAcceptsCurrencyMetrics
+--- PASS: TestDecodeAcceptsCurrencyMetrics (0.00s)
+=== RUN   TestDecodeRejectsTableShapes
+--- PASS: TestDecodeRejectsTableShapes (0.00s)
+=== RUN   TestDecodeRejectsImageAndChildrenShapes
+--- PASS: TestDecodeRejectsImageAndChildrenShapes (0.00s)
+=== RUN   TestDecodeRejectsOversizedPayload
+--- PASS: TestDecodeRejectsOversizedPayload (0.00s)
+=== RUN   TestDecodeEnforcesCounts
+--- PASS: TestDecodeEnforcesCounts (0.01s)
+=== RUN   TestDecodeEnforcesDepth
+--- PASS: TestDecodeEnforcesDepth (0.00s)
+=== RUN   TestRoundTripRepresentativeBlocks
+--- PASS: TestRoundTripRepresentativeBlocks (0.00s)
+=== RUN   TestDecodeIsolatesValues
+--- PASS: TestDecodeIsolatesValues (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/presentation	1.040s
+=== RUN   TestGoldenCases
+--- PASS: TestGoldenCases (0.00s)
+=== RUN   TestWidthsNeverExceedBudget
+--- PASS: TestWidthsNeverExceedBudget (0.00s)
+=== RUN   TestAuthorityIsNeverShortened
+--- PASS: TestAuthorityIsNeverShortened (0.00s)
+=== RUN   TestResourceURIsKeepTheirScheme
+--- PASS: TestResourceURIsKeepTheirScheme (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/pathdisplay	1.010s
+=== RUN   TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem
+--- PASS: TestActivityLineDropsLowestPriorityFirstAndNeverCutsAnItem (0.00s)
+=== RUN   TestActivityCountsFailedJobsAfterRealExit
+--- PASS: TestActivityCountsFailedJobsAfterRealExit (0.00s)
+=== RUN   TestActivityLineStripsTerminalSequencesFromProducerLabels
+--- PASS: TestActivityLineStripsTerminalSequencesFromProducerLabels (0.00s)
+=== RUN   TestNoticesFitAndStripUntrustedControls
+=== RUN   TestNoticesFitAndStripUntrustedControls/36
+=== RUN   TestNoticesFitAndStripUntrustedControls/57
+=== RUN   TestNoticesFitAndStripUntrustedControls/80
+=== RUN   TestNoticesFitAndStripUntrustedControls/140
+--- PASS: TestNoticesFitAndStripUntrustedControls (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/36 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/57 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/80 (0.00s)
+    --- PASS: TestNoticesFitAndStripUntrustedControls/140 (0.00s)
+=== RUN   TestMultiReadPartialFailureIsNotAToolError
+--- PASS: TestMultiReadPartialFailureIsNotAToolError (0.00s)
+=== RUN   TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb
+--- PASS: TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb (0.00s)
+=== RUN   TestFetchBackendSelectionPrefersMostSpecificRule
+--- PASS: TestFetchBackendSelectionPrefersMostSpecificRule (0.00s)
+=== RUN   TestFetchBackendDescriptorValidation
+--- PASS: TestFetchBackendDescriptorValidation (0.00s)
+=== RUN   TestStatusSegmentRenderFitsAndNamesSeverity
+--- PASS: TestStatusSegmentRenderFitsAndNamesSeverity (0.00s)
+=== RUN   TestFrameProducerDescriptorRejectsInternalAndUnknownFields
+--- PASS: TestFrameProducerDescriptorRejectsInternalAndUnknownFields (0.00s)
+=== RUN   TestToolPresentationRegistrationDrivesTheResolver
+--- PASS: TestToolPresentationRegistrationDrivesTheResolver (0.00s)
+=== RUN   TestToolPresentationRegistrationIsIdempotentAndConflictSafe
+--- PASS: TestToolPresentationRegistrationIsIdempotentAndConflictSafe (0.00s)
+=== RUN   TestDescribeContributionsIsFilteredAndPaged
+--- PASS: TestDescribeContributionsIsFilteredAndPaged (0.00s)
+=== RUN   TestPresentationHeaderShortensTargetsToWidth
+--- PASS: TestPresentationHeaderShortensTargetsToWidth (0.00s)
+=== RUN   TestFirstTouchGuideIsInjectedOncePerRevision
+--- PASS: TestFirstTouchGuideIsInjectedOncePerRevision (0.00s)
+=== RUN   TestFrameBaselineResumeKeepsDeliveredFactsOnTheBranch
+--- PASS: TestFrameBaselineResumeKeepsDeliveredFactsOnTheBranch (0.00s)
+=== RUN   TestFrameBaselineOmitsFramesFromAnotherBranch
+--- PASS: TestFrameBaselineOmitsFramesFromAnotherBranch (0.00s)
+=== RUN   TestFrameBaselineIgnoresCancelledAndFollowsLatestState
+--- PASS: TestFrameBaselineIgnoresCancelledAndFollowsLatestState (0.00s)
+=== RUN   TestFrameBaselineDropsFramesSummarizedByCompaction
+--- PASS: TestFrameBaselineDropsFramesSummarizedByCompaction (0.00s)
+=== RUN   TestInstructionUpdateContextSettingControlsDiff
+--- PASS: TestInstructionUpdateContextSettingControlsDiff (0.00s)
+=== RUN   TestIncompleteInstructionRequiresCurrentFullyDeliveredSource
+--- PASS: TestIncompleteInstructionRequiresCurrentFullyDeliveredSource (0.00s)
+=== RUN   TestBeforePromptRequiresAllSixContextFrames
+--- PASS: TestBeforePromptRequiresAllSixContextFrames (0.00s)
+=== RUN   TestPinsFollowTheActiveBranchOnly
+--- PASS: TestPinsFollowTheActiveBranchOnly (0.00s)
+=== RUN   TestPinnableClassRefusesSteeringAndNamesAmbiguity
+--- PASS: TestPinnableClassRefusesSteeringAndNamesAmbiguity (0.00s)
+=== RUN   TestListingCursorRetentionIsBoundedByBytesAndCount
+=== RUN   TestListingCursorRetentionIsBoundedByBytesAndCount/1
+=== RUN   TestListingCursorRetentionIsBoundedByBytesAndCount/16384
+--- PASS: TestListingCursorRetentionIsBoundedByBytesAndCount (0.03s)
+    --- PASS: TestListingCursorRetentionIsBoundedByBytesAndCount/1 (0.01s)
+    --- PASS: TestListingCursorRetentionIsBoundedByBytesAndCount/16384 (0.03s)
+=== RUN   TestListingCursorBindsIdentityResourceAndSnapshotWithoutExposingPayload
+--- PASS: TestListingCursorBindsIdentityResourceAndSnapshotWithoutExposingPayload (0.00s)
+=== RUN   TestBoundedListingContinuationDoesNotSkipOrDuplicateRows
+--- PASS: TestBoundedListingContinuationDoesNotSkipOrDuplicateRows (0.58s)
+=== RUN   TestListingHiddenPolicyIsReportedAndApplied
+--- PASS: TestListingHiddenPolicyIsReportedAndApplied (0.00s)
+=== RUN   TestWebSearchRendersTypedURICellsAtEveryWidth
+--- PASS: TestWebSearchRendersTypedURICellsAtEveryWidth (0.00s)
+=== RUN   TestPresentationHostileTerminalBytesNeverReachTheRow
+--- PASS: TestPresentationHostileTerminalBytesNeverReachTheRow (0.00s)
+=== RUN   TestPresentationPlainRowPerLifecycleState
+--- PASS: TestPresentationPlainRowPerLifecycleState (0.00s)
+=== RUN   TestPresentationUnusableDetailsKeepTheRawResult
+--- PASS: TestPresentationUnusableDetailsKeepTheRawResult (0.00s)
+=== RUN   TestProjectIdentityUsesTheParentProject
+--- PASS: TestProjectIdentityUsesTheParentProject (0.01s)
+=== RUN   TestPromptOverrideStaysOffUnlessForced
+--- PASS: TestPromptOverrideStaysOffUnlessForced (0.00s)
+=== RUN   TestWalkReplaceChangesOnlyTheExactServedPrompt
+--- PASS: TestWalkReplaceChangesOnlyTheExactServedPrompt (0.00s)
+=== RUN   TestPromptEpochIsStableForTheSameText
+--- PASS: TestPromptEpochIsStableForTheSameText (0.00s)
+=== RUN   TestPromptEpochChangesWhenTheToolListChanges
+--- PASS: TestPromptEpochChangesWhenTheToolListChanges (0.00s)
+=== RUN   TestRenderErrorDoesNotReplaceTheHostPrompt
+--- PASS: TestRenderErrorDoesNotReplaceTheHostPrompt (0.00s)
+=== RUN   TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch
+--- PASS: TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch (0.00s)
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/wrong_correlation
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/missing_destination
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/unexpected_resource
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/not_applied_with_effects
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/unknown_reported_committed
+=== RUN   TestMutationReceiptCannotInventCommitOrHidePartialEffects/duplicate_effects
+--- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/wrong_correlation (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/missing_destination (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/unexpected_resource (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/not_applied_with_effects (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/unknown_reported_committed (0.00s)
+    --- PASS: TestMutationReceiptCannotInventCommitOrHidePartialEffects/duplicate_effects (0.00s)
+=== RUN   TestProviderBusRejectsMalformedReplyBranches
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_success
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/error_with_result
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_error
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/invalid_outcome
+--- PASS: TestProviderBusRejectsMalformedReplyBranches (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_success (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/error_with_result (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_error (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/invalid_outcome (0.00s)
+=== RUN   TestReadRepetitionHintRetainsContentAndResetsOnChanges
+--- PASS: TestReadRepetitionHintRetainsContentAndResetsOnChanges (0.00s)
+=== RUN   TestReadProjectionPreservesHistoryProvenanceAndAnnotations
+--- PASS: TestReadProjectionPreservesHistoryProvenanceAndAnnotations (0.00s)
+=== RUN   TestReadProjectionRefusesUnprovedSupersession
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/incomplete
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/partial_line
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/clipped_content
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/error
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/different_revision
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/summary
+=== RUN   TestReadProjectionRefusesUnprovedSupersession/derived
+--- PASS: TestReadProjectionRefusesUnprovedSupersession (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/incomplete (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/partial_line (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/clipped_content (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/error (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/different_revision (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/summary (0.00s)
+    --- PASS: TestReadProjectionRefusesUnprovedSupersession/derived (0.00s)
+=== RUN   TestSchemeCommandParsesQuotedAndEscapedStaticPaths
+--- PASS: TestSchemeCommandParsesQuotedAndEscapedStaticPaths (0.00s)
+=== RUN   TestSchemeCommandAcceptsStandaloneVerbsOnly
+--- PASS: TestSchemeCommandAcceptsStandaloneVerbsOnly (0.00s)
+=== RUN   TestSessionScratchKeysDoNotCollide
+--- PASS: TestSessionScratchKeysDoNotCollide (0.00s)
+=== RUN   TestSecretsBoundaryCreatesKeyAndRedactsDetectedTokens
+--- PASS: TestSecretsBoundaryCreatesKeyAndRedactsDetectedTokens (0.00s)
+=== RUN   TestSecretsBoundaryRecoversWithoutRestartAfterAFailedBuild
+--- PASS: TestSecretsBoundaryRecoversWithoutRestartAfterAFailedBuild (0.00s)
+=== RUN   TestSecretsBoundaryHonoursTheEnabledSetting
+--- PASS: TestSecretsBoundaryHonoursTheEnabledSetting (0.00s)
+=== RUN   TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery
+--- PASS: TestSecretsBoundaryNotifiesOncePerCauseAndAgainAfterRecovery (0.00s)
+=== RUN   TestSecretsBoundaryLearnsNamedEnvironmentAndEnvFilesUpToTheRepositoryRoot
+--- PASS: TestSecretsBoundaryLearnsNamedEnvironmentAndEnvFilesUpToTheRepositoryRoot (0.00s)
+=== RUN   TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral
+--- PASS: TestSecretsBoundaryLearnsResolvedAuthButNeverACommandLiteral (0.00s)
+=== RUN   TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates
+--- PASS: TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates (0.00s)
+=== RUN   TestRedactResultPatchesBlocksAndKeepsOpaqueOnes
+--- PASS: TestRedactResultPatchesBlocksAndKeepsOpaqueOnes (0.00s)
+=== RUN   TestRedactResultWithholdsOutputWhenTheBoundaryFails
+--- PASS: TestRedactResultWithholdsOutputWhenTheBoundaryFails (0.00s)
+=== RUN   TestSeenStateSurvivesRedactionOfTheDeliveredBlock
+--- PASS: TestSeenStateSurvivesRedactionOfTheDeliveredBlock (0.00s)
+=== RUN   TestUserBashSubstitutesPlaceholdersAndRedactsOutput
+--- PASS: TestUserBashSubstitutesPlaceholdersAndRedactsOutput (0.00s)
+=== RUN   TestRedactContextCleansTheSystemMessageAndOtherMessages
+--- PASS: TestRedactContextCleansTheSystemMessageAndOtherMessages (0.00s)
+=== RUN   TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure
+--- PASS: TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure (0.04s)
+=== RUN   TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning
+--- PASS: TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning (0.00s)
+=== RUN   TestDiscoveryAndLocation
+--- PASS: TestDiscoveryAndLocation (0.00s)
+=== RUN   TestCancellationIsOwnerScoped
+--- PASS: TestCancellationIsOwnerScoped (0.00s)
+=== RUN   TestCfgProviderExposesSettings
+--- PASS: TestCfgProviderExposesSettings (0.00s)
+=== RUN   TestArtifactProviderResolvesProjectTree
+--- PASS: TestArtifactProviderResolvesProjectTree (0.00s)
+=== RUN   TestCfgProviderServesIntegrationsPerOwner
+--- PASS: TestCfgProviderServesIntegrationsPerOwner (0.00s)
+=== RUN   TestDedupeByIDKeepsTheFirstOfEachSession
+--- PASS: TestDedupeByIDKeepsTheFirstOfEachSession (0.00s)
+=== RUN   TestShortIDsOfSessionsStartedTogetherDiffer
+--- PASS: TestShortIDsOfSessionsStartedTogetherDiffer (0.00s)
+=== RUN   TestSessionMessageSettingsAffectDelivery
+--- PASS: TestSessionMessageSettingsAffectDelivery (0.00s)
+=== RUN   TestSkillReadLoadsAndUnloadDeclines
+--- PASS: TestSkillReadLoadsAndUnloadDeclines (0.00s)
+=== RUN   TestReadVisibilityRequiresIntactDeliveredBlock
+--- PASS: TestReadVisibilityRequiresIntactDeliveredBlock (0.00s)
+=== RUN   TestAnnotationOrderCannotChangeSeenVisibility
+--- PASS: TestAnnotationOrderCannotChangeSeenVisibility (0.00s)
+=== RUN   TestSummaryViewHonoursSettings
+=== RUN   TestSummaryViewHonoursSettings/read.summarize.enabled
+=== RUN   TestSummaryViewHonoursSettings/read.summarize.min-total-lines
+--- PASS: TestSummaryViewHonoursSettings (0.16s)
+    --- PASS: TestSummaryViewHonoursSettings/read.summarize.enabled (0.00s)
+    --- PASS: TestSummaryViewHonoursSettings/read.summarize.min-total-lines (0.00s)
+=== RUN   TestSummaryViewFoldsBodiesOnly
+--- PASS: TestSummaryViewFoldsBodiesOnly (0.24s)
+=== RUN   TestDecideTrustNearestRuleWinsAndDenyBeatsAllowAtEqualDepth
+--- PASS: TestDecideTrustNearestRuleWinsAndDenyBeatsAllowAtEqualDepth (0.00s)
+=== RUN   TestExistingRevisionIncludesBytesBeyondSnapshotLimit
+--- PASS: TestExistingRevisionIncludesBytesBeyondSnapshotLimit (0.02s)
+=== RUN   TestAtomicWriteFileRefusesRacingDestination
+--- PASS: TestAtomicWriteFileRefusesRacingDestination (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	2.158s

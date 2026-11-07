@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 41
+  revision: 42
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T21:34:15+01:00"
+  updated_at: "2026-11-07T21:41:35+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 41
-      reason: "Reject contradictory reply envelopes before classifying mutation outcomes"
-      changes: ["Shared bounded strict reply decoding across control/provider callers", "Rejected empty success, mixed result/error and unsafe unknown retry claims", "Verified a committed mutation with a malformed notApplied reply remains unknown"]
+    - revision: 42
+      reason: "Separate presentation data/settings/lifecycle gaps from chrome"
+      changes: ["Recorded exact semantic-header, width and path-display evidence", "Tracked missing ownership, dynamic settings, revision caches and replay behavior as implementation work"]
 ---
 
 # Scope and evidence
@@ -97,6 +97,27 @@ SPEC-0001 §7 bullets are audited independently of representative discovery succ
 | §8 collaboration services | PARTIAL | Snapshots, conditional secrets, context fields, fetch/status/docs/frames and two-session extension messaging have actual consumer evidence; full settings and lifecycle anchors remain open above. |
 
 No provider mutation permission prompt is introduced by this reconciliation. General operation.status is conditional on admitting deferred work; synchronous provider mutations currently return receipts directly and require state reconciliation after unknown outcomes, per SPEC-0004 §6.1. The specification wording must be reconciled rather than inventing an advertised operation lookup.
+
+# Exact local presentation anchors
+
+SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Current observed cases are [presentation-anchors-unit.log](evidence/presentation-anchors-unit.log) and [presentation-anchors-live.log](evidence/presentation-anchors-live.log).
+
+| Anchor | Status | Evidence and remaining work |
+|---|---|---|
+| §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Real reference tool data and typed URI rendering pass. Settings catalog integration and absent-producer/dormant replay still require 17.8.10.2/3/5. |
+| §8.2 opt-in ownership and visible conflicts | OPEN | Registration conflicts are tested, but installPresentation does not check host tool ownership; first-use/appliesAfterReload tracking is absent. Work is 17.8.10.1. |
+| §8.3 host error and monotonic final state | PARTIAL | Host-error rendering constrains claimed success. No per-call settled/revision tracker prevents later stale updates; 17.8.10.4 owns this gap. |
+| §8.4 incomplete success vs partial-commit failure | PASS (semantic headers) | Plain lifecycle/host-error/typed snapshot tests distinguish completeness, outcome and effects. |
+| §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.4/5, not inferred from one search card. |
+| §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.6. |
+| §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.5/6. |
+| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | There is no dynamic display override store or settings.get dispatcher; renderers use producer defaultDisplay directly. Work is 17.8.10.2/3. |
+| §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.5 owns actual evidence. |
+| §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver closures capture the first descriptor; no resolved-name registry reports late changes. Workbench never calls foreign renderer markers, but notification/invalidation behavior needs 17.8.10.1. |
+| §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.4. |
+| §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.6. |
+
+These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred rich-panel polish. None is silently moved to Slice 3.
 
 # Baseline gates
 
