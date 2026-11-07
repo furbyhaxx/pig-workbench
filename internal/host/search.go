@@ -13,7 +13,7 @@ import (
 func (a *app) registerSearchTools(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "grep", Label: "grep",
-		Description:   "Search file contents under a local path or registered provider directory. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Relative paths resolve against the Workbench location. Binary, oversized and incomplete provider files are skipped and listed in Details; hitting a bound reports complete:false instead of pretending the results are exhaustive.",
+		Description:   "Search file contents at a local path or registered provider file/directory. Line selectors are accepted only for explicit files. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Relative paths resolve against the Workbench location. Binary, oversized and incomplete provider files are skipped and listed in Details; hitting a bound reports complete:false instead of pretending the results are exhaustive.",
 		PromptSnippet: "Search file contents with exact matches and honest limits.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"pattern":    map[string]any{"type": "string", "minLength": 1, "description": "Regular expression, or one literal when literal is true."},
@@ -94,14 +94,13 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	defer done()
 	root := captured.Cwd
 	var provider resource.Provider
+	var selection resource.Selection
 	if hasPath && input.Path != "" {
 		target, parseErr := resource.ParsePath(captured.Cwd, input.Path, "")
 		if parseErr != nil {
 			return nil, parseErr
 		}
-		if target.Selection.Explicit {
-			return nil, errors.New("grep does not accept a line selector on the root")
-		}
+		selection = target.Selection
 		if target.Scheme == "file" {
 			root = target.Path
 		} else {
@@ -114,7 +113,7 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	options := search.Options{
 		Root: root, Patterns: patterns, Literal: input.Literal, IgnoreCase: input.IgnoreCase,
-		Glob: input.Glob, Exclude: input.Exclude, FilesOnly: input.FilesOnly,
+		Glob: input.Glob, Exclude: input.Exclude, FilesOnly: input.FilesOnly, Selection: selection,
 		Limits: search.Limits{MaxMatches: input.Limit, Context: input.Context},
 	}
 	var result search.Result

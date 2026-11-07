@@ -30,7 +30,7 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 
 **Unfinished Slice 1:**
 
-- `grep` does not yet accept explicit provider-file targets or selectors. Long matching lines use bounded windows; requested context that cannot fit can still cause a match to be omitted with an incomplete result.
+- Long grep matching lines use bounded windows; requested context that cannot fit can still cause a match to be omitted with an incomplete result.
 - For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. A static-word `value > URI` dispatches supported control writes with the same confirmation rules as `write`; quotes and escapes are recognized, but it is not general shell redirection and dynamically constructed paths cannot always be recognized. `rm`, `mv`, `cp` and `mkdir` are rejected. Provider mutation authorization and full scheme-command routing remain open.
 - `prompt.delivery = "auto"` retains PiG's prompt; `force` opts in to `builtin/workbench` only when instructions are enabled. The live prompt A/B evaluation and full real-agent transcript await authorization for provider spend. The `prompt.template` setting is not applied.
 - All fourteen specifications are approved, but implementation and acceptance remain incomplete. The [acceptance inventory](.project/analyses/2026-11-05-slice-1-inventory/README.md) distinguishes observed tests from incomplete rows.

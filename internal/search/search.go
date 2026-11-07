@@ -63,6 +63,7 @@ type Options struct {
 	Glob       string
 	Exclude    []string
 	FilesOnly  bool
+	Selection  resource.Selection
 	Limits     Limits
 }
 
@@ -90,6 +91,15 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 	expressions, literals, err := compilePatterns(options)
 	if err != nil {
 		return Result{}, err
+	}
+	if options.Selection.Explicit {
+		info, err := os.Stat(options.Root)
+		if err != nil {
+			return Result{}, err
+		}
+		if info.IsDir() {
+			return Result{}, errors.New("grep line selectors require a file, not a directory")
+		}
 	}
 	result := Result{Complete: true}
 	remainingBytes, remainingLines := 48<<10, 1900
@@ -213,7 +223,7 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 	defer cancel()
 	result := Result{Complete: true}
 	remainingBytes, remainingLines, sourceBudget := 48<<10, 1900, int64(16<<20)
-	walk, err := resource.Walk(work, provider, options.Root, func(entry resource.Entry, _ int) (resource.WalkAction, error) {
+	visit := func(entry resource.Entry, _ int) (resource.WalkAction, error) {
 		if entry.Name == ".git" || excluded(entry.URI, options.Exclude) {
 			return resource.WalkSkipDir, nil
 		}
@@ -262,7 +272,23 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 			return resource.WalkStop, nil
 		}
 		return resource.WalkContinue, nil
-	})
+	}
+	stat, err := provider.Stat(work, options.Root)
+	walkComplete := true
+	if err == nil {
+		switch stat.Kind {
+		case resource.EntryFile:
+			_, err = visit(resource.Entry{URI: stat.URI, Name: filepath.Base(stat.URI), Kind: stat.Kind}, 0)
+		case resource.EntryDir:
+			if options.Selection.Explicit {
+				return Result{}, errors.New("grep line selectors require a file, not a directory")
+			}
+			walk, walkErr := resource.Walk(work, provider, options.Root, visit)
+			err, walkComplete = walkErr, walk.Complete
+		default:
+			return Result{}, errors.New("grep target must be a file or directory, not a link or control")
+		}
+	}
 	if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
 		result.Complete = false
 		err = nil
@@ -270,7 +296,7 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 	if err != nil {
 		return Result{}, err
 	}
-	result.Complete = result.Complete && walk.Complete
+	result.Complete = result.Complete && walkComplete
 	sort.SliceStable(result.Matches, func(i, j int) bool {
 		if result.Matches[i].Path != result.Matches[j].Path {
 			return result.Matches[i].Path < result.Matches[j].Path
@@ -427,7 +453,20 @@ func scanBytes(ctx context.Context, path string, data []byte, options Options, e
 	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
+	spans, err := options.Selection.Resolve(len(lines), false)
+	if err != nil {
+		return nil, err
+	}
 	for index, line := range lines {
+		if options.Selection.Explicit {
+			selected := false
+			for _, span := range spans {
+				selected = selected || index+1 >= span.Start && index+1 <= span.End
+			}
+			if !selected {
+				continue
+			}
+		}
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}

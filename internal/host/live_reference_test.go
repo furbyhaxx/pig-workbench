@@ -213,6 +213,23 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 
 // TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
 // extension load order must not matter.
+func TestLiveGrepExplicitProviderFileAndLineSelection(t *testing.T) {
+	results := runScriptedWith(t, t.TempDir(), "grep", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/a.md", "pattern": "alpha"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/a.md:2", "pattern": "alpha"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/a.md:1:raw", "pattern": "alpha"}}
+		},
+	)
+	if len(results) != 3 || !strings.Contains(results[0], "kb://sources/a.md:1:1: alpha one") || !strings.Contains(results[0], "kb://sources/a.md:3:1: alpha three") || strings.Contains(results[1], "alpha one") || !strings.Contains(results[1], "kb://sources/a.md:3:1: alpha three") || strings.Contains(results[2], "alpha three") || !strings.Contains(results[2], "kb://sources/a.md:1:1: alpha one") {
+		t.Fatalf("provider file selector coordinates are incorrect: %v", results)
+	}
+}
+
 func TestLiveGrepWalksPaginatedProvider(t *testing.T) {
 	results := runScriptedWith(t, t.TempDir(), "grep", "", []string{"reference-producer"},
 		func([]string) scriptedCall {

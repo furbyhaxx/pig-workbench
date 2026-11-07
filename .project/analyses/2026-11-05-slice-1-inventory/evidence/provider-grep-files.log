@@ -1,0 +1,14 @@
+=== RUN   TestLiveGrepExplicitProviderFileAndLineSelection
+--- PASS: TestLiveGrepExplicitProviderFileAndLineSelection (1.30s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.94s)
+=== RUN   TestLiveGrepExplicitProviderFileAndLineSelection
+--- PASS: TestLiveGrepExplicitProviderFileAndLineSelection (0.86s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.88s)
+=== RUN   TestLiveGrepExplicitProviderFileAndLineSelection
+--- PASS: TestLiveGrepExplicitProviderFileAndLineSelection (0.82s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.80s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	6.627s
