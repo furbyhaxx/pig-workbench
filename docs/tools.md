@@ -71,7 +71,7 @@ grep {"pattern": "needle", "ignoreCase": true, "glob": "*.go", "exclude": ["vend
 grep {"patterns": ["TODO", "FIXME"], "literal": true}
 ```
 
-`patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match or file limit reports `complete: false` — never a silent "that is all". `context` is accepted but surrounding lines are not emitted yet. Search roots are local filesystem paths; provider URIs are not routed.
+`patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. `context` emits up to ten source lines on either side of each match, marked separately from matching lines. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match, file or output limit reports `complete: false` — never a silent "that is all". A matching line or its context that cannot fit the output budget is omitted and makes the result incomplete. Search roots are local filesystem paths; provider URIs are not routed.
 
 ## `find`
 

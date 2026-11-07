@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 10
+  revision: 11
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T08:09:18+01:00"
+  updated_at: "2026-11-07T08:14:02+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -41,13 +41,16 @@ document:
     - revision: 10
       reason: "Verify scheme redirects against the shared control write policy"
       changes: ["Recorded real-host self-title redirect and stored-title confirmation behavior", "Retained other scheme commands and general redirect syntax as open"]
+    - revision: 11
+      reason: "Exercise grep context and its output ceiling"
+      changes: ["Recorded real-host context lines and output-budget truncation", "Retained long-line windows and provider-root searches as open"]
 ---
 
 # Scope and evidence
 
 This table follows [PLAN-0001 §9](../../plans/0001-pig-workbench.md), including the Slice 1 portions of split rows. A passing test proves only the behavior named in its cell, **not the full ownership row**. A dash means no representative execution was established in this run. No row is claimed frozen or fully accepted by this inventory.
 
-The following subset ran against a real PiG host with an isolated local scripted provider, without billed inference; its output is [acceptance-subset.txt](evidence/acceptance-subset.txt). All test names in the table refer to `internal/host/` integration tests and appear in that output unless marked otherwise. Reproduce with `just _modfile`, then `go test -race -tags=integration -modfile=.tmp/go.mod ./internal/host -run '<test-name>' -count=1 -v`. Source findings are supported by [source-audit.txt](evidence/source-audit.txt) and the named implementation files.
+The following subset ran against a real PiG host with an isolated local scripted provider, without billed inference; its output is [acceptance-subset.txt](evidence/acceptance-subset.txt). All test names in the table refer to `internal/host/` integration tests and appear in that output unless marked otherwise. Reproduce with `just _modfile`, then `go test -race -tags=integration -modfile=.tmp/go.mod ./internal/host -run '<test-name>' -count=1 -v`. The historical pre-fix audit is [source-audit.txt](evidence/source-audit.txt); current implementation and limitations are identified in the table.
 
 | PLAN-0001 §9 row | Owner | Observed representative behavior | Remaining acceptance or known gap |
 |---|---|---|---|
@@ -58,7 +61,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration; grep/find do not route provider roots. Full policy and mutation acceptance is not established. |
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
-| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode` and `TestLiveGrepAcceptsLiteralPatternList` exercise local reads and literal OR search. | Grep context is accepted but ignored; grep/find treat provider URIs as local paths. Loop guard and supersession need explicit evidence. |
+| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode`, `TestLiveGrepAcceptsLiteralPatternList`, `TestLiveGrepEmitsRequestedContext` and `TestLiveGrepContextHonoursOutputBudget` exercise local reads, literal OR search and bounded context ([grep-context.log](evidence/grep-context.log)). | Grep/find treat provider URIs as local paths. Long-line match windows, loop guard and supersession need implementation or evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | Project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. `TestLiveSchemeRedirectUsesControlWrite` and `TestLiveStoredSessionTitleRequiresConfirmation` exercise control redirects and confirmation parity ([control-redirect.log](evidence/control-redirect.log)). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one literal word; full provider routing and general redirect syntax are not implemented. |

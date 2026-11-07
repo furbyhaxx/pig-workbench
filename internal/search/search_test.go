@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -44,6 +45,26 @@ func TestGrepBoundsAndHonesty(t *testing.T) {
 	}
 	if limited.Complete || len(limited.Matches) != 1 {
 		t.Fatalf("limit reported as complete: %+v", limited)
+	}
+}
+
+func TestGrepContextAndOutputBudget(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, "context.txt", "one\nneedle\nthree\nfour\n")
+	result, err := Grep(context.Background(), Options{Root: root, Patterns: []string{"needle"}, Limits: Limits{Context: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Matches) != 1 || len(result.Matches[0].Before) != 1 || result.Matches[0].Before[0].Line != 1 || result.Matches[0].Before[0].Text != "one" || len(result.Matches[0].After) != 1 || result.Matches[0].After[0].Line != 3 || result.Matches[0].After[0].Text != "three" {
+		t.Fatalf("unexpected surrounding lines: %+v", result)
+	}
+	write(t, root, "large.txt", strings.Repeat("x", 100000)+" needle\n")
+	limited, err := Grep(context.Background(), Options{Root: root, Patterns: []string{"needle"}, Limits: Limits{Context: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if limited.Complete {
+		t.Fatalf("oversized result claimed to be complete: %+v", limited)
 	}
 }
 

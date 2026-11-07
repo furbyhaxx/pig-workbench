@@ -251,6 +251,48 @@ func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
 	}
 }
 
+func TestLiveGrepEmitsRequestedContext(t *testing.T) {
+	root := t.TempDir()
+	project := filepath.Join(root, "project")
+	if err := os.MkdirAll(project, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(project, "example.txt"), []byte("before\nneedle\nafter\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "grep",
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"pattern": "needle", "path": project, "context": 1}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"pattern": "needle", "path": project}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "-1- before") || !strings.Contains(results[0], "-3- after") || !strings.Contains(results[0], ":2:1: needle") {
+		t.Fatalf("requested context missing or confused with matches: %v", results)
+	}
+	if strings.Contains(results[1], "before") || strings.Contains(results[1], "after") {
+		t.Fatalf("unrequested context was emitted: %s", results[1])
+	}
+}
+
+func TestLiveGrepContextHonoursOutputBudget(t *testing.T) {
+	root := t.TempDir()
+	project := filepath.Join(root, "project")
+	if err := os.MkdirAll(project, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(project, "many.txt"), []byte(strings.Repeat("needle "+strings.Repeat("x", 100)+"\n", 1000)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "grep", func([]string) scriptedCall {
+		return scriptedCall{"grep", map[string]any{"pattern": "needle", "path": project, "context": 2}}
+	})
+	if len(results) != 1 || len(results[0]) > 50<<10 || !strings.Contains(results[0], "results truncated") {
+		t.Fatalf("context exceeded the budget or hid truncation: %v bytes, %v results", len(strings.Join(results, "")), len(results))
+	}
+}
+
 func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("apple\npear\nplum\n"), 0600); err != nil {

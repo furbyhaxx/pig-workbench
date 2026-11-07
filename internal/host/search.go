@@ -23,7 +23,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"glob":       map[string]any{"type": "string", "description": "Only search file names matching this glob."},
 			"exclude":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "File or directory name globs to skip."},
 			"filesOnly":  map[string]any{"type": "boolean", "description": "Return only the first match per file."},
-			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Accepted for compatibility; surrounding lines are not emitted yet."},
+			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Number of surrounding source lines before and after each match."},
 			"limit":      map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum matches (default 200)."},
 		}, "oneOf": []any{
 			map[string]any{"required": []string{"pattern"}, "not": map[string]any{"required": []string{"patterns"}}},
@@ -78,6 +78,9 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	if hasPatterns && !input.Literal {
 		return nil, errors.New("patterns[] requires literal:true; use pattern for a regex")
 	}
+	if input.Context < 0 || input.Context > 10 {
+		return nil, errors.New("grep context must be between 0 and 10 lines")
+	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
 		return nil, err
@@ -98,17 +101,24 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	result, err := search.Grep(work, search.Options{
 		Root: root, Patterns: patterns, Literal: input.Literal, IgnoreCase: input.IgnoreCase,
 		Glob: input.Glob, Exclude: input.Exclude, FilesOnly: input.FilesOnly,
-		Limits: search.Limits{MaxMatches: input.Limit},
+		Limits: search.Limits{MaxMatches: input.Limit, Context: input.Context},
 	})
 	if err != nil {
 		return nil, err
 	}
 	var body strings.Builder
 	for _, match := range result.Matches {
-		_, _ = fmt.Fprintf(&body, "%s:%d:%d: %s\n", match.Path, match.Line, match.Column, plainLine(match.Text))
+		path := plainLine(match.Path)
+		for _, line := range match.Before {
+			_, _ = fmt.Fprintf(&body, "%s-%d- %s\n", path, line.Line, plainLine(line.Text))
+		}
+		_, _ = fmt.Fprintf(&body, "%s:%d:%d: %s\n", path, match.Line, match.Column, plainLine(match.Text))
+		for _, line := range match.After {
+			_, _ = fmt.Fprintf(&body, "%s-%d- %s\n", path, line.Line, plainLine(line.Text))
+		}
 	}
 	if !result.Complete {
-		body.WriteString("… results truncated at the configured limit\n")
+		body.WriteString("… results truncated at a match, file or output limit\n")
 	}
 	if len(result.Skipped) > 0 {
 		_, _ = fmt.Fprintf(&body, "skipped %d unreadable, binary or oversized file(s)\n", len(result.Skipped))

@@ -16,12 +16,20 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
+// ContextLine is one surrounding source line, not a match.
+type ContextLine struct {
+	Line int    `json:"line"`
+	Text string `json:"text"`
+}
+
 // Match is one exact source match.
 type Match struct {
-	Path   string `json:"path"`
-	Line   int    `json:"line"`
-	Column int    `json:"column"`
-	Text   string `json:"text"`
+	Path   string        `json:"path"`
+	Line   int           `json:"line"`
+	Column int           `json:"column"`
+	Text   string        `json:"text"`
+	Before []ContextLine `json:"before,omitempty"`
+	After  []ContextLine `json:"after,omitempty"`
 }
 
 // Result reports what was searched and whether the bound was reached.
@@ -103,6 +111,7 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		}
 	}
 	result := Result{Complete: true}
+	remainingBytes, remainingLines := 48<<10, 1900
 	err := filepath.WalkDir(options.Root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, fs.ErrPermission) {
@@ -142,7 +151,7 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 			result.Complete = false
 			return fs.SkipAll
 		}
-		matches, scanned, err := scanFile(ctx, path, options, expressions, literals, limits)
+		matches, scanned, err := scanFile(ctx, path, options, expressions, literals, limits, limits.MaxMatches-len(result.Matches)+1)
 		if err != nil {
 			if errors.Is(err, errTooLarge) || errors.Is(err, errBinary) {
 				result.Skipped = append(result.Skipped, path)
@@ -155,11 +164,21 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 			matches = matches[:1]
 		}
 		for _, match := range matches {
-			if len(result.Matches) >= limits.MaxMatches {
+			bytes, lines := matchBudget(match)
+			if len(result.Matches) >= limits.MaxMatches || bytes > remainingBytes || lines > remainingLines {
 				result.Complete = false
 				return fs.SkipAll
 			}
+			match.Text = strings.Clone(match.Text)
+			for i := range match.Before {
+				match.Before[i].Text = strings.Clone(match.Before[i].Text)
+			}
+			for i := range match.After {
+				match.After[i].Text = strings.Clone(match.After[i].Text)
+			}
 			result.Matches = append(result.Matches, match)
+			remainingBytes -= bytes
+			remainingLines -= lines
 		}
 		return nil
 	})
@@ -180,7 +199,19 @@ var (
 	errBinary   = errors.New("file looks binary")
 )
 
-func scanFile(ctx context.Context, path string, options Options, expressions []*regexp.Regexp, literals []string, limits Limits) ([]Match, int, error) {
+func matchBudget(match Match) (int, int) {
+	lines := 1 + len(match.Before) + len(match.After)
+	bytes := lines*(len(match.Path)+64) + len(match.Text)
+	for _, line := range match.Before {
+		bytes += len(line.Text)
+	}
+	for _, line := range match.After {
+		bytes += len(line.Text)
+	}
+	return bytes, lines
+}
+
+func scanFile(ctx context.Context, path string, options Options, expressions []*regexp.Regexp, literals []string, limits Limits, matchLimit int) ([]Match, int, error) {
 	file, info, err := fileio.OpenRegular(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -204,6 +235,9 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 	}
 	var matches []Match
 	lines := strings.Split(string(data), "\n")
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
 	for index, line := range lines {
 		if ctx.Err() != nil {
 			return nil, 0, ctx.Err()
@@ -212,7 +246,17 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 		if column == 0 {
 			continue
 		}
-		matches = append(matches, Match{Path: path, Line: index + 1, Column: column, Text: strings.TrimRight(line, "\r")})
+		match := Match{Path: path, Line: index + 1, Column: column, Text: strings.TrimSuffix(line, "\r")}
+		for i := max(0, index-limits.Context); i < index; i++ {
+			match.Before = append(match.Before, ContextLine{Line: i + 1, Text: strings.TrimSuffix(lines[i], "\r")})
+		}
+		for i := index + 1; i < min(len(lines), index+limits.Context+1); i++ {
+			match.After = append(match.After, ContextLine{Line: i + 1, Text: strings.TrimSuffix(lines[i], "\r")})
+		}
+		matches = append(matches, match)
+		if options.FilesOnly || len(matches) >= matchLimit {
+			break
+		}
 	}
 	return matches, 1, nil
 }
