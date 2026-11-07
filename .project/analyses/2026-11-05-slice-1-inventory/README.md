@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 15
+  revision: 16
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T08:52:49+01:00"
+  updated_at: "2026-11-07T09:04:21+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -56,6 +56,9 @@ document:
     - revision: 15
       reason: "Add confined project-private note discovery"
       changes: ["Recorded project isolation, symlink and source-budget tests", "Kept host delivery and pin wiring open"]
+    - revision: 16
+      reason: "Integrate trusted project-private instruction delivery"
+      changes: ["Recorded live trust, isolation, pin, update and withdrawal cases", "Retained truncated-steering mutation safety as open work"]
 ---
 
 # Scope and evidence
@@ -74,7 +77,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
 | 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode`, `TestLiveGrepAcceptsLiteralPatternList`, `TestLiveGrepEmitsRequestedContext` and `TestLiveGrepContextHonoursOutputBudget` exercise local reads, literal OR search and bounded context ([grep-context.log](evidence/grep-context.log)); real provider and scratch finds are in [find-provider.log](evidence/find-provider.log) and [find-scratch.log](evidence/find-scratch.log). Provider escape, link, noWalk and cancellation cases are in [find-walk-safety.log](evidence/find-walk-safety.log). | Grep does not search provider URIs. Long-line match windows, loop guard and supersession need implementation or evidence. |
-| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | Project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
+| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal; private note lifecycle is exercised in [private-integration.log](evidence/private-integration.log). | The mutation barrier for a previously delivered but truncated steering view needs implementation; other acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. `TestLiveSchemeRedirectUsesControlWrite` and `TestLiveStoredSessionTitleRequiresConfirmation` exercise control redirects and confirmation parity ([control-redirect.log](evidence/control-redirect.log)). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one literal word; full provider routing and general redirect syntax are not implemented. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |
@@ -84,7 +87,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake; `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real reply at hop one ([agent-reply-hop.log](evidence/agent-reply-hop.log)). | Windows messaging is compile-level only. |
 | 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |
 | 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
-| 0012 §3.6 | S1 K | Private-note discovery confines notes to an explicitly authorized root, applies user trust and budgets, and refuses symlink escapes ([private-discovery.log](evidence/private-discovery.log)). | The host does not yet supply the private root or integrate pins; no live test proves delivery. |
+| 0012 §3.6 | S1 K | Private-note discovery confines notes to an authorized root, applies user trust and budgets, and refuses symlink escapes ([private-discovery.log](evidence/private-discovery.log)); actual PiG sessions exercise trust, project isolation, pins, diffs and withdrawal ([private-integration.log](evidence/private-integration.log), [private-registry-trust.log](evidence/private-registry-trust.log)). | Full compaction and all cap interactions still need explicit acceptance mapping. |
 | 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing; `TestLiveFindWalksPaginatedProvider` and `TestLiveFindWalksScratchWithoutFollowingLinks` verify paginated and scratch traversal ([find-provider.log](evidence/find-provider.log), [find-scratch.log](evidence/find-scratch.log)). | Provider grep remains open; first-touch guide and naming acceptance need separate mapping. |
 | 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees; `TestLiveStoredSessionTitleRequiresConfirmation` checks native RPC confirmation ([stored-title-confirmation.log](evidence/stored-title-confirmation.log)). Scratch read, stat and listing confinement are covered in [local-read-confinement.log](evidence/local-read-confinement.log), [live-local-read-confinement.log](evidence/live-local-read-confinement.log) and [scratch-list-safety.log](evidence/scratch-list-safety.log). | The confirmation was not visually tested in TUI; each core scheme needs separate evidence. |
 | 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |
@@ -100,6 +103,6 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
-- G8.20 provider mutations and general redirect syntax, provider-root grep, grep long-line windows and project-private instruction discovery are not complete. The task list retains them; no acceptance row above should be read as a waiver.
+- G8.20 provider mutations and general redirect syntax, provider-root grep, grep long-line windows and the truncated-steering mutation prerequisite are not complete. The task list retains them; no acceptance row above should be read as a waiver.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

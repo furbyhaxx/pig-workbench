@@ -33,16 +33,16 @@ func TestPinsFollowTheActiveBranchOnly(t *testing.T) {
 }
 
 func TestPinnableClassRefusesSteeringAndNamesAmbiguity(t *testing.T) {
-	if _, err := pinnableClass("/p/AGENTS.md", ""); err == nil {
+	if _, err := pinnableClass("/p/AGENTS.md", "", ""); err == nil {
 		t.Fatal("steering must not be pinnable")
 	}
-	if class, err := pinnableClass("/p/BACKLOG.md", ""); err != nil || class.ID != "backlog" {
+	if class, err := pinnableClass("/p/BACKLOG.md", "", ""); err != nil || class.ID != "backlog" {
 		t.Fatalf("backlog = %v %v", class.ID, err)
 	}
-	if _, err := pinnableClass("/p/NOTES.md", ""); err == nil {
+	if _, err := pinnableClass("/p/NOTES.md", "", ""); err == nil {
 		t.Fatal("an unknown file is not an instruction file")
 	}
-	if _, err := pinnableClass("/p/BACKLOG.md", "steering"); err == nil {
+	if _, err := pinnableClass("/p/BACKLOG.md", "steering", ""); err == nil {
 		t.Fatal("the requested class must own the file name")
 	}
 }

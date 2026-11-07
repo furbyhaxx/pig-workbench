@@ -120,6 +120,10 @@ Secret values are collected before finalization, stored encrypted, and returned 
 
 The working location is captured per call. Mutating tools take a lease, so a `cd` cannot move the ground under an in-flight write. The location survives resume (replayed from the session's parent chain), and PiG's own session `cwd` stays untouched, which also means PiG's builtin tools keep using it until they are replaced.
 
+## Ambient instructions
+
+For a trusted project, Workbench selects root-level `*.md` personal notes from `<agent-dir>/projects/<project-id>/private/` as user-authority instruction frames. Create the directory and notes yourself; the project and `private` directories must be owner-only. Notes and pins are scoped to the active trusted project: an untrusted project cannot claim another project's notes by copying its ID. A user `trust.rules` allow rule can authorize another project. Changes are reconciled at prompt and tool boundaries; changing projects withdraws inapplicable pins. Use `/workbench instructions rules` to inspect classes and `/workbench instructions pin <path>` or `unpin <path>` to manage pins. Discovery is bounded to 4096 directory entries and the shared source budget; symlinked notes are not followed.
+
 ## Sessions and settings resources
 
 - `session://self/meta` — session id, name, cwd, mode, entry counts, whether it is durable.

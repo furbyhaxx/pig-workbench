@@ -39,6 +39,37 @@ func testRegistryProject(t *testing.T, id string) Project {
 	return p
 }
 
+func TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories(t *testing.T) {
+	agent := t.TempDir()
+	registry := openTestRegistry(t, agent)
+	if root, err := registry.PrivateNotesRoot("prj-first"); err != nil || root != "" {
+		t.Fatalf("missing private root: %q, %v", root, err)
+	}
+	private := filepath.Join(agent, "projects", "prj-first", "private")
+	if err := os.MkdirAll(private, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if root, err := registry.PrivateNotesRoot("prj-first"); err != nil || root != private {
+		t.Fatalf("private root: %q, %v", root, err)
+	}
+	if _, err := registry.PrivateNotesRoot("../escape"); err == nil {
+		t.Fatal("invalid project ID accepted")
+	}
+	other := filepath.Join(agent, "projects", "prj-other")
+	if err := os.Symlink(filepath.Dir(private), other); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if _, err := registry.PrivateNotesRoot("prj-other"); err == nil {
+		t.Fatal("symlinked project registry accepted")
+	}
+	if err := os.Chmod(private, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := registry.PrivateNotesRoot("prj-first"); err == nil {
+		t.Fatal("non-private notes directory accepted")
+	}
+}
+
 func TestRegistryConcurrentRegistrationAndLocationMerge(t *testing.T) {
 	dir := t.TempDir()
 	registries := []*Registry{openTestRegistry(t, dir), openTestRegistry(t, dir)}

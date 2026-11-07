@@ -12,29 +12,36 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool, allowNested func(dir string) bool) ([]contextFact, error) {
+func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool, allowNested func(dir string) bool) ([]contextFact, string, error) {
 	trusted, err := ctx.IsProjectTrusted()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	agent, err := sdk.AgentDir()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	registry, err := project.Open(agent)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	origin, err := registry.Detect(requestContext{ctx}, ctx.Cwd())
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if root != origin.Root {
 		rel, relErr := filepath.Rel(origin.Root, target)
 		if projectID == "global" && origin.ProjectID == "global" && relErr == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 			root = origin.Root
 		} else {
-			trusted = false
+			trusted = allowNested != nil && allowNested(root)
+		}
+	}
+	privateRoot := ""
+	if trusted {
+		privateRoot, err = registry.PrivateNotesRoot(projectID)
+		if err != nil {
+			return nil, "", err
 		}
 	}
 	relative, relErr := filepath.Rel(root, target)
@@ -46,20 +53,25 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 		root = agent
 	}
 	var boundary string
-	selected, err := instructions.Discover(requestContext{ctx}, target, nil, instructions.Options{ProjectRoot: root, UserRoots: []string{agent}})
+	opts := instructions.Options{ProjectRoot: root, UserRoots: []string{agent}}
+	if trusted {
+		opts.PrivateRoot = privateRoot
+	}
+	selected, err := instructions.Discover(requestContext{ctx}, target, nil, opts)
 	if err != nil {
 		var nested *instructions.NestedRepositoryError
 		if !errors.As(err, &nested) {
-			return nil, err
+			return nil, "", err
 		}
 		if allowNested != nil && allowNested(nested.Dir) {
-			selected, err = instructions.Discover(requestContext{ctx}, target, nil, instructions.Options{ProjectRoot: root, UserRoots: []string{agent}, AllowNested: true})
+			opts.AllowNested = true
+			selected, err = instructions.Discover(requestContext{ctx}, target, nil, opts)
 		} else {
 			boundary = nested.Dir
 			selected, err = instructions.Discover(requestContext{ctx}, agent, nil, instructions.Options{ProjectRoot: agent})
 		}
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 	var facts []contextFact
@@ -69,7 +81,7 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 	for _, file := range selected.Files {
 		facts = append(facts, selectedFact(agent, pointerRoot(validate, root), file))
 	}
-	return facts, nil
+	return facts, privateRoot, nil
 }
 
 func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error) {

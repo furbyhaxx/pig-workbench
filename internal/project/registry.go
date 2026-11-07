@@ -152,6 +152,29 @@ func (r *Registry) Lookup(id string) (Entry, bool, error) {
 	return entry, true, nil
 }
 
+// PrivateNotesRoot returns an existing private notes directory for the project, or an empty path if absent.
+func (r *Registry) PrivateNotesRoot(id string) (string, error) {
+	if id != "global" && !idPattern.MatchString(id) {
+		return "", &Error{Key: "id", Reason: "expected global or prj- followed by lowercase letters or digits"}
+	}
+	if err := r.checkDirectory(); err != nil {
+		return "", err
+	}
+	entry := filepath.Join(r.dir, id)
+	if _, err := privateDirectory(entry); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+	private := filepath.Join(entry, "private")
+	if _, err := privateDirectory(private); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+	return private, nil
+}
+
 // Rebuild replaces the cache from valid project records and reports invalid records.
 func (r *Registry) Rebuild() error {
 	lock, err := r.lock()

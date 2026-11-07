@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/furbyhaxx/pig-workbench/internal/project"
 )
 
 // toolResults returns every tool message of one recorded provider request, in order.
@@ -27,6 +29,185 @@ func toolResults(t *testing.T, body string) []string {
 		}
 	}
 	return results
+}
+
+func TestLiveProjectPrivateNotesRespectTrustAndProjectIdentity(t *testing.T) {
+	for _, trusted := range []bool{false, true} {
+		t.Run(fmt.Sprintf("trusted=%t", trusted), func(t *testing.T) {
+			root := t.TempDir()
+			if _, err := project.Create(root, "prj-privateone", "private-one"); err != nil {
+				t.Fatal(err)
+			}
+			agent := filepath.Join(root, "agent")
+			private := filepath.Join(agent, "projects", "prj-privateone", "private")
+			if err := os.MkdirAll(private, 0700); err != nil {
+				t.Fatal(err)
+			}
+			note := filepath.Join(private, "notes.md")
+			if err := os.WriteFile(note, []byte("PRIVATE-ONE-MARKER\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			other := filepath.Join(agent, "projects", "prj-privateother", "private", "BACKLOG.md")
+			if err := os.MkdirAll(filepath.Dir(other), 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(other, []byte("OTHER-PROJECT-SECRET\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			recorder := &requestRecorder{calls: []scriptedCall{
+				{"write", map[string]any{"path": "session://self/instructions/ctl", "content": "pin " + note}},
+				{"write", map[string]any{"path": "session://self/instructions/ctl", "content": "pin " + other}},
+			}}
+			server := recorder.serve(t)
+			defer server.Close()
+			writeFixtureProvider(t, agent, server.URL)
+			args := []string{"--model", "workbench-fixture/mock", "--tools", "write"}
+			if trusted {
+				args = append(args, "--approve")
+			} else {
+				args = append(args, "--no-approve")
+			}
+			fixture := startRPCWithExtensions(t, root, true, nil, args...)
+			fixture.send("go", "prompt", "Inspect private instructions.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			if len(recorder.bodies) != 3 {
+				t.Fatalf("got %d provider requests", len(recorder.bodies))
+			}
+			first := recorder.bodies[0]
+			if got := strings.Contains(first, "PRIVATE-ONE-MARKER"); got != trusted {
+				t.Fatalf("private note present=%v; trusted=%v", got, trusted)
+			}
+			if trusted && (!strings.Contains(first, "instructions.project-private") || !strings.Contains(first, "user, instruction")) {
+				t.Fatal("private note lacks its user instruction provenance")
+			}
+			if strings.Contains(strings.Join(recorder.bodies, ""), "OTHER-PROJECT-SECRET") {
+				t.Fatal("another project's private content reached the provider")
+			}
+			results := toolResults(t, recorder.bodies[2])
+			if len(results) < 2 || !strings.Contains(results[len(results)-1], "active trusted project") {
+				t.Fatalf("cross-project pin was not refused: %v", results)
+			}
+			if trusted && !strings.Contains(results[len(results)-2], "pinned") {
+				t.Fatalf("own private note pin was refused: %v", results)
+			}
+		})
+	}
+}
+
+func TestLivePrivateNotesUpdateAndPinnedNotesWithdrawOnProjectChange(t *testing.T) {
+	root, other := t.TempDir(), t.TempDir()
+	if _, err := project.Create(root, "prj-privateone", "private-one"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := project.Create(other, "prj-privateother", "private-other"); err != nil {
+		t.Fatal(err)
+	}
+	agent := filepath.Join(root, "agent")
+	private := filepath.Join(agent, "projects", "prj-privateone", "private")
+	otherPrivate := filepath.Join(agent, "projects", "prj-privateother", "private")
+	for _, dir := range []string{private, otherPrivate} {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var body strings.Builder
+	for i := range 40 {
+		fmt.Fprintf(&body, "PRIVATE-RULE-%02d must be obeyed.\n", i)
+	}
+	note := filepath.Join(private, "notes.md")
+	if err := os.WriteFile(note, []byte(body.String()), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(otherPrivate, "notes.md"), []byte("OTHER-PRIVATE-MARKER\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte("a\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(other, "b.txt"), []byte("b\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"write", map[string]any{"path": "session://self/instructions/ctl", "content": "pin " + note}},
+		{"bash", map[string]any{"command": fmt.Sprintf("printf 'PRIVATE-UPDATED-MARKER\\n' >> %q", note)}},
+		{"read", map[string]any{"path": "a.txt"}},
+		{"cd", map[string]any{"path": other}},
+		{"read", map[string]any{"path": "b.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, agent, server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--approve", "--model", "workbench-fixture/mock", "--tools", "read,write,bash,cd")
+	fixture.send("go", "prompt", "Check the project instructions.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 6 {
+		t.Fatalf("got %d provider requests", len(recorder.bodies))
+	}
+	if !strings.Contains(recorder.bodies[0], "PRIVATE-RULE-00") {
+		t.Fatal("initial private note was not delivered")
+	}
+	if !strings.Contains(recorder.bodies[3], "Instruction update for") || !strings.Contains(recorder.bodies[3], "PRIVATE-UPDATED-MARKER") {
+		t.Fatal("private note update did not arrive as an instruction diff")
+	}
+	last := recorder.bodies[5]
+	if !strings.Contains(last, "does not belong to the active trusted project") {
+		t.Fatal("pinned private note was not withdrawn after changing projects")
+	}
+	if strings.Contains(strings.Join(recorder.bodies, ""), "OTHER-PRIVATE-MARKER") {
+		t.Fatal("untrusted other project's private note reached the provider")
+	}
+}
+
+func TestLivePrivateNotesFollowExplicitlyTrustedProjectChange(t *testing.T) {
+	root, other := t.TempDir(), t.TempDir()
+	if _, err := project.Create(root, "prj-first", "first"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := project.Create(other, "prj-second", "second"); err != nil {
+		t.Fatal(err)
+	}
+	agent := filepath.Join(root, "agent")
+	for id, marker := range map[string]string{"prj-first": "FIRST-NOTE-MARKER", "prj-second": "SECOND-NOTE-MARKER"} {
+		dir := filepath.Join(agent, "projects", id, "private")
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "notes.md"), []byte(marker+"\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(other, "b.txt"), []byte("b\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"cd", map[string]any{"path": other}},
+		{"read", map[string]any{"path": "b.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, agent, server.URL)
+	settings := fmt.Sprintf("[trust]\nrules = [%q]\n", "allow "+other)
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
+		t.Fatal(err)
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--approve", "--model", "workbench-fixture/mock", "--tools", "cd,read")
+	fixture.send("go", "prompt", "Inspect both projects.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 3 {
+		t.Fatalf("got %d provider requests", len(recorder.bodies))
+	}
+	if !strings.Contains(recorder.bodies[0], "FIRST-NOTE-MARKER") || strings.Contains(recorder.bodies[0], "SECOND-NOTE-MARKER") {
+		t.Fatal("first project did not receive only its own private note")
+	}
+	if !strings.Contains(recorder.bodies[2], "SECOND-NOTE-MARKER") {
+		t.Fatal("explicitly trusted second project did not receive its private note")
+	}
 }
 
 func TestLiveInstructionSettingsControlFramesAndPointerValidation(t *testing.T) {

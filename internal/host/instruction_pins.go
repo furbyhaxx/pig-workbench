@@ -11,6 +11,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
+	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
@@ -63,7 +64,13 @@ func withoutPin(pins []instructionPin, path string) []instructionPin {
 
 // pinnableClass chooses the class a file belongs to. A class must allow pinning, and an
 // ambiguous match needs an explicit class so an agent cannot pick a convenient one.
-func pinnableClass(path, requested string) (instructions.Class, error) {
+func pinnableClass(path, requested, privateRoot string) (instructions.Class, error) {
+	if privateNotePath(path, privateRoot) {
+		if requested != "" && requested != "project-private" {
+			return instructions.Class{}, fmt.Errorf("private note does not belong to class %q", requested)
+		}
+		return instructions.ProjectPrivateClass(), nil
+	}
 	var matches []instructions.Class
 	for _, class := range instructions.DefaultClasses() {
 		if requested != "" && class.ID != requested || !slices.Contains(class.Filenames, filepath.Base(path)) {
@@ -86,6 +93,45 @@ func pinnableClass(path, requested string) (instructions.Class, error) {
 		return instructions.Class{}, fmt.Errorf("class %q does not allow pins", matches[0].ID)
 	}
 	return matches[0], nil
+}
+
+func privateNotePath(path, root string) bool {
+	if root == "" || !strings.HasSuffix(filepath.Base(path), ".md") {
+		return false
+	}
+	canonical, err := filepath.EvalSymlinks(root)
+	return err == nil && filepath.Dir(path) == canonical
+}
+
+func sessionPrivateRoot(ctx sdk.Context, s *session) (string, error) {
+	agent, err := sdk.AgentDir()
+	if err != nil {
+		return "", err
+	}
+	registry, err := project.Open(agent)
+	if err != nil {
+		return "", err
+	}
+	current := s.location.Current()
+	detected, err := registry.Detect(requestContext{ctx}, current.Cwd)
+	if err != nil {
+		return "", err
+	}
+	_, root, err := instructionFacts(ctx, current.Cwd, detected.Root, detected.ProjectID, false, func(dir string) bool { return trustAllows(s.settings, dir) })
+	return root, err
+}
+
+func insideRegistryPrivate(agent, path string) bool {
+	canonical, err := filepath.EvalSymlinks(agent)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(filepath.Join(canonical, "projects"), path)
+	if err != nil || !filepath.IsLocal(rel) {
+		return false
+	}
+	parts := strings.Split(rel, string(filepath.Separator))
+	return len(parts) >= 3 && parts[1] == "private"
 }
 
 // pinBoundary is the directory a pinned file must lie in: the trusted project, or the user's agent directory.
@@ -133,7 +179,18 @@ func (a *app) pinInstruction(ctx sdk.Context, class, rawPath, origin string) (st
 	if info, err := os.Stat(canonical); err != nil || !info.Mode().IsRegular() {
 		return "", errors.New("pin target is not a regular file")
 	}
-	selected, err := pinnableClass(canonical, class)
+	privateRoot, err := sessionPrivateRoot(ctx, s)
+	if err != nil {
+		return "", err
+	}
+	agent, err := sdk.AgentDir()
+	if err != nil {
+		return "", err
+	}
+	if insideRegistryPrivate(agent, canonical) && !privateNotePath(canonical, privateRoot) {
+		return "", errors.New("private note pins must belong to the active trusted project")
+	}
+	selected, err := pinnableClass(canonical, class, privateRoot)
 	if err != nil {
 		return "", err
 	}
@@ -184,7 +241,7 @@ func (a *app) unpinInstruction(ctx sdk.Context, rawPath string) (string, error) 
 }
 
 // pinFacts delivers every pin. A vanished or no-longer-selected file becomes a notice, never stale content.
-func pinFacts(ctx sdk.Context, agent, pointers string, pins []instructionPin) []contextFact {
+func pinFacts(ctx sdk.Context, agent, privateRoot, pointers string, pins []instructionPin) []contextFact {
 	var facts []contextFact
 	for _, pin := range pins {
 		class, ok := classByID(pin.Class)
@@ -195,11 +252,24 @@ func pinFacts(ctx sdk.Context, agent, pointers string, pins []instructionPin) []
 			unavailable("its class no longer exists")
 			continue
 		}
+		if class.ID == "project-private" {
+			if !privateNotePath(pin.Path, privateRoot) {
+				unavailable("it does not belong to the active trusted project")
+				continue
+			}
+		} else if insideRegistryPrivate(agent, pin.Path) {
+			unavailable("private notes require their own class")
+			continue
+		}
 		root := filepath.Dir(pin.Path)
 		if rel, err := filepath.Rel(agent, pin.Path); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 			root = agent
 		}
-		set, err := instructions.Discover(requestContext{ctx}, filepath.Dir(pin.Path), []instructions.Class{class}, instructions.Options{ProjectRoot: root, AllowNested: true})
+		options := instructions.Options{ProjectRoot: root, AllowNested: true}
+		if class.ID == "project-private" {
+			options.PrivateRoot = privateRoot
+		}
+		set, err := instructions.Discover(requestContext{ctx}, filepath.Dir(pin.Path), []instructions.Class{class}, options)
 		if err != nil {
 			unavailable("it cannot be read")
 			continue
@@ -219,6 +289,9 @@ func pinFacts(ctx sdk.Context, agent, pointers string, pins []instructionPin) []
 }
 
 func classByID(id string) (instructions.Class, bool) {
+	if id == "project-private" {
+		return instructions.ProjectPrivateClass(), true
+	}
 	for _, class := range instructions.DefaultClasses() {
 		if class.ID == id {
 			return class, true
@@ -303,7 +376,8 @@ func (a *app) instructionRules(ctx sdk.Context) (string, error) {
 		return "", err
 	}
 	var lines []string
-	for _, class := range instructions.DefaultClasses() {
+	classes := append(instructions.DefaultClasses(), instructions.ProjectPrivateClass())
+	for _, class := range classes {
 		lines = append(lines, fmt.Sprintf("class %s: %s, placement %s, select %s, role %s, pin %t", class.ID, strings.Join(class.Filenames, ", "), class.Placement, class.Select, class.Role, class.AllowPin))
 	}
 	current := s.location.Current()
@@ -311,7 +385,11 @@ func (a *app) instructionRules(ctx sdk.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	set, err := instructions.Discover(requestContext{ctx}, current.Cwd, nil, instructions.Options{ProjectRoot: current.ProjectRoot, UserRoots: []string{agent}, AllowNested: false})
+	privateRoot, err := sessionPrivateRoot(ctx, s)
+	if err != nil {
+		return "", err
+	}
+	set, err := instructions.Discover(requestContext{ctx}, current.Cwd, nil, instructions.Options{ProjectRoot: current.ProjectRoot, UserRoots: []string{agent}, PrivateRoot: privateRoot, AllowNested: false})
 	if err != nil {
 		return strings.Join(lines, "\n") + "\nDiscovery for " + current.Cwd + " failed: " + err.Error(), nil
 	}
