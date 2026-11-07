@@ -57,6 +57,16 @@ func (FileProvider) List(ctx context.Context, uri, cursor string, limit int) (Li
 	if err != nil {
 		return Listing{}, fmt.Errorf("list directory: %w", err)
 	}
+	return pageDirectory(ctx, entries, cursor, limit, func(entry fs.DirEntry) Entry {
+		item := directoryEntry(entry, FileURI(filepath.Join(path, entry.Name())))
+		if item.Kind == EntryLink {
+			item.Target, _ = os.Readlink(filepath.Join(path, entry.Name()))
+		}
+		return item
+	})
+}
+
+func pageDirectory(ctx context.Context, entries []fs.DirEntry, cursor string, limit int, makeEntry func(fs.DirEntry) Entry) (Listing, error) {
 	sort.SliceStable(entries, func(i, j int) bool {
 		if entries[i].IsDir() != entries[j].IsDir() {
 			return entries[i].IsDir()
@@ -83,24 +93,25 @@ func (FileProvider) List(ctx context.Context, uri, cursor string, limit int) (Li
 			page.NextCursor = page.Entries[len(page.Entries)-1].Name
 			break
 		}
-		item := Entry{Name: entry.Name(), URI: FileURI(filepath.Join(path, entry.Name()))}
-		switch {
-		case entry.IsDir():
-			item.Kind = EntryDir
-		case entry.Type()&os.ModeSymlink != 0:
-			item.Kind = EntryLink
-			if target, err := os.Readlink(filepath.Join(path, entry.Name())); err == nil {
-				item.Target = target
-			}
-		default:
-			item.Kind = EntryFile
-			if info, err := entry.Info(); err == nil {
-				item.Size = info.Size()
-			}
-		}
-		page.Entries = append(page.Entries, item)
+		page.Entries = append(page.Entries, makeEntry(entry))
 	}
 	return page, nil
+}
+
+func directoryEntry(entry fs.DirEntry, uri string) Entry {
+	item := Entry{Name: entry.Name(), URI: uri}
+	switch {
+	case entry.IsDir():
+		item.Kind = EntryDir
+	case entry.Type()&os.ModeSymlink != 0:
+		item.Kind = EntryLink
+	default:
+		item.Kind = EntryFile
+		if info, err := entry.Info(); err == nil {
+			item.Size = info.Size()
+		}
+	}
+	return item
 }
 
 // Read pages a regular UTF-8 file, or lists a directory as a stable view.

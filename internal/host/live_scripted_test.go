@@ -251,6 +251,46 @@ func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
 	}
 }
 
+func TestLiveFindWalksScratchWithoutFollowingLinks(t *testing.T) {
+	root := t.TempDir()
+	cache := filepath.Join(root, "cache")
+	t.Setenv("XDG_CACHE_HOME", cache)
+	outside := filepath.Join(root, "outside")
+	if err := os.Mkdir(outside, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outside, "outside.md"), []byte("outside"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "find",
+		func([]string) scriptedCall {
+			dir := filepath.Join(cache, "pig-workbench", "scratch")
+			entries, err := os.ReadDir(dir)
+			if err != nil || len(entries) != 1 {
+				t.Errorf("scratch session missing: entries=%v err=%v", entries, err)
+			} else {
+				scratch := filepath.Join(dir, entries[0].Name())
+				if err := os.Mkdir(filepath.Join(scratch, "nested"), 0700); err != nil {
+					t.Errorf("create scratch directory: %v", err)
+				}
+				if err := os.WriteFile(filepath.Join(scratch, "nested", "two words.md"), []byte("inside"), 0600); err != nil {
+					t.Errorf("create scratch file: %v", err)
+				}
+				if err := os.Symlink(outside, filepath.Join(scratch, "escape")); err != nil {
+					t.Errorf("create symlink: %v", err)
+				}
+			}
+			return scriptedCall{"find", map[string]any{"path": "local:///", "pattern": "*.md"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "local:///escape", "pattern": "*.md"}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "local:///nested/two%20words.md") || strings.Contains(strings.Join(results, ""), "outside.md") || !strings.Contains(results[1], "not a directory") {
+		t.Fatalf("scratch find escaped or failed to return its URI: %v", results)
+	}
+}
+
 func TestLiveLocalReadCannotEscapeScratch(t *testing.T) {
 	root := t.TempDir()
 	cache := filepath.Join(root, "cache")

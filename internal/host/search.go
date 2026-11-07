@@ -34,7 +34,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "find", Label: "find",
-		Description:   "Walk a local directory or registered provider root for file names matching a glob pattern. local:// scratch traversal is not yet available. Links and noWalk subtrees are not followed, control files and .git are skipped, exclusions apply, and bounds report complete:false.",
+		Description:   "Walk a local directory or registered provider root for file names matching a glob pattern. Links and noWalk subtrees are not followed, control files and .git are skipped, exclusions apply, and bounds report complete:false.",
 		PromptSnippet: "Find files by name glob under a directory.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"pattern"}, "properties": map[string]any{
 			"pattern": map[string]any{"type": "string", "minLength": 1, "description": "File-name glob, e.g. *.go."},
@@ -162,9 +162,6 @@ func (a *app) find(ctx sdk.Context, params map[string]any) (any, error) {
 		if target.Scheme == "file" {
 			root = target.Path
 		} else {
-			if target.Scheme == "local" {
-				return nil, errors.New("find local:// is unavailable until scratch listings can be traversed safely")
-			}
 			provider, err = s.router.Provider(target)
 			if err != nil {
 				return nil, err

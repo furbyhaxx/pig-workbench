@@ -79,7 +79,7 @@ grep {"patterns": ["TODO", "FIXME"], "literal": true}
 find {"pattern": "*.go", "exclude": ["vendor"], "limit": 200}
 ```
 
-Walks file names under a local directory or registered provider directory. `find {"path": "kb://sources/", "pattern": "*.md"}` traverses paged provider listings with depth, entry, time and output limits. Links are not followed, control files and `.git` are skipped, and `noWalk` subtrees are skipped unless named directly. `local://` scratch traversal is temporarily unavailable while its listing is made safe; other providers without listing support return an error. Excluded names are pruned before descending.
+Walks file names under a local directory or registered provider directory. `find {"path": "kb://sources/", "pattern": "*.md"}` traverses paged provider listings with depth, entry, time and output limits. Links are not followed, control files and `.git` are skipped, and `noWalk` subtrees are skipped unless named directly. `local://` scratch traversal stays within the session root; scratch directories over 5000 entries return an error rather than an unbounded listing. Providers without listing support return an error. Excluded names are pruned before descending.
 
 ## `cd`
 

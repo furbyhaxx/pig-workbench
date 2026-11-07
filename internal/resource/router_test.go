@@ -101,6 +101,39 @@ func TestLocalProviderReadRefusesSymlinkEscape(t *testing.T) {
 	}
 }
 
+func TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "scratch")
+	provider, err := NewLocalProvider(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "nested"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "nested", "two words.md"), []byte("scratch data\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	stat, err := provider.Stat(context.Background(), "local:///escape")
+	if err != nil || stat.Kind != EntryLink {
+		t.Fatalf("link was followed: stat=%+v err=%v", stat, err)
+	}
+	if _, err := provider.List(context.Background(), "local:///escape", "", 100); err == nil {
+		t.Fatal("listing followed an escaping directory link")
+	}
+	listing, err := provider.List(context.Background(), "local:///nested", "", 100)
+	if err != nil || len(listing.Entries) != 1 || listing.Entries[0].URI != "local:///nested/two%20words.md" {
+		t.Fatalf("scratch listing exposed backing paths: %+v, %v", listing, err)
+	}
+	page, err := provider.Read(context.Background(), ReadRequest{URI: listing.Entries[0].URI, Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err != nil || !strings.Contains(page.Content, "scratch data") {
+		t.Fatalf("listed URI cannot be read: %+v, %v", page, err)
+	}
+}
+
 func TestFileProviderListingIsDeterministic(t *testing.T) {
 	root := t.TempDir()
 	for _, name := range []string{"b.txt", "A.txt", "z/c.txt"} {

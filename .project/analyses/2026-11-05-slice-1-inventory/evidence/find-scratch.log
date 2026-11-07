@@ -1,0 +1,8 @@
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (1.33s)
+=== RUN   TestLiveFindWalksScratchWithoutFollowingLinks
+--- PASS: TestLiveFindWalksScratchWithoutFollowingLinks (9.80s)
+=== RUN   TestLiveLocalReadCannotEscapeScratch
+--- PASS: TestLiveLocalReadCannotEscapeScratch (10.99s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	23.156s

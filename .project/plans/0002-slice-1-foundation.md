@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 24
+  revision: 25
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T08:34:34+01:00"
+  updated_at: "2026-11-07T08:44:09+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -83,6 +83,9 @@ document:
     - revision: 24
       reason: "Confine scratch reads to their session root"
       changes: ["Fixed a reproduced outside-scratch symlink read", "Kept safe scratch listing and stat as separate remaining work"]
+    - revision: 25
+      reason: "Confine scratch listings and enable provider traversal"
+      changes: ["Preserved local URI identity and bounded scratch directory enumeration", "Verified recursive search refuses escaping links"]
 ---
 
 # 1. Outcome
@@ -103,7 +106,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **Current status (07.11.2026):** Slice 1 is implemented in substantial part but is **not complete**. All fourteen specifications have been approved; acceptance and the slice exit remain open. The authoritative row-by-row inventory is [ANA-2026-11-05-slice-1-inventory](../analyses/2026-11-05-slice-1-inventory/README.md); its representative passing tests are not a claim that every acceptance anchor passes.
 - **Observed baseline:** at `9da6882`, `just check`, `just race` and `just integration` passed on Linux with scripted inference. Three repeated targeted race runs passed for lifecycle draining, watcher joins, crash reclamation, session-end cleanup and reference-producer reload. Logs are retained in the inventory's `evidence/`. These gates must be repeated after the remaining implementation changes.
 - **Available:** the ten tools, local locations, scoped settings, core resources, hashline editing, jobs, secrets boundary, frames and instructions, prompt/skills, session messaging and the v1 contribution seams are wired in varying degrees. See the product README and the inventory for the exact current surface and its limitations.
-- **Unfinished Slice 1:** `grep` does not route provider roots; `find` walks bounded paginated providers except `local://`, whose scratch listing and stat are not yet safe to traverse. Scratch reads now use a root-confined descriptor. Grep context is bounded but oversized matching lines are not yet windowed around the match. Scheme-command `rm`, `mv`, `cp` and `mkdir` are unconditionally refused; redirects accept one literal word and supported control targets, not general shell redirection. The project-private instruction class is absent. The task list retains all four behaviors and their acceptance tests; none is moved to depth by this checkpoint.
+- **Unfinished Slice 1:** `grep` does not route provider roots; `find` walks bounded paginated providers including confined `local://` scratch. Scratch reads and listings use root-confined descriptors. Grep context is bounded but oversized matching lines are not yet windowed around the match. Scheme-command `rm`, `mv`, `cp` and `mkdir` are unconditionally refused; redirects accept one literal word and supported control targets, not general shell redirection. The project-private instruction class is absent. The task list retains all four behaviors and their acceptance tests; none is moved to depth by this checkpoint.
 - **Evidence and approval gaps:** `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real two-session reply and hop limit with scripted inference. `TestLiveStoredSessionTitleRequiresConfirmation` exercises decline and acceptance through PiG RPC confirmation dialogs, not a visual TUI. `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi and preview answers in real PiG RPC dialogs with scripted inference. `TestActivityCountsFailedJobsAfterRealExit` verifies activity failure counts against real child processes. Windows messaging, session storage and registry have compile-level coverage only. The real-provider A/B and full agent transcript require user authorization for inference spend. Prompt takeover remains force-only and also requires instructions enabled.
 - **Intentionally deferred:** activity-item click requires the fork host and `activity.shortcut` is not applied; broadcast, coordinator, by-project trees and rich questionnaire chrome belong to later slices. The reference-extension seam gate passed; the real pig-web co-load remains pig-web's gate, and no slice-exit commit exists yet.
 

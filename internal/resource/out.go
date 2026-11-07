@@ -6,6 +6,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -135,14 +138,23 @@ func NewLocalProvider(root string) (*LocalProvider, error) {
 func (*LocalProvider) Scheme() string { return "local" }
 
 func (p *LocalProvider) path(uri string) (string, error) {
-	rest := strings.TrimPrefix(uri, "local:")
-	rest = strings.TrimPrefix(rest, "//")
-	if rest == "" || rest == "/" {
-		return p.root, nil
+	u, err := url.Parse(uri)
+	if err != nil || u.Scheme != "local" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return "", errors.New("invalid local:// URI")
+	}
+	rest := u.Host + u.Path
+	if u.Opaque != "" {
+		rest, err = url.PathUnescape(u.Opaque)
+		if err != nil {
+			return "", errors.New("invalid local:// path encoding")
+		}
 	}
 	rest = strings.TrimPrefix(rest, "/")
-	clean := filepath.Clean(rest)
-	if clean == "." || strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
+	if rest == "" {
+		return p.root, nil
+	}
+	clean := filepath.Clean(filepath.FromSlash(rest))
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || filepath.IsAbs(clean) || strings.ContainsRune(clean, 0) {
 		return "", errors.New("local:// path must stay inside the session scratch")
 	}
 	return filepath.Join(p.root, clean), nil
@@ -154,7 +166,16 @@ func (p *LocalProvider) Stat(ctx context.Context, uri string) (StatResult, error
 	if err != nil {
 		return StatResult{}, err
 	}
-	info, err := os.Stat(path)
+	rel, err := filepath.Rel(p.root, path)
+	if err != nil {
+		return StatResult{}, err
+	}
+	root, err := os.OpenRoot(p.root)
+	if err != nil {
+		return StatResult{}, err
+	}
+	defer root.Close()
+	info, err := root.Lstat(rel)
 	if errors.Is(err, os.ErrNotExist) {
 		return StatResult{}, ErrNotFound
 	}
@@ -164,6 +185,8 @@ func (p *LocalProvider) Stat(ctx context.Context, uri string) (StatResult, error
 	kind := EntryFile
 	if info.IsDir() {
 		kind = EntryDir
+	} else if info.Mode()&os.ModeSymlink != 0 {
+		kind = EntryLink
 	}
 	return StatResult{URI: uri, Kind: kind, Size: info.Size()}, nil
 }
@@ -174,7 +197,52 @@ func (p *LocalProvider) List(ctx context.Context, uri, cursor string, limit int)
 	if err != nil {
 		return Listing{}, err
 	}
-	return FileProvider{}.List(ctx, FileURI(path), cursor, limit)
+	rel, err := filepath.Rel(p.root, path)
+	if err != nil {
+		return Listing{}, err
+	}
+	root, err := os.OpenRoot(p.root)
+	if err != nil {
+		return Listing{}, err
+	}
+	defer root.Close()
+	before, err := root.Lstat(rel)
+	if errors.Is(err, os.ErrNotExist) {
+		return Listing{}, ErrNotFound
+	}
+	if err != nil {
+		return Listing{}, err
+	}
+	if !before.IsDir() {
+		return Listing{}, errors.New("scratch listing target is not a directory")
+	}
+	dir, err := root.Open(rel)
+	if err != nil {
+		return Listing{}, err
+	}
+	defer dir.Close()
+	opened, err := dir.Stat()
+	if err != nil {
+		return Listing{}, err
+	}
+	if !opened.IsDir() || !os.SameFile(before, opened) {
+		return Listing{}, errors.New("scratch directory changed while opening; retry")
+	}
+	entries, err := dir.ReadDir(5001)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return Listing{}, err
+	}
+	if len(entries) > 5000 {
+		return Listing{}, errors.New("scratch directory exceeds the 5000-entry listing limit")
+	}
+	if limit <= 0 || limit > 2000 {
+		limit = 500
+	}
+	return pageDirectory(ctx, entries, cursor, limit, func(entry fs.DirEntry) Entry {
+		name := filepath.ToSlash(filepath.Join(rel, entry.Name()))
+		child := (&url.URL{Scheme: "local", Path: "/" + name}).String()
+		return directoryEntry(entry, child)
+	})
 }
 
 // Read pages one scratch file.

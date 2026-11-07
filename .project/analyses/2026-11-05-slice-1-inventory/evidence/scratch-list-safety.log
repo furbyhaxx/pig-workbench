@@ -1,0 +1,68 @@
+=== RUN   TestLocalProviderContainment
+--- PASS: TestLocalProviderContainment (0.00s)
+=== RUN   TestLocalProviderReadRefusesSymlinkEscape
+--- PASS: TestLocalProviderReadRefusesSymlinkEscape (0.00s)
+=== RUN   TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory
+--- PASS: TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+=== RUN   TestWalkHonoursNoWalkAndNeverFollowsLinks
+--- PASS: TestWalkHonoursNoWalkAndNeverFollowsLinks (0.00s)
+=== RUN   TestWalkHonoursCancellation
+--- PASS: TestWalkHonoursCancellation (0.00s)
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/other_authority
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/nonchild
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor
+--- PASS: TestWalkRejectsEscapesAndRepeatedCursors (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/other_authority (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/nonchild (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor (0.00s)
+=== RUN   TestLocalProviderContainment
+--- PASS: TestLocalProviderContainment (0.00s)
+=== RUN   TestLocalProviderReadRefusesSymlinkEscape
+--- PASS: TestLocalProviderReadRefusesSymlinkEscape (0.00s)
+=== RUN   TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory
+--- PASS: TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+=== RUN   TestWalkHonoursNoWalkAndNeverFollowsLinks
+--- PASS: TestWalkHonoursNoWalkAndNeverFollowsLinks (0.00s)
+=== RUN   TestWalkHonoursCancellation
+--- PASS: TestWalkHonoursCancellation (0.00s)
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/other_authority
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/nonchild
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor
+--- PASS: TestWalkRejectsEscapesAndRepeatedCursors (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/other_authority (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/nonchild (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor (0.00s)
+=== RUN   TestLocalProviderContainment
+--- PASS: TestLocalProviderContainment (0.00s)
+=== RUN   TestLocalProviderReadRefusesSymlinkEscape
+--- PASS: TestLocalProviderReadRefusesSymlinkEscape (0.00s)
+=== RUN   TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory
+--- PASS: TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+=== RUN   TestWalkHonoursNoWalkAndNeverFollowsLinks
+--- PASS: TestWalkHonoursNoWalkAndNeverFollowsLinks (0.00s)
+=== RUN   TestWalkHonoursCancellation
+--- PASS: TestWalkHonoursCancellation (0.00s)
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/other_authority
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/nonchild
+=== RUN   TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor
+--- PASS: TestWalkRejectsEscapesAndRepeatedCursors (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/other_authority (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/parent_traversal (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/nonchild (0.00s)
+    --- PASS: TestWalkRejectsEscapesAndRepeatedCursors/repeated_cursor (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/resource	1.015s
