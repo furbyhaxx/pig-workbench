@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 48
+  revision: 49
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T23:36:27+01:00"
+  updated_at: "2026-11-08T00:06:20+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 48
-      reason: "Add scoped grouped display commands and retain reviewable captures"
-      changes: ["Verified grouped inspect/set/reset, quoted identifiers, completions and display-only change events", "Captured the provisional plain TUI at four widths and 16 rows without inference", "Fixed the reference producer to keep independent contributions available when --tools hides its presented tool", "Passed the full host integration rerun; layout review and renderer application remain open"]
+    - revision: 49
+      reason: "Apply effective display controls to cached renderers without I/O"
+      changes: ["Applied enabled/density/preview/metric visibility and preserved explicit zero preview", "Cached effective values per config revision and retained truthful raw/host-error fallback", "Counted actual preview lines instead of blocks", "Kept unsupported target/nested/custom consumers registered-only and refreshed provisional captures"]
 ---
 
 # Scope and evidence
@@ -111,7 +111,7 @@ SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Cu
 | §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.8/9, not inferred from one search card. |
 | §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.10. |
 | §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.9/10. |
-| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Values report registered, not applied/live; settings.get/catalog now pass [unit](evidence/display-settings-get-unit.log) and [actual host](evidence/display-settings-get-live.log) cases; grouped editing, application and render lifecycle remain 17.8.10.6–10. |
+| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Enabled/density/preview/metric controls now apply live through revision-keyed caches ([unit rendering](evidence/effective-display-rendering-unit.log), [actual settings/event](evidence/effective-display-settings-live.log), [full integration](evidence/effective-display-full-integration.log)); other controls remain registered-only. settings.get/catalog also pass [unit](evidence/display-settings-get-unit.log) and [actual host](evidence/display-settings-get-live.log) cases; grouped editing is implemented with provisional captures awaiting user review; monotonic snapshot lifecycle, replay and recorded-target/host-metric work remain 17.8.10.8–10. |
 | §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.9 owns actual evidence. |
 | §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
 | §5 hot render path | OPEN | decodeToolSnapshot currently marshals/parses Details on every result render; validated snapshot caching and monotonic lifecycle handling belong to 17.8.10.8. |

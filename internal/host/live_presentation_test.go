@@ -65,7 +65,7 @@ func TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	field := output.DisplaySettings.Fields["density"]
-	if output.DisplaySettings.Owner != "reference-producer" || output.DisplaySettings.Key != "web_search" || field.Value != "compact" || field.Scope != "runtime" || field.Application != "registered" {
+	if output.DisplaySettings.Owner != "reference-producer" || output.DisplaySettings.Key != "web_search" || field.Value != "compact" || field.Scope != "runtime" || field.Application != "live" {
 		t.Fatalf("effective display query: %+v", output)
 	}
 	if _, present := output.DisplaySettings.Fields["secrets.enabled"]; present {
@@ -86,7 +86,7 @@ func TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys(t *testing.
 	entry := func(id string) map[string]any {
 		return settingsNotice(t, fixture, id, "show "+key)["entry"].(map[string]any)
 	}
-	if value := entry("default"); value["value"] != "normal" || value["application"] != "registered" {
+	if value := entry("default"); value["value"] != "normal" || value["application"] != "live" {
 		t.Fatalf("producer default not active: %+v", value)
 	}
 	settingsNotice(t, fixture, "override", `set runtime `+key+` "compact"`)
@@ -95,7 +95,7 @@ func TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys(t *testing.
 		t.Fatalf("withdrawal erased override or stayed active: %+v", value)
 	}
 	fixture.command("restore", "/reference register-presentation")
-	if value := entry("restored"); value["value"] != "compact" || value["application"] != "registered" {
+	if value := entry("restored"); value["value"] != "compact" || value["application"] != "live" {
 		t.Fatalf("stable-key activation lost override: %+v", value)
 	}
 }

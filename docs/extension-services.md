@@ -75,7 +75,7 @@ Presentation registration cross-checks every claimed tool against host source at
 
 ## Query display settings
 
-`settings.get` requires your own active presentation `registrationId` and empty params. It returns `api.DisplaySettings`: stable owner/key, config revision, reload applicability and declared display fields with scope/file provenance and application status. It does not expose producer execution configuration or another owner's registration. The reply is bounded to 48 KiB. `registered` still means renderer integration is pending, not applied.
+`settings.get` requires your own active presentation `registrationId` and empty params. It returns `api.DisplaySettings`: stable owner/key, config revision, reload applicability and declared display fields with scope/file provenance and application status. It does not expose producer execution configuration or another owner's registration. The reply is bounded to 48 KiB. `live` marks a control with an actual renderer consumer; `registered` still means integration is pending, not applied. Effective enabled/density/preview/metric settings are cached once per configuration revision without render-time I/O.
 
 Dynamic fields also appear in `/workbench settings catalog tools.` and command completions. Removed fields remain unavailable in the user-facing catalog rather than being erased.
 

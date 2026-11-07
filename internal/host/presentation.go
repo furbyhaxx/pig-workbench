@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
@@ -19,6 +20,7 @@ type presentationRegistration struct {
 	owner          string
 	key            string
 	signature      [32]byte
+	enabled        bool
 	descriptor     presentation.Descriptor
 }
 
@@ -45,12 +47,27 @@ func (c *presentationCatalog) add(registrationID, owner, key string, descriptor 
 		Owner, Key string
 		Descriptor presentation.Descriptor
 	}{owner, key, descriptor})
-	entry := presentationRegistration{registrationID: registrationID, owner: owner, key: key, signature: sha256.Sum256(encoded), descriptor: descriptor}
+	entry := presentationRegistration{registrationID: registrationID, owner: owner, key: key, signature: sha256.Sum256(encoded), descriptor: descriptor, enabled: true}
 	for _, name := range descriptor.ToolNames {
 		c.byTool[name] = entry
 	}
 	c.byID[registrationID] = entry
 	return nil
+}
+
+func (s *session) refreshPresentationDisplay(snapshot *config.Snapshot) {
+	catalog := s.presentations
+	catalog.mu.Lock()
+	defer catalog.mu.Unlock()
+	for id, entry := range catalog.byID {
+		if setting, ok := snapshot.Get(displayKey(entry.owner, entry.key, "enabled")); ok {
+			entry.enabled = setting.Value.(bool)
+		}
+		catalog.byID[id] = entry
+		for _, tool := range entry.descriptor.ToolNames {
+			catalog.byTool[tool] = entry
+		}
+	}
 }
 
 func (c *presentationCatalog) remove(registrationID string) {
@@ -68,14 +85,19 @@ func (c *presentationCatalog) remove(registrationID string) {
 	delete(c.byID, registrationID)
 }
 
-func (c *presentationCatalog) resolve(tool string) (presentationRegistration, bool) {
+func (c *presentationCatalog) recordResolution(tool string, entry presentationRegistration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	entry, ok := c.byTool[tool]
 	if _, answered := c.resolved[tool]; !answered {
 		c.resolved[tool] = entry
 	}
-	return entry, ok
+}
+
+func presentationSignature(entry presentationRegistration) [32]byte {
+	if !entry.enabled {
+		return [32]byte{}
+	}
+	return entry.signature
 }
 
 func (c *presentationCatalog) appliesAfterReload(id string) bool {
@@ -83,7 +105,7 @@ func (c *presentationCatalog) appliesAfterReload(id string) bool {
 	defer c.mu.RUnlock()
 	if entry, ok := c.byID[id]; ok {
 		for _, tool := range entry.descriptor.ToolNames {
-			if resolved, answered := c.resolved[tool]; answered && resolved.signature != entry.signature {
+			if resolved, answered := c.resolved[tool]; answered && resolved.signature != presentationSignature(entry) {
 				return true
 			}
 		}
@@ -91,7 +113,7 @@ func (c *presentationCatalog) appliesAfterReload(id string) bool {
 	for tool, resolved := range c.resolved {
 		if resolved.registrationID == id {
 			current := c.byTool[tool]
-			if current.signature != resolved.signature {
+			if presentationSignature(current) != resolved.signature {
 				return true
 			}
 		}
@@ -107,7 +129,7 @@ func (c *presentationCatalog) changes() []presentationChange {
 	var changes []presentationChange
 	for tool, resolved := range c.resolved {
 		current, exists := c.byTool[tool]
-		if current.signature == resolved.signature {
+		if presentationSignature(current) == resolved.signature {
 			continue
 		}
 		if exists {
@@ -142,16 +164,34 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 	if err != nil {
 		return next()
 	}
-	entry, ok := s.presentations.resolve(toolName)
+	entry, ok := s.presentations.lookup(toolName)
 	if !ok {
+		s.presentations.recordResolution(toolName, presentationRegistration{})
 		return next()
 	}
+	display, displayErr := s.effectiveDisplay(entry)
+	if displayErr != nil || !display.enabled {
+		s.presentations.recordResolution(toolName, presentationRegistration{})
+		return next()
+	}
+	s.presentations.recordResolution(toolName, entry)
+	cache := &displayCache{}
 	return &sdk.ToolRenderers{
 		Call: func(_ sdk.Context, args map[string]any, _ sdk.ToolRenderContext, width int) ([]string, error) {
+			display, err := cache.get(s, entry)
+			if err != nil || !display.enabled {
+				return fitPresentationLines([]string{entry.descriptor.Label + " · presentation disabled; delegation appliesAfterReload"}, width, 2), nil
+			}
 			return renderPresentationCall(entry.descriptor, args, width), nil
 		},
 		Result: func(_ sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
-			return renderPresentationResult(entry.descriptor, result, options, render, width), nil
+			display, err := cache.get(s, entry)
+			if err != nil || !display.enabled {
+				return rawPresentationResult(entry.descriptor, result, width, render.IsError, "presentation disabled or unavailable; delegation appliesAfterReload"), nil
+			}
+			descriptor := entry.descriptor
+			descriptor.DefaultDisplay.Density, descriptor.DefaultDisplay.PreviewLines = display.density, display.preview
+			return renderPresentationResult(descriptor, result, options, render, width, display), nil
 		},
 	}
 }

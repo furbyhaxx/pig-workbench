@@ -133,7 +133,7 @@ func displayGroupLines(groups []displayGroupView, width int) []string {
 			pending = pending || field.Effective.Application != "live"
 		}
 		if pending {
-			lines = append(lines, "Schema registered; not applied.")
+			lines = append(lines, "Some controls not applied.")
 		}
 		if group.AppliesAfterReload {
 			lines = append(lines, "Renderer claim appliesAfterReload.")

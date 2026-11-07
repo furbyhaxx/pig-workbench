@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 56
+  revision: 57
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T23:36:27+01:00"
+  updated_at: "2026-11-08T00:06:20+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 56
-      reason: "Add scoped grouped display commands and retain reviewable captures"
-      changes: ["Verified grouped inspect/set/reset, quoted identifiers, completions and display-only change events", "Captured the provisional plain TUI at four widths and 16 rows without inference", "Fixed the reference producer to keep independent contributions available when --tools hides its presented tool", "Passed the full host integration rerun; layout review and renderer application remain open"]
+    - revision: 57
+      reason: "Apply effective display controls to cached renderers without I/O"
+      changes: ["Applied enabled/density/preview/metric visibility and preserved explicit zero preview", "Cached effective values per config revision and retained truthful raw/host-error fallback", "Counted actual preview lines instead of blocks", "Kept unsupported target/nested/custom consumers registered-only and refreshed provisional captures"]
 ---
 
 # 1. Outcome

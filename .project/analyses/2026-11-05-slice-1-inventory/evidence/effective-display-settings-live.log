@@ -1,0 +1,26 @@
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.73s)
+=== RUN   TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues
+--- PASS: TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues (0.69s)
+=== RUN   TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys
+--- PASS: TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys (0.76s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.05s)
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.80s)
+=== RUN   TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues
+--- PASS: TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues (0.79s)
+=== RUN   TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys
+--- PASS: TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys (0.81s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.21s)
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.78s)
+=== RUN   TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues
+--- PASS: TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues (0.72s)
+=== RUN   TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys
+--- PASS: TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys (0.73s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	11.097s

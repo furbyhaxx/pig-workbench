@@ -5,7 +5,7 @@
  metrics ["results"] [defaults]
  preview-lines 6 [defaults]
  target-shortening true [defaults]
- Schema registered; not applied.
+ Some controls not applied.
  reference-producer / web_search
 
 ────────────────────────────────────

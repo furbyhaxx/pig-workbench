@@ -33,6 +33,9 @@ func displayDefinitions(owner, key string, d presentation.Descriptor) ([]config.
 		metrics = append(metrics, metric.ID)
 	}
 	definitions := []config.Definition{field("enabled", config.Boolean, true), density, preview, field("metrics", config.Strings, metrics), field("target-shortening", config.Boolean, true), children}
+	for i := 0; i < 4; i++ {
+		definitions[i].Application = "live"
+	}
 	used := map[string]bool{}
 	for _, definition := range definitions {
 		used[definition.Key] = true
@@ -80,6 +83,12 @@ func installWithDisplaySchema(ctx context.Context, s *session, registration cont
 		cleanup()
 		return nil, fmt.Errorf("%w: display schema activation failed: %v", contribution.ErrInvalidDescriptor, err)
 	}
+	snapshot, err := s.settings.Current()
+	if err != nil {
+		cleanup()
+		return nil, err
+	}
+	s.refreshPresentationDisplay(snapshot)
 	return cleanup, nil
 }
 

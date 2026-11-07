@@ -35,7 +35,9 @@ Settings marked `unavailable` are retained and validated but do not control thei
 
 Presentation descriptors register typed values under `tools.<owner>.<stable-key>.<field>`; TOML quoting preserves dots in owner/key names as literal segments. Producer defaults sit below user, trusted-project and runtime overrides. Withdrawal keeps overrides and marks the schema unavailable; re-registration reuses the stable identity. Descriptor type changes must use a new key or an explicit migration.
 
-These dynamic entries currently report `registered`, not `live`: storage, grouped inspection and scoped editing are available, but full renderer application is still being integrated. Do not infer applied rendering from a successful save.
+`enabled`, `density`, `preview-lines` and `metrics` now report `live` and affect the shared renderer. Compact density is header-only; an explicit zero preview is retained, and `metrics = []` hides metrics. Changing these values never changes tool execution. If rendering was already cached, disabling shows a bounded raw fallback and reports `appliesAfterReload` for delegation to the producer/host; before first resolution it delegates directly.
+
+Target-shortening, child-density and producer-specific controls still report `registered` until their consumers are integrated. Do not infer applied rendering from a successful save of a registered-only control.
 
 ```text
 /workbench settings tools

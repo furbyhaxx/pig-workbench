@@ -20,39 +20,61 @@ func renderPresentationCall(descriptor presentation.Descriptor, args map[string]
 	return fitPresentationLines([]string{strings.Join(parts, " · ")}, width, 1)
 }
 
-func renderPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) []string {
+func rawPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, width int, hostIsError bool, diagnostic string) []string {
+	status := "result"
+	if hostIsError {
+		status = "failed (host)"
+	}
+	lines := []string{descriptor.Label + " · " + status}
+	if diagnostic != "" {
+		lines = append(lines, diagnostic)
+	}
+	lines = append(lines, contentPreview(result.Content, 6)...)
+	return fitPresentationLines(lines, width, 40)
+}
+
+func renderPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay) []string {
 	snapshot, err := decodeToolSnapshot(descriptor, result.Details)
 	if err != nil {
-		lines := []string{descriptor.Label + " · result"}
+		diagnostic := ""
 		if result.Details != nil {
-			lines = append(lines, "presentation unavailable; showing raw result")
+			diagnostic = "presentation unavailable; showing raw result"
 		}
-		lines = append(lines, contentPreview(result.Content, 6)...)
-		return fitPresentationLines(lines, width, 40)
+		return rawPresentationResult(descriptor, result, width, render.IsError, diagnostic)
 	}
+	metrics := make([]presentation.Metric, 0, len(snapshot.Metrics))
+	for _, metric := range snapshot.Metrics {
+		if display.metrics[metric.ID] {
+			metrics = append(metrics, metric)
+		}
+	}
+	snapshot.Metrics = metrics
 	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width)}
-	if snapshot.Summary != "" {
-		lines = append(lines, snapshot.Summary)
-	}
 	preview := descriptor.DefaultDisplay.PreviewLines
-	if preview <= 0 {
-		preview = 8
-	}
 	switch descriptor.DefaultDisplay.Density {
 	case "compact":
-		preview = min(preview, 3)
+		preview = 0
 	case "full":
-		preview = max(preview, 40)
+		if preview > 0 {
+			preview = max(preview, 40)
+		}
 	}
 	if options.Expanded {
 		preview = max(preview, 80)
 	}
-	for _, block := range snapshot.Blocks {
-		if len(lines) >= preview+2 {
-			lines = append(lines, "… more presentation blocks")
-			break
+	if preview > 0 {
+		var body []string
+		if snapshot.Summary != "" {
+			body = append(body, snapshot.Summary)
 		}
-		lines = append(lines, presentationBlockLines(block)...)
+		for _, block := range snapshot.Blocks {
+			body = append(body, presentationBlockLines(block)...)
+		}
+		shown := min(preview, len(body))
+		lines = append(lines, body[:shown]...)
+		if shown < len(body) {
+			lines = append(lines, fmt.Sprintf("… %d more presentation lines", len(body)-shown))
+		}
 	}
 	if snapshot.Continuation != nil {
 		continuation := "continue: " + snapshot.Continuation.Explanation

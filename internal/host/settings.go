@@ -210,6 +210,9 @@ func notifyJSON(ctx sdk.Context, value any) error {
 }
 
 func (a *app) settingsChanged(ctx sdk.Context, s *session, revision uint64, keys []string) {
+	if snapshot, err := s.settings.Current(); err == nil {
+		s.refreshPresentationDisplay(snapshot)
+	}
 	event := api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:settings:%d", s.generation, revision), Type: "settings.changed", Data: map[string]any{"configRevision": revision, "changed": keys}}
 	if err := ctx.Events().Emit(api.EventChannel, event); err != nil {
 		ctx.Notify("Configuration is applied, but its change notification failed; inspect settings to reconcile.", "warning")
