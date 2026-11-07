@@ -39,6 +39,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 - `ErrUnavailable` means no Workbench answered within the call; use your own fallback rather than assuming its services ran.
 - `TransportError.Error()` omits request payloads; its unwrapped cause is separate and must be handled carefully.
 - A request above 64 KiB fails `limitExceeded` locally before emitting.
+- Control and provider replies share `api.DecodeReply`: one non-null success result or one actionable error, never both. Malformed/oversized replies are ignored; missing trustworthy mutation receipts remain unknown. Unknown outcomes cannot carry a safe-retry flag.
 - `Close` unsubscribes; it does not preempt a call already running in another handler.
 
 ## Advertised capabilities today

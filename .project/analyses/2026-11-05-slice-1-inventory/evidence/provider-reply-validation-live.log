@@ -1,0 +1,26 @@
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.53s)
+=== RUN   TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit
+--- PASS: TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit (0.84s)
+=== RUN   TestLiveServiceFailuresRPC
+--- PASS: TestLiveServiceFailuresRPC (0.39s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (1.02s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.09s)
+=== RUN   TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit
+--- PASS: TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit (0.90s)
+=== RUN   TestLiveServiceFailuresRPC
+--- PASS: TestLiveServiceFailuresRPC (0.36s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (1.14s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.16s)
+=== RUN   TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit
+--- PASS: TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit (0.83s)
+=== RUN   TestLiveServiceFailuresRPC
+--- PASS: TestLiveServiceFailuresRPC (0.33s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (0.98s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	11.607s

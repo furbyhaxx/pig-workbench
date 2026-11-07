@@ -213,6 +213,22 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 
 // TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
 // extension load order must not matter.
+func TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit(t *testing.T) {
+	t.Setenv("WORKBENCH_MUTATION_FIXTURE", "1")
+	t.Setenv("WORKBENCH_REFERENCE_BAD_WIRE", "1")
+	results := runScriptedWith(t, t.TempDir(), "write,read", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"write", map[string]any{"path": "mut://fixture/committed", "content": "landed despite malformed reply\n"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "mut://fixture/committed"}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "unknown") || strings.Contains(results[0], "notApplied") || !strings.Contains(results[1], "landed despite malformed reply") {
+		t.Fatalf("contradictory provider reply produced a safe-retry claim: %v", results)
+	}
+}
+
 func TestLiveProviderMutationsWithoutConfirmation(t *testing.T) {
 	t.Setenv("WORKBENCH_MUTATION_FIXTURE", "1")
 	steps := []scriptedCall{

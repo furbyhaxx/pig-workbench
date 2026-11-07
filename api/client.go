@@ -246,15 +246,11 @@ func (c *Client) exchange(ctx sdk.Context, request Request) ([]Reply, bool, erro
 }
 
 func (c *Client) onReply(_ sdk.Context, value any) error {
-	encoded, err := json.Marshal(value)
-	if err != nil || len(encoded) > ControlBytes {
+	reply, err := DecodeReply(value)
+	if err != nil {
 		return nil
 	}
-	var reply Reply
-	if err := json.Unmarshal(encoded, &reply); err != nil {
-		return nil
-	}
-	if reply.Version != 1 || reply.To != c.identity || reply.ID == "" || reply.Generation == "" || reply.OK == (reply.Error != nil) || reply.OK && reply.Result == nil || !reply.OK && reply.Result != nil {
+	if reply.To != c.identity {
 		return nil
 	}
 	c.mu.Lock()

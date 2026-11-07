@@ -231,7 +231,7 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		if err != nil {
 			return err
 		}
-		stop, err := created.Serve(ext, handle)
+		stop, err := serveReference(created, ext)
 		if err != nil {
 			created.Close()
 			return err

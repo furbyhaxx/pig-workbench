@@ -104,6 +104,52 @@ type Discovery struct {
 	Location         any      `json:"location,omitempty"`
 }
 
+// DecodeReply validates one bounded reply without interpreting method-specific result data.
+func DecodeReply(value any) (Reply, error) {
+	var reply Reply
+	invalid := func() (Reply, error) {
+		return Reply{}, &Error{Code: "invalidRequest", Message: "invalid reply envelope"}
+	}
+	encoded, err := json.Marshal(value)
+	if err != nil || len(encoded) > ControlBytes {
+		return invalid()
+	}
+	if Decode(encoded, &reply) != nil {
+		return invalid()
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(encoded, &fields) != nil {
+		return invalid()
+	}
+	if !bytes.Equal(fields["ok"], []byte("true")) && !bytes.Equal(fields["ok"], []byte("false")) {
+		return invalid()
+	}
+	if reply.Version != 1 || !validWireID(reply.ID) || !validWireID(reply.SessionID) || !validWireID(reply.Generation) || !validWireID(reply.To.Owner) || !validWireID(reply.To.Instance) {
+		return invalid()
+	}
+	if reply.OK {
+		if reply.Result == nil || reply.Error != nil {
+			return invalid()
+		}
+	} else {
+		if reply.Result != nil || reply.Error == nil || !validWireID(reply.Error.Code) || strings.TrimSpace(reply.Error.Message) == "" {
+			return invalid()
+		}
+		if (reply.Error.Outcome == "unknown" || reply.Error.Code == "outcomeUnknown") && reply.Error.Retryable {
+			return invalid()
+		}
+		if reply.Error.Code == "outcomeUnknown" && reply.Error.Outcome != "" && reply.Error.Outcome != "unknown" {
+			return invalid()
+		}
+		switch reply.Error.Outcome {
+		case "", "notApplied", "applied", "unknown":
+		default:
+			return invalid()
+		}
+	}
+	return reply, nil
+}
+
 // DecodeRequest validates the common shape without interpreting method parameters.
 func DecodeRequest(value any) (Request, error) {
 	var request Request

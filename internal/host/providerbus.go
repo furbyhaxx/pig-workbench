@@ -46,15 +46,11 @@ func newProviderBus(sessionID, generation string, events func() (sdk.Context, bo
 }
 
 func (b *providerBus) onReply(_ sdk.Context, value any) error {
-	encoded, err := json.Marshal(value)
-	if err != nil || len(encoded) > api.ControlBytes {
+	reply, err := api.DecodeReply(value)
+	if err != nil {
 		return nil
 	}
-	var reply api.Reply
-	if err := json.Unmarshal(encoded, &reply); err != nil {
-		return nil
-	}
-	if reply.Version != 1 || reply.To != b.identity || reply.SessionID != b.sessionID || reply.Generation != b.generation || reply.OK == (reply.Error != nil) {
+	if reply.To != b.identity || reply.SessionID != b.sessionID || reply.Generation != b.generation {
 		return nil
 	}
 	b.mu.Lock()

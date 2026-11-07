@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 49
+  revision: 50
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T21:09:49+01:00"
+  updated_at: "2026-11-07T21:34:15+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 49
-      reason: "Preserve native directory snapshot continuation integrity"
-      changes: ["Bounded native cursor use to canonical directories and visible entry snapshots","Rejected wrong roots, inserted/removed entries and stale last names","Used descriptor-checked nonblocking directory admission and preserved scratch containment"]
+    - revision: 50
+      reason: "Reject contradictory reply envelopes before classifying mutation outcomes"
+      changes: ["Shared bounded strict reply decoding across control/provider callers", "Rejected empty success, mixed result/error and unsafe unknown retry claims", "Verified a committed mutation with a malformed notApplied reply remains unknown"]
 ---
 
 # 1. Outcome

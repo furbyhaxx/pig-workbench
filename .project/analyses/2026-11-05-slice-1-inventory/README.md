@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 40
+  revision: 41
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T21:23:33+01:00"
+  updated_at: "2026-11-07T21:34:15+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 40
-      reason: "Audit exact protocol anchors and expose missing lifecycle/settings behavior"
-      changes: ["Recorded actual passing control/registry/reference suites", "Tracked cancellation, strict provider replies, progress and dormant settings as open", "Kept foreign/fused evidence separate from isolated Go results"]
+    - revision: 41
+      reason: "Reject contradictory reply envelopes before classifying mutation outcomes"
+      changes: ["Shared bounded strict reply decoding across control/provider callers", "Rejected empty success, mixed result/error and unsafe unknown retry claims", "Verified a committed mutation with a malformed notApplied reply remains unknown"]
 ---
 
 # Scope and evidence
@@ -89,8 +89,8 @@ SPEC-0001 §7 bullets are audited independently of representative discovery succ
 | §7.2 identical/changed/colliding/atomic replace/stale handles | PASS (covered registry paths) | Registry/contribution unit tests and live stale-generation/reload cases pass; active-operation withdrawal still requires 17.8.4. |
 | §7.3 foreign-runtime JSON equivalence | OPEN | Go JSON contract tests do not prove another supported extension runtime. Actual foreign/fused coverage is 17.8.3.5. |
 | §7.4 nested control/provider/progress and owned shutdown | PARTIAL | Real nested reference calls/reloads pass. Provider progress has no consumer (17.8.3.6); provider admission/drain is 17.8.4. |
-| §7.5 deadline/cancel/failure/unknown mutation outcome | OPEN | Current mutation failure/partial/unknown receipts pass. Provider Serve does not apply operation deadlines or explicit cancellation; control Client does not send cancel after abort or preserve known replies after Emit failure. Work is 17.8.4.2 and 17.8.3.4. |
-| §7.6 response/envelope/counters/duplicate IDs/lost notifications | PARTIAL | Request/reply size and malformed control tests pass. Provider reply branch validation is incomplete (17.8.3.3); no dedicated progress/counter/lost-event evidence is implied by those tests. |
+| §7.5 deadline/cancel/failure/unknown mutation outcome | OPEN | Current mutation failure/partial/unknown receipts pass. Provider Serve does not apply operation deadlines or explicit cancellation; control Client does not send cancel after abort or preserve known replies after Emit failure. Work is 17.8.4.2 and 17.8.3.4; malformed reply outcome safety now has actual committed-effect evidence. |
+| §7.6 response/envelope/counters/duplicate IDs/lost notifications | PARTIAL | Request/reply size and malformed control tests pass. Strict provider/control reply branch validation passes [unit](evidence/provider-reply-validation-unit.log) and [actual committed-mutation wire](evidence/provider-reply-validation-live.log) tests; no dedicated progress/counter/lost-event evidence is implied by those tests. |
 | §7.7 absent-producer replay and dormant settings | OPEN | Raw retained result fallback exists, but settings.get has no dispatcher and dynamic presentation settings persistence/dormancy is not implemented. Presentation reconciliation in 17.8.3.2 owns this gap. |
 | §7.8 cancellation-after-abort, late replies, isolated/fused | OPEN | Direct owner-scoped control cancellation and late-reply unit checks pass; actual busy provider cancellation and both host forms still require 17.8.4.2 and 17.8.3.5. |
 | §7.9 reload hang consistency | PARTIAL | Two real reloads and independent consumer rediscovery pass. Shared-bus/host preemption limits stay explicit; no deterministic never-returning host reload was established by those runs. |

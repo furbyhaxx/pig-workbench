@@ -1,0 +1,44 @@
+=== RUN   TestProviderBusRejectsMalformedReplyBranches
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_success
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/error_with_result
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_error
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/invalid_outcome
+--- PASS: TestProviderBusRejectsMalformedReplyBranches (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_success (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/error_with_result (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_error (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/invalid_outcome (0.00s)
+=== RUN   TestProviderBusRejectsMalformedReplyBranches
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_success
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/error_with_result
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_error
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/invalid_outcome
+--- PASS: TestProviderBusRejectsMalformedReplyBranches (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_success (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/error_with_result (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_error (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/invalid_outcome (0.00s)
+=== RUN   TestProviderBusRejectsMalformedReplyBranches
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_success
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/error_with_result
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/empty_error
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code
+=== RUN   TestProviderBusRejectsMalformedReplyBranches/invalid_outcome
+--- PASS: TestProviderBusRejectsMalformedReplyBranches (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_success (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/error_with_result (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/empty_error (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/unsafe_unknown_retry (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/contradictory_unknown_code (0.00s)
+    --- PASS: TestProviderBusRejectsMalformedReplyBranches/invalid_outcome (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	1.053s
