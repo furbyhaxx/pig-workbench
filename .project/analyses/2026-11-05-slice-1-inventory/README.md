@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 27
+  revision: 28
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T16:26:32+01:00"
+  updated_at: "2026-11-07T16:32:35+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -92,6 +92,9 @@ document:
     - revision: 27
       reason: "Compile all Slice 1 ownership rows against current observed tests"
       changes: ["Linked passing unit and live cases for all 24 ownership rows", "Retained remaining unproved behavior instead of treating a table as acceptance"]
+    - revision: 28
+      reason: "Pass final scripted-provider gates after mutation wiring"
+      changes: ["Recorded just check, race and integration at 733298a", "Kept the unrun live-provider A/B gate explicit"]
 ---
 
 # Scope and evidence
@@ -128,6 +131,8 @@ At `eb55bf7`, fresh race-enabled full unit and host integration runs passed. U m
 | 0014 §3–§5, §6.1–§6.2, §7, §8 | S1 J | L: `TestLivePromptSettingsControlTakeover`, `TestLiveSkillsListingBudgetChangesTheCommandOutput`; U: `TestFixtureSectionOrder`, `TestBuiltinWorkbenchRendersRequiredSections`, `TestPromptEpochIsStableForTheSameText`, `TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch`, `TestScanReadsFrontmatterAndHidesNestedUntilLoad`. | Engine, six frames, epochs and skills evidence. Live-provider A/B remains unauthorized; auto retains PiG's prompt and force requires instructions enabled. |
 
 # Baseline gates
+
+At `733298a`, the exact `just check`, `just race` and `just integration` recipes passed after provider mutation wiring: [mutations-final-check.log](evidence/mutations-final-check.log), [mutations-final-race.log](evidence/mutations-final-race.log), [mutations-final-integration.log](evidence/mutations-final-integration.log). No new permission or confirmation layer is installed for contributed mutations. Full fresh, uncached verbose race evidence at the same implementation is linked above. No billed inference was used.
 
 At `9126aff`, `just check`, `just race` and `just integration` pass on Linux after the search, private-instruction, mutation-barrier and shell-parser changes. Redacted output: [approved-check.log](evidence/approved-check.log), [approved-race.log](evidence/approved-race.log), [approved-integration-rerun.log](evidence/approved-integration-rerun.log). The first integration run failed only because the old composition-refusal regression expected the word `quoting` after static quotes became supported ([approved-integration.log](evidence/approved-integration.log)); the assertion now checks composition refusal and still verifies that no shell marker was created. The targeted case passed three times before the full rerun. These checks use scripted local inference, not a live-provider A/B evaluation.
 
