@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 func write(t *testing.T, root, name, body string) string {
@@ -20,6 +22,55 @@ func write(t *testing.T, root, name, body string) string {
 		t.Fatal(err)
 	}
 	return path
+}
+
+type changingRevisionProvider struct {
+	resource.Provider
+	reads int
+}
+
+func (p *changingRevisionProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {
+	page, err := p.Provider.Read(ctx, request)
+	p.reads++
+	if p.reads > 1 {
+		page.Facts.Revision = "changed"
+	}
+	return page, err
+}
+
+func TestGrepProviderPagesAndHonoursBoundaries(t *testing.T) {
+	root := t.TempDir()
+	body := strings.Repeat("ordinary source line\n", 2499) + "needle at end\n"
+	write(t, root, "nested/data.txt", body)
+	outside := t.TempDir()
+	write(t, outside, "secret.txt", "needle outside\n")
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	options := Options{Root: resource.FileURI(root), Patterns: []string{"needle"}, Literal: true, Glob: "*.txt", Limits: Limits{Context: 1}}
+	result, err := GrepProvider(context.Background(), resource.FileProvider{}, options)
+	if err != nil || !result.Complete || len(result.Matches) != 1 {
+		t.Fatalf("provider paging: %+v %v", result, err)
+	}
+	match := result.Matches[0]
+	if match.Revision == "" || match.Line != 2500 || match.Column != 1 || len(match.Before) != 1 || match.Before[0].Line != 2499 || !strings.Contains(match.Path, "nested/data.txt") {
+		t.Fatalf("provider match lost coordinates or context: %+v", match)
+	}
+	unstable := &changingRevisionProvider{Provider: resource.FileProvider{}}
+	changed, err := GrepProvider(context.Background(), unstable, options)
+	if err != nil || changed.Complete || len(changed.Skipped) != 1 || len(changed.Matches) != 0 {
+		t.Fatalf("changed provider revision was mixed: %+v %v", changed, err)
+	}
+	options.Limits.MaxFileBytes = 100
+	limited, err := GrepProvider(context.Background(), resource.FileProvider{}, options)
+	if err != nil || limited.Complete || len(limited.Skipped) != 1 || len(limited.Matches) != 0 {
+		t.Fatalf("provider size limit not reported: %+v %v", limited, err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := GrepProvider(ctx, resource.FileProvider{}, options); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled provider walk: %v", err)
+	}
 }
 
 func TestGrepBoundsAndHonesty(t *testing.T) {

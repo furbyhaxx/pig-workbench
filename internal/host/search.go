@@ -13,7 +13,7 @@ import (
 func (a *app) registerSearchTools(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "grep", Label: "grep",
-		Description:   "Search file contents under one directory. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Paths resolve against the Workbench location. Binary and oversized files are skipped and listed in Details; hitting the match/file limit reports complete:false instead of pretending the results are exhaustive.",
+		Description:   "Search file contents under a local path or registered provider directory. Pass exactly one regex pattern, or literal patterns for an OR search (literal:true). Relative paths resolve against the Workbench location. Binary, oversized and incomplete provider files are skipped and listed in Details; hitting a bound reports complete:false instead of pretending the results are exhaustive.",
 		PromptSnippet: "Search file contents with exact matches and honest limits.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"pattern":    map[string]any{"type": "string", "minLength": 1, "description": "Regular expression, or one literal when literal is true."},
@@ -93,17 +93,36 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	defer done()
 	root := captured.Cwd
+	var provider resource.Provider
 	if hasPath && input.Path != "" {
-		root, err = captured.Resolve(input.Path)
-		if err != nil {
-			return nil, err
+		target, parseErr := resource.ParsePath(captured.Cwd, input.Path, "")
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		if target.Selection.Explicit {
+			return nil, errors.New("grep does not accept a line selector on the root")
+		}
+		if target.Scheme == "file" {
+			root = target.Path
+		} else {
+			provider, err = s.router.Provider(target)
+			if err != nil {
+				return nil, err
+			}
+			root = target.URI
 		}
 	}
-	result, err := search.Grep(work, search.Options{
+	options := search.Options{
 		Root: root, Patterns: patterns, Literal: input.Literal, IgnoreCase: input.IgnoreCase,
 		Glob: input.Glob, Exclude: input.Exclude, FilesOnly: input.FilesOnly,
 		Limits: search.Limits{MaxMatches: input.Limit, Context: input.Context},
-	})
+	}
+	var result search.Result
+	if provider != nil {
+		result, err = search.GrepProvider(work, provider, options)
+	} else {
+		result, err = search.Grep(work, options)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +142,7 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 		}
 	}
 	if !result.Complete {
-		body.WriteString("… results incomplete due to a line window or match, file or output limit\n")
+		body.WriteString("… results incomplete due to a line window, skipped provider file or search/output limit\n")
 	}
 	if len(result.Skipped) > 0 {
 		_, _ = fmt.Fprintf(&body, "skipped %d unreadable, binary or oversized file(s)\n", len(result.Skipped))

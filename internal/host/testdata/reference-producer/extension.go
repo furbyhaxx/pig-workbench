@@ -60,13 +60,13 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 			}
 			if request.Cursor == "next" {
 				complete := true
-				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "a.md", URI: "kb://paged/a.md", Kind: "file"}, {Name: "other.txt", URI: "kb://paged/other.txt", Kind: "file"}, {Name: "cycle", URI: "kb://paged/cycle", Kind: "link", Target: "kb://paged/"}, {Name: "control", URI: "kb://paged/control", Kind: "ctl"}, {Name: "expensive", URI: "kb://paged/expensive/", Kind: "dir", NoWalk: true}}}, nil
+				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "a.md", URI: "kb://paged/a.md", Kind: "file"}, {Name: "other.txt", URI: "kb://paged/other.txt", Kind: "file"}, {Name: "cycle", URI: "kb://paged/cycle", Kind: "link", Target: "kb://paged/"}, {Name: "control", URI: "kb://paged/control", Kind: "ctl"}, {Name: "private.md", URI: "kb://paged/private.md", Kind: "file", NoWalk: true}, {Name: "expensive", URI: "kb://paged/expensive/", Kind: "dir", NoWalk: true}}}, nil
 			}
 			return nil, &api.Error{Code: "invalidRequest", Message: "unknown cursor"}
 		}
-		if request.URI == "kb://paged/nested/" {
+		if request.URI == "kb://paged/nested/" || request.URI == "kb://sources/nested/" {
 			complete := true
-			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "b.md", URI: "kb://paged/nested/b.md", Kind: "file"}}}, nil
+			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "b.md", URI: request.URI + "b.md", Kind: "file"}}}, nil
 		}
 		if request.URI == "git://fixture/" || request.URI == "git://fixture" {
 			complete := true

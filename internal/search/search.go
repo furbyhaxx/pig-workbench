@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
@@ -27,6 +28,7 @@ type ContextLine struct {
 // Match is one exact source match.
 type Match struct {
 	Path        string        `json:"path"`
+	Revision    string        `json:"revision,omitempty"`
 	Line        int           `json:"line"`
 	Column      int           `json:"column"`
 	Text        string        `json:"text"`
@@ -142,25 +144,8 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		if options.FilesOnly && len(matches) > 0 {
 			matches = matches[:1]
 		}
-		for _, match := range matches {
-			bytes, lines := matchBudget(match)
-			if len(result.Matches) >= limits.MaxMatches || bytes > remainingBytes || lines > remainingLines {
-				result.Complete = false
-				return fs.SkipAll
-			}
-			match.Text = strings.Clone(match.Text)
-			for i := range match.Before {
-				match.Before[i].Text = strings.Clone(match.Before[i].Text)
-			}
-			for i := range match.After {
-				match.After[i].Text = strings.Clone(match.After[i].Text)
-			}
-			result.Matches = append(result.Matches, match)
-			if match.Windowed {
-				result.Complete = false
-			}
-			remainingBytes -= bytes
-			remainingLines -= lines
+		if !appendMatches(&result, matches, limits.MaxMatches, &remainingBytes, &remainingLines) {
+			return fs.SkipAll
 		}
 		return nil
 	})
@@ -174,6 +159,194 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 		return result.Matches[i].Line < result.Matches[j].Line
 	})
 	return result, nil
+}
+
+func appendMatches(result *Result, matches []Match, limit int, remainingBytes, remainingLines *int) bool {
+	for _, match := range matches {
+		bytes, lines := matchBudget(match)
+		if len(result.Matches) >= limit || bytes > *remainingBytes || lines > *remainingLines {
+			result.Complete = false
+			return false
+		}
+		match.Text = strings.Clone(match.Text)
+		for i := range match.Before {
+			match.Before[i].Text = strings.Clone(match.Before[i].Text)
+		}
+		for i := range match.After {
+			match.After[i].Text = strings.Clone(match.After[i].Text)
+		}
+		result.Matches = append(result.Matches, match)
+		if match.Windowed {
+			result.Complete = false
+		}
+		*remainingBytes -= bytes
+		*remainingLines -= lines
+	}
+	return true
+}
+
+// GrepProvider searches bounded source pages in a provider tree without following links.
+func GrepProvider(ctx context.Context, provider resource.Provider, options Options) (Result, error) {
+	if options.Root == "" || len(options.Patterns) == 0 {
+		return Result{}, errors.New("search needs a root and at least one pattern")
+	}
+	if options.Glob != "" {
+		if _, err := filepath.Match(options.Glob, "probe"); err != nil {
+			return Result{}, fmt.Errorf("%w: glob %q", ErrInvalidPattern, options.Glob)
+		}
+	}
+	limits := options.Limits
+	if limits.MaxMatches <= 0 {
+		limits.MaxMatches = 200
+	}
+	if limits.MaxFiles <= 0 {
+		limits.MaxFiles = 5000
+	}
+	if limits.MaxFileBytes <= 0 {
+		limits.MaxFileBytes = 4 << 20
+	}
+	expressions, literals, err := compilePatterns(options)
+	if err != nil {
+		return Result{}, err
+	}
+	work, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	result := Result{Complete: true}
+	remainingBytes, remainingLines, sourceBudget := 48<<10, 1900, int64(16<<20)
+	walk, err := resource.Walk(work, provider, options.Root, func(entry resource.Entry, _ int) (resource.WalkAction, error) {
+		if entry.Name == ".git" || excluded(entry.URI, options.Exclude) {
+			return resource.WalkSkipDir, nil
+		}
+		if entry.Kind != resource.EntryFile || entry.NoWalk {
+			return resource.WalkContinue, nil
+		}
+		if options.Glob != "" {
+			matched, _ := filepath.Match(options.Glob, entry.Name)
+			if !matched {
+				return resource.WalkContinue, nil
+			}
+		}
+		if result.FilesScanned >= limits.MaxFiles || sourceBudget <= 0 {
+			result.Complete = false
+			return resource.WalkStop, nil
+		}
+		var revision string
+		data, complete, readErr := readProviderSource(work, provider, entry.URI, min(limits.MaxFileBytes, sourceBudget), &sourceBudget, &revision)
+		if readErr != nil {
+			if errors.Is(readErr, resource.ErrUnsupported) || errors.Is(readErr, resource.ErrNotFound) || errors.Is(readErr, errTooLarge) {
+				result.Skipped = append(result.Skipped, entry.URI)
+				result.Complete = false
+				return resource.WalkContinue, nil
+			}
+			return resource.WalkStop, readErr
+		}
+		if !complete {
+			result.Skipped = append(result.Skipped, entry.URI)
+			result.Complete = false
+			return resource.WalkContinue, nil
+		}
+		matches, scanErr := scanBytes(work, entry.URI, data, options, expressions, literals, limits, limits.MaxMatches-len(result.Matches)+1)
+		if errors.Is(scanErr, errBinary) {
+			result.Skipped = append(result.Skipped, entry.URI)
+			result.Complete = false
+			return resource.WalkContinue, nil
+		}
+		if scanErr != nil {
+			return resource.WalkStop, scanErr
+		}
+		result.FilesScanned++
+		for i := range matches {
+			matches[i].Revision = revision
+		}
+		if !appendMatches(&result, matches, limits.MaxMatches, &remainingBytes, &remainingLines) {
+			return resource.WalkStop, nil
+		}
+		return resource.WalkContinue, nil
+	})
+	if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
+		result.Complete = false
+		err = nil
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	result.Complete = result.Complete && walk.Complete
+	sort.SliceStable(result.Matches, func(i, j int) bool {
+		if result.Matches[i].Path != result.Matches[j].Path {
+			return result.Matches[i].Path < result.Matches[j].Path
+		}
+		return result.Matches[i].Line < result.Matches[j].Line
+	})
+	return result, nil
+}
+
+func readProviderSource(ctx context.Context, provider resource.Provider, uri string, limit int64, sourceBudget *int64, sourceRevision *string) ([]byte, bool, error) {
+	var data []byte
+	next := 1
+	revision := ""
+	for pages := 0; pages < 256; pages++ {
+		selection := resource.Selection{Raw: true}
+		if next > 1 {
+			selection.Ranges = []resource.Range{{Start: next}}
+		}
+		page, err := provider.Read(ctx, resource.ReadRequest{URI: uri, Requested: uri, Selector: selection, Budget: resource.Budget{Bytes: 48 << 10, Lines: 1000}})
+		if err != nil {
+			return nil, false, err
+		}
+		*sourceBudget -= int64(len(page.Content))
+		if *sourceBudget < 0 {
+			return data, false, errTooLarge
+		}
+		facts := page.Facts
+		if facts.CanonicalURI != uri {
+			return data, false, nil
+		}
+		if pages > 0 && (revision == "" || facts.Revision != revision) {
+			return data, false, nil
+		}
+		if pages == 0 {
+			revision = facts.Revision
+			*sourceRevision = revision
+		}
+		if len(facts.FullyShownRanges) == 0 {
+			return data, facts.SelectionComplete && facts.ResourceComplete && len(data) == 0, nil
+		}
+		if len(facts.FullyShownRanges) != 1 || facts.FullyShownRanges[0].Start != next {
+			return data, false, nil
+		}
+		end := facts.FullyShownRanges[0].End
+		if end < next || len(facts.ShownRanges) != 1 || facts.ShownRanges[0] != facts.FullyShownRanges[0] {
+			return data, false, nil
+		}
+		rest := page.Content
+		for line := next; line <= end; line++ {
+			i := strings.IndexByte(rest, '\n')
+			if i < 0 {
+				if line != end || !facts.SelectionComplete {
+					return data, false, nil
+				}
+				i = len(rest)
+			}
+			if int64(len(data)+i+1) > limit {
+				return data, false, errTooLarge
+			}
+			data = append(data, rest[:i]...)
+			data = append(data, '\n')
+			if i < len(rest) {
+				rest = rest[i+1:]
+			} else {
+				rest = ""
+			}
+		}
+		if facts.SelectionComplete {
+			return data, next > 1 || facts.ResourceComplete, nil
+		}
+		if revision == "" {
+			return data, false, nil
+		}
+		next = end + 1
+	}
+	return data, false, nil
 }
 
 func compilePatterns(options Options) ([]*regexp.Regexp, []string, error) {

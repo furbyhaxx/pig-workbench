@@ -1,0 +1,20 @@
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.44s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.84s)
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (0.81s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (0.99s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.79s)
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (0.82s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.11s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.86s)
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (0.81s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	9.496s

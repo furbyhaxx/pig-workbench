@@ -213,6 +213,25 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 
 // TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
 // extension load order must not matter.
+func TestLiveGrepWalksPaginatedProvider(t *testing.T) {
+	results := runScriptedWith(t, t.TempDir(), "grep", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://paged/", "pattern": "paged", "literal": true, "glob": "*.md"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "kb://sources/", "pattern": "alpha two", "literal": true, "context": 1}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "kb://paged/a.md:1:1: paged alpha") || !strings.Contains(results[0], "kb://paged/nested/b.md:1:1: paged bravo") || strings.Contains(results[0], "control") || strings.Contains(results[0], "incomplete") {
+		t.Fatalf("provider grep missed paginated results or followed a noWalk entry: %v", results)
+	}
+	for _, want := range []string{"kb://sources/a.md-1- alpha one", "kb://sources/a.md:2:1: alpha two", "kb://sources/a.md-3- alpha three"} {
+		if !strings.Contains(results[1], want) {
+			t.Fatalf("provider grep omitted %q: %s", want, results[1])
+		}
+	}
+}
+
 func TestLiveFindWalksPaginatedProvider(t *testing.T) {
 	results := runScriptedWith(t, t.TempDir(), "find", "", []string{"reference-producer"},
 		func([]string) scriptedCall {

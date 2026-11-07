@@ -71,7 +71,7 @@ grep {"pattern": "needle", "ignoreCase": true, "glob": "*.go", "exclude": ["vend
 grep {"patterns": ["TODO", "FIXME"], "literal": true}
 ```
 
-`patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. `context` emits up to ten source lines on either side of each match, marked separately from matching lines. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match, file or output limit reports `complete: false` — never a silent "that is all". Long matching lines are shown as UTF-8-safe windows with their original byte column and window start; this makes the result incomplete. A match whose requested context cannot fit the output budget is omitted and makes the result incomplete. Search roots are local filesystem paths; provider URIs are not routed.
+`patterns[]` requires `literal: true`; `pattern` is a regex unless `literal: true` is set. `context` emits up to ten source lines on either side of each match, marked separately from matching lines. Binary and oversized files are skipped and listed in `Details.skipped`. Reaching the match, file or output limit reports `complete: false` — never a silent "that is all". Long matching lines are shown as UTF-8-safe windows with their original byte column and window start; this makes the result incomplete. A match whose requested context cannot fit the output budget is omitted and makes the result incomplete. Registered provider directory roots are walked with depth, entry, time and source-byte limits. Links, control files and `noWalk` subtrees are skipped; incomplete, changing or oversized provider files are reported as skipped rather than searched partially. Explicit provider-file targets and selectors are not yet supported.
 
 ## `find`
 
