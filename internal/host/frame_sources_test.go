@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 func TestInstructionUpdateContextSettingControlsDiff(t *testing.T) {
@@ -40,6 +42,40 @@ func TestInstructionUpdateContextSettingControlsDiff(t *testing.T) {
 	withContext := instructionDiff(fact, previous, current, updateContext(baseline))
 	if withoutContext == "" || withContext == "" || strings.Count(withContext, "unchanged contextual instruction line") <= strings.Count(withoutContext, "unchanged contextual instruction line") {
 		t.Fatalf("context setting did not affect the emitted diff:\n%s\n%s", withoutContext, withContext)
+	}
+}
+
+func TestIncompleteInstructionRequiresCurrentFullyDeliveredSource(t *testing.T) {
+	store, err := hashline.NewStore(hashline.StoreLimits{}, "epoch-one")
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "AGENTS.md")
+	uri := resource.FileURI(path)
+	snapshot, err := store.Retain(uri, []byte("one\ntwo\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &session{snapshots: store}
+	fact := contextFact{resource: path, revision: snapshot.Revision, incomplete: true}
+	if s.instructionFullySeen(fact) {
+		t.Fatal("undelivered instructions were treated as seen")
+	}
+	if err := store.Delivered(uri, snapshot.Revision, store.Epoch(), []hashline.LineSpan{{Start: 1, End: 1}}, true); err != nil {
+		t.Fatal(err)
+	}
+	if s.instructionFullySeen(fact) {
+		t.Fatal("partially delivered instructions were treated as complete")
+	}
+	if err := store.Delivered(uri, snapshot.Revision, store.Epoch(), []hashline.LineSpan{{Start: 2, End: 2}}, true); err != nil {
+		t.Fatal(err)
+	}
+	if !s.instructionFullySeen(fact) {
+		t.Fatal("full delivered coverage was not recognized")
+	}
+	fact.revision = hashline.SourceRevision([]byte("changed\n"))
+	if s.instructionFullySeen(fact) {
+		t.Fatal("an old delivered revision authorized new instructions")
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -78,8 +79,15 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 	if boundary != "" {
 		facts = append(facts, contextFact{source: "instructions.boundary", kind: "notice", authority: "data", resource: boundary, value: "Nested repository instructions were not loaded without a separate trust decision: " + boundary})
 	}
+	present := make(map[string]bool)
 	for _, file := range selected.Files {
 		facts = append(facts, selectedFact(agent, pointerRoot(validate, root), file))
+		present[file.Class+"/"+file.Path] = true
+	}
+	for _, reason := range selected.Reasons {
+		if reason.Status == "capped" && (reason.Class == "steering" || reason.Class == "project-private") && !present[reason.Class+"/"+reason.Path] {
+			facts = append(facts, contextFact{source: "instructions." + reason.Class, resource: reason.Path, kind: "notice", authority: "data", value: "Instruction view unavailable due to its limit: " + reason.Path, incomplete: true})
+		}
 	}
 	return facts, privateRoot, nil
 }
@@ -97,26 +105,34 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 		if err != nil {
 			return nil, nil
 		}
-		if target.Scheme != "file" {
-			return nil, nil
+		if target.Scheme == "file" {
+			path := target.Path
+			if info, err := os.Stat(path); err != nil || !info.IsDir() {
+				path = filepath.Dir(path)
+			}
+			facts["workbenchInstructionTarget"] = path
 		}
-		path := target.Path
-		if info, err := os.Stat(path); err != nil || !info.IsDir() {
-			path = filepath.Dir(path)
-		}
-		facts["workbenchInstructionTarget"] = path
 	}
 	result, err := a.contextFrames(ctx, facts)
 	if err != nil {
 		return nil, err
 	}
 	if output, ok := result.(map[string]any); ok {
+		tool, _ := data["toolName"].(string)
+		mutating := tool == "edit" || tool == "write" || tool == "bash" || tool == "jobs" && (input["action"] == "write" || input["action"] == "eof")
+		changed := false
 		if message, ok := output["message"].(map[string]any); ok {
 			text, _ := message["content"].(string)
 			if err := ctx.SendMessage("pig-workbench.context", text, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
 				return nil, err
 			}
-			if tool, _ := data["toolName"].(string); (tool == "edit" || tool == "write") && strings.Contains(text, `src="instructions.`) {
+			changed = strings.Contains(text, `src="instructions.`)
+		}
+		if mutating {
+			if incomplete, ok := output["workbenchIncompleteInstructions"].([]string); ok && len(incomplete) > 0 {
+				return map[string]any{"block": true, "reason": "incompleteInstruction: read the complete instruction file before mutating (files over 4 MiB must be reduced): " + strings.Join(incomplete, ", ")}, nil
+			}
+			if changed {
 				return map[string]any{"block": true, "reason": "instructionContextChanged: instructions applying to this target were just delivered to you and nothing was changed. Read them, then repeat the call if it still fits."}, nil
 			}
 		}
@@ -138,7 +154,22 @@ func selectedFact(agent, pointerRoot string, file instructions.Selected) context
 		authority = "instruction"
 	}
 	body := "Instructions from: " + file.Path + "\n" + (instructions.Set{Files: []instructions.Selected{file}}).Render()
-	return contextFact{source: "instructions." + file.Class, value: body, resource: file.Path, kind: kind, authority: authority}
+	return contextFact{source: "instructions." + file.Class, value: body, resource: file.Path, kind: kind, authority: authority, incomplete: file.Truncated && file.Role == "instruction", revision: file.Digest}
+}
+
+func (s *session) instructionFullySeen(fact contextFact) bool {
+	if fact.revision == "" {
+		return false
+	}
+	snapshot, ok := s.snapshots.Latest(resource.FileURI(fact.resource))
+	if !ok || snapshot.Revision != fact.revision || snapshot.Epoch != s.snapshots.Epoch() {
+		return false
+	}
+	source, err := hashline.Normalize(snapshot.Raw)
+	if err != nil || len(source.Lines) == 0 {
+		return false
+	}
+	return len(snapshot.Seen) == 1 && snapshot.Seen[0].Start == 1 && snapshot.Seen[0].End >= len(source.Lines)
 }
 
 // pointerRoot is the directory backlog pointer targets resolve against, or "" when validation is off.

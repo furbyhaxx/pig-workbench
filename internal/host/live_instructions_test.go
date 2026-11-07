@@ -479,6 +479,44 @@ func TestLiveBacklogShowsAMissingPointerTarget(t *testing.T) {
 	}
 }
 
+func TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte(strings.Repeat("Steering rule.\n", 250)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	write := map[string]any{"path": "made.txt", "content": "made\n"}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"write", write},
+		{"write", write},
+		{"bash", map[string]any{"command": "touch should-not-exist"}},
+		{"read", map[string]any{"path": "AGENTS.md:1-125"}},
+		{"write", write},
+		{"read", map[string]any{"path": "AGENTS.md:126-250"}},
+		{"write", write},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write,bash")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 7 || !strings.Contains(results[0], "incompleteInstruction") || !strings.Contains(results[1], "incompleteInstruction") || !strings.Contains(results[2], "incompleteInstruction") || !strings.Contains(results[4], "incompleteInstruction") || !strings.Contains(results[6], "Wrote") {
+		t.Fatalf("truncated steering prerequisite was not enforced until a complete read: %q", results)
+	}
+	if _, err := os.Stat(filepath.Join(root, "should-not-exist")); !os.IsNotExist(err) {
+		t.Fatalf("blocked bash command ran: %v", err)
+	}
+	if data, err := os.ReadFile(filepath.Join(root, "made.txt")); err != nil || string(data) != "made\n" {
+		t.Fatalf("post-read write failed: %v %q", err, data)
+	}
+}
+
 func TestLiveMutationIsBlockedOnceWhenNewInstructionsApply(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {

@@ -83,6 +83,8 @@ type contextFact struct {
 	source                    string
 	value                     any
 	resource, kind, authority string
+	incomplete                bool
+	revision                  string
 }
 
 func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
@@ -304,6 +306,17 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		pending = append(pending, prompt...)
 	}
 	result := map[string]any{}
+	if data["workbenchToolContext"] == true {
+		var incomplete []string
+		for _, fact := range facts {
+			if fact.incomplete && !s.instructionFullySeen(fact) {
+				incomplete = append(incomplete, fact.resource)
+			}
+		}
+		if len(incomplete) > 0 {
+			result["workbenchIncompleteInstructions"] = incomplete
+		}
+	}
 	if enabled.Value == true {
 		if options, ok := data["systemPromptOptions"].(map[string]any); ok {
 			options["contextFiles"] = []any{}
