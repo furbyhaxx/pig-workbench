@@ -616,6 +616,7 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 		return FindResult{}, err
 	}
 	result := FindResult{Complete: true}
+	remaining := 48 << 10
 	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, fs.ErrPermission) {
@@ -649,10 +650,11 @@ func Find(ctx context.Context, root, pattern string, exclude []string, limit int
 		if !matchGlob(pattern, root, path, entry.Name()) {
 			return nil
 		}
-		if len(result.Entries) >= limit {
+		if len(result.Entries) >= limit || len(path)+1 > remaining {
 			result.Complete = false
 			return fs.SkipAll
 		}
+		remaining -= len(path) + 1
 		item := FindEntry{Path: path}
 		if info, infoErr := entry.Info(); infoErr == nil {
 			item.Size = info.Size()

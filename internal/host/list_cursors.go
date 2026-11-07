@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -9,9 +10,22 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 )
 
-type cursorBinding struct{ Registration, Descriptor, Generation, Instance string }
+type cursorBinding struct{ Registration, Descriptor, Generation, Instance, Context string }
+
+func listingContext(ctx context.Context) string {
+	captured, ok := ctx.Value(capturedLocationKey{}).(location.Snapshot)
+	if !ok {
+		return ""
+	}
+	encoded, _ := json.Marshal(captured)
+	digest := sha256.Sum256(encoded)
+	return hex.EncodeToString(digest[:])
+}
+
 type listingCursor struct {
 	Binding                             cursorBinding
 	Requested, Canonical, Raw, Revision string
@@ -29,7 +43,7 @@ type listingCursorStore struct {
 }
 
 func (s *listingCursorStore) put(entry listingCursor, now time.Time) (string, error) {
-	size := len(entry.Requested) + len(entry.Canonical) + len(entry.Raw) + len(entry.Revision) + len(entry.Binding.Registration) + len(entry.Binding.Descriptor) + len(entry.Binding.Generation) + len(entry.Binding.Instance)
+	size := len(entry.Requested) + len(entry.Canonical) + len(entry.Raw) + len(entry.Revision) + len(entry.Binding.Registration) + len(entry.Binding.Descriptor) + len(entry.Binding.Generation) + len(entry.Binding.Instance) + len(entry.Binding.Context)
 	if size > 1<<20 {
 		return "", errors.New("limitExceeded: listing cursor exceeds the 1 MiB retention budget")
 	}

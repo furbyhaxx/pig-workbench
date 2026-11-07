@@ -35,6 +35,7 @@ type Entry struct {
 
 // Listing is a bounded directory page.
 type Listing struct {
+	Revision   string  `json:"revision,omitempty"`
 	Entries    []Entry `json:"entries"`
 	NextCursor string  `json:"nextCursor,omitempty"`
 	Complete   bool    `json:"complete"`

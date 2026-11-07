@@ -63,6 +63,11 @@ func TestListingCursorBindsIdentityResourceAndSnapshotWithoutExposingPayload(t *
 		t.Fatal("cursor reused after descriptor replacement")
 	}
 	changed = binding
+	changed.Context = "different captured location"
+	if _, err := store.get(token, changed, "kb://root/", now); err == nil {
+		t.Fatal("cursor reused in another captured context")
+	}
+	changed = binding
 	changed.Generation = "new"
 	if _, err := store.get(token, changed, "kb://root/", now); err == nil {
 		t.Fatal("cursor reused after reload")

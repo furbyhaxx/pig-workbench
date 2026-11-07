@@ -157,28 +157,14 @@ func (a *app) runSchemeCommand(ctx context.Context, s *session, cmd schemeComman
 		if err != nil {
 			return "", err
 		}
-		provider, err := s.router.Provider(target)
-		if err != nil {
-			return "", err
-		}
-		page, err := provider.List(ctx, target.URI, "", 200)
-		if err != nil {
-			return "", err
-		}
-		var b strings.Builder
-		for _, entry := range page.Entries {
-			_, _ = fmt.Fprintf(&b, "%s\t%s\n", entry.Kind, entry.Name)
-		}
-		if !page.Complete {
-			b.WriteString("… listing truncated\n")
-		}
-		return b.String(), nil
+		result, err := listContainer(ctx, s, target, "", 200, true)
+		return result.Content, err
 	case "cat":
 		target, err := resource.ParsePath("/", cmd.paths[0], "")
 		if err != nil {
 			return "", err
 		}
-		page, err := s.router.Read(ctx, target, resource.Budget{Bytes: 1 << 20, Lines: 100000})
+		page, err := s.router.Read(ctx, target, resource.Budget{Bytes: 50 << 10, Lines: 2000})
 		if err != nil {
 			return "", err
 		}

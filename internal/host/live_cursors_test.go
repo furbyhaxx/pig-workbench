@@ -31,7 +31,9 @@ func TestLiveListingCursorRejectsOtherRootsAndChangedRevisions(t *testing.T) {
 	}
 	t.Setenv("WORKBENCH_REFERENCE_CATALOG_REVISION", revision)
 	results := runScriptedWith(t, t.TempDir(), "ls", "", []string{"reference-producer"},
-		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "kb://paged/"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"ls", map[string]any{"path": "kb://paged/", "limit": 1}}
+		},
 		func(results []string) scriptedCall {
 			return scriptedCall{"ls", map[string]any{"path": "kb://sources/", "cursor": cursorOf(t, results[0])}}
 		},
@@ -55,7 +57,7 @@ func TestLiveListingCursorExpiresAfterReload(t *testing.T) {
 	var saved atomic.Value
 	recorder := &requestRecorder{next: func(index int) *scriptedCall {
 		if index == 0 {
-			return &scriptedCall{"ls", map[string]any{"path": "kb://paged/"}}
+			return &scriptedCall{"ls", map[string]any{"path": "kb://paged/", "limit": 1}}
 		}
 		if index == 2 {
 			return &scriptedCall{"ls", map[string]any{"path": "kb://paged/", "cursor": saved.Load().(string)}}

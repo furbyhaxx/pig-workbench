@@ -115,7 +115,7 @@ func (p *contributedProvider) List(ctx context.Context, uri, cursor string, limi
 	if !p.descriptor.Has("list") {
 		return resource.Listing{}, resource.ErrUnsupported
 	}
-	binding := cursorBinding{Registration: p.registrationID, Descriptor: p.descriptorRevision, Generation: p.generation, Instance: p.owner.Instance}
+	binding := cursorBinding{Registration: p.registrationID, Descriptor: p.descriptorRevision, Generation: p.generation, Instance: p.owner.Instance, Context: listingContext(ctx)}
 	request := api.ResourceRequest{Operation: "list", RequestedURI: uri, URI: uri, Limits: api.PageLimits{Lines: max(1, limit)}}
 	if cursor != "" {
 		retained, err := p.cursors.get(cursor, binding, p.canonicalURI(uri), time.Now())
@@ -137,7 +137,7 @@ func (p *contributedProvider) List(ctx context.Context, uri, cursor string, limi
 	if result.Complete != nil && *result.Complete && result.NextCursor != "" {
 		return resource.Listing{}, errors.New("provider returned a completed listing with a continuation cursor")
 	}
-	listing := resource.Listing{Complete: result.NextCursor == ""}
+	listing := resource.Listing{Revision: result.Revision, Complete: result.NextCursor == ""}
 	if result.NextCursor != "" {
 		listing.NextCursor, err = p.cursors.put(listingCursor{Binding: binding, Requested: p.canonicalURI(uri), Canonical: result.CanonicalURI, Raw: result.NextCursor, Revision: result.Revision}, time.Now())
 		if err != nil {

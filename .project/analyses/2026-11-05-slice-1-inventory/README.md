@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 35
+  revision: 36
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T19:38:23+01:00"
+  updated_at: "2026-11-07T20:38:28+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 35
-      reason: "Preserve provider total and coverage facts without invented defaults"
-      changes: ["Preserved unknown total omission and known-empty zero through actual SDK persistence","Rejected negative/impossible coverage and unrepresentable continuation spans before rendering","Kept native directory cursor and remaining resource anchors open"]
+    - revision: 36
+      reason: "Bound listing and local find output before live evaluation"
+      changes: ["Bounded ls content and retained metadata with lossless resumable pages","Exposed includeHidden with its preserved true default and effective result facts","Bounded local find path bytes and reused listing limits for scheme commands","Passed full host integration plus repeated pagination/hidden-policy safety tests"]
 ---
 
 # Scope and evidence
@@ -76,7 +76,7 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0006 §8.10 performance | OPEN | Fresh bounded-memory/cache/listing measurements remain 17.8.7.3; remote/archive benchmarks depend on deferred backends. |
 | 0006 §7 repetition and supersession | PASS (implemented safety path) | Repeated read and history-preserving projection tests pass; the existing threshold setting must be wired in 17.8.2.4. |
 | 0006 §6 search ignores and glob dialect | PASS | Nested .gitignore/negation and explicit-root semantics pass [real-host](evidence/search-ignore-live.log) and [safety](evidence/search-ignore-safety.log) tests. Brace/class/doublestar dialect parity and invalid-pattern safety pass [unit](evidence/search-glob-unit.log) and [real-host](evidence/search-glob-live.log) regressions. |
-| 0006 §6 listing/search output details | OPEN | Bounded ls/find output, explicit hidden-entry facts, Unicode literal byte columns and filename-only output are tracked as 17.8.2.11–13. |
+| 0006 §6 listing/search output details | OPEN | Bounded ls/find output and explicit hidden-entry facts pass [safety](evidence/list-output-safety.log), [actual PiG](evidence/list-output-live.log) and [find path-byte](evidence/find-output-bytes.log) cases. Unicode literal byte columns and filename-only output remain 17.8.2.12/13. |
 | 0012 §5.3 captured routing facts | PASS | Original current-location routing fails under concurrent cd ([repro](evidence/captured-provider-project-repro.log)); captured resource/search/fetch contexts and mutation revisions pass repeated real-host tests ([evidence](evidence/captured-provider-project.log)). |
 
 # Baseline gates

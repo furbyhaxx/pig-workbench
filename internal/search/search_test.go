@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,6 +196,24 @@ func TestSearchGlobDialectIsSharedByLocalAndProviderWalks(t *testing.T) {
 	filtered, err := Find(t.Context(), root, "**/*", []string{"nested/**"}, 100)
 	if err != nil || len(filtered.Entries) != 3 {
 		t.Fatalf("recursive exclusion not applied: %+v %v", filtered, err)
+	}
+}
+
+func TestFindBoundsActualPathBytes(t *testing.T) {
+	root := t.TempDir()
+	for i := 0; i < 600; i++ {
+		write(t, root, fmt.Sprintf("item-%04d-%s.txt", i, strings.Repeat("a", 120)), "")
+	}
+	result, err := Find(t.Context(), root, "*.txt", nil, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes := 0
+	for _, entry := range result.Entries {
+		bytes += len(entry.Path) + 1
+	}
+	if result.Complete || bytes > 48<<10 || len(result.Entries) == 600 {
+		t.Fatalf("unbounded find: count=%d bytes=%d complete=%v", len(result.Entries), bytes, result.Complete)
 	}
 }
 

@@ -37,9 +37,10 @@ func (a *app) registerWriteAndList(ext *sdk.Extension) {
 		Description:   "List one container through the Workbench resource router, including registered scheme URIs whose providers support listing. Entries have typed kinds and a continuation cursor; incomplete listings are reported.",
 		PromptSnippet: "List a directory with typed entries and a continuation cursor.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path"}, "properties": map[string]any{
-			"path":   map[string]any{"type": "string", "minLength": 1, "description": "Directory path or scheme URI."},
-			"cursor": map[string]any{"type": "string", "description": "Opaque cursor from a previous listing."},
-			"limit":  map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum entries (default 200)."},
+			"path":          map[string]any{"type": "string", "minLength": 1, "description": "Directory path or scheme URI."},
+			"cursor":        map[string]any{"type": "string", "description": "Opaque cursor from a previous listing."},
+			"includeHidden": map[string]any{"type": "boolean", "description": "Include dot-prefixed entries; true by default."},
+			"limit":         map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum entries (default 200)."},
 		}},
 		Execute: a.ls,
 	})
@@ -230,67 +231,6 @@ func readExisting(path string) (os.FileInfo, string, error) {
 
 func atomicWriteFile(ctx context.Context, path string, data []byte, mode os.FileMode) (bool, error) {
 	return fileedit.Create(ctx, path, data, mode)
-}
-
-type lsParams struct {
-	Path   string `json:"path"`
-	Cursor string `json:"cursor"`
-	Limit  int    `json:"limit"`
-}
-
-func (a *app) ls(ctx sdk.Context, params map[string]any) (any, error) {
-	var input lsParams
-	if err := decode(params, &input); err != nil {
-		return nil, err
-	}
-	s, work, release, err := a.admit(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-	captured, done, err := s.location.Acquire(ctx.ToolCallID(), false)
-	if err != nil {
-		return nil, err
-	}
-	defer done()
-	work = withCapturedLocation(work, captured)
-	target, err := resource.ParsePath(captured.Cwd, input.Path, "")
-	if err != nil {
-		return nil, err
-	}
-	if target.Selection.Explicit {
-		return nil, errors.New("ls takes a directory, not a line selector")
-	}
-	provider, err := s.router.Provider(target)
-	if err != nil {
-		return nil, err
-	}
-	limit := input.Limit
-	if limit <= 0 {
-		limit = 200
-	}
-	listing, err := provider.List(work, target.URI, input.Cursor, limit)
-	if err != nil {
-		return nil, fmt.Errorf("ls %s: %w", target.Requested, err)
-	}
-	var body bytes.Buffer
-	for _, entry := range listing.Entries {
-		_, _ = fmt.Fprintf(&body, "%-4s %s", entry.Kind, entry.Name)
-		switch {
-		case entry.Kind == resource.EntryLink:
-			_, _ = fmt.Fprintf(&body, " -> %s", entry.Target)
-		case entry.Size > 0:
-			_, _ = fmt.Fprintf(&body, " (%d bytes)", entry.Size)
-		}
-		if entry.Detail != "" {
-			_, _ = fmt.Fprintf(&body, "  %s", sanitizeProviderText(entry.Detail))
-		}
-		body.WriteByte('\n')
-	}
-	if !listing.Complete {
-		_, _ = fmt.Fprintf(&body, "… more entries; continue with cursor %q\n", listing.NextCursor)
-	}
-	return sdk.ToolResult{Content: body.String(), Details: map[string]any{"uri": target.URI, "entries": listing.Entries, "complete": listing.Complete, "nextCursor": listing.NextCursor, "locationRevision": captured.Revision}}, nil
 }
 
 func short(revision string) string {
