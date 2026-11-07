@@ -81,6 +81,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	if recognized {
 		sourceTarget, err := resource.ParsePath(captured.Cwd, copied.Path, "")
 		if err != nil {
@@ -252,6 +253,7 @@ func (a *app) ls(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	target, err := resource.ParsePath(captured.Cwd, input.Path, "")
 	if err != nil {
 		return nil, err

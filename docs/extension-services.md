@@ -66,6 +66,8 @@ An extension that calls a model itself bypasses Workbench's hooks. If the user l
 - The owner name is a claim on a shared bus, not an authenticated identity: the grant guards against misrouting, not against a hostile extension.
 - Placeholders are never resolved back to values through this service.
 
+Resource and fetch requests use the project of the tool's captured Workbench location. A concurrent `cd` does not change the project binding between operations in a read batch or search traversal. Mutation location revisions use the same captured binding.
+
 ## Provider mutation outcomes
 
 Existing-resource mutations carry `expectedRevision`; new resources carry `mustNotExist`, and copy/move destinations carry `destinationMustNotExist`. Writes are limited to 32 KiB of content and the 64 KiB encoded control envelope. No recursive operations, implicit parent creation or cross-provider transfers are supported. `write` and scheme-command redirects share dispatch; `rm`, `mv`, `cp` and `mkdir` map to remove, move, copy and mkdir.

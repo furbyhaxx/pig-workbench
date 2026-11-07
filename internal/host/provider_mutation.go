@@ -41,7 +41,7 @@ func (a *app) mutateProvider(work context.Context, s *session, target resource.T
 	if err != nil {
 		return sdk.ToolResult{}, err
 	}
-	mutation := &api.ResourceMutation{Content: content, LocationRevision: s.location.Current().Revision}
+	mutation := &api.ResourceMutation{Content: content, LocationRevision: s.routingLocation(work).Revision}
 	switch operation {
 	case "write", "mkdir", "remove", "move", "copy":
 	default:

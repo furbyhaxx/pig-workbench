@@ -92,6 +92,7 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	root := captured.Cwd
 	var provider resource.Provider
 	var selection resource.Selection
@@ -174,6 +175,7 @@ func (a *app) find(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	root := captured.Cwd
 	var provider resource.Provider
 	if input.Path != "" {

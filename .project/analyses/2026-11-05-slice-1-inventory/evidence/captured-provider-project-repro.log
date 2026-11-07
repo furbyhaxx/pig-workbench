@@ -1,0 +1,6 @@
+=== RUN   TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd
+    live_reads_test.go:102: request drifted to the new project during cd: {OperationID:op-990bf49880f32532 Operation:read RequestedURI:kb://sources/nested/b.md URI:kb://sources/nested/b.md Selector:0xc0001f4190 Cursor: Limits:{Bytes:50687 Lines:1979} Project:<nil> Mutation:<nil>}
+--- FAIL: TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd (1.56s)
+FAIL
+FAIL	github.com/furbyhaxx/pig-workbench/internal/host	1.606s
+FAIL

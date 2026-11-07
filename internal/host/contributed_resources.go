@@ -288,7 +288,7 @@ type projectIdentityCache struct {
 
 // projectIdentity returns the calling session's project; nil in the builtin global project.
 func (s *session) projectIdentity(ctx context.Context) *api.Project {
-	current := s.location.Current()
+	current := s.routingLocation(ctx)
 	s.projectMu.Lock()
 	defer s.projectMu.Unlock()
 	if s.projectCache.valid && s.projectCache.revision == current.Revision {

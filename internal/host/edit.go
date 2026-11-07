@@ -53,6 +53,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	configuration, err := s.settings.Current()
 	if err != nil {
 		return nil, err

@@ -3,11 +3,15 @@
 package host
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/furbyhaxx/pig-workbench/api"
 )
 
 func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T) {
@@ -42,6 +46,61 @@ func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T
 	}
 	if strings.Contains(history.String(), "superseded by read") || !strings.Contains(history.String(), "1:line 1") {
 		t.Fatal("context projection changed persisted history")
+	}
+}
+
+func TestLiveBatchedProviderReadsKeepCapturedProjectAcrossCd(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".project"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".project", "Project.toml"), []byte("version=1\nid='prj-capture1'\nslug='capture'\nname='Capture'\n[component]\nslug='capture'\nprimary=true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	gate := filepath.Join(t.TempDir(), "provider")
+	t.Setenv("WORKBENCH_REFERENCE_PROJECT_BARRIER", gate)
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"paths": []string{"kb://sources/a.md", "kb://sources/nested/b.md"}}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read")
+	defer func() { _ = os.WriteFile(gate+".release", []byte("done"), 0600) }()
+	fixture.send("read", "prompt", "Read both resources.")
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		if _, err := os.Stat(gate + ".entered"); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("read never reached provider barrier")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	fixture.send("move", "prompt", "/cd "+t.TempDir())
+	response := fixture.wait(func(e map[string]any) bool { return e["type"] == "response" && e["id"] == "move" })
+	if response["success"] != true {
+		t.Fatalf("concurrent cd failed: %+v", response)
+	}
+	if err := os.WriteFile(gate+".release", []byte("done"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+	encoded, err := os.ReadFile(gate + ".requests")
+	if err != nil {
+		t.Fatal(err)
+	}
+	requests := strings.Split(strings.TrimSpace(string(encoded)), "\n")
+	if len(requests) != 2 {
+		t.Fatalf("want two provider reads: %s", encoded)
+	}
+	for _, line := range requests {
+		var request api.ResourceRequest
+		if err := json.Unmarshal([]byte(line), &request); err != nil {
+			t.Fatal(err)
+		}
+		if request.Project == nil || request.Project.ID != "prj-capture1" {
+			t.Fatalf("request drifted to the new project during cd: %+v", request)
+		}
 	}
 }
 

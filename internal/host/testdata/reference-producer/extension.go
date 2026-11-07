@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
@@ -42,6 +43,33 @@ var documents = map[string]string{
 }
 
 func execute(request api.ResourceRequest) (any, *api.Error) {
+	if gate := os.Getenv("WORKBENCH_REFERENCE_PROJECT_BARRIER"); gate != "" && request.Operation == "read" {
+		encoded, _ := json.Marshal(request)
+		file, err := os.OpenFile(gate+".requests", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			return nil, &api.Error{Code: "internal", Message: "cannot record project probe"}
+		}
+		_, writeErr := file.Write(append(encoded, '\n'))
+		closeErr := file.Close()
+		if writeErr != nil || closeErr != nil {
+			return nil, &api.Error{Code: "internal", Message: "cannot record project probe"}
+		}
+		if request.URI == "kb://sources/a.md" {
+			if err := os.WriteFile(gate+".entered", []byte("ready"), 0600); err != nil {
+				return nil, &api.Error{Code: "internal", Message: "cannot signal project probe"}
+			}
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				if _, err := os.Stat(gate + ".release"); err == nil {
+					break
+				}
+				if time.Now().After(deadline) {
+					return nil, &api.Error{Code: "deadlineExceeded", Message: "project probe timed out"}
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+	}
 	if strings.HasPrefix(request.URI, "mut://") {
 		return executeMutation(request)
 	}

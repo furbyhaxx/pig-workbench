@@ -130,6 +130,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, captured)
 	targets := make([]resource.Target, len(input.Paths))
 	for i, path := range input.Paths {
 		targets[i], err = resource.ParsePath(captured.Cwd, path, input.Selector)

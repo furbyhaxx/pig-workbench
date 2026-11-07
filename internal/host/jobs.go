@@ -56,6 +56,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	work = withCapturedLocation(work, location)
 	configuration, err := s.settings.Current()
 	if err != nil {
 		return nil, err
