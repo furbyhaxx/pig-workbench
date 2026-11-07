@@ -1,0 +1,14 @@
+=== RUN   TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes
+--- PASS: TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes (0.02s)
+=== RUN   TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides
+--- PASS: TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides (0.01s)
+=== RUN   TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes
+--- PASS: TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes (0.01s)
+=== RUN   TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides
+--- PASS: TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides (0.01s)
+=== RUN   TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes
+--- PASS: TestPresentationSchemaReplacementDoesNotReinterpretSavedTypes (0.01s)
+=== RUN   TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides
+--- PASS: TestPresentationSchemasUseStableDefaultsAndKeepWithdrawnOverrides (0.01s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	1.106s

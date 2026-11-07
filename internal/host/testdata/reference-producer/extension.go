@@ -401,6 +401,23 @@ func Extension() *sdk.Extension {
 		}
 		active, binding, registered := client, currentEndpoint, currentReceipts
 		mu.Unlock()
+		if strings.TrimSpace(args) == "withdraw-presentation" {
+			if err := active.Unregister(ctx, binding, registered["toolPresentation"].RegistrationID); err != nil {
+				return err
+			}
+			mu.Lock()
+			delete(currentReceipts, "toolPresentation")
+			mu.Unlock()
+			ctx.Notify(`{"presentationFixture":"withdrawn"}`, "info")
+			return nil
+		}
+		if strings.TrimSpace(args) == "register-presentation" {
+			if err := register(ctx, ext); err != nil {
+				return err
+			}
+			ctx.Notify(`{"presentationFixture":"registered"}`, "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "claim-other" {
 			receipt, err := active.Register(ctx, binding, "toolPresentation", "foreign-read", map[string]any{"toolNames": []string{"read"}, "label": "Foreign read", "presentationVersion": 1, "preset": "text"})
 			var protocol *api.Error

@@ -52,9 +52,13 @@ func (m *Manager) UpdateDynamic(ctx context.Context, namespace []string, fields 
 		}
 		definition.Default = cloneValue(normalized)
 		definition.Choices = append([]string(nil), definition.Choices...)
+		application := definition.Application
 		definition.Application = "unavailable"
 		if active {
-			definition.Application = "live"
+			if application != "live" && application != "registered" {
+				return errors.New("dynamic schema application must be live or registered")
+			}
+			definition.Application = application
 		}
 		candidate[definition.Key] = definition
 		seen[definition.Key] = true

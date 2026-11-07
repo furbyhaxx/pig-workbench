@@ -3,12 +3,14 @@ package host
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -22,7 +24,15 @@ func presentationSession(t *testing.T) *session {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog()}
+	root := t.TempDir()
+	settings, err := config.New(config.Paths{User: filepath.Join(root, "user.toml"), Project: filepath.Join(root, "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	return &session{id: "session", generation: "generation", contributions: registry, presentations: newPresentationCatalog(), settings: settings}
 }
 
 func presentationTestContext() context.Context {
@@ -144,7 +154,7 @@ func TestLatePresentationClaimsAndWithdrawalsReportReloadLimits(t *testing.T) {
 		t.Fatalf("restoring cached descriptor retained a false pending claim: %+v %v", restored, failure)
 	}
 	request := api.Request{Method: "unregister", Generation: "generation", RegistrationID: early["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
-	withdrawn, failure := a.dispatchService(context.Background(), sdk.Context{}, other, request)
+	withdrawn, failure := a.unregisterContribution(context.Background(), other, request)
 	if failure != nil || withdrawn.(map[string]any)["appliesAfterReload"] != true {
 		t.Fatalf("withdrawal hid cached renderer: %+v %v", withdrawn, failure)
 	}
@@ -179,7 +189,7 @@ func TestToolPresentationRegistrationIsIdempotentAndConflictSafe(t *testing.T) {
 		t.Fatalf("conflicting registration leaked into the registry: %#v", all)
 	}
 	request := api.Request{Method: "unregister", Generation: "generation", RegistrationID: first["registrationId"].(string), From: api.Identity{Owner: "build-tools", Instance: "i-1"}, Params: json.RawMessage(`{}`)}
-	if _, failure := a.dispatchService(context.Background(), sdk.Context{}, s, request); failure != nil {
+	if _, failure := a.unregisterContribution(context.Background(), s, request); failure != nil {
 		t.Fatalf("unregister: %v", failure)
 	}
 	if _, ok := s.presentations.lookup("build_run"); ok || len(s.contributions.List()) != 0 {

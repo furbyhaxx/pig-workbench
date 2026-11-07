@@ -140,7 +140,7 @@ func (a *app) registerContribution(ctx context.Context, s *session, request api.
 		}
 	}
 	if params.PreviousRevision != "" || request.RegistrationID != "" {
-		return a.replaceContribution(s, request, params, consumer)
+		return a.replaceContribution(ctx, s, request, params, consumer)
 	}
 	receipt, err := s.contributions.Register(request.From, kind, params.Key, params.Descriptor)
 	if err != nil {
@@ -153,7 +153,7 @@ func (a *app) registerContribution(ctx context.Context, s *session, request api.
 	if err != nil {
 		return nil, contributionProtocolError(err)
 	}
-	cleanup, err := consumer(s, registration)
+	cleanup, err := installWithDisplaySchema(ctx, s, registration, consumer)
 	if err != nil {
 		_ = s.contributions.Unregister(request.From, receipt.RegistrationID)
 		return nil, contributionProtocolError(err)
@@ -166,7 +166,7 @@ func (a *app) registerContribution(ctx context.Context, s *session, request api.
 	return s.receiptResult(receipt), nil
 }
 
-func (a *app) replaceContribution(s *session, request api.Request, params registrationParams, consumer contributionConsumer) (any, *api.Error) {
+func (a *app) replaceContribution(ctx context.Context, s *session, request api.Request, params registrationParams, consumer contributionConsumer) (any, *api.Error) {
 	if request.RegistrationID == "" || params.PreviousRevision == "" {
 		return nil, &api.Error{Code: "invalidRequest", Field: "registrationId", Message: "replace requires registrationId and params.previousRevision", Outcome: "notApplied"}
 	}
@@ -188,7 +188,7 @@ func (a *app) replaceContribution(s *session, request api.Request, params regist
 	replaced, err := s.contributions.Get(request.From, request.RegistrationID)
 	if err == nil {
 		var cleanup func()
-		if cleanup, err = consumer(s, replaced); err == nil {
+		if cleanup, err = installWithDisplaySchema(ctx, s, replaced, consumer); err == nil {
 			s.setInstalled(request.RegistrationID, cleanup)
 			a.emitRegistrationChanged(s, request.RegistrationID, "replaced")
 			if contribution.Kind(params.Kind) == contribution.KindResourceProvider {
@@ -199,14 +199,14 @@ func (a *app) replaceContribution(s *session, request api.Request, params regist
 	}
 	// Restore the previous descriptor so a failed install never leaves the owner unregistered.
 	if _, restoreErr := s.contributions.Replace(request.From, request.RegistrationID, receipt.DescriptorRevision, current.Descriptor); restoreErr == nil {
-		if cleanup, installErr := consumer(s, current); installErr == nil {
+		if cleanup, installErr := installWithDisplaySchema(ctx, s, current, consumer); installErr == nil {
 			s.setInstalled(request.RegistrationID, cleanup)
 		}
 	}
 	return nil, contributionProtocolError(err)
 }
 
-func (a *app) unregisterContribution(_ context.Context, s *session, request api.Request) (any, *api.Error) {
+func (a *app) unregisterContribution(ctx context.Context, s *session, request api.Request) (any, *api.Error) {
 	if request.RegistrationID == "" {
 		return nil, &api.Error{Code: "invalidRequest", Field: "registrationId", Message: "unregister requires a registrationId", Outcome: "notApplied"}
 	}
@@ -219,11 +219,17 @@ func (a *app) unregisterContribution(_ context.Context, s *session, request api.
 		return nil, contributionProtocolError(err)
 	}
 	s.withdrawInstalled(request.RegistrationID)
+	var warnings []string
+	if lookupErr == nil {
+		if err := withdrawDisplaySchema(ctx, s, current); err != nil {
+			warnings = append(warnings, "Contribution removed, but display schema withdrawal failed; reload settings before editing dormant values.")
+		}
+	}
 	a.emitRegistrationChanged(s, request.RegistrationID, "unregistered")
 	if lookupErr == nil && current.Kind == contribution.KindResourceProvider {
 		a.emitResourcesChanged(s, request.RegistrationID, "unregistered")
 	}
-	return map[string]any{"registrationId": request.RegistrationID, "removed": true, "appliesAfterReload": s.presentations.appliesAfterReload(request.RegistrationID)}, nil
+	return map[string]any{"registrationId": request.RegistrationID, "removed": true, "warnings": warnings, "appliesAfterReload": s.presentations.appliesAfterReload(request.RegistrationID)}, nil
 }
 
 func (a *app) describeContributions(_ context.Context, s *session, request api.Request) (any, *api.Error) {

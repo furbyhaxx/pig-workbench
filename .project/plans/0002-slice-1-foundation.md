@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 53
+  revision: 54
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T22:29:46+01:00"
+  updated_at: "2026-11-07T22:46:54+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 53
-      reason: "Add typed dynamic display namespaces to the existing safe config engine"
-      changes: ["Preserved quoted owner/key segments through conflict checks and round-trip edits", "Verified precedence, reset, dormant overrides and rejected type reinterpretation", "Kept schema withdrawal from clearing unrelated stale-file errors", "Producer activation and settings commands remain the next implementation leaves"]
+    - revision: 54
+      reason: "Activate stable presentation schemas without claiming unapplied rendering"
+      changes: ["Registered producer defaults and bounded typed custom fields by owner/key", "Preserved dormant overrides and rolled back incompatible descriptor replacements", "Reported schema-only values as registered until rendering is integrated", "Verified actual host withdrawal/re-registration and preserved explicit zero preview defaults"]
 ---
 
 # 1. Outcome

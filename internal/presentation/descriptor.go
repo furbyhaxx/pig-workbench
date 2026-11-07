@@ -75,13 +75,14 @@ type MetricDefinition struct {
 
 // DisplaySetting is one allowlisted boolean, bounded integer or enum control.
 type DisplaySetting struct {
-	Key     string   `json:"key"`
-	Label   string   `json:"label"`
-	Type    string   `json:"type"`
-	Default any      `json:"default"`
-	Minimum *int     `json:"minimum,omitempty"`
-	Maximum *int     `json:"maximum,omitempty"`
-	Values  []string `json:"values,omitempty"`
+	Key         string   `json:"key"`
+	Label       string   `json:"label"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type"`
+	Default     any      `json:"default"`
+	Minimum     *int     `json:"minimum,omitempty"`
+	Maximum     *int     `json:"maximum,omitempty"`
+	Values      []string `json:"values,omitempty"`
 }
 
 var (
@@ -90,7 +91,7 @@ var (
 
 // DecodeDescriptor strictly validates a toolPresentation descriptor.
 func DecodeDescriptor(data []byte) (Descriptor, error) {
-	var descriptor Descriptor
+	descriptor := Descriptor{DefaultDisplay: DisplayDefaults{Density: "normal", PreviewLines: 8}}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&descriptor); err != nil {
@@ -213,7 +214,7 @@ func validUnit(unit MetricUnit) bool {
 }
 
 func validateDisplaySetting(setting DisplaySetting) error {
-	if !identifierPattern.MatchString(setting.Key) || setting.Label == "" || hasControl(setting.Label) {
+	if !identifierPattern.MatchString(setting.Key) || setting.Label == "" || hasControl(setting.Label) || len(setting.Description) > 512 || hasControl(setting.Description) {
 		return errors.New("key or label is invalid")
 	}
 	switch setting.Type {
@@ -222,6 +223,9 @@ func validateDisplaySetting(setting DisplaySetting) error {
 			return errors.New("boolean default is invalid")
 		}
 	case "integer":
+		if setting.Minimum == nil || setting.Maximum == nil {
+			return errors.New("integer display settings require explicit bounds")
+		}
 		value, ok := asInt(setting.Default)
 		if !ok || value < 0 && setting.Minimum == nil {
 			return errors.New("integer default is invalid")

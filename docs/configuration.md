@@ -31,6 +31,12 @@ The catalog identifies the other live consumers, including edit policy, instruct
 
 Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `prompt.template` is displayed but rendering always uses `builtin/workbench`, and `activity.shortcut` is not applied: `alt+w` is registered statically before settings load. Complex instruction classes and producer-specific settings are not implemented.
 
+## Presentation display namespaces
+
+Presentation descriptors register typed values under `tools.<owner>.<stable-key>.<field>`; TOML quoting preserves dots in owner/key names as literal segments. Producer defaults sit below user, trusted-project and runtime overrides. Withdrawal keeps overrides and marks the schema unavailable; re-registration reuses the stable identity. Descriptor type changes must use a new key or an explicit migration.
+
+These dynamic entries currently report `registered`, not `live`: storage and generic inspection/editing are available, but full renderer application and the dedicated tools-settings interface are still being integrated. Do not infer applied rendering from a successful save.
+
 ## Inspect and change
 
 ```text

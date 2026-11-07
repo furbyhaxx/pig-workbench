@@ -30,6 +30,8 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 
 **Unfinished Slice 1:**
 
+- Typed presentation preferences persist by owner/stable key and survive withdrawal, but currently report `registered`; renderer application and the dedicated tools-settings interface are not yet complete.
+
 - Long grep matching lines use bounded windows; oversized context is reduced and marked incomplete. Searches still stop at their output and source limits.
 - For non-locatable scheme paths, standalone `ls` and `cat` are routed in-process. A static-word `value > URI` dispatches supported control writes with the same confirmation rules as `write`; quotes and escapes are recognized, but it is not general shell redirection and dynamically constructed paths cannot always be recognized. `rm`, `mv`, `cp` and `mkdir` route to providers that declare those operations, without new permission prompts. Cross-provider transfers and recursive operations are refused; contributed hashline editing remains unavailable.
 - `prompt.delivery = "auto"` retains PiG's prompt; `force` opts in to `builtin/workbench` only when instructions are enabled. The live prompt A/B evaluation and full real-agent transcript await authorization for provider spend. The `prompt.template` setting is not applied.

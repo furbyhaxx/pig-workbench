@@ -108,9 +108,21 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 				return nil, &api.Error{Code: "permissionDenied", Message: "verificationRequired: host tool ownership metadata is unavailable", Outcome: "notApplied"}
 			}
 			ctx = context.WithValue(ctx, presentationToolsKey{}, tools)
+			trusted, err := host.IsProjectTrusted()
+			if err != nil {
+				return nil, protocolError(err)
+			}
+			ctx = context.WithValue(ctx, displayTrustKey{}, trusted)
 		}
 		return a.registerContribution(ctx, s, request)
 	case "unregister":
+		if current, err := s.contributions.Get(request.From, request.RegistrationID); err == nil && current.Kind == contribution.KindToolPresentation {
+			trusted, err := host.IsProjectTrusted()
+			if err != nil {
+				return nil, protocolError(err)
+			}
+			ctx = context.WithValue(ctx, displayTrustKey{}, trusted)
+		}
 		return a.unregisterContribution(ctx, s, request)
 	case "describe":
 		return a.describeContributions(ctx, s, request)
