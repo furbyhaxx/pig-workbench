@@ -2,6 +2,40 @@
 
 Runtime dependencies are version-matched through Go modules. Latest release and maintenance/supersession checks were performed against the Go module proxy and upstream repositories on 03.11.2026 and rechecked on 05.11.2026. No upstream deprecation or replacement notice was found for these selected projects; gofrs/flock is the maintained successor to theckman/go-flock.
 
+## mvdan.cc/sh/v3 v3.14.1
+
+Source: https://github.com/mvdan/sh (BSD-3-Clause). The latest release and maintenance status were checked on 07.11.2026; no deprecation or replacement notice was found.
+
+```text
+Copyright (c) 2016, Daniel Martí. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
 ## pi-secret-guard detection patterns
 
 High-confidence token patterns in `internal/secrets/detection.go` are adapted from the local pi-secret-guard project. Source: `host:/mnt/Projects/furbyhaxx/pi-secret-guard/`. Licensed under MIT.

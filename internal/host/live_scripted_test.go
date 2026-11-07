@@ -227,6 +227,24 @@ func TestLiveSchemeCommandRefusesQuotedComposition(t *testing.T) {
 	}
 }
 
+func TestLiveQuotedSchemeCommandDoesNotRunComposedShell(t *testing.T) {
+	root := t.TempDir()
+	results := runScripted(t, root, "bash",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": `cat 'sess'ion://self/title`}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": `cat 'sess'ion://self/title | tee ` + filepath.Join(root, "should-not-exist")}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "session://self/title") || !strings.Contains(results[1], "standalone") {
+		t.Fatalf("quoted scheme command routing failed: %v", results)
+	}
+	if _, err := os.Stat(filepath.Join(root, "should-not-exist")); !os.IsNotExist(err) {
+		t.Fatalf("composed shell command ran: %v", err)
+	}
+}
+
 func TestLiveSchemeRedirectUsesControlWrite(t *testing.T) {
 	results := runScripted(t, t.TempDir(), "bash,read",
 		func([]string) scriptedCall {

@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	"mvdan.cc/sh/v3/shell"
+	"mvdan.cc/sh/v3/syntax"
+
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
@@ -20,44 +23,112 @@ type schemeCommand struct {
 // parseSchemeCommand accepts a standalone ls, cat, rm, mv, cp, mkdir or a single redirect.
 // Anything with a pipe, substitution, compound operator or extra word is refused by name.
 func parseSchemeCommand(command string, schemes []string) (schemeCommand, bool, error) {
-	if hasSchemeArg(command, schemes) && strings.ContainsAny(command, "|;&$`<()\n'\"\\") {
-		return schemeCommand{}, false, fmt.Errorf("scheme paths only work as a standalone ls, cat, rm, mv, cp, mkdir or > redirect; quoting, pipes, compounds and substitutions are refused")
-	}
-	fields := strings.Fields(command)
-	if len(fields) == 0 {
+	file, err := syntax.NewParser(syntax.Variant(syntax.LangBash)).Parse(strings.NewReader(command), "")
+	if err != nil {
+		if hasSchemeArg(command, schemes) {
+			return schemeCommand{}, false, errors.New("invalid shell syntax involving a scheme path")
+		}
 		return schemeCommand{}, false, nil
 	}
-	if hasSchemeArg(command, schemes) && strings.Contains(command, ">") && (len(fields) != 3 || fields[1] != ">" || strings.Count(command, ">") != 1) {
-		return schemeCommand{}, false, errors.New("scheme redirects require one standalone >")
+	containsScheme := hasSchemeArg(command, schemes)
+	syntax.Walk(file, func(node syntax.Node) bool {
+		if word, ok := node.(*syntax.Word); ok {
+			if value, ok := staticShellWord(command, word); ok {
+				containsScheme = containsScheme || hasSchemeArg(value, schemes)
+			} else {
+				start, end := int(word.Pos().Offset()), int(word.End().Offset())
+				if start >= 0 && end <= len(command) && start <= end && strings.Contains(command[start:end], "://") {
+					containsScheme = true
+				}
+			}
+		}
+		return true
+	})
+	if !containsScheme {
+		return schemeCommand{}, false, nil
+	}
+	refused := errors.New("scheme paths require a standalone ls, cat, rm, mv, cp, mkdir or > redirect; expansions and shell composition are refused")
+	if len(file.Stmts) != 1 {
+		return schemeCommand{}, false, refused
+	}
+	stmt := file.Stmts[0]
+	call, ok := stmt.Cmd.(*syntax.CallExpr)
+	if !ok || stmt.Background || stmt.Negated || stmt.Coprocess || stmt.Disown || len(call.Assigns) != 0 {
+		return schemeCommand{}, false, refused
+	}
+	fields := make([]string, 0, len(call.Args))
+	for _, word := range call.Args {
+		value, ok := staticShellWord(command, word)
+		if !ok {
+			return schemeCommand{}, false, refused
+		}
+		fields = append(fields, value)
+	}
+	if len(fields) == 0 {
+		return schemeCommand{}, false, refused
+	}
+	if len(stmt.Redirs) > 0 {
+		if len(stmt.Redirs) != 1 || stmt.Redirs[0].Op != syntax.RdrOut || stmt.Redirs[0].N != nil || len(fields) != 1 {
+			return schemeCommand{}, false, refused
+		}
+		target, ok := staticShellWord(command, stmt.Redirs[0].Word)
+		if !ok || !schemePath(target, schemes) {
+			return schemeCommand{}, false, refused
+		}
+		return schemeCommand{verb: "redirect", paths: []string{target}, text: fields[0]}, true, nil
 	}
 	verb := fields[0]
 	switch verb {
 	case "ls", "cat", "rm", "mkdir":
 		if len(fields) != 2 || !schemePath(fields[1], schemes) {
-			return refuseOther(command, schemes)
+			return schemeCommand{}, false, refused
 		}
 		return schemeCommand{verb: verb, paths: fields[1:2]}, true, nil
 	case "mv", "cp":
 		if len(fields) != 3 || !schemePath(fields[1], schemes) && !schemePath(fields[2], schemes) {
-			return refuseOther(command, schemes)
+			return schemeCommand{}, false, refused
 		}
 		if !schemePath(fields[1], schemes) || !schemePath(fields[2], schemes) {
 			return schemeCommand{}, false, fmt.Errorf("%s between a scheme path and a local path is unsupported; both ends must be scheme paths", verb)
 		}
 		return schemeCommand{verb: verb, paths: fields[1:3]}, true, nil
 	default:
-		if len(fields) == 3 && fields[1] == ">" && schemePath(fields[2], schemes) {
-			return schemeCommand{verb: "redirect", paths: fields[2:3], text: fields[0]}, true, nil
-		}
-		return refuseOther(command, schemes)
+		return schemeCommand{}, false, refused
 	}
 }
 
-func refuseOther(command string, schemes []string) (schemeCommand, bool, error) {
-	if hasSchemeArg(command, schemes) {
-		return schemeCommand{}, false, fmt.Errorf("scheme paths only work as a standalone ls, cat, rm, mv, cp, mkdir or > redirect")
+func staticShellWord(command string, word *syntax.Word) (string, bool) {
+	if word == nil {
+		return "", false
 	}
-	return schemeCommand{}, false, nil
+	static := true
+	syntax.Walk(word, func(node syntax.Node) bool {
+		switch part := node.(type) {
+		case *syntax.ParamExp, *syntax.CmdSubst, *syntax.ArithmExp, *syntax.ProcSubst, *syntax.ExtGlob, *syntax.BraceExp:
+			static = false
+		case *syntax.SglQuoted:
+			static = static && !part.Dollar
+		case *syntax.DblQuoted:
+			static = static && !part.Dollar
+		case *syntax.Lit:
+			if strings.ContainsAny(part.Value, "*?[") || strings.HasPrefix(part.Value, "~") {
+				static = false
+			}
+		}
+		return static
+	})
+	if !static {
+		return "", false
+	}
+	start, end := int(word.Pos().Offset()), int(word.End().Offset())
+	if start < 0 || end > len(command) || start > end {
+		return "", false
+	}
+	words, err := shell.Fields(command[start:end], func(string) string { return "" })
+	if err != nil || len(words) != 1 {
+		return "", false
+	}
+	return words[0], true
 }
 
 func schemePath(field string, schemes []string) bool {

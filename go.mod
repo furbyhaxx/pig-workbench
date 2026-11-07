@@ -17,6 +17,7 @@ require (
 	github.com/odvcencio/gotreesitter v0.56.0
 	golang.org/x/net v0.62.0
 	golang.org/x/sys v0.49.0
+	mvdan.cc/sh/v3 v3.14.1
 )
 
 require (
