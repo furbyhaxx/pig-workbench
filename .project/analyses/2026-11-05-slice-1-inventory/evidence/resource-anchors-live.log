@@ -1,0 +1,42 @@
+=== RUN   TestLiveHTTPReadUsesBuiltinStaticReader
+--- PASS: TestLiveHTTPReadUsesBuiltinStaticReader (0.81s)
+=== RUN   TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory
+--- PASS: TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory (0.87s)
+=== RUN   TestLiveRepetitionHintStaysWithinReadBudget
+--- PASS: TestLiveRepetitionHintStaysWithinReadBudget (0.83s)
+=== RUN   TestLiveRepeatedReadHintPreservesSourceAndResetsOnRevision
+--- PASS: TestLiveRepeatedReadHintPreservesSourceAndResetsOnRevision (0.95s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.06s)
+=== RUN   TestLiveGrepExplicitProviderFileAndLineSelection
+--- PASS: TestLiveGrepExplicitProviderFileAndLineSelection (0.84s)
+=== RUN   TestLiveGrepWalksPaginatedProvider
+--- PASS: TestLiveGrepWalksPaginatedProvider (0.79s)
+=== RUN   TestLiveFindWalksPaginatedProvider
+--- PASS: TestLiveFindWalksPaginatedProvider (0.81s)
+=== RUN   TestLiveFindWalksScratchWithoutFollowingLinks
+--- PASS: TestLiveFindWalksScratchWithoutFollowingLinks (10.06s)
+=== RUN   TestLiveLocalReadCannotEscapeScratch
+--- PASS: TestLiveLocalReadCannotEscapeScratch (11.18s)
+=== RUN   TestLiveGrepEmitsRequestedContext
+--- PASS: TestLiveGrepEmitsRequestedContext (0.78s)
+=== RUN   TestLiveGrepKeepsMatchWhenContextIsOversized
+--- PASS: TestLiveGrepKeepsMatchWhenContextIsOversized (0.79s)
+=== RUN   TestLiveGrepContextHonoursOutputBudget
+--- PASS: TestLiveGrepContextHonoursOutputBudget (0.83s)
+=== RUN   TestLiveGrepReportsWindowAroundLongLineMatch
+--- PASS: TestLiveGrepReportsWindowAroundLongLineMatch (0.77s)
+=== RUN   TestLiveGrepAcceptsLiteralPatternList
+--- PASS: TestLiveGrepAcceptsLiteralPatternList (0.77s)
+=== RUN   TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead
+--- PASS: TestLiveSnapshotsViewLetsAnotherToolsOutputBeEditedWithoutARead (0.84s)
+=== RUN   TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut
+--- PASS: TestLiveSnapshotsViewGrantsNothingWhenTheBlockIsCut (0.96s)
+=== RUN   TestLiveStoredSessionTitleRequiresConfirmation
+--- PASS: TestLiveStoredSessionTitleRequiresConfirmation (1.22s)
+=== RUN   TestLiveStoredSessionsAreListedReadAndTitled
+--- PASS: TestLiveStoredSessionsAreListedReadAndTitled (1.13s)
+=== RUN   TestLiveReadLocationAndCodemode
+--- PASS: TestLiveReadLocationAndCodemode (1.23s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	38.553s

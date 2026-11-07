@@ -5,96 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 28
+  revision: 29
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T16:32:35+01:00"
+  updated_at: "2026-11-07T18:05:20+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Separate completed evidence from missing wiring, behavior and acceptance without narrowing scope"
-      changes: ["Recorded per-row status with file and test anchors", "Named the ordered remaining work per phase", "Confirmed no row is satisfied by an unadvertised or stub path"]
-    - revision: 2
-      reason: "Reconcile the current implementation and retain observed representative acceptance evidence"
-      changes: ["Enumerated every Slice 1 ownership row", "Recorded passing real-host cases without equating them to complete row acceptance", "Exposed missing scheme commands, provider search and private instruction discovery"]
-    - revision: 3
-      reason: "Retain the current baseline quality and cleanup checks"
-      changes: ["Recorded green check, race and integration gates", "Recorded repeated shutdown, crash-reclamation and reference-producer reload checks", "Kept final acceptance and live-provider evaluation open"]
-    - revision: 4
-      reason: "Verify activity failure counting against real jobs"
-      changes: ["Recorded a repeatable race-enabled test using successful and failed processes"]
-    - revision: 5
-      reason: "Exercise multi and preview questions through real native RPC dialogs"
-      changes: ["Recorded selected values and preview display with a local scripted provider"]
-    - revision: 6
-      reason: "Exercise stored-session title confirmation"
-      changes: ["Recorded actual PiG RPC confirmation, decline, acceptance and title reads"]
-    - revision: 7
-      reason: "Exercise agent-reply hop limit in two real sessions"
-      changes: ["Recorded a real reply retaining its conversation and being queued at the hop limit"]
-    - revision: 8
-      reason: "Rerun baseline gates after adding independent acceptance cases"
-      changes: ["Recorded successful check, race and integration on the updated tree"]
-    - revision: 9
-      reason: "User approved the remaining five specifications"
-      changes: ["Removed the resolved approval blocker while retaining implementation and acceptance gaps"]
-    - revision: 10
-      reason: "Verify scheme redirects against the shared control write policy"
-      changes: ["Recorded real-host self-title redirect and stored-title confirmation behavior", "Retained other scheme commands and general redirect syntax as open"]
-    - revision: 11
-      reason: "Exercise grep context and its output ceiling"
-      changes: ["Recorded real-host context lines and output-budget truncation", "Retained long-line windows and provider-root searches as open"]
-    - revision: 12
-      reason: "Exercise bounded find over provider listings"
-      changes: ["Recorded real-host pagination and recursive provider traversal", "Retained local scratch safety and provider grep as open"]
-    - revision: 13
-      reason: "Fix an outside-scratch symlink read"
-      changes: ["Recorded a reproduced escape and confined descriptor-based read regression", "Kept scratch listing and stat containment open"]
-    - revision: 14
-      reason: "Confine scratch listing and stat"
-      changes: ["Recorded root-confined stat and bounded listing tests", "Exercised real scratch provider traversal and symlink refusal"]
-    - revision: 15
-      reason: "Add confined project-private note discovery"
-      changes: ["Recorded project isolation, symlink and source-budget tests", "Kept host delivery and pin wiring open"]
-    - revision: 16
-      reason: "Integrate trusted project-private instruction delivery"
-      changes: ["Recorded live trust, isolation, pin, update and withdrawal cases", "Retained truncated-steering mutation safety as open work"]
-    - revision: 17
-      reason: "Show bounded windows for long grep matches"
-      changes: ["Recorded repeatable package and real-host long-line window tests", "Kept oversized-context omissions explicit"]
-    - revision: 18
-      reason: "Enforce the truncated-instruction mutation prerequisite"
-      changes: ["Recorded real-host repeated refusal, partial reads and recovery", "Verified that a different source revision is not authorized"]
-    - revision: 19
-      reason: "Recognize static quoted and escaped shell words"
-      changes: ["Recorded parser and real-host composition-refusal tests", "Kept dynamic shell path recognition and provider mutations explicit"]
-    - revision: 20
-      reason: "Exercise grep on provider directory roots"
-      changes: ["Recorded paginated traversal and source-revision tests", "Kept explicit provider-file targets and selectors open"]
-    - revision: 21
-      reason: "Verify instruction prerequisites for tagged batch targets"
-      changes: ["Recorded multi-file and move-destination tests with no pre-prerequisite mutations"]
-    - revision: 22
-      reason: "Search provider files with line selectors"
-      changes: ["Recorded real-host explicit file and source-coordinate selection tests"]
-    - revision: 23
-      reason: "Preserve matches when grep context exceeds its output budget"
-      changes: ["Recorded real-host bounded context reduction without hiding matching lines"]
-    - revision: 24
-      reason: "Rerun full gates after approved-contract implementation"
-      changes: ["Recorded successful check, race and integration at 9126aff", "Retained the initial stale refusal-text assertion failure and its correction"]
-    - revision: 25
-      reason: "Wire provider mutations without new permission prompts"
-      changes: ["Recorded real-host write, mkdir, remove, move, copy and redirect execution", "Verified stale refusal, provider denial, partial and unknown outcomes"]
-    - revision: 26
-      reason: "Exercise the capable-provider verb and failure matrix"
-      changes: ["Verified ls/cat and every declared mutation verb", "Checked missing parents, nonempty directories, cross-provider refusal and malformed receipts"]
-    - revision: 27
-      reason: "Compile all Slice 1 ownership rows against current observed tests"
-      changes: ["Linked passing unit and live cases for all 24 ownership rows", "Retained remaining unproved behavior instead of treating a table as acceptance"]
-    - revision: 28
-      reason: "Pass final scripted-provider gates after mutation wiring"
-      changes: ["Recorded just check, race and integration at 733298a", "Kept the unrun live-provider A/B gate explicit"]
+    - revision: 29
+      reason: "Reconcile exact resource acceptance instead of representative smoke tests"
+      changes: ["Recorded scoped pass/open/deferred status for each resource anchor", "Tracked concrete budget, cursor, totals, routing and search defects before live evaluation"]
 ---
 
 # Scope and evidence
@@ -129,6 +48,35 @@ At `eb55bf7`, fresh race-enabled full unit and host integration runs passed. U m
 | 0012 §5.4, registered docs | S1 C, D | L: `TestLiveReferenceProducerSeams`. | Registered documentation and scheme guides. PiG-source docs remain Slice 2. |
 | 0013 §2–§5, §7 | S1 I | L: `TestLiveProviderRequestsNeverCarryAKnownSecret`, `TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted`, `TestLiveStoredSearchKeyIsRedactedInJobLogs`; U: `TestRedactContextCleansTheSystemMessageAndOtherMessages`, `TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure`, `TestVaultEncryptionFormatAndMetadataSafety`. | Read/bash/jobs/provider payloads, context, grants and encrypted vault. Native custom credential resolvers remain a coverage gap. |
 | 0014 §3–§5, §6.1–§6.2, §7, §8 | S1 J | L: `TestLivePromptSettingsControlTakeover`, `TestLiveSkillsListingBudgetChangesTheCommandOutput`; U: `TestFixtureSectionOrder`, `TestBuiltinWorkbenchRendersRequiredSections`, `TestPromptEpochIsStableForTheSameText`, `TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch`, `TestScanReadsFrontmatterAndHidesNestedUntilLoad`. | Engine, six frames, epochs and skills evidence. Live-provider A/B remains unauthorized; auto retains PiG's prompt and force requires instructions enabled. |
+
+# Exact local resource anchors
+
+Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, scoped by PLAN-0001 §9 and PLAN-0002. PASS means only the stated behavior; OPEN requires the named follow-up task. Evidence for this audit is [resource-anchors-unit.log](evidence/resource-anchors-unit.log) and [resource-anchors-live.log](evidence/resource-anchors-live.log). This replaces the earlier assumption that a few green examples established the complete row.
+
+| Anchor | Observed status | Evidence or precise remaining work |
+|---|---|---|
+| 0004 §10.1 provider lifecycle/direct/codemode/list/catalog | PARTIAL | Live reference seams and read/codemode tests pass; reverse load order and unregister/drain are reconciled in 17.8.3.1/3.3. |
+| 0004 §10.2 atomic invalid/duplicate/reserved registrations | PASS | TestParseProviderDescriptor and TestRegisterContributedIsAtomic; live reference registration/reload has separate protocol evidence. |
+| 0004 §10.3 path and selector grammar | PASS (local/core) | TestLiteralFilesAndURIPunctuation, TestSelectors, TestRawPreservesBytesAndLineConvention and TestLargeLineNeverBecomesSeen. Remote/archive adapters are outside Slice 1. |
+| 0004 §10.4 revision/paging/unknown totals | OPEN | Source revisions revalidate on each read; provider-list cursors lack registration/resource binding (17.8.2.9), and unknown provider totals serialize as zero (17.8.2.10). |
+| 0004 §10.5 core trees | PARTIAL | Stored-session/title, scratch, job, skill, cfg, artifact and reference-doc tests run. by-project/worktree tree acceptance is explicitly Slice 2, not an implementation waiver for core routes. |
+| 0004 §10.6 source/derived seen state and alias edit refusal | PASS | TestLargeLineNeverBecomesSeen, TestRenderSpansValidatesProviderPages and live reference edit refusal; full edit matrix is 17.8.4.1. |
+| 0004 §10.7 mutation outcomes | PARTIAL | Live provider verb/failure matrix passes; cancel/idempotency/disconnect anchor reconciliation remains 17.8.3.1. |
+| 0004 §10.8 bounded slow/noisy providers | OPEN | Descriptor concurrency is validated but not enforced in the adapter; owner admission and unregister/drain are 17.8.3.3. Renderers do no provider calls. |
+| 0004 §10.9 invalidation/revalidation | PARTIAL | File reads recompute source digests; syntax cache keys include source content. Explicit provider lifecycle and watch-loss reconciliation remain 17.8.3.1/3.3. |
+| 0004 §10.10 direct/bus semantics and host forms | PARTIAL | Local provider and real bus tests pass. Foreign-runtime/fused evidence is not implied by a Go isolated run; 17.8.3.1 owns the exact host matrix. |
+| 0004 §11 fetch routing/policy/fallback | PARTIAL | Builtin HTTP redirect/media/policy tests and reference fetch/locate run. Full backend policy toggles/fallback matrix remains protocol/config reconciliation. |
+| 0006 §8.1 selector goldens and bounded bytes | PASS (source) | Selector, raw-byte, continuation and large-line tests pass. Aggregate guide/continuation framing needs 17.8.2.5. |
+| 0006 §8.2 literal punctuation and view chains | PASS (local/core) | Literal/query/port parser cases pass; archive/binary format adapters remain Slice 2. |
+| 0006 §8.3 summary coordinates/seen | PASS | Summary and source coverage tests pass; summaries are ineligible as superseding complete source. |
+| 0006 §8.4 representative/malformed/oversize/cancel matrix | PARTIAL | Local source, directory, provider and static-HTTP fixtures pass; explicit bounds/lifecycle defects stay in 17.8.2.5 and 17.8.3.3. |
+| 0006 §8.5–§8.7 rich adapters/notebooks/media | DEFERRED | PLAN-0001 assigns these adapters to later slices; they are not advertised as implemented. |
+| 0006 §8.8 direct/codemode/provider bounds and batches | OPEN | Live direct/codemode tests pass; large first-touch guides, incomplete-provider framing and captured-project routing require 17.8.2.5/6. |
+| 0006 §8.9 static URL policy/no billed question answering | PASS | Builtin HTTP and reference backend tests pass without inference spend. |
+| 0006 §8.10 performance | OPEN | Fresh bounded-memory/cache/listing measurements remain 17.8.7.3; remote/archive benchmarks depend on deferred backends. |
+| 0006 §7 repetition and supersession | PASS (implemented safety path) | Repeated read and history-preserving projection tests pass; the existing threshold setting must be wired in 17.8.2.4. |
+| 0006 §6 search ignores and glob dialect | OPEN | Local walkers ignore .git/user exclusions but do not honor .gitignore; glob behavior needs exact-contract reconciliation (17.8.2.7/8). |
+| 0012 §5.3 captured routing facts | OPEN | Provider project detection currently consults the latest location rather than the captured tool location; 17.8.2.6 owns the concurrent-cd fix. |
 
 # Baseline gates
 
