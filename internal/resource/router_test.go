@@ -135,6 +135,85 @@ func TestRouterDispatch(t *testing.T) {
 	}
 }
 
+type walkProvider struct {
+	pages map[string]Listing
+	calls []string
+}
+
+func (p *walkProvider) Scheme() string { return "kb" }
+func (p *walkProvider) Stat(_ context.Context, uri string) (StatResult, error) {
+	return StatResult{URI: uri, Kind: EntryDir}, nil
+}
+func (p *walkProvider) List(_ context.Context, uri, cursor string, _ int) (Listing, error) {
+	p.calls = append(p.calls, uri+"|"+cursor)
+	page, ok := p.pages[uri+"|"+cursor]
+	if !ok {
+		return Listing{}, ErrNotFound
+	}
+	return page, nil
+}
+func (*walkProvider) Read(context.Context, ReadRequest) (ReadResult, error) {
+	return ReadResult{}, ErrUnsupported
+}
+
+func TestWalkHonoursNoWalkAndNeverFollowsLinks(t *testing.T) {
+	p := &walkProvider{pages: map[string]Listing{
+		"kb://root/|": {Complete: true, Entries: []Entry{
+			{Name: "nested", URI: "kb://root/nested/", Kind: EntryDir},
+			{Name: "expensive", URI: "kb://root/expensive/", Kind: EntryDir, NoWalk: true},
+			{Name: "alias", URI: "kb://root/alias", Kind: EntryLink, Target: "kb://elsewhere/"},
+			{Name: "ctl", URI: "kb://root/ctl", Kind: EntryControl},
+		}},
+		"kb://root/nested/|":    {Complete: true, Entries: []Entry{{Name: "doc.md", URI: "kb://root/nested/doc.md", Kind: EntryFile}}},
+		"kb://root/expensive/|": {Complete: true, Entries: []Entry{{Name: "note.md", URI: "kb://root/expensive/note.md", Kind: EntryFile}}},
+	}}
+	var visited []string
+	result, err := Walk(context.Background(), p, "kb://root/", func(entry Entry, _ int) (WalkAction, error) {
+		visited = append(visited, entry.Name)
+		return WalkContinue, nil
+	})
+	if err != nil || !result.Complete || strings.Join(visited, ",") != "nested,expensive,alias,doc.md" || strings.Join(p.calls, ",") != "kb://root/|,kb://root/nested/|" {
+		t.Fatalf("unsafe walk: result=%+v visited=%v calls=%v err=%v", result, visited, p.calls, err)
+	}
+	visited = nil
+	result, err = Walk(context.Background(), p, "kb://root/expensive/", func(entry Entry, _ int) (WalkAction, error) {
+		visited = append(visited, entry.Name)
+		return WalkContinue, nil
+	})
+	if err != nil || !result.Complete || strings.Join(visited, ",") != "note.md" {
+		t.Fatalf("explicit noWalk root was not searched: result=%+v visited=%v err=%v", result, visited, err)
+	}
+}
+
+func TestWalkHonoursCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	p := &walkProvider{}
+	if _, err := Walk(ctx, p, "kb://root/", func(Entry, int) (WalkAction, error) { return WalkContinue, nil }); !errors.Is(err, context.Canceled) || len(p.calls) != 0 {
+		t.Fatalf("cancelled walk reached provider: calls=%v err=%v", p.calls, err)
+	}
+}
+
+func TestWalkRejectsEscapesAndRepeatedCursors(t *testing.T) {
+	cases := []struct {
+		name string
+		page Listing
+	}{
+		{"other authority", Listing{Complete: true, Entries: []Entry{{Name: "doc", URI: "kb://other/doc", Kind: EntryFile}}}},
+		{"parent traversal", Listing{Complete: true, Entries: []Entry{{Name: "doc", URI: "kb://root/../doc", Kind: EntryFile}}}},
+		{"nonchild", Listing{Complete: true, Entries: []Entry{{Name: "doc", URI: "kb://root/deep/doc", Kind: EntryFile}}}},
+		{"repeated cursor", Listing{NextCursor: "again"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &walkProvider{pages: map[string]Listing{"kb://root/|": tc.page, "kb://root/|again": tc.page}}
+			if _, err := Walk(context.Background(), p, "kb://root/", func(Entry, int) (WalkAction, error) { return WalkContinue, nil }); err == nil {
+				t.Fatal("invalid provider walk was accepted")
+			}
+		})
+	}
+}
+
 type provider struct{ scheme string }
 
 func (p provider) Scheme() string { return p.scheme }

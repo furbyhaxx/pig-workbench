@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 11
+  revision: 12
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T08:14:02+01:00"
+  updated_at: "2026-11-07T08:25:25+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -44,6 +44,9 @@ document:
     - revision: 11
       reason: "Exercise grep context and its output ceiling"
       changes: ["Recorded real-host context lines and output-budget truncation", "Retained long-line windows and provider-root searches as open"]
+    - revision: 12
+      reason: "Exercise bounded find over provider listings"
+      changes: ["Recorded real-host pagination and recursive provider traversal", "Retained local scratch safety and provider grep as open"]
 ---
 
 # Scope and evidence
@@ -61,7 +64,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration; grep/find do not route provider roots. Full policy and mutation acceptance is not established. |
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
-| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode`, `TestLiveGrepAcceptsLiteralPatternList`, `TestLiveGrepEmitsRequestedContext` and `TestLiveGrepContextHonoursOutputBudget` exercise local reads, literal OR search and bounded context ([grep-context.log](evidence/grep-context.log)). | Grep/find treat provider URIs as local paths. Long-line match windows, loop guard and supersession need implementation or evidence. |
+| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode`, `TestLiveGrepAcceptsLiteralPatternList`, `TestLiveGrepEmitsRequestedContext` and `TestLiveGrepContextHonoursOutputBudget` exercise local reads, literal OR search and bounded context ([grep-context.log](evidence/grep-context.log)); `TestLiveFindWalksPaginatedProvider` exercises paginated nested traversal ([find-provider.log](evidence/find-provider.log)); provider escape, link, noWalk and cancellation cases are in [find-walk-safety.log](evidence/find-walk-safety.log). | Grep does not search provider URIs; find cannot safely traverse local scratch yet. Long-line match windows, loop guard and supersession need implementation or evidence. |
 | 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | Project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
 | 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
 | 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. `TestLiveSchemeRedirectUsesControlWrite` and `TestLiveStoredSessionTitleRequiresConfirmation` exercise control redirects and confirmation parity ([control-redirect.log](evidence/control-redirect.log)). | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths. Redirects only accept one literal word; full provider routing and general redirect syntax are not implemented. |
@@ -73,7 +76,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |
 | 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
 | 0012 §3.6 | S1 K | — | Private notes class is not present in `instructions.DefaultClasses`, which the host uses; no live test proves it. |
-| 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing. | Provider-root search/walking is not wired; first-touch guide and naming acceptance need separate mapping. |
+| 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing; `TestLiveFindWalksPaginatedProvider` verifies paginated find traversal ([find-provider.log](evidence/find-provider.log)). | Provider grep and local scratch traversal remain open; first-touch guide and naming acceptance need separate mapping. |
 | 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees; `TestLiveStoredSessionTitleRequiresConfirmation` checks decline and acceptance in native RPC dialogs ([stored-title-confirmation.log](evidence/stored-title-confirmation.log)). | The confirmation was not visually tested in TUI; each core scheme needs separate evidence. |
 | 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |
 | 0013 §2–§5, §7 | S1 I | `TestLiveStoredSearchKeyIsRedactedInJobLogs` verifies a stored key is redacted in a job log. | Native custom credential resolver coverage is unavailable; all redaction/substitution boundaries need individual acceptance evidence. |
@@ -88,6 +91,6 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
-- G8.20 dispatch, provider-root grep/find, grep context and project-private instruction discovery are not complete. The task list retains them; no acceptance row above should be read as a waiver.
+- G8.20 provider mutations and general redirect syntax, provider-root grep, safe local scratch traversal, grep long-line windows and project-private instruction discovery are not complete. The task list retains them; no acceptance row above should be read as a waiver.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

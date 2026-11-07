@@ -28,6 +28,7 @@ type Entry struct {
 	Size     int64     `json:"size,omitempty"`
 	Revision string    `json:"revision,omitempty"`
 	Target   string    `json:"target,omitempty"`
+	NoWalk   bool      `json:"noWalk,omitempty"`
 	// Detail is a one-line description shown after the name in listings.
 	Detail string `json:"detail,omitempty"`
 }

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 // ContextLine is one surrounding source line, not a match.
@@ -314,6 +315,47 @@ type FindResult struct {
 	Entries  []FindEntry `json:"entries"`
 	Complete bool        `json:"complete"`
 	Scanned  int         `json:"scanned"`
+}
+
+// FindProvider walks a provider root for names matching pattern.
+func FindProvider(ctx context.Context, provider resource.Provider, root, pattern string, exclude []string, limit int) (FindResult, error) {
+	if pattern == "" {
+		return FindResult{}, errors.New("find pattern is empty")
+	}
+	if _, err := filepath.Match(pattern, "probe"); err != nil {
+		return FindResult{}, fmt.Errorf("%w: glob %q", ErrInvalidPattern, pattern)
+	}
+	if limit <= 0 {
+		limit = 200
+	}
+	result := FindResult{}
+	remaining := 48 << 10
+	walk, err := resource.Walk(ctx, provider, root, func(entry resource.Entry, _ int) (resource.WalkAction, error) {
+		if entry.Name == ".git" || excluded(entry.URI, exclude) {
+			return resource.WalkSkipDir, nil
+		}
+		if entry.Kind == resource.EntryDir {
+			return resource.WalkContinue, nil
+		}
+		matched, err := filepath.Match(pattern, entry.Name)
+		if err != nil {
+			return resource.WalkStop, err
+		}
+		if !matched {
+			return resource.WalkContinue, nil
+		}
+		if len(result.Entries) >= limit || len(entry.URI)+1 > remaining {
+			return resource.WalkStop, nil
+		}
+		result.Entries = append(result.Entries, FindEntry{Path: entry.URI, Size: entry.Size})
+		remaining -= len(entry.URI) + 1
+		return resource.WalkContinue, nil
+	})
+	if err != nil {
+		return FindResult{}, err
+	}
+	result.Scanned, result.Complete = walk.Scanned, walk.Complete
+	return result, nil
 }
 
 // Find walks root for names matching pattern.

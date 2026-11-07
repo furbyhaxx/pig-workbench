@@ -79,7 +79,7 @@ grep {"patterns": ["TODO", "FIXME"], "literal": true}
 find {"pattern": "*.go", "exclude": ["vendor"], "limit": 200}
 ```
 
-Walks file names under the location or a local filesystem path. Symlinked directories are not followed; `.git` is skipped; excluded names are pruned before descending. Provider URIs are not routed.
+Walks file names under a local directory or registered provider directory. `find {"path": "kb://sources/", "pattern": "*.md"}` traverses paged provider listings with depth, entry, time and output limits. Links are not followed, control files and `.git` are skipped, and `noWalk` subtrees are skipped unless named directly. `local://` scratch traversal is temporarily unavailable while its listing is made safe; other providers without listing support return an error. Excluded names are pruned before descending.
 
 ## `cd`
 

@@ -213,6 +213,23 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 
 // TestLiveReferenceProducerLoadsBeforeWorkbench covers the SPEC-0002 §8 row that
 // extension load order must not matter.
+func TestLiveFindWalksPaginatedProvider(t *testing.T) {
+	results := runScriptedWith(t, t.TempDir(), "find", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "kb://paged/", "pattern": "*.md"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "kb://paged/", "pattern": "*.md", "limit": 1}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "kb://paged/a.md") || !strings.Contains(results[0], "kb://paged/nested/b.md") || strings.Contains(results[0], "control") {
+		t.Fatalf("provider walk failed: %v", results)
+	}
+	if !strings.Contains(results[1], "truncated") {
+		t.Fatalf("provider result limit was not reported: %s", results[1])
+	}
+}
+
 func TestLiveReferenceProducerLoadsBeforeWorkbench(t *testing.T) {
 	repo := repoRoot(t)
 	root := t.TempDir()

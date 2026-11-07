@@ -86,6 +86,7 @@ type ResourceEntry struct {
 	Size     int64  `json:"size,omitempty"`
 	Revision string `json:"revision,omitempty"`
 	Target   string `json:"target,omitempty"`
+	NoWalk   bool   `json:"noWalk,omitempty"`
 }
 
 // TextPage is a bounded text page with exact coverage facts.

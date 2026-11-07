@@ -36,12 +36,15 @@ var documents = map[string]string{
 	"kb://sources/a.md":        "alpha one\nalpha two\nalpha three\nalpha four\nalpha five\n",
 	"kb://sources/page.html":   "<html><body><article><h1>Located page</h1><p>Served from the knowledge base snapshot.</p></article></body></html>",
 	"kb://sources/nested/b.md": "bravo\n",
+	"kb://paged/a.md":          "paged alpha\n",
+	"kb://paged/nested/b.md":   "paged bravo\n",
+	"kb://paged/other.txt":     "not markdown\n",
 }
 
 func execute(request api.ResourceRequest) (any, *api.Error) {
 	switch request.Operation {
 	case "stat":
-		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" || request.URI == "git://fixture/" || request.URI == "git://fixture" {
+		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" || request.URI == "git://fixture/" || request.URI == "git://fixture" || request.URI == "kb://paged/" || request.URI == "kb://paged" || request.URI == "kb://paged/nested/" {
 			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir"}, nil
 		}
 		text, ok := documents[request.URI]
@@ -50,6 +53,21 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 		}
 		return api.ResourceResult{CanonicalURI: request.URI, Kind: "file", Size: int64(len(text)), Lines: strings.Count(text, "\n"), Revision: fmt.Sprintf("r%d", len(text))}, nil
 	case "list":
+		if request.URI == "kb://paged/" || request.URI == "kb://paged" {
+			if request.Cursor == "" {
+				complete := false
+				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, NextCursor: "next", Entries: []api.ResourceEntry{{Name: "nested", URI: "kb://paged/nested/", Kind: "dir"}}}, nil
+			}
+			if request.Cursor == "next" {
+				complete := true
+				return api.ResourceResult{CanonicalURI: "kb://paged/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "a.md", URI: "kb://paged/a.md", Kind: "file"}, {Name: "other.txt", URI: "kb://paged/other.txt", Kind: "file"}, {Name: "cycle", URI: "kb://paged/cycle", Kind: "link", Target: "kb://paged/"}, {Name: "control", URI: "kb://paged/control", Kind: "ctl"}, {Name: "expensive", URI: "kb://paged/expensive/", Kind: "dir", NoWalk: true}}}, nil
+			}
+			return nil, &api.Error{Code: "invalidRequest", Message: "unknown cursor"}
+		}
+		if request.URI == "kb://paged/nested/" {
+			complete := true
+			return api.ResourceResult{CanonicalURI: request.URI, Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "b.md", URI: "kb://paged/nested/b.md", Kind: "file"}}}, nil
+		}
 		if request.URI == "git://fixture/" || request.URI == "git://fixture" {
 			complete := true
 			return api.ResourceResult{CanonicalURI: "git://fixture/", Kind: "dir", Complete: &complete, Entries: []api.ResourceEntry{{Name: "main.go", URI: "git://fixture/main.go", Kind: "file", Size: int64(len(gitFile))}}}, nil

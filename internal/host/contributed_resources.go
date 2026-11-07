@@ -131,7 +131,7 @@ func (p *contributedProvider) List(ctx context.Context, uri, cursor string, limi
 		if !strings.HasPrefix(entry.URI, p.canonical+"://") || entry.Name == "" || strings.ContainsAny(entry.Name, "/\x00") {
 			return resource.Listing{}, fmt.Errorf("%s:// provider returned an invalid entry", p.canonical)
 		}
-		listing.Entries = append(listing.Entries, resource.Entry{Name: sanitizeProviderText(entry.Name), URI: entry.URI, Kind: kind, Size: entry.Size, Revision: entry.Revision, Target: entry.Target})
+		listing.Entries = append(listing.Entries, resource.Entry{Name: sanitizeProviderText(entry.Name), URI: entry.URI, Kind: kind, Size: entry.Size, Revision: entry.Revision, Target: entry.Target, NoWalk: entry.NoWalk})
 	}
 	return listing, nil
 }

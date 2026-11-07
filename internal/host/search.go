@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/search"
 )
 
@@ -33,7 +34,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "find", Label: "find",
-		Description:   "Walk a directory for file names matching a glob pattern. Symlinked directories are not followed, .git is skipped, exclusions apply, and the result reports complete:false when it stops at the limit.",
+		Description:   "Walk a local directory or registered provider root for file names matching a glob pattern. local:// scratch traversal is not yet available. Links and noWalk subtrees are not followed, control files and .git are skipped, exclusions apply, and bounds report complete:false.",
 		PromptSnippet: "Find files by name glob under a directory.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"pattern"}, "properties": map[string]any{
 			"pattern": map[string]any{"type": "string", "minLength": 1, "description": "File-name glob, e.g. *.go."},
@@ -149,19 +150,40 @@ func (a *app) find(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	defer done()
 	root := captured.Cwd
+	var provider resource.Provider
 	if input.Path != "" {
-		root, err = captured.Resolve(input.Path)
-		if err != nil {
-			return nil, err
+		target, parseErr := resource.ParsePath(captured.Cwd, input.Path, "")
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		if target.Selection.Explicit {
+			return nil, errors.New("find does not accept a line selector")
+		}
+		if target.Scheme == "file" {
+			root = target.Path
+		} else {
+			if target.Scheme == "local" {
+				return nil, errors.New("find local:// is unavailable until scratch listings can be traversed safely")
+			}
+			provider, err = s.router.Provider(target)
+			if err != nil {
+				return nil, err
+			}
+			root = target.URI
 		}
 	}
-	result, err := search.Find(work, root, input.Pattern, input.Exclude, input.Limit)
+	var result search.FindResult
+	if provider != nil {
+		result, err = search.FindProvider(work, provider, root, input.Pattern, input.Exclude, input.Limit)
+	} else {
+		result, err = search.Find(work, root, input.Pattern, input.Exclude, input.Limit)
+	}
 	if err != nil {
 		return nil, err
 	}
 	var body strings.Builder
 	for _, entry := range result.Entries {
-		body.WriteString(entry.Path)
+		body.WriteString(plainLine(entry.Path))
 		body.WriteByte('\n')
 	}
 	if !result.Complete {
