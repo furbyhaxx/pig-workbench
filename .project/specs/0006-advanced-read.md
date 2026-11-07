@@ -4,12 +4,12 @@ document:
   id: "SPEC-0006"
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -32,11 +32,14 @@ document:
     - revision: 7
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 8
+      reason: "User approved the remaining five specifications on 07.11.2026"
+      changes: ["Approved the advanced-read contract for Slice 1; implementation and acceptance remain separately tracked"]
 ---
 
 # 1. Scope and evidence
 
-Draft specification for enhanced read/grep/find/ls. Depends on [resource providers](0004-resource-providers.md), [source snapshots](0005-hashline-editing.md), [ambient context](0007-ambient-context.md) and [configuration](0010-configuration-state-trust.md). Full advanced reader scope is retained; “use bash instead” is not adapter implementation.
+Specification for enhanced read/grep/find/ls. Depends on [resource providers](0004-resource-providers.md), [source snapshots](0005-hashline-editing.md), [ambient context](0007-ambient-context.md) and [configuration](0010-configuration-state-trust.md). Full advanced reader scope is retained; “use bash instead” is not adapter implementation.
 
 Inspected donor contract: `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi/packages/coding-agent/src/prompts/tools/read.md`, `src/tools/read-selector.ts`, read.ts imports/dispatch surface and read-summary/json/sqlite/archive modules; nugent scheme ToolPath/Selector/Pager. The donor prompt and selector distinguish raw bare numbers and comma lists; Workbench adopts those precise semantics below rather than nugent's simpler onward-number interpretation.
 

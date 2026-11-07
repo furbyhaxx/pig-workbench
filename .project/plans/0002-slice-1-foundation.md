@@ -5,9 +5,9 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 19
+  revision: 20
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T00:37:26+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -68,6 +68,9 @@ document:
     - revision: 19
       reason: "Exercise agent replies at the hop limit"
       changes: ["Recorded a real two-session reply preserving its conversation and stopping automatic wake at hop one"]
+    - revision: 20
+      reason: "User approved the five remaining specifications"
+      changes: ["Recorded approval revisions for SPEC-0003/0006/0007/0008/0011", "Kept implementation gaps and the live-provider spend decision open"]
 ---
 
 # 1. Outcome
@@ -85,7 +88,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 
 ## Progress
 
-- **Current status (07.11.2026):** Slice 1 is implemented in substantial part but is **not complete or frozen**. The five draft specifications listed in A1 still require user approval. The authoritative row-by-row inventory is [ANA-2026-11-05-slice-1-inventory](../analyses/2026-11-05-slice-1-inventory/README.md); its representative passing tests are not a claim that every acceptance anchor passes.
+- **Current status (07.11.2026):** Slice 1 is implemented in substantial part but is **not complete**. All fourteen specifications have been approved; acceptance and the slice exit remain open. The authoritative row-by-row inventory is [ANA-2026-11-05-slice-1-inventory](../analyses/2026-11-05-slice-1-inventory/README.md); its representative passing tests are not a claim that every acceptance anchor passes.
 - **Observed baseline:** at `9da6882`, `just check`, `just race` and `just integration` passed on Linux with scripted inference. Three repeated targeted race runs passed for lifecycle draining, watcher joins, crash reclamation, session-end cleanup and reference-producer reload. Logs are retained in the inventory's `evidence/`. These gates must be repeated after the remaining implementation changes.
 - **Available:** the ten tools, local locations, scoped settings, core resources, hashline editing, jobs, secrets boundary, frames and instructions, prompt/skills, session messaging and the v1 contribution seams are wired in varying degrees. See the product README and the inventory for the exact current surface and its limitations.
 - **Unfinished Slice 1:** `grep` ignores its accepted `context` parameter; `grep` and `find` do not route provider roots. Scheme-command `rm`, `mv`, `cp` and `mkdir` are unconditionally refused and redirects only target `job://`. The project-private instruction class is absent. The task list retains all four behaviors and their acceptance tests; none is moved to depth by this checkpoint.
@@ -150,7 +153,7 @@ Freeze everything that fixes data models, persisted records, wire formats, model
 
 Each frozen specification gets a revision with `status: "approved"` after user review. Later changes need a new revision and a migration note.
 
-**Approval state (05.11.2026).** The user approved nine specifications for Slice 1 implementation: SPEC-0001 rev 8, SPEC-0002 rev 8, SPEC-0004 rev 7, SPEC-0005 rev 11, SPEC-0009 rev 11, SPEC-0010 rev 14, SPEC-0012 rev 8, SPEC-0013 rev 6 and SPEC-0014 rev 8, together with the required 1–120 character `resourceProvider.summary` (already enforced in `resource.ProviderDescriptor.Validate`). Five specifications remain `draft` and are **not** frozen: SPEC-0003 (presentation), SPEC-0006 (advanced read), SPEC-0007 (ambient context), SPEC-0008 (locations and jobs) and SPEC-0011 (messaging). They still gate implementation and need their own approval revision before a phase may claim their rows.
+**Approval state (07.11.2026).** The user approved the remaining five specifications: SPEC-0003 rev 8, SPEC-0006 rev 8, SPEC-0007 rev 7, SPEC-0008 rev 8 and SPEC-0011 rev 8. The previously approved specifications remain SPEC-0001 rev 8, SPEC-0002 rev 8, SPEC-0004 rev 7, SPEC-0005 rev 11, SPEC-0009 rev 11, SPEC-0010 rev 14, SPEC-0012 rev 8, SPEC-0013 rev 6 and SPEC-0014 rev 8, including the required 1–120 character `resourceProvider.summary` (enforced in `resource.ProviderDescriptor.Validate`). Approval freezes the contracts, not the incomplete implementation or Slice 1 acceptance.
 
 ## A2. Answer pig-web's M0.4 inputs
 

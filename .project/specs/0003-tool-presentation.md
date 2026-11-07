@@ -4,12 +4,12 @@ document:
   id: "SPEC-0003"
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T13:04:17+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Define the public Workbench extension APIs before implementation"
@@ -32,11 +32,14 @@ document:
     - revision: 7
       reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
       changes: ["Child-row hook is a fork change"]
+    - revision: 8
+      reason: "User approved the remaining five specifications on 07.11.2026"
+      changes: ["Approved the presentation contract for Slice 1; implementation and acceptance remain separately tracked"]
 ---
 
 # 1. Goal and verified host mechanisms
 
-Let other extensions opt their tools into Workbench renderers and display settings without surrendering tool execution ownership. Workbench consumes a **semantic presentation model**, not remotely executed drawing callbacks. This draft depends on [SPEC-0001](0001-extension-services.md) and [integration UX](../sketches/extension-apis/README.md).
+Let other extensions opt their tools into Workbench renderers and display settings without surrendering tool execution ownership. Workbench consumes a **semantic presentation model**, not remotely executed drawing callbacks. This specification depends on [SPEC-0001](0001-extension-services.md) and [integration UX](../sketches/extension-apis/README.md).
 
 Open probe: whether the host asks the resolver about historical tool names before extensions run `session_start` on resume; if it does, those names report `appliesAfterReload` as above.
 

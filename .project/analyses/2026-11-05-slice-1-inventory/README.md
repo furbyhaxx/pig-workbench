@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 8
+  revision: 9
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T00:42:02+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "Rerun baseline gates after adding independent acceptance cases"
       changes: ["Recorded successful check, race and integration on the updated tree"]
+    - revision: 9
+      reason: "User approved the remaining five specifications"
+      changes: ["Removed the resolved approval blocker while retaining implementation and acceptance gaps"]
 ---
 
 # Scope and evidence
@@ -48,19 +51,19 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0001 §2–§7 | S1 C | `TestLiveServiceDiscoveryRPC` discovers the service. | Full protocol failure, cancellation and receipt matrix needs reconciliation with the acceptance anchor. |
 | 0001 §8 | S1 C + consumer | `TestLiveReferenceProducerSeams` exercises registered contributions and consumers. | Each collaboration method and conditional grant still needs an explicit acceptance mapping. |
 | 0002 all | S1 F | `TestLiveResumeDoesNotResendDeliveredContextFrames` checks resume delivery. | Branch, compaction, trust and projection cases are not all established by that run. |
-| 0003 §2–§6, §10 | S1 F, B | `TestLiveReferenceProducerSeams` exercises reference presentation. | SPEC-0003 is draft; plain-state and width cases require complete row reconciliation. |
+| 0003 §2–§6, §10 | S1 F, B | `TestLiveReferenceProducerSeams` exercises reference presentation. | Plain-state and width cases require complete row reconciliation. |
 | 0004 §1–§10 | S1 D | `TestLiveReferenceProducerSeams` exercises a contributed provider and edit refusal. | Provider mutations are refused at registration; grep/find do not route provider roots. Full policy and mutation acceptance is not established. |
 | 0004 §11 | S1 D | `TestLiveHTTPReadUsesBuiltinStaticReader` and `TestLiveReferenceProducerSeams` exercise builtin and contributed fetching. | Redirect and policy matrix needs reconciliation against the anchor. |
 | 0005 §2–§8, §10, G5.2 | S1 G | `TestLiveTaggedAndExactEditUseObservedSource` exercises both edit forms. | This test does not prove every grammar, recovery and snapshot case. |
-| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode` and `TestLiveGrepAcceptsLiteralPatternList` exercise local reads and literal OR search. | SPEC-0006 is draft. Grep context is accepted but ignored; grep/find treat provider URIs as local paths. Loop guard and supersession need explicit evidence. |
-| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | SPEC-0007 is draft; project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
-| 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | SPEC-0008 is draft; full location acceptance requires reconciliation. |
-| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. | SPEC-0008 is draft. `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths; redirects only route to `job://`. Provider approval parity is unproven. |
+| 0006 §2–§4, §6–§7 | S1 D | `TestLiveReadLocationAndCodemode` and `TestLiveGrepAcceptsLiteralPatternList` exercise local reads and literal OR search. | Grep context is accepted but ignored; grep/find treat provider URIs as local paths. Loop guard and supersession need explicit evidence. |
+| 0007 §2–§8 local | S1 K | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn` exercises instruction admission and withdrawal. | Project-private instruction discovery is not in the default classes. Other acceptance cases need reconciliation. |
+| 0008 §2–§3 local | S1 E1 | `TestLiveReadLocationAndCodemode` exercises captured cwd and `cd`. | Full location acceptance requires reconciliation. |
+| 0008 §5–§7, G8.20 | S1 H | `TestLiveBackgroundJobStdinAndCompletion` exercises job input and completion. | `rm`, `mv`, `cp` and `mkdir` are unconditionally refused for scheme paths; redirects only route to `job://`. Provider approval parity is unproven. |
 | 0009 §2–§3, §5 | S1 L2 | `TestLiveAskUsesNativeRPCAndReturnsUserChoice` exercises an RPC choice; `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi-selection and preview text ([ask-multi-preview.log](evidence/ask-multi-preview.log)). | The rich TUI panel is deferred chrome; remaining mode and failure cases need reconciliation. |
 | 0009 §8, Slice 1 routes | S1 M | `TestLiveEveryCompletedCommandIsAcceptedByItsHandler` exercises command handlers. | Reconcile the complete Slice 1 command and mode matrix; print has no command output channel. |
 | 0009 §9, activity line | S1 M, F | `TestLiveActivityLineCountsMatchTheRegistries` compares shared activity items with live registries. | That RPC test did not observe a widget. `TestActivityCountsFailedJobsAfterRealExit` checks one successful and one failed real process ([activity-failed.log](evidence/activity-failed.log)); real TUI placement has separate coverage. Click requires a fork host; configured shortcut is not applied. |
 | 0010 all | S1 B | `TestLiveSettingsScopesAndReload` exercises settings scopes and reload. | Many validated settings remain unavailable; their catalog entries identify them. Full storage, trust and lifecycle matrix is not established by this one test. |
-| 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake; `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real reply at hop one ([agent-reply-hop.log](evidence/agent-reply-hop.log)). | SPEC-0011 is draft; Windows messaging is compile-level only. |
+| 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake; `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real reply at hop one ([agent-reply-hop.log](evidence/agent-reply-hop.log)). | Windows messaging is compile-level only. |
 | 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |
 | 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
 | 0012 §3.6 | S1 K | — | Private notes class is not present in `instructions.DefaultClasses`, which the host uses; no live test proves it. |
@@ -78,7 +81,7 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 
 # Acceptance blockers
 
-- The five draft specifications SPEC-0003, SPEC-0006, SPEC-0007, SPEC-0008 and SPEC-0011 await user approval. Slice 1 cannot be called frozen before that decision.
+- All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
 - G8.20 dispatch, provider-root grep/find, grep context and project-private instruction discovery are not complete. The task list retains them; no acceptance row above should be read as a waiver.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

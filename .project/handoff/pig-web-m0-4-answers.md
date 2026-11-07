@@ -5,9 +5,9 @@ document:
   title: "Workbench answers to pig-web's M0.4 inputs (M1–M6)"
   description: "Current service and safety answers for pig-web, with seam evidence and open Slice 1 gates"
   status: "open"
-  revision: 2
+  revision: 3
   created_at: "2026-11-05T17:25:00+01:00"
-  updated_at: "2026-11-07T00:26:47+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -17,13 +17,16 @@ document:
     - revision: 2
       reason: "Replace obsolete pre-implementation answers with current observed behavior"
       changes: ["Documented conditional secrets and snapshots services", "Distinguished the reference seam gate from the downstream co-load", "Named outstanding freeze and acceptance blockers"]
+    - revision: 3
+      reason: "User approved the five remaining specifications"
+      changes: ["Recorded contract approval without claiming implementation or slice exit"]
 ---
 
 # Status
 
 Workbench's reference-extension seam gate has passed with a real PiG host and a local scripted provider; see `TestLiveReferenceProducerSeams` and the [acceptance evidence](../analyses/2026-11-05-slice-1-inventory/evidence/acceptance-subset.txt). This is not a pig-web co-load test. The actual two-extension co-load belongs to pig-web's own gate.
 
-**There is no Slice 1 exit commit yet.** Five specifications remain draft, several acceptance behaviors are incomplete, and the live-provider evaluation awaits user authorization. See the [current inventory](../analyses/2026-11-05-slice-1-inventory/README.md). Use the eventual slice-exit handoff and commit when they exist; do not interpret this checkpoint as that handoff.
+**There is no Slice 1 exit commit yet.** All fourteen specifications are approved, but several acceptance behaviors are incomplete and the live-provider evaluation awaits user authorization. See the [current inventory](../analyses/2026-11-05-slice-1-inventory/README.md). Use the eventual slice-exit handoff and commit when they exist; do not interpret this checkpoint as that handoff.
 
 # Answers
 
@@ -45,4 +48,4 @@ Workbench's reference-extension seam gate has passed with a real PiG host and a 
 
 # Next handoff
 
-Once approval, implementation and acceptance are complete, produce a slice-exit handoff naming its actual commit and reference-gate evidence. pig-web can then run its own real co-load gate against that commit.
+Once implementation and acceptance are complete, produce a slice-exit handoff naming its actual commit and reference-gate evidence. pig-web can then run its own real co-load gate against that commit.

@@ -4,12 +4,12 @@ document:
   id: "SPEC-0007"
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
-  status: "draft"
-  revision: 6
+  status: "approved"
+  revision: 7
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T12:29:09+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -29,11 +29,14 @@ document:
     - revision: 6
       reason: "Several instruction files per directory (SPEC-0014 §9)"
       changes: ["Class field select = first | all", "Configuration example in TOML with kebab-case keys (SPEC-0010)", "Prompt engine owns the stable set when enabled"]
+    - revision: 7
+      reason: "User approved the remaining five specifications on 07.11.2026"
+      changes: ["Approved the ambient-context contract for Slice 1; implementation and acceptance remain separately tracked"]
 ---
 
 # 1. Purpose and inputs
 
-Draft specification for instruction discovery and user-defined ambient file classes. Implements the user's two use cases without conflating them:
+Specification for instruction discovery and user-defined ambient file classes. Implements the user's two use cases without conflating them:
 - BACKLOG.md: touched directory plus **all ancestors**, with bounded pointer-item injection.
 - Other repeated files: root-most plus nearest, or a chosen pinned instance, avoiding intermediate duplicates.
 

@@ -4,12 +4,12 @@ document:
   id: "SPEC-0011"
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-05T17:10:00+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "orchestrator"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "User requested cross-project session discovery and bidirectional messaging that wakes idle sessions"
@@ -29,6 +29,9 @@ document:
     - revision: 6
       reason: "Session titles are writable"
       changes: ["Endpoint record follows title changes"]
+    - revision: 8
+      reason: "User approved the remaining five specifications on 07.11.2026"
+      changes: ["Approved the messaging contract for Slice 1; implementation and acceptance remain separately tracked"]
 ---
 
 # 1. Purpose and boundary

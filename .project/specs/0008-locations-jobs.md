@@ -4,12 +4,12 @@ document:
   id: "SPEC-0008"
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
-  status: "draft"
-  revision: 7
+  status: "approved"
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-03T11:21:24+01:00"
+  updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
-  updated_by: "orchestrator"
+  updated_by: "coding-assistant"
   changelog:
     - revision: 1
       reason: "Complete the remaining Workbench specification and design areas"
@@ -32,11 +32,14 @@ document:
     - revision: 7
       reason: "All config files are TOML (SPEC-0010 §1)"
       changes: ["Setting keys renamed to kebab-case"]
+    - revision: 8
+      reason: "User approved the remaining five specifications on 07.11.2026"
+      changes: ["Approved the locations and jobs contract for Slice 1; implementation and acceptance remain separately tracked"]
 ---
 
 # 1. Scope and references
 
-Draft contract for cd/bash/jobs, /remote and working-location/job services. Depends on [services](0001-extension-services.md), [frames](0002-message-frames.md), [resources](0004-resource-providers.md), [ambient context](0007-ambient-context.md) and [persistence/trust](0010-configuration-state-trust.md).
+Contract for cd/bash/jobs, /remote and working-location/job services. Depends on [services](0001-extension-services.md), [frames](0002-message-frames.md), [resources](0004-resource-providers.md), [ambient context](0007-ambient-context.md) and [persistence/trust](0010-configuration-state-trust.md).
 
 Prior art: `host:/mnt/Projects/furbyhaxx/pi-workbench/src/core/{location,ssh,jobs,job-controls,retained-jobs}.ts` and its index.ts command wiring. Donor Jobs distinguishes exitCode, signal, timedOut, background and reported state; controls do not acknowledge model completion notifications just because a user viewed the panel. Workbench preserves those distinctions and strengthens crash/remote-input guarantees with explicit capability reporting.
 
