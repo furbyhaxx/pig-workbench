@@ -12,7 +12,7 @@ func TestSchemeCommandAcceptsStandaloneVerbsOnly(t *testing.T) {
 	if err != nil || !ok || parsed.verb != "redirect" || parsed.text != "kill" {
 		t.Fatalf("redirect: %+v %v %v", parsed, ok, err)
 	}
-	for _, command := range []string{"ls job:// | head", "cat $(echo job://x)", "rm job://a && true", "echo hi > job://a; ls"} {
+	for _, command := range []string{"ls job:// | head", "cat $(echo job://x)", "rm job://a && true", "echo hi > job://a; ls", `cat "job://x"`, `cat 'job://x'`, `kill > job://abc/ctl;true`} {
 		if _, _, err := parseSchemeCommand(command, schemes); err == nil {
 			t.Fatalf("%q was accepted", command)
 		}

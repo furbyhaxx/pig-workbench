@@ -20,15 +20,15 @@ type schemeCommand struct {
 // parseSchemeCommand accepts a standalone ls, cat, rm, mv, cp, mkdir or a single redirect.
 // Anything with a pipe, substitution, compound operator or extra word is refused by name.
 func parseSchemeCommand(command string, schemes []string) (schemeCommand, bool, error) {
-	if strings.ContainsAny(command, "|;&$`<>()\n") && !strings.Contains(command, " > ") && !strings.HasPrefix(strings.TrimSpace(command), ">") {
-		if hasSchemeArg(command, schemes) {
-			return schemeCommand{}, false, fmt.Errorf("scheme paths only work as a standalone ls, cat, rm, mv, cp, mkdir or > redirect; pipes, compounds and substitutions are refused")
-		}
-		return schemeCommand{}, false, nil
+	if hasSchemeArg(command, schemes) && strings.ContainsAny(command, "|;&$`<()\n'\"\\") {
+		return schemeCommand{}, false, fmt.Errorf("scheme paths only work as a standalone ls, cat, rm, mv, cp, mkdir or > redirect; quoting, pipes, compounds and substitutions are refused")
 	}
 	fields := strings.Fields(command)
 	if len(fields) == 0 {
 		return schemeCommand{}, false, nil
+	}
+	if hasSchemeArg(command, schemes) && strings.Contains(command, ">") && (len(fields) != 3 || fields[1] != ">" || strings.Count(command, ">") != 1) {
+		return schemeCommand{}, false, errors.New("scheme redirects require one standalone >")
 	}
 	verb := fields[0]
 	switch verb {
@@ -70,8 +70,8 @@ func schemePath(field string, schemes []string) bool {
 }
 
 func hasSchemeArg(command string, schemes []string) bool {
-	for _, field := range strings.Fields(command) {
-		if schemePath(field, schemes) {
+	for _, scheme := range schemes {
+		if strings.Contains(command, scheme+"://") {
 			return true
 		}
 	}
