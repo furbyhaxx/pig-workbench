@@ -1,0 +1,11 @@
+mkdir -p "$REPO/.tmp"
+cp go.mod "$REPO/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "$REPO/.tmp/go.sum"; else : > "$REPO/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$REPO/.tmp/go.mod"
+go test -race -tags=integration -modfile="$REPO/.tmp/go.mod" ./internal/host
+--- FAIL: TestLiveSchemeCommandRefusesQuotedComposition (0.86s)
+    live_scripted_test.go:223: quoted scheme composition was not refused: [scheme paths require a standalone ls, cat, rm, mv, cp, mkdir or > redirect; expansions and shell composition are refused]
+FAIL
+FAIL	github.com/furbyhaxx/pig-workbench/internal/host	214.744s
+FAIL
+error: recipe `integration` failed on line 33 with exit code 1

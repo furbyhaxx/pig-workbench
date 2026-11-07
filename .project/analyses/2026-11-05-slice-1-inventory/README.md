@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 23
+  revision: 24
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T09:56:16+01:00"
+  updated_at: "2026-11-07T10:06:32+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -80,6 +80,9 @@ document:
     - revision: 23
       reason: "Preserve matches when grep context exceeds its output budget"
       changes: ["Recorded real-host bounded context reduction without hiding matching lines"]
+    - revision: 24
+      reason: "Rerun full gates after approved-contract implementation"
+      changes: ["Recorded successful check, race and integration at 9126aff", "Retained the initial stale refusal-text assertion failure and its correction"]
 ---
 
 # Scope and evidence
@@ -117,6 +120,8 @@ The following subset ran against a real PiG host with an isolated local scripted
 
 # Baseline gates
 
+At `9126aff`, `just check`, `just race` and `just integration` pass on Linux after the search, private-instruction, mutation-barrier and shell-parser changes. Redacted output: [approved-check.log](evidence/approved-check.log), [approved-race.log](evidence/approved-race.log), [approved-integration-rerun.log](evidence/approved-integration-rerun.log). The first integration run failed only because the old composition-refusal regression expected the word `quoting` after static quotes became supported ([approved-integration.log](evidence/approved-integration.log)); the assertion now checks composition refusal and still verifies that no shell marker was created. The targeted case passed three times before the full rerun. These checks use scripted local inference, not a live-provider A/B evaluation.
+
 At commit `9da6882` on Linux, `just check` (including validation), `just race` and `just integration` passed. Their redacted output is [check.log](evidence/check.log), [race.log](evidence/race.log) and [integration.log](evidence/integration.log); `$REPO` replaces the local checkout path. The same gates passed again at `31ab95a` after the new behavioral cases: [check](evidence/check-updated.log), [race](evidence/race-updated.log), [integration](evidence/integration-updated.log). These are baseline checks, not the final gate after the blocked implementation work.
 
 Three repeated race-enabled runs passed for job manager cancellation, watcher joins and lifecycle shutdown ([leaks-unit.log](evidence/leaks-unit.log)), and for live crash reclamation, session-end job termination and reference-producer reload ([leaks-integration.log](evidence/leaks-integration.log)). These targeted checks are not a comprehensive heap or goroutine leak proof. The real TUI job/scratch reload path is not repeated by these three cases.
@@ -124,6 +129,6 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
-- G8.20 provider mutations and general redirect syntax are not complete. The task list retains them; no acceptance row above should be read as a waiver.
+- G8.20 provider mutations and general redirect syntax are not complete. SPEC-0004 does not define the concrete mutation-policy declaration or `mkdir`/`copy` provider operations; enabling external mutations awaits a reviewed revision including authorization and receipt guarantees. The task list retains them; no acceptance row above should be read as a waiver.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.

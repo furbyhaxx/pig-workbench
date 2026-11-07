@@ -1,0 +1,6 @@
+mkdir -p "$REPO/.tmp"
+cp go.mod "$REPO/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "$REPO/.tmp/go.sum"; else : > "$REPO/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$REPO/.tmp/go.mod"
+go test -race -tags=integration -modfile="$REPO/.tmp/go.mod" ./internal/host
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	227.259s
