@@ -85,38 +85,13 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 	if limits.MaxFileBytes <= 0 {
 		limits.MaxFileBytes = 4 << 20
 	}
-	var expressions []*regexp.Regexp
-	var literals []string
-	if options.Literal {
-		for _, pattern := range options.Patterns {
-			if pattern == "" {
-				return Result{}, errors.New("literal pattern is empty")
-			}
-			if options.IgnoreCase {
-				literals = append(literals, strings.ToLower(pattern))
-			} else {
-				literals = append(literals, pattern)
-			}
-		}
-	} else {
-		for _, pattern := range options.Patterns {
-			if pattern == "" {
-				return Result{}, errors.New("regex pattern is empty")
-			}
-			expression := pattern
-			if options.IgnoreCase {
-				expression = "(?i)" + expression
-			}
-			compiled, err := regexp.Compile(expression)
-			if err != nil {
-				return Result{}, fmt.Errorf("%w: %v", ErrInvalidPattern, err)
-			}
-			expressions = append(expressions, compiled)
-		}
+	expressions, literals, err := compilePatterns(options)
+	if err != nil {
+		return Result{}, err
 	}
 	result := Result{Complete: true}
 	remainingBytes, remainingLines := 48<<10, 1900
-	err := filepath.WalkDir(options.Root, func(path string, entry fs.DirEntry, err error) error {
+	err = filepath.WalkDir(options.Root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, fs.ErrPermission) {
 				result.Skipped = append(result.Skipped, path)
@@ -201,6 +176,35 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 	return result, nil
 }
 
+func compilePatterns(options Options) ([]*regexp.Regexp, []string, error) {
+	var expressions []*regexp.Regexp
+	var literals []string
+	for _, pattern := range options.Patterns {
+		if pattern == "" {
+			if options.Literal {
+				return nil, nil, errors.New("literal pattern is empty")
+			}
+			return nil, nil, errors.New("regex pattern is empty")
+		}
+		if options.Literal {
+			if options.IgnoreCase {
+				pattern = strings.ToLower(pattern)
+			}
+			literals = append(literals, pattern)
+			continue
+		}
+		if options.IgnoreCase {
+			pattern = "(?i)" + pattern
+		}
+		compiled, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%w: %v", ErrInvalidPattern, err)
+		}
+		expressions = append(expressions, compiled)
+	}
+	return expressions, literals, nil
+}
+
 var (
 	errTooLarge = errors.New("file exceeds the search byte limit")
 	errBinary   = errors.New("file looks binary")
@@ -237,8 +241,13 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 	if int64(len(data)) > limits.MaxFileBytes {
 		return nil, 0, errTooLarge
 	}
+	matches, err := scanBytes(ctx, path, data, options, expressions, literals, limits, matchLimit)
+	return matches, 1, err
+}
+
+func scanBytes(ctx context.Context, path string, data []byte, options Options, expressions []*regexp.Regexp, literals []string, limits Limits, matchLimit int) ([]Match, error) {
 	if looksBinary(data) {
-		return nil, 0, errBinary
+		return nil, errBinary
 	}
 	var matches []Match
 	lines := strings.Split(string(data), "\n")
@@ -247,7 +256,7 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 	}
 	for index, line := range lines {
 		if ctx.Err() != nil {
-			return nil, 0, ctx.Err()
+			return nil, ctx.Err()
 		}
 		column := hit(line, expressions, literals, options.IgnoreCase)
 		if column == 0 {
@@ -279,7 +288,7 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 			break
 		}
 	}
-	return matches, 1, nil
+	return matches, nil
 }
 
 func hit(line string, expressions []*regexp.Regexp, literals []string, ignoreCase bool) int {
