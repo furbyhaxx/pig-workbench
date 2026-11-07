@@ -381,6 +381,20 @@ func TestLiveGrepContextHonoursOutputBudget(t *testing.T) {
 	}
 }
 
+func TestLiveGrepReportsWindowAroundLongLineMatch(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "long.txt")
+	if err := os.WriteFile(path, []byte(strings.Repeat("x", 50000)+"needle"+strings.Repeat("y", 50000)+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "grep", func([]string) scriptedCall {
+		return scriptedCall{"grep", map[string]any{"path": path, "pattern": "needle"}}
+	})
+	if len(results) != 1 || !strings.Contains(results[0], ":1:50001:") || !strings.Contains(results[0], "[line window from byte ") || !strings.Contains(results[0], "needle") || !strings.Contains(results[0], "results incomplete") || len(results[0]) > 48<<10 {
+		t.Fatalf("long-line match was lost or misreported: %v", results)
+	}
+}
+
 func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte("apple\npear\nplum\n"), 0600); err != nil {

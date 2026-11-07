@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func write(t *testing.T, root, name, body string) string {
@@ -65,6 +66,22 @@ func TestGrepContextAndOutputBudget(t *testing.T) {
 	}
 	if limited.Complete {
 		t.Fatalf("oversized result claimed to be complete: %+v", limited)
+	}
+}
+
+func TestGrepWindowsLongMatchingLines(t *testing.T) {
+	root := t.TempDir()
+	for name, prefix := range map[string]int{"start": 0, "middle": 50000, "end": 100000} {
+		line := strings.Repeat("é", prefix/2) + "needle" + strings.Repeat("é", (100000-prefix)/2)
+		path := write(t, root, name, line+"\n")
+		result, err := Grep(context.Background(), Options{Root: path, Patterns: []string{"needle"}, Literal: true})
+		if err != nil || len(result.Matches) != 1 {
+			t.Fatalf("%s: matching line was lost: %+v %v", name, result, err)
+		}
+		match := result.Matches[0]
+		if match.Column != prefix+1 || !strings.Contains(match.Text, "needle") || len(match.Text) > 8192 || !utf8.ValidString(match.Text) || !match.Windowed || match.WindowStart < 1 || result.Complete {
+			t.Errorf("%s: invalid match window: %+v complete=%v", name, match, result.Complete)
+		}
 	}
 }
 

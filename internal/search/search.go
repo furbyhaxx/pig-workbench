@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -25,12 +26,14 @@ type ContextLine struct {
 
 // Match is one exact source match.
 type Match struct {
-	Path   string        `json:"path"`
-	Line   int           `json:"line"`
-	Column int           `json:"column"`
-	Text   string        `json:"text"`
-	Before []ContextLine `json:"before,omitempty"`
-	After  []ContextLine `json:"after,omitempty"`
+	Path        string        `json:"path"`
+	Line        int           `json:"line"`
+	Column      int           `json:"column"`
+	Text        string        `json:"text"`
+	Windowed    bool          `json:"windowed,omitempty"`
+	WindowStart int           `json:"windowStart,omitempty"`
+	Before      []ContextLine `json:"before,omitempty"`
+	After       []ContextLine `json:"after,omitempty"`
 }
 
 // Result reports what was searched and whether the bound was reached.
@@ -178,6 +181,9 @@ func Grep(ctx context.Context, options Options) (Result, error) {
 				match.After[i].Text = strings.Clone(match.After[i].Text)
 			}
 			result.Matches = append(result.Matches, match)
+			if match.Windowed {
+				result.Complete = false
+			}
 			remainingBytes -= bytes
 			remainingLines -= lines
 		}
@@ -248,6 +254,20 @@ func scanFile(ctx context.Context, path string, options Options, expressions []*
 			continue
 		}
 		match := Match{Path: path, Line: index + 1, Column: column, Text: strings.TrimSuffix(line, "\r")}
+		const windowBytes = 8192
+		if len(match.Text) > windowBytes {
+			start := min(max(0, column-1-windowBytes/2), len(match.Text)-windowBytes)
+			for start > 0 && !utf8.RuneStart(match.Text[start]) {
+				start--
+			}
+			end := min(len(match.Text), start+windowBytes)
+			for end < len(match.Text) && !utf8.RuneStart(match.Text[end]) {
+				end--
+			}
+			match.Text = match.Text[start:end]
+			match.Windowed = true
+			match.WindowStart = start + 1
+		}
 		for i := max(0, index-limits.Context); i < index; i++ {
 			match.Before = append(match.Before, ContextLine{Line: i + 1, Text: strings.TrimSuffix(lines[i], "\r")})
 		}

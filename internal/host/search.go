@@ -113,13 +113,17 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 		for _, line := range match.Before {
 			_, _ = fmt.Fprintf(&body, "%s-%d- %s\n", path, line.Line, plainLine(line.Text))
 		}
-		_, _ = fmt.Fprintf(&body, "%s:%d:%d: %s\n", path, match.Line, match.Column, plainLine(match.Text))
+		if match.Windowed {
+			_, _ = fmt.Fprintf(&body, "%s:%d:%d: [line window from byte %d] %s\n", path, match.Line, match.Column, match.WindowStart, plainLine(match.Text))
+		} else {
+			_, _ = fmt.Fprintf(&body, "%s:%d:%d: %s\n", path, match.Line, match.Column, plainLine(match.Text))
+		}
 		for _, line := range match.After {
 			_, _ = fmt.Fprintf(&body, "%s-%d- %s\n", path, line.Line, plainLine(line.Text))
 		}
 	}
 	if !result.Complete {
-		body.WriteString("… results truncated at a match, file or output limit\n")
+		body.WriteString("… results incomplete due to a line window or match, file or output limit\n")
 	}
 	if len(result.Skipped) > 0 {
 		_, _ = fmt.Fprintf(&body, "skipped %d unreadable, binary or oversized file(s)\n", len(result.Skipped))
