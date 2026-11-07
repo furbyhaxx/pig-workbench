@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -54,6 +55,9 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 	policies, err := validatedClasses(classes)
 	if err != nil {
 		return Set{}, err
+	}
+	if classes == nil && opts.PrivateRoot != "" {
+		policies = append(policies, ProjectPrivateClass())
 	}
 	target, err := filepath.Abs(root)
 	if err != nil {
@@ -119,6 +123,15 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 		user.fs.Close()
 		if err != nil {
 			return Set{}, err
+		}
+	}
+	if opts.PrivateRoot != "" {
+		for _, class := range policies {
+			if class.ID == "project-private" {
+				if err := d.scanPrivate(ctx, opts.PrivateRoot, class); err != nil {
+					return Set{}, err
+				}
+			}
 		}
 	}
 	if err := d.scanScope(ctx, project, dirs); err != nil {
@@ -259,6 +272,9 @@ func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) e
 	for i, dir := range dirs {
 		candidates[i] = make([][]candidate, len(d.classes))
 		for j, class := range d.classes {
+			if class.ID == "project-private" {
+				continue
+			}
 			chosen := false
 			for _, name := range class.Filenames {
 				if err := ctx.Err(); err != nil {
@@ -339,6 +355,71 @@ func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) e
 					return err
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func (d *discovery) scanPrivate(ctx context.Context, path string, class Class) error {
+	before, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("inspect private notes directory: %w", err)
+	}
+	if !before.IsDir() {
+		return errors.New("private notes root is not a directory")
+	}
+	private, err := openScope(path, "user")
+	if err != nil {
+		return fmt.Errorf("open private notes directory: %w", err)
+	}
+	defer private.fs.Close()
+	opened, err := private.fs.Stat(".")
+	if err != nil || !os.SameFile(before, opened) {
+		return errors.New("private notes directory changed while opening")
+	}
+	dir, err := private.fs.Open(".")
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+	entries, err := dir.ReadDir(4097)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+	if len(entries) > 4096 {
+		return errors.New("private notes directory exceeds the 4096-entry scan limit")
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+	for _, entry := range entries {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		name := filepath.Join(private.root, entry.Name())
+		info, err := private.fs.Lstat(entry.Name())
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("inspect private note %s: %w", name, err)
+		}
+		if !info.Mode().IsRegular() {
+			d.reasons = append(d.reasons, Reason{Class: class.ID, Path: name, DisplayPath: name, Status: "ignored", Detail: "private notes must be regular files"})
+			continue
+		}
+		if d.remaining == 0 {
+			return errors.New("private instruction source budget exhausted")
+		}
+		if err := d.selectCandidate(ctx, private, class, candidate{path: name, display: name, canonical: name}); err != nil {
+			return err
+		}
+		if reason := d.reasons[len(d.reasons)-1]; reason.Status == "missing" {
+			return fmt.Errorf("private note %s unavailable: %s", name, reason.Detail)
 		}
 	}
 	return nil

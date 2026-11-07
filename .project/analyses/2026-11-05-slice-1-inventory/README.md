@@ -5,9 +5,9 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T08:44:09+01:00"
+  updated_at: "2026-11-07T08:52:49+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -53,6 +53,9 @@ document:
     - revision: 14
       reason: "Confine scratch listing and stat"
       changes: ["Recorded root-confined stat and bounded listing tests", "Exercised real scratch provider traversal and symlink refusal"]
+    - revision: 15
+      reason: "Add confined project-private note discovery"
+      changes: ["Recorded project isolation, symlink and source-budget tests", "Kept host delivery and pin wiring open"]
 ---
 
 # Scope and evidence
@@ -81,7 +84,7 @@ The following subset ran against a real PiG host with an isolated local scripted
 | 0011 §2–§8 | S1 L1 | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes` exercises actual two-session wake; `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real reply at hop one ([agent-reply-hop.log](evidence/agent-reply-hop.log)). | Windows messaging is compile-level only. |
 | 0012 §3.1–§3.4 | S1 E1 | `TestLiveReadLocationAndCodemode` exercises location and project context in the host. | Full project recognition precedence needs separate acceptance evidence. |
 | 0012 §3.5 | S1 E2 | `TestLiveSessionStorageIsSharedThenUnlinked` exercises conversion and undo. | The complete crash-step and conflict matrix needs reconciliation; Windows is compile-level only. |
-| 0012 §3.6 | S1 K | — | Private notes class is not present in `instructions.DefaultClasses`, which the host uses; no live test proves it. |
+| 0012 §3.6 | S1 K | Private-note discovery confines notes to an explicitly authorized root, applies user trust and budgets, and refuses symlink escapes ([private-discovery.log](evidence/private-discovery.log)). | The host does not yet supply the private root or integrate pins; no live test proves delivery. |
 | 0012 §5.1–§5.2, §5.5 | S1 D | `TestLiveReferenceProducerSeams` exercises registered scheme routing; `TestLiveFindWalksPaginatedProvider` and `TestLiveFindWalksScratchWithoutFollowingLinks` verify paginated and scratch traversal ([find-provider.log](evidence/find-provider.log), [find-scratch.log](evidence/find-scratch.log)). | Provider grep remains open; first-touch guide and naming acceptance need separate mapping. |
 | 0012 §5.3 core | S1 D, H, J, L1 | `TestLiveStoredSessionsAreListedReadAndTitled` exercises stored session trees; `TestLiveStoredSessionTitleRequiresConfirmation` checks native RPC confirmation ([stored-title-confirmation.log](evidence/stored-title-confirmation.log)). Scratch read, stat and listing confinement are covered in [local-read-confinement.log](evidence/local-read-confinement.log), [live-local-read-confinement.log](evidence/live-local-read-confinement.log) and [scratch-list-safety.log](evidence/scratch-list-safety.log). | The confirmation was not visually tested in TUI; each core scheme needs separate evidence. |
 | 0012 §5.4, registered docs | S1 C, D | `TestLiveReferenceProducerSeams` exercises contributed docs. | PiG-source docs are Slice 2; reconcile registered-doc operations individually. |

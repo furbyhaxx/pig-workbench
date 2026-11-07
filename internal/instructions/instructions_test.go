@@ -34,6 +34,49 @@ func reasonFor(set Set, path, status string) bool {
 	return false
 }
 
+func TestDiscoverProjectPrivateNotesAreConfinedAndCapped(t *testing.T) {
+	root := t.TempDir()
+	private := filepath.Join(t.TempDir(), "private")
+	note := write(t, private, "notes.md", strings.Repeat("private rule\n", 3000))
+	write(t, private, "ignore.txt", "not a note\n")
+	write(t, private, "nested/hidden.md", "not a root note\n")
+	other := write(t, t.TempDir(), "other.md", "other project secret\n")
+	if err := os.Symlink(other, filepath.Join(private, "escape.md")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	set, err := Discover(context.Background(), root, nil, Options{ProjectRoot: root, PrivateRoot: private})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(set.Files) != 1 || set.Files[0].Path != note || set.Files[0].Class != "project-private" || set.Files[0].Trust != "user" || set.Files[0].Role != "instruction" || !set.Files[0].Truncated {
+		t.Fatalf("incorrect private selection: %+v", set.Files)
+	}
+	if strings.Contains(set.Render(), "other project secret") || !reasonFor(set, filepath.Join(private, "escape.md"), "ignored") {
+		t.Fatalf("private symlink was followed: %+v", set.Reasons)
+	}
+	otherSet, err := Discover(context.Background(), root, nil, Options{ProjectRoot: root, PrivateRoot: filepath.Dir(other)})
+	if err != nil || len(otherSet.Files) != 1 || otherSet.Files[0].Path != other || strings.Contains(otherSet.Render(), "private rule") {
+		t.Fatalf("private roots were not isolated: %+v, %v", otherSet.Files, err)
+	}
+	link := filepath.Join(t.TempDir(), "private")
+	if err := os.Symlink(private, link); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if _, err := Discover(context.Background(), root, nil, Options{ProjectRoot: root, PrivateRoot: link}); err == nil {
+		t.Fatal("symlinked private directory accepted")
+	}
+}
+
+func TestPrivateNotesRespectTotalSourceBudget(t *testing.T) {
+	root, private := t.TempDir(), t.TempDir()
+	write(t, private, "a.md", strings.Repeat("long rule\n", 20))
+	later := write(t, private, "b.md", "must not be read\n")
+	_, err := Discover(context.Background(), root, nil, Options{ProjectRoot: root, PrivateRoot: private, MaxTotalBytes: 64})
+	if err == nil || !strings.Contains(err.Error(), "budget exhausted") {
+		t.Fatalf("exhausted budget did not fail closed before %s: %v", later, err)
+	}
+}
+
 func TestDiscoverNestedSteeringAndCappedBacklog(t *testing.T) {
 	root := t.TempDir()
 	broad := write(t, root, "AGENTS.md", "root rules\n")

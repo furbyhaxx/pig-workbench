@@ -26,8 +26,10 @@ type Class struct {
 // Options defines the project boundary, authorized user directories and scan budget.
 // A zero MaxTotalBytes permits up to 4 MiB of source bytes per discovery.
 type Options struct {
-	ProjectRoot   string
-	UserRoots     []string
+	ProjectRoot string
+	UserRoots   []string
+	// PrivateRoot is a separately authorized project-private notes directory.
+	PrivateRoot   string
 	MaxTotalBytes int
 	AllowNested   bool
 	// ValidatePointers reports that target validation is deferred; it does not read targets.
@@ -82,6 +84,11 @@ func DefaultClasses() []Class {
 		{ID: "steering", Filenames: []string{"AGENTS.override.md", "AGENTS.md", "AGENTS.MD"}, Placement: "ancestors", Select: "first", Role: "instruction", MaxLines: 200, MaxBytes: 16384},
 		{ID: "backlog", Filenames: []string{"BACKLOG.md"}, Placement: "ancestors", Select: "first", Role: "context", MaxLines: 200, MaxBytes: 16384, MaxItems: 25, AllowPin: true},
 	}
+}
+
+// ProjectPrivateClass returns the built-in user-owned private-notes policy.
+func ProjectPrivateClass() Class {
+	return Class{ID: "project-private", Filenames: []string{"*.md"}, Placement: "root", Select: "all", Role: "instruction", MaxLines: 200, MaxBytes: 16384, AllowPin: true}
 }
 
 func validatedClasses(classes []Class) ([]Class, error) {
