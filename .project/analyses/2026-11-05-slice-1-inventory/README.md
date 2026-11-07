@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 38
+  revision: 39
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-07T20:48:43+01:00"
+  updated_at: "2026-11-07T21:09:49+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 38
-      reason: "Make filename-only grep output honor its public contract"
-      changes: ["Returned distinct paths without source/context or line coordinates", "Avoided retaining or windowing source text for filesOnly", "Verified shared scanner and actual local/provider tool behavior"]
+    - revision: 39
+      reason: "Preserve native directory snapshot continuation integrity"
+      changes: ["Bounded native cursor use to canonical directories and visible entry snapshots","Rejected wrong roots, inserted/removed entries and stale last names","Used descriptor-checked nonblocking directory admission and preserved scratch containment"]
 ---
 
 # Scope and evidence
@@ -58,7 +58,7 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 | 0004 §10.1 provider lifecycle/direct/codemode/list/catalog | PARTIAL | Live reference seams and read/codemode tests pass; reverse load order and unregister/drain are reconciled in 17.8.3.1/3.3. |
 | 0004 §10.2 atomic invalid/duplicate/reserved registrations | PASS | TestParseProviderDescriptor and TestRegisterContributedIsAtomic; live reference registration/reload has separate protocol evidence. |
 | 0004 §10.3 path and selector grammar | PASS (local/core) | TestLiteralFilesAndURIPunctuation, TestSelectors, TestRawPreservesBytesAndLineConvention and TestLargeLineNeverBecomesSeen. Remote/archive adapters are outside Slice 1. |
-| 0004 §10.4 revision/paging/unknown totals | OPEN | Source revisions revalidate on each read. Cursor registration/resource/snapshot bindings and reload expiry pass [live](evidence/listing-cursors-live.log) and [retention/privacy](evidence/listing-cursors-safety.log) tests. Unknown/known-empty totals and malformed coverage pass [unit](evidence/provider-totals-unit.log) and [actual SDK persistence](evidence/provider-totals-live.log) cases; native directory cursor integrity remains 17.8.2.14. |
+| 0004 §10.4 revision/paging/unknown totals | OPEN | Source revisions revalidate on each read. Cursor registration/resource/snapshot bindings and reload expiry pass [live](evidence/listing-cursors-live.log) and [retention/privacy](evidence/listing-cursors-safety.log) tests. Unknown/known-empty totals and malformed coverage pass [unit](evidence/provider-totals-unit.log) and [actual SDK persistence](evidence/provider-totals-live.log) cases; native file/scratch directory identity, snapshot and missing-last-entry checks pass [unit](evidence/native-directory-cursors-unit.log) and [actual PiG](evidence/native-directory-cursors-live.log) regressions. |
 | 0004 §10.5 core trees | PARTIAL | Stored-session/title, scratch, job, skill, cfg, artifact and reference-doc tests run. by-project/worktree tree acceptance is explicitly Slice 2, not an implementation waiver for core routes. |
 | 0004 §10.6 source/derived seen state and alias edit refusal | PASS | TestLargeLineNeverBecomesSeen, TestRenderSpansValidatesProviderPages and live reference edit refusal; full edit matrix is 17.8.4.1. |
 | 0004 §10.7 mutation outcomes | PARTIAL | Live provider verb/failure matrix passes; cancel/idempotency/disconnect anchor reconciliation remains 17.8.3.1. |

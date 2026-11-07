@@ -134,6 +134,74 @@ func TestLocalProviderListsScratchURIsAndRefusesEscapingDirectory(t *testing.T) 
 	}
 }
 
+func TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges(t *testing.T) {
+	root, other := t.TempDir(), t.TempDir()
+	for _, dir := range []string{root, other} {
+		for _, name := range []string{"a", "b", "c"} {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("source"), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	provider := FileProvider{}
+	first, err := provider.List(t.Context(), FileURI(root), "", 1)
+	if err != nil || first.NextCursor == "" {
+		t.Fatalf("first page: %+v %v", first, err)
+	}
+	alias := filepath.Join(t.TempDir(), "alias")
+	if err := os.Symlink(root, alias); err == nil {
+		stat, err := provider.Stat(t.Context(), FileURI(alias))
+		if err != nil || stat.URI != FileURI(root) {
+			t.Fatalf("directory alias did not resolve canonically: %+v %v", stat, err)
+		}
+		page, err := provider.List(t.Context(), FileURI(alias), first.NextCursor, 1)
+		if err != nil || len(page.Entries) != 1 || page.Entries[0].Name != "b" {
+			t.Fatalf("canonical alias lost continuation: %+v %v", page, err)
+		}
+	}
+	if _, err := provider.List(t.Context(), FileURI(other), first.NextCursor, 1); err == nil {
+		t.Fatal("native cursor reused against another directory")
+	}
+	if err := os.WriteFile(filepath.Join(root, "000-new"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.List(t.Context(), FileURI(root), first.NextCursor, 1); err == nil {
+		t.Fatal("native cursor ignored an inserted entry")
+	}
+	current, err := provider.List(t.Context(), FileURI(root), "", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(root, current.Entries[0].Name)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.List(t.Context(), FileURI(root), current.NextCursor, 1); err == nil {
+		t.Fatal("removed cursor silently returned a complete empty listing")
+	}
+	left, err := NewLocalProvider(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	right, err := NewLocalProvider(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []*LocalProvider{left, right} {
+		for _, name := range []string{"a", "b"} {
+			if err := os.WriteFile(filepath.Join(p.root, name), nil, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	page, err := left.List(t.Context(), "local:///", "", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := right.List(t.Context(), "local:///", page.NextCursor, 1); err == nil {
+		t.Fatal("scratch cursor crossed session roots")
+	}
+}
+
 func TestFileProviderListingIsDeterministic(t *testing.T) {
 	root := t.TempDir()
 	for _, name := range []string{"b.txt", "A.txt", "z/c.txt"} {
@@ -156,10 +224,10 @@ func TestFileProviderListingIsDeterministic(t *testing.T) {
 	if len(names) != 2 || names[0] != "z" || names[1] != "A.txt" {
 		t.Fatalf("directories-first order wrong: %v", names)
 	}
-	if listing.Complete || listing.NextCursor != "A.txt" {
+	if listing.Complete || listing.NextCursor == "" || listing.Revision == "" {
 		t.Fatalf("paging facts wrong: %+v", listing)
 	}
-	rest, err := FileProvider{}.List(context.Background(), FileURI(root), "A.txt", 2)
+	rest, err := FileProvider{}.List(context.Background(), FileURI(root), listing.NextCursor, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

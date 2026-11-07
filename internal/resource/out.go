@@ -216,15 +216,11 @@ func (p *LocalProvider) List(ctx context.Context, uri, cursor string, limit int)
 	if !before.IsDir() {
 		return Listing{}, errors.New("scratch listing target is not a directory")
 	}
-	dir, err := root.Open(rel)
+	dir, opened, err := fileio.OpenDirectoryInRoot(root, rel)
 	if err != nil {
 		return Listing{}, err
 	}
 	defer dir.Close()
-	opened, err := dir.Stat()
-	if err != nil {
-		return Listing{}, err
-	}
 	if !opened.IsDir() || !os.SameFile(before, opened) {
 		return Listing{}, errors.New("scratch directory changed while opening; retry")
 	}
@@ -238,11 +234,23 @@ func (p *LocalProvider) List(ctx context.Context, uri, cursor string, limit int)
 	if limit <= 0 || limit > 2000 {
 		limit = 500
 	}
-	return pageDirectory(ctx, entries, cursor, limit, func(entry fs.DirEntry) Entry {
+	page, err := pageDirectory(ctx, entries, FileURI(path), cursor, limit, func(entry fs.DirEntry) Entry {
 		name := filepath.ToSlash(filepath.Join(rel, entry.Name()))
 		child := (&url.URL{Scheme: "local", Path: "/" + name}).String()
 		return directoryEntry(entry, child)
 	})
+	if err != nil {
+		return Listing{}, err
+	}
+	after, err := dir.Stat()
+	if err != nil {
+		return Listing{}, err
+	}
+	current, err := root.Lstat(rel)
+	if err != nil || !os.SameFile(opened, current) || opened.Size() != after.Size() || !opened.ModTime().Equal(after.ModTime()) {
+		return Listing{}, errors.New("staleRevision: scratch directory changed while listing; restart")
+	}
+	return page, nil
 }
 
 // Read pages one scratch file.

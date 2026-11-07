@@ -69,7 +69,7 @@ ls {"path": "session://self"}
 ls {"path": ".", "cursor": "…", "limit": 200}
 ```
 
-Lists containers supported by the selected provider. Entries have types (`file`, `dir`, `link`, `ctl`), a continuation cursor and an explicit `complete` flag in `Details`. Content stays within 50 KiB / 2000 lines and entry metadata is bounded; unshown rows remain resumable rather than being skipped. `includeHidden` defaults to `true`; pass `false` to omit dot-prefixed names. Details report the effective policy and the number omitted. Listing cursors are bound to the resource, hidden-entry policy and captured tool context; contributed-provider cursors also bind registration and descriptor revision; they expire on reload/replacement, after five minutes or when the bounded cache evicts them. Restart the listing after `staleRevision`.
+Lists containers supported by the selected provider. Entries have types (`file`, `dir`, `link`, `ctl`), a continuation cursor and an explicit `complete` flag in `Details`. Content stays within 50 KiB / 2000 lines and entry metadata is bounded; unshown rows remain resumable rather than being skipped. `includeHidden` defaults to `true`; pass `false` to omit dot-prefixed names. Details report the effective policy and the number omitted. Listing cursors are bound to the resource, hidden-entry policy and captured tool context; contributed-provider cursors also bind registration and descriptor revision; they expire on reload/replacement, after five minutes or when the bounded cache evicts them. Restart the listing after `staleRevision`. Native file/scratch backend cursors also bind the directory snapshot: insertion, removal, rename or visible entry-metadata changes invalidate continuation instead of silently skipping rows.
 
 ## `grep`
 

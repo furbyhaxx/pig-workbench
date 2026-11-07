@@ -1,0 +1,14 @@
+=== RUN   TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges
+--- PASS: TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+=== RUN   TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges
+--- PASS: TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+=== RUN   TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges
+--- PASS: TestNativeListingCursorRejectsWrongTargetsAndDirectoryChanges (0.00s)
+=== RUN   TestFileProviderListingIsDeterministic
+--- PASS: TestFileProviderListingIsDeterministic (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/resource	1.015s

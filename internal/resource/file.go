@@ -8,9 +8,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // FileProvider serves local files and directories under file://.
@@ -22,6 +23,16 @@ func (FileProvider) Scheme() string { return "file" }
 // Stat describes a local path.
 func (FileProvider) Stat(ctx context.Context, uri string) (StatResult, error) {
 	path, err := localPath(uri)
+	if err != nil {
+		return StatResult{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return StatResult{}, err
+	}
+	path, err = filepath.EvalSymlinks(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return StatResult{}, ErrNotFound
+	}
 	if err != nil {
 		return StatResult{}, err
 	}
@@ -50,50 +61,45 @@ func (FileProvider) List(ctx context.Context, uri, cursor string, limit int) (Li
 	if limit <= 0 || limit > 2000 {
 		limit = 500
 	}
-	entries, err := os.ReadDir(path)
+	if err := ctx.Err(); err != nil {
+		return Listing{}, err
+	}
+	path, err = filepath.EvalSymlinks(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return Listing{}, ErrNotFound
+	}
+	if err != nil {
+		return Listing{}, err
+	}
+	dir, opened, err := fileio.OpenDirectory(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return Listing{}, ErrNotFound
 	}
 	if err != nil {
 		return Listing{}, fmt.Errorf("list directory: %w", err)
 	}
-	return pageDirectory(ctx, entries, cursor, limit, func(entry fs.DirEntry) Entry {
+	defer dir.Close()
+	entries, err := dir.ReadDir(-1)
+	if err != nil {
+		return Listing{}, err
+	}
+	page, err := pageDirectory(ctx, entries, FileURI(path), cursor, limit, func(entry fs.DirEntry) Entry {
 		item := directoryEntry(entry, FileURI(filepath.Join(path, entry.Name())))
 		if item.Kind == EntryLink {
 			item.Target, _ = os.Readlink(filepath.Join(path, entry.Name()))
 		}
 		return item
 	})
-}
-
-func pageDirectory(ctx context.Context, entries []fs.DirEntry, cursor string, limit int, makeEntry func(fs.DirEntry) Entry) (Listing, error) {
-	sort.SliceStable(entries, func(i, j int) bool {
-		if entries[i].IsDir() != entries[j].IsDir() {
-			return entries[i].IsDir()
-		}
-		return entries[i].Name() < entries[j].Name()
-	})
-	page := Listing{Entries: make([]Entry, 0, min(limit, len(entries))), Complete: true}
-	start := 0
-	if cursor != "" {
-		start = len(entries)
-		for i, entry := range entries {
-			if entry.Name() == cursor {
-				start = i + 1
-				break
-			}
-		}
+	if err != nil {
+		return Listing{}, err
 	}
-	for _, entry := range entries[start:] {
-		if err := ctx.Err(); err != nil {
-			return Listing{}, err
-		}
-		if len(page.Entries) == limit {
-			page.Complete = false
-			page.NextCursor = page.Entries[len(page.Entries)-1].Name
-			break
-		}
-		page.Entries = append(page.Entries, makeEntry(entry))
+	after, err := dir.Stat()
+	if err != nil {
+		return Listing{}, err
+	}
+	current, err := os.Stat(path)
+	if err != nil || !os.SameFile(opened, current) || opened.Size() != after.Size() || !opened.ModTime().Equal(after.ModTime()) {
+		return Listing{}, errors.New("staleRevision: directory changed while listing; restart")
 	}
 	return page, nil
 }

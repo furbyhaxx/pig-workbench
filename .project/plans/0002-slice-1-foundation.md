@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 48
+  revision: 49
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-07T20:48:43+01:00"
+  updated_at: "2026-11-07T21:09:49+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 48
-      reason: "Make filename-only grep output honor its public contract"
-      changes: ["Returned distinct paths without source/context or line coordinates", "Avoided retaining or windowing source text for filesOnly", "Verified shared scanner and actual local/provider tool behavior"]
+    - revision: 49
+      reason: "Preserve native directory snapshot continuation integrity"
+      changes: ["Bounded native cursor use to canonical directories and visible entry snapshots","Rejected wrong roots, inserted/removed entries and stale last names","Used descriptor-checked nonblocking directory admission and preserved scratch containment"]
 ---
 
 # 1. Outcome

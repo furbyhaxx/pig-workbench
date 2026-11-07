@@ -10,6 +10,31 @@ import (
 	"testing"
 )
 
+func TestLiveNativeListingRejectsChangedDirectorySnapshots(t *testing.T) {
+	root := t.TempDir()
+	catalog := filepath.Join(root, "catalog")
+	if err := os.Mkdir(catalog, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a", "b", "c"} {
+		if err := os.WriteFile(filepath.Join(catalog, name), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results := runScripted(t, root, "ls",
+		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "catalog", "limit": 1}} },
+		func(results []string) scriptedCall {
+			if err := os.WriteFile(filepath.Join(catalog, "000-new"), nil, 0600); err != nil {
+				t.Error(err)
+			}
+			return scriptedCall{"ls", map[string]any{"path": "catalog", "limit": 1, "cursor": cursorOf(t, results[0])}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[1], "staleRevision") {
+		t.Fatalf("native listing silently mixed snapshots: %v", results)
+	}
+}
+
 func TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit(t *testing.T) {
 	root := t.TempDir()
 	for _, dir := range []string{"big", "small"} {

@@ -1,0 +1,14 @@
+=== RUN   TestLiveNativeListingRejectsChangedDirectorySnapshots
+--- PASS: TestLiveNativeListingRejectsChangedDirectorySnapshots (0.81s)
+=== RUN   TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit
+--- PASS: TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit (0.88s)
+=== RUN   TestLiveNativeListingRejectsChangedDirectorySnapshots
+--- PASS: TestLiveNativeListingRejectsChangedDirectorySnapshots (0.79s)
+=== RUN   TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit
+--- PASS: TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit (0.88s)
+=== RUN   TestLiveNativeListingRejectsChangedDirectorySnapshots
+--- PASS: TestLiveNativeListingRejectsChangedDirectorySnapshots (0.75s)
+=== RUN   TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit
+--- PASS: TestLiveListingOutputIsBoundedAndHiddenPolicyIsExplicit (0.89s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	6.032s
