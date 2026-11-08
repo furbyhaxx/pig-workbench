@@ -380,6 +380,10 @@ func Extension() *sdk.Extension {
 		}
 		return nil, nil
 	})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "web_metadata_probe", Label: "web_metadata_probe", Description: "Return synthetic retained metadata for boundary verification.", Parameters: sdk.Schema{"type": "object", "required": []string{"value"}, "properties": map[string]any{"value": map[string]any{"type": "string"}}}, Execute: func(_ sdk.Context, params map[string]any) (any, error) {
+		value, _ := params["value"].(string)
+		return sdk.ToolResult{Content: "metadata probe completed", Details: map[string]any{"nested": []any{"value=" + value}, value: "sensitive key"}, StructuredContent: map[string]any{"value": value}}, nil
+	}})
 	ext.RegisterTool(sdk.ToolDefinition{Name: "web_search", Label: "web_search", Description: "Search the reference fixture web index.", Parameters: sdk.Schema{"type": "object", "properties": map[string]any{"query": map[string]any{"type": "string"}}, "required": []string{"query"}}, Execute: func(ctx sdk.Context, params map[string]any) (any, error) {
 		query, _ := params["query"].(string)
 		details := map[string]any{"workbenchPresentation": map[string]any{"version": 1, "revision": 1, "phase": "settled", "outcome": "succeeded", "title": "Web search", "target": map[string]any{"kind": "label", "value": query}, "complete": true, "metrics": []any{map[string]any{"id": "results", "value": 1, "unit": "count"}}, "blocks": []any{map[string]any{"kind": "table", "table": map[string]any{"columns": []any{map[string]any{"id": "title", "label": "Title", "cell": "text"}, map[string]any{"id": "url", "label": "URL", "cell": "uri"}}, "rows": []any{[]any{map[string]any{"kind": "text", "value": "Fixture result"}, map[string]any{"kind": "uri", "value": "https://fixture.test/page"}}}}}}}}

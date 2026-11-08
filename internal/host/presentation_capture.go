@@ -1,6 +1,8 @@
 package host
 
 import (
+	"maps"
+
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 )
 
@@ -9,8 +11,23 @@ func (a *app) capturePresentationFinal(_ sdk.Context, data map[string]any) (any,
 	return nil, nil
 }
 
-func (a *app) capturePresentationUpdate(_ sdk.Context, data map[string]any) (any, error) {
+func (a *app) capturePresentationUpdate(ctx sdk.Context, data map[string]any) (any, error) {
 	if partial, ok := data["partialResult"].(map[string]any); ok {
+		s, err := a.current()
+		if err != nil {
+			return nil, nil
+		}
+		patch, cause := s.secrets.resultPatch(partial)
+		if patch != nil {
+			protected := maps.Clone(partial)
+			for field, value := range patch.(map[string]any) {
+				protected[field] = value
+			}
+			partial = protected
+		}
+		if cause != nil {
+			s.secrets.withhold(ctx, cause)
+		}
 		a.capturePresentation(data, partial, false)
 	}
 	return nil, nil

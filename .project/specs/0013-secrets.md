@@ -5,31 +5,15 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "approved"
-  revision: 6
+  revision: 7
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-08T14:23:19+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User replaced the donor secret guard with the nukii-revived design, plus ask_user secret requests and a secrets scheme"
-      changes: ["Purpose, detection, placeholders, keys, vault, boundary hooks, substitution, env injection, secret:// tree, ask_user secret type, settings, host probes and acceptance"]
-    - revision: 2
-      reason: "User decided Q1–Q4"
-      changes: ["Own key at sdk.AgentDir()/secret.key", "No imports, no legacy placeholders", "AES-256-GCM (measured faster than XChaCha20-Poly1305)", "Secrets.toml v2 with nukii's schema; kebab-case keys"]
-    - revision: 3
-      reason: "Probes S1–S6 run (ANA-2026-11-03-secrets-host-probes)"
-      changes: ["Hook table matches observed coverage; entry-time redaction is the primary boundary", "Fail closed via ctx.Abort in before_provider_request", "Codemode substitution in children only", "Extension inference outside the boundary; host requests H-S1, H-S2", "Probe results replace the probe list"]
-    - revision: 4
-      reason: "User renamed the settings file"
-      changes: ["pig-workbench.toml renamed to Workbench.toml"]
-    - revision: 5
-      reason: "User approved explicit opt-in redaction for extension-owned inference"
-      changes: ["Specified secrets.redact, failure behavior and shared-bus limits", "Clarified research child sessions without Workbench are not automatically protected", "Added user-only redaction-owner grants and acceptance cases", "Qualified auth command expansion by registration kind and trailing-annotation redaction responsibilities"]
-    - revision: 6
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; detection, vault, boundary and env-injection contracts frozen; the native custom-resolver path is a recorded coverage gap"]
-
+    - revision: 7
+      reason: "Protect retained tool metadata, not only model-bound content"
+      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
 ---
 
 # 1. Purpose
@@ -83,14 +67,14 @@ Verified in [probes S1–S6](../analyses/2026-11-03-secrets-host-probes/README.m
 | Path into a provider request | Hook | Action |
 |---|---|---|
 | User prompt (typed, pasted, RPC) | `input` (transform) | detect, learn, replace with placeholders |
-| Tool result content (builtin, Workbench, other extensions, MCP, codemode and its children) | `tool_result` (`content` patch) | detect, learn, replace in `content` and model-visible structured content |
+| Tool result (builtin, Workbench, other extensions, MCP, codemode and its children) | `tool_result` (`content`, `details`, `structuredContent` patch) | detect, learn and replace before model delivery or session persistence |
 | User `!` command | `user_bash` returning `operations` | run the command with placeholders substituted; redact streamed output |
 | Every message of an agent turn, including the system message (context files such as `AGENTS.md`, other extensions' messages, frames) | `context_with_system` | replace any remaining value (`context` alone does not include the system message) |
 | Serialized payload of an agent turn | `before_provider_request` | final pass; fail closed (§4.4) |
 | Compaction and branch-summary requests | none fires | clean because they are built from session entries already redacted at entry (§4.2) |
 | Extension inference (`ModelRegistry`/`ModelRuntime` `Complete`/`Stream`) | none fires | owner explicitly redacts its request, using `secrets.redact` when opted in (§4.5); Workbench's own inference redacts its request itself |
 
-Tool `details` and live progress updates (`tool_execution_update`) are not sent to providers and are not altered.
+Tool `details` and `structuredContent` may persist even though they are not provider text. Treat their JSON strings and keys as a retained-data boundary: redact known values, reject unsupported shapes or redacted-key collisions, and never expose raw keys in failure paths. Native binary content blocks keep the existing opaque handling; arbitrary JSON metadata has no opaque exemption. Workbench protects presentation update copies before retaining them; this does not claim global transformation of other extensions' native live progress rendering.
 
 ## 4.2 Entry-time redaction
 
@@ -111,7 +95,7 @@ PiG stores the rendered system message, including `project_context`, in the sess
 
 - **Fail closed:** if the key or vault cannot be loaded, or a redaction pass errors:
   - `before_provider_request` calls `ctx.Abort()` and returns an error, which withholds the request (probe: the turn ends `Request aborted`, nothing reaches the provider). Returning an error alone is not enough: PiG then sends the original payload. Workbench shows a notice naming the cause and `/workbench secrets`.
-  - `tool_result` replaces the content with an error stating that output was withheld because the secrets boundary is unavailable, so raw output never enters the session. `input` refuses the prompt with the same notice.
+  - `tool_result` replaces content with a withheld-output error and clears details and structured content atomically, so partially protected output never enters the session. `input` refuses the prompt with the same notice.
   - Recovery needs no restart: the next request after the key and vault load again goes through.
 - `secrets.enabled = false` turns the whole feature off explicitly; then nothing is redacted and the activity line shows `secrets off`.
 

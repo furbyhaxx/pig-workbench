@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 58
+  revision: 59
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-08T00:37:02+01:00"
+  updated_at: "2026-11-08T14:23:19+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 58
-      reason: "Retain monotonic presentation state outside repeated rendering"
-      changes: ["Captured actual streamed/final snapshots and context history by opaque call identity", "Prevented stale running and conflicting final regression with visible diagnostics", "Bounded immutable snapshot/layout caches and preserved raw fallback", "Verified actual streamed conflict retention and full host integration"]
+    - revision: 59
+      reason: "Protect retained tool metadata, not only model-bound content"
+      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
 ---
 
 # 1. Outcome

@@ -49,33 +49,46 @@ func (a *app) redactInput(ctx sdk.Context, data map[string]any) (any, error) {
 	return map[string]any{"action": "transform", "text": redacted}, nil
 }
 
-// resultPatch is the tool_result patch for content; cause is non-nil when output was withheld.
-func (b *secretsBoundary) resultPatch(content any) (patch any, cause error) {
+// resultPatch protects retained result fields atomically; no partial redaction is published.
+func (b *secretsBoundary) resultPatch(data map[string]any) (patch any, cause error) {
 	guard, enabled, err := b.Guard()
-	if err == nil && enabled {
-		var redacted any
-		if redacted, err = secrets.RedactContent(guard, content); err == nil {
-			return map[string]any{"content": redacted}, nil
-		}
-	}
-	if err == nil {
+	if err == nil && !enabled {
 		return nil, nil
 	}
-	return map[string]any{"content": []any{map[string]any{"type": "text", "text": "Output withheld: the secrets boundary is unavailable. Repair the reported error, run /workbench settings reload, then retry."}}, "isError": true}, err
+	if err == nil {
+		out := make(map[string]any)
+		if content, present := data["content"]; present {
+			out["content"], err = secrets.RedactContent(guard, content)
+		}
+		if err == nil {
+			for _, field := range []string{"details", "structuredContent"} {
+				if value, present := data[field]; present {
+					out[field], err = secrets.RedactData(guard, value)
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		if err == nil {
+			return out, nil
+		}
+	}
+	return map[string]any{"content": []any{map[string]any{"type": "text", "text": "Output withheld: the secrets boundary is unavailable. Repair the reported error, run /workbench settings reload, then retry."}}, "details": map[string]any{}, "structuredContent": map[string]any{}, "isError": true}, err
 }
 
-// redactResult replaces secrets in every model-visible block of a tool result before it enters
-// the session. A failing boundary replaces the content so raw output never reaches the transcript.
 func (a *app) redactResult(ctx sdk.Context, data map[string]any) (any, error) {
-	content, present := data["content"]
-	if !present || content == nil {
+	_, content := data["content"]
+	_, details := data["details"]
+	_, structured := data["structuredContent"]
+	if !content && !details && !structured {
 		return nil, nil
 	}
 	s, err := a.current()
 	if err != nil {
 		return nil, nil
 	}
-	patch, cause := s.secrets.resultPatch(content)
+	patch, cause := s.secrets.resultPatch(data)
 	if cause != nil {
 		s.secrets.withhold(ctx, cause)
 	}

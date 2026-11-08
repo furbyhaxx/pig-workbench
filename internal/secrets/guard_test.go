@@ -70,6 +70,42 @@ func requireUnsupported(t *testing.T, out map[string]any, err error, path string
 	}
 }
 
+func TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions(t *testing.T) {
+	guard, _, _ := newTestGuard(t)
+	secret := "metadata-secret-value"
+	if err := guard.Learn([]byte(secret), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	placeholder, err := guard.Redact(secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := map[string]any{secret: []any{"prefix " + secret, true, 42}}
+	out, err := RedactData(guard, input)
+	if err != nil || strings.Contains(mustJSON(t, out), secret) || !strings.Contains(mustJSON(t, out), placeholder) {
+		t.Fatal("retained JSON keys/values were not protected")
+	}
+	if _, exists := input[secret]; !exists {
+		t.Fatal("redaction mutated the original metadata")
+	}
+	if out, err := RedactData(guard, map[string]any{secret: "first", placeholder: "second"}); err == nil || out != nil {
+		t.Fatal("redacted key collision silently discarded metadata")
+	}
+}
+
+func TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses(t *testing.T) {
+	guard, _, _ := newTestGuard(t)
+	secret := "sensitive-metadata-key"
+	failing := failingGuard{delegate: guard, failOn: "failure-value", err: errors.New(secret)}
+	out, err := RedactData(failing, map[string]any{secret: map[string]any{"nested": "failure-value"}})
+	if err == nil || out != nil || strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "failure-value") {
+		t.Fatal("metadata guard failure leaked content or returned partial data")
+	}
+	if out, err := RedactData(guard, map[string]any{secret: func() {}}); err == nil || out != nil || strings.Contains(err.Error(), secret) {
+		t.Fatal("unsupported metadata was stringified or leaked its key")
+	}
+}
+
 func TestRedactContentProtectsTextAndPreservesBinary(t *testing.T) {
 	detector, _, key := newTestGuard(t)
 	secret := "content-guard-secret-value"

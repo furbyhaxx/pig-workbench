@@ -11,6 +11,8 @@ The agent/config directories come from PiG, including its alternate/shared-direc
 
 Secret detection policy lives in its own `Secrets.toml` beside each `Workbench.toml` (agent directory and, while trusted, the project's config directory), in the nukii schema: `version = 2`, `[env] names`, `[[patterns]]` (`name` plus one of `regex`, `prefix`, `suffix`; `min-length` ≥ 8 for prefix) and `[exclusions]` (`values`, `hashes`, `patterns`, `env-names`). Patterns and exclusions **append** across layers, so a trusted project can add to the user's policy but never drop it; only the user file may set `[env] names`. The file is read on session start and by `/workbench settings reload`; a malformed file withholds model requests (fail closed) until it is repaired. It never holds secret values.
 
+Tool-result protection covers content plus retained `details` and `structuredContent` before session persistence. Retained JSON string values and keys are redacted; a guard failure, unsupported shape or redacted-key collision withholds all those fields atomically rather than saving partial plaintext. Native image/audio content blocks retain their existing opaque-binary handling. Presentation update captures are protected before entering Workbench's retained caches.
+
 ## Example
 
 ```toml

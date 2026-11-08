@@ -51,6 +51,14 @@ func RedactContent(guard TextGuard, content any) (any, error) {
 	return transformContent(guard.Redact, content, "content")
 }
 
+// RedactData redacts strings and object keys in retained JSON data, failing on key collisions or unsupported shapes.
+func RedactData(guard TextGuard, value any) (any, error) {
+	if guard == nil {
+		return nil, errNoGuard
+	}
+	return transformDataValues(guard.Redact, value, "data", true, 0)
+}
+
 // SubstituteArguments substitutes string values in tool arguments recursively.
 // Keys, numbers and other scalars are never transformed: argument objects are
 // user data, so no key is exempt from substitution but no key is rewritten either.
@@ -230,23 +238,48 @@ func copyObject(value map[string]any, path string) (map[string]any, error) {
 
 // transformValues transforms string values only. Keys are structure, never text.
 func transformValues(transform textOp, value any, path string) (any, error) {
+	return transformDataValues(transform, value, path, false, 0)
+}
+
+func transformDataValues(transform textOp, value any, path string, keys bool, depth int) (any, error) {
+	if keys && depth > 64 {
+		return nil, &ErrUnsupportedShape{Path: path}
+	}
 	switch typed := value.(type) {
 	case string:
 		return applyText(transform, path, typed)
 	case map[string]any:
 		out := make(map[string]any, len(typed))
+		index := 0
 		for key, item := range typed {
-			transformed, err := transformValues(transform, item, joinPath(path, key))
+			keyPath, valuePath := joinPath(path, key), joinPath(path, key)
+			if keys {
+				keyPath = indexPath(path+".keys", index)
+				valuePath = indexPath(path+".values", index)
+			}
+			name := key
+			if keys {
+				var err error
+				name, err = applyText(transform, keyPath, key)
+				if err != nil {
+					return nil, err
+				}
+				if _, exists := out[name]; exists {
+					return nil, &ErrUnsupportedShape{Path: keyPath}
+				}
+			}
+			transformed, err := transformDataValues(transform, item, valuePath, keys, depth+1)
 			if err != nil {
 				return nil, err
 			}
-			out[key] = transformed
+			out[name] = transformed
+			index++
 		}
 		return out, nil
 	case []any:
 		out := make([]any, len(typed))
 		for index, item := range typed {
-			transformed, err := transformValues(transform, item, indexPath(path, index))
+			transformed, err := transformDataValues(transform, item, indexPath(path, index), keys, depth+1)
 			if err != nil {
 				return nil, err
 			}

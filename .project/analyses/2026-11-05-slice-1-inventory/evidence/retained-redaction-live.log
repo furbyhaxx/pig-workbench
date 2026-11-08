@@ -1,0 +1,26 @@
+=== RUN   TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict
+--- PASS: TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict (1.23s)
+=== RUN   TestLiveRetainedToolMetadataNeverPersistsKnownSecrets
+--- PASS: TestLiveRetainedToolMetadataNeverPersistsKnownSecrets (1.23s)
+=== RUN   TestLiveProviderRequestsNeverCarryAKnownSecret
+--- PASS: TestLiveProviderRequestsNeverCarryAKnownSecret (3.20s)
+=== RUN   TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder
+--- PASS: TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder (1.09s)
+=== RUN   TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict
+--- PASS: TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict (1.24s)
+=== RUN   TestLiveRetainedToolMetadataNeverPersistsKnownSecrets
+--- PASS: TestLiveRetainedToolMetadataNeverPersistsKnownSecrets (1.42s)
+=== RUN   TestLiveProviderRequestsNeverCarryAKnownSecret
+--- PASS: TestLiveProviderRequestsNeverCarryAKnownSecret (3.34s)
+=== RUN   TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder
+--- PASS: TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder (1.01s)
+=== RUN   TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict
+--- PASS: TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict (1.22s)
+=== RUN   TestLiveRetainedToolMetadataNeverPersistsKnownSecrets
+--- PASS: TestLiveRetainedToolMetadataNeverPersistsKnownSecrets (1.28s)
+=== RUN   TestLiveProviderRequestsNeverCarryAKnownSecret
+--- PASS: TestLiveProviderRequestsNeverCarryAKnownSecret (3.36s)
+=== RUN   TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder
+--- PASS: TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder (1.09s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	21.748s

@@ -203,10 +203,10 @@ func TestSecretsBoundaryRedactTextReportsDisabledAndFailureStates(t *testing.T) 
 func TestRedactResultPatchesBlocksAndKeepsOpaqueOnes(t *testing.T) {
 	b, _ := testBoundary(t)
 	token := "ghp_" + strings.Repeat("w3X4", 6)
-	got, err := b.resultPatch([]any{
+	got, err := b.resultPatch(map[string]any{"content": []any{
 		map[string]any{"type": "text", "text": "key " + token},
 		map[string]any{"type": "image", "data": "AAAA", "mimeType": "image/png"},
-	})
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,8 +217,24 @@ func TestRedactResultPatchesBlocksAndKeepsOpaqueOnes(t *testing.T) {
 	if blocks[1].(map[string]any)["data"] != "AAAA" {
 		t.Fatal("an image block must stay intact")
 	}
-	if got, err := b.resultPatch("nothing secret"); err != nil || got.(map[string]any)["content"] != "nothing secret" {
+	if got, err := b.resultPatch(map[string]any{"content": "nothing secret"}); err != nil || got.(map[string]any)["content"] != "nothing secret" {
 		t.Fatalf("a clean string result must be returned unchanged, got %v %v", got, err)
+	}
+}
+
+func TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure(t *testing.T) {
+	boundary, _ := testBoundary(t)
+	token := "ghp_" + strings.Repeat("Xy5pQ8", 5)
+	patch, cause := boundary.resultPatch(map[string]any{"content": "secret=" + token, "details": map[string]any{"unsupported": func() {}}, "structuredContent": map[string]any{"value": token}})
+	if cause == nil {
+		t.Fatal("unsupported retained metadata was accepted")
+	}
+	result := patch.(map[string]any)
+	if result["isError"] != true || len(result["details"].(map[string]any)) != 0 || len(result["structuredContent"].(map[string]any)) != 0 {
+		t.Fatal("withholding retained plaintext metadata")
+	}
+	if strings.Contains(result["content"].([]any)[0].(map[string]any)["text"].(string), token) {
+		t.Fatal("metadata failure returned partially redacted source")
 	}
 }
 
@@ -228,7 +244,7 @@ func TestRedactResultWithholdsOutputWhenTheBoundaryFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	raw := "ghp_" + strings.Repeat("e5R6", 6)
-	got, cause := b.resultPatch(raw)
+	got, cause := b.resultPatch(map[string]any{"content": raw})
 	if cause == nil {
 		t.Fatal("the failure cause must be reported")
 	}
@@ -261,7 +277,7 @@ func TestSeenStateSurvivesRedactionOfTheDeliveredBlock(t *testing.T) {
 	s := &session{snapshots: store, pendingViews: make(map[string][]pendingView), secrets: b}
 	a := &app{session: s}
 	s.rememberRead("call", "epoch", target, page)
-	patch, cause := b.resultPatch([]any{map[string]any{"type": "text", "text": page.Content}})
+	patch, cause := b.resultPatch(map[string]any{"content": []any{map[string]any{"type": "text", "text": page.Content}}})
 	if cause != nil {
 		t.Fatal(cause)
 	}

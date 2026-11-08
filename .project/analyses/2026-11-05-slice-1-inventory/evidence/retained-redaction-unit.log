@@ -1,0 +1,34 @@
+=== RUN   TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions
+--- PASS: TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions (0.00s)
+=== RUN   TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses
+--- PASS: TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses (0.00s)
+=== RUN   TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions
+--- PASS: TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions (0.00s)
+=== RUN   TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses
+--- PASS: TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses (0.00s)
+=== RUN   TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions
+--- PASS: TestRedactDataProtectsKeysValuesAndFailsClosedOnCollisions (0.00s)
+=== RUN   TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses
+--- PASS: TestRedactDataFailurePathsNeverEchoSensitiveKeysOrGuardCauses (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	1.020s
+=== RUN   TestRedactResultPatchesBlocksAndKeepsOpaqueOnes
+--- PASS: TestRedactResultPatchesBlocksAndKeepsOpaqueOnes (0.00s)
+=== RUN   TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure
+--- PASS: TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure (0.00s)
+=== RUN   TestRedactResultWithholdsOutputWhenTheBoundaryFails
+--- PASS: TestRedactResultWithholdsOutputWhenTheBoundaryFails (0.00s)
+=== RUN   TestRedactResultPatchesBlocksAndKeepsOpaqueOnes
+--- PASS: TestRedactResultPatchesBlocksAndKeepsOpaqueOnes (0.00s)
+=== RUN   TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure
+--- PASS: TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure (0.00s)
+=== RUN   TestRedactResultWithholdsOutputWhenTheBoundaryFails
+--- PASS: TestRedactResultWithholdsOutputWhenTheBoundaryFails (0.00s)
+=== RUN   TestRedactResultPatchesBlocksAndKeepsOpaqueOnes
+--- PASS: TestRedactResultPatchesBlocksAndKeepsOpaqueOnes (0.00s)
+=== RUN   TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure
+--- PASS: TestRedactResultWithholdsAllRetainedFieldsOnMetadataFailure (0.00s)
+=== RUN   TestRedactResultWithholdsOutputWhenTheBoundaryFails
+--- PASS: TestRedactResultWithholdsOutputWhenTheBoundaryFails (0.00s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	1.040s

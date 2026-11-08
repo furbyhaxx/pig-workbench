@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 50
+  revision: 51
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T00:37:02+01:00"
+  updated_at: "2026-11-08T14:23:19+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 50
-      reason: "Retain monotonic presentation state outside repeated rendering"
-      changes: ["Captured actual streamed/final snapshots and context history by opaque call identity", "Prevented stale running and conflicting final regression with visible diagnostics", "Bounded immutable snapshot/layout caches and preserved raw fallback", "Verified actual streamed conflict retention and full host integration"]
+    - revision: 51
+      reason: "Protect retained tool metadata, not only model-bound content"
+      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
 ---
 
 # Scope and evidence
@@ -124,6 +124,12 @@ These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred ri
 The plain `/workbench settings tools` surface has actual RPC scoped edit/reset and display-only settings.changed evidence: [unit](evidence/display-settings-commands-unit.log), [live](evidence/display-settings-commands-live.log). The new TUI view is **awaiting user layout review**, not approved chrome. Short-height (16-row) captures: [36 columns](evidence/display-settings-tui/w36.txt), [57](evidence/display-settings-tui/w57.txt), [80](evidence/display-settings-tui/w80.txt), [140](evidence/display-settings-tui/w140.txt); ANSI counterparts are alongside them. Captures use an isolated fixture model with an unreachable local endpoint and slash commands only; no inference was requested.
 
 The first full integration run failed because source ownership verification correctly refused a presented tool hidden by the CLI --tools selection, and the reference fixture aborted its unrelated registrations ([first run](evidence/display-settings-full-integration-first.log)). The fixture now skips only that unavailable presentation after host metadata confirms the tool is absent, retaining resources/fetch/frames; ownership policy is not bypassed. The full suite then passed ([rerun](evidence/display-settings-full-integration-rerun.log)).
+
+# Retained result secret boundary
+
+`TestLiveRetainedToolMetadataNeverPersistsKnownSecrets` reproduced known values in actual JSONL result metadata after command substitution and secret-bearing resource paths. Tool-result content, details and structured content are now protected before persistence; metadata JSON keys/values are redacted, collisions/unsupported data fail closed, and Workbench's captured presentation update copies are protected too. This corrects SPEC-0013's earlier unsafe assumption that non-provider Details could remain untouched.
+
+Observed checks: [check](evidence/retained-redaction-check.log), [race](evidence/retained-redaction-race.log), [full host integration](evidence/retained-redaction-all.log), [repeated unit cases](evidence/retained-redaction-unit.log), and [three actual-host runs](evidence/retained-redaction-live.log). The shell still receives real substituted values, while retained commands, resource URIs, JSON keys and structured fields do not persist them. Existing session files are **not** rewritten or claimed repaired. Native third-party live progress rendering is not globally transformed; only Workbench's retained update copies are protected.
 
 # Baseline gates
 
