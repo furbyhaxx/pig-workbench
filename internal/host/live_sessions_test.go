@@ -710,3 +710,42 @@ func TestLiveStaleAddressesAreRefusedWithTheCurrentSession(t *testing.T) {
 		t.Fatal("a refused message woke the receiver")
 	}
 }
+
+// TestLiveARealSessionReplacementRefusesTheOldAddress drives /new on a running session: the old
+// session ID is refused with the current one, the new ID is reachable and wakes the model.
+func TestLiveARealSessionReplacementRefusesTheOldAddress(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, nil)
+	before := waitForRecords(t, runtime, 1)
+	var oldID string
+	for id := range before {
+		oldID = id
+	}
+	receiver.fixture.send("replace", "new_session", "")
+	receiver.fixture.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "replace" })
+	var current string
+	var record map[string]any
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) && current == "" {
+		for id, r := range endpointRecords(t, runtime) {
+			if id != oldID {
+				current, record = id, r
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if current == "" {
+		t.Fatalf("no endpoint record for the replacement session; records: %v", endpointRecords(t, runtime))
+	}
+	if reply := callEndpoint(t, runtime, record, messagingEnvelope(oldID, 0)); reply["status"] != "rejected" || reply["reason"] != "sessionChanged" {
+		t.Fatalf("a message for the replaced session must answer sessionChanged, got %v", reply)
+	}
+	time.Sleep(300 * time.Millisecond)
+	if strings.Contains(strings.Join(receiver.requests(), "\n"), "HOP-PROBE") {
+		t.Fatal("a message for the replaced session reached the model")
+	}
+	if reply := callEndpoint(t, runtime, record, messagingEnvelope(current, 0)); reply["status"] != "accepted" {
+		t.Fatalf("the replacement session must accept messages addressed to it, got %v", reply)
+	}
+	waitForRequest(t, receiver, "HOP-PROBE")
+}

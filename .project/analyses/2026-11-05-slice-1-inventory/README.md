@@ -282,7 +282,7 @@ Not implemented from SPEC-0008 §6: `jobs wait until=output`, a `signal` argumen
 |---|---|---|
 | Discovery, third-user and wrong-token refusal | PASS | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes`, `TestWrongTokenGetsNoReplyAndNothingIsDelivered`, `TestAuthenticatedPeerReachesTheHandler` |
 | Idle wake, busy steer, waitingForUser untouched | PASS | `TestLiveBusyReceiverIsSteeredNotWoken`, `TestLiveWaitingReceiverGetsTheMessageAsTheReadResult` |
-| `sessionChanged`, expiry | PASS after test added | `TestLiveStaleAddressesAreRefusedWithTheCurrentSession` (protocol-level; a real `/new` replacement was not driven) |
+| `sessionChanged`, expiry | PASS after test added | `TestLiveStaleAddressesAreRefusedWithTheCurrentSession` (protocol level) and `TestLiveARealSessionReplacementRefusesTheOldAddress` (a real `new_session` replacement: the old ID answers `sessionChanged`, the new one accepts and wakes) |
 | Stale record cleanup after `kill -9` | PASS | `TestLiveACrashedSessionsRecordIsPrunedByTheNextStart` |
 | maxHops, rate, blocked peers | PASS | `TestLiveAgentReplyIncrementsHopAndStopsWake`, `TestSessionMessageSettingsAffectDelivery`, `TestLiveSessionsCommandSendsRedactsAndHonoursBlock` |
 | Secret typed by the sender, envelope escape | PASS | `TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider`, frames envelope unit tests |
