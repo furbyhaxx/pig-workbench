@@ -3,6 +3,7 @@ package host
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/kit"
@@ -118,26 +119,60 @@ func (p *textPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) 
 
 type hubItem struct{ value, label, description string }
 
-// hubPanel is the Workbench entry menu: one selectable row per feature.
+// hubPanel is the Workbench entry menu: one selectable row per feature, narrowed by typing.
 type hubPanel struct {
 	title    string
 	items    []hubItem
+	filter   string
 	selected int
 	height   func() int
 }
 
-func (p *hubPanel) View(width int) kit.View {
-	items := make([]kit.SelectItem, len(p.items))
-	for i, item := range p.items {
-		items[i] = kit.SelectItem{Value: item.value, Label: item.label, Description: fitLine(item.description, max(20, width-24))}
+// visible returns the entries whose name, verb or description contains the typed text.
+func (p *hubPanel) visible() []hubItem {
+	needle := strings.ToLower(strings.TrimSpace(p.filter))
+	if needle == "" {
+		return p.items
 	}
-	list := kit.NewSelectList("hub", items, listRows(p.height(), 6, len(items)))
-	list.SetSelectedIndex(p.selected)
-	hint := sdk.KeyHint("tui.select.confirm", "open") + " · " + sdk.KeyHint("tui.select.cancel", "close")
-	return kit.View{Root: panelFrame(p.title, list, "", hint, width), Focus: "hub"}
+	var out []hubItem
+	for _, item := range p.items {
+		if strings.Contains(strings.ToLower(item.label+" "+item.value+" "+item.description), needle) {
+			out = append(out, item)
+		}
+	}
+	return out
 }
 
-func (p *hubPanel) HandleInput(string) (sdk.RemoteComponentResult, error) {
+func (p *hubPanel) View(width int) kit.View {
+	visible := p.visible()
+	items := make([]kit.SelectItem, len(visible))
+	for i, item := range visible {
+		items[i] = kit.SelectItem{Value: item.value, Label: item.label, Description: fitLine(item.description, max(20, width-24))}
+	}
+	list := kit.NewSelectList("hub", items, listRows(p.height(), 7, len(p.items)))
+	list.SetSelectedIndex(max(0, min(p.selected, max(0, len(items)-1))))
+	hint := sdk.KeyHint("tui.select.confirm", "open") + " · type to search · " + sdk.KeyHint("tui.select.cancel", "close")
+	body := kit.NewContainer(kit.NewText(fitLine("search: "+p.filter+"▏", width), 1, 0), list)
+	if len(items) == 0 {
+		body.AddChild(kit.NewText("No entry matches the search.", 1, 0))
+	}
+	return kit.View{Root: panelFrame(p.title, body, "", hint, width), Focus: "hub"}
+}
+
+func (p *hubPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) {
+	switch {
+	case tui.MatchesKey(data, "backspace"):
+		if p.filter != "" {
+			_, size := utf8.DecodeLastRuneInString(p.filter)
+			p.filter = p.filter[:len(p.filter)-size]
+			p.selected = 0
+		}
+	default:
+		if text, ok := printable(data); ok {
+			p.filter += text
+			p.selected = 0
+		}
+	}
 	return sdk.RemoteComponentResult{}, nil
 }
 
@@ -150,6 +185,10 @@ func (p *hubPanel) HandleViewEvent(event kit.Event) (sdk.RemoteComponentResult, 
 			return sdk.RemoteComponentResult{Done: true, Value: event.Item.Value}, nil
 		}
 	case kit.EventCancel:
+		if p.filter != "" {
+			p.filter, p.selected = "", 0
+			return sdk.RemoteComponentResult{}, nil
+		}
 		return sdk.RemoteComponentResult{Done: true}, nil
 	}
 	return sdk.RemoteComponentResult{}, nil

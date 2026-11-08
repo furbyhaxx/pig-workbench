@@ -3,9 +3,11 @@
 package host
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -114,6 +116,28 @@ func (s *tuiSession) waitFor(want string, within time.Duration) string {
 	}
 	s.t.Fatalf("never saw %q:\n%s", want, screen)
 	return ""
+}
+
+// capture writes the screen at 140, 80, 57 and 36 columns by 16 rows to
+// $WORKBENCH_CAPTURE_DIR/<name>/w<width>.txt; without the variable it does nothing.
+func (s *tuiSession) capture(name string) {
+	dir := os.Getenv("WORKBENCH_CAPTURE_DIR")
+	if dir == "" {
+		return
+	}
+	target := filepath.Join(dir, name)
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		s.t.Fatal(err)
+	}
+	for _, width := range []int{140, 80, 57, 36} {
+		s.tmux("resize-window", "-t", "wb", "-x", strconv.Itoa(width), "-y", "16")
+		time.Sleep(900 * time.Millisecond)
+		if err := os.WriteFile(filepath.Join(target, fmt.Sprintf("w%d.txt", width)), []byte(s.screen()), 0o644); err != nil {
+			s.t.Fatal(err)
+		}
+	}
+	s.tmux("resize-window", "-t", "wb", "-x", "100", "-y", "32")
+	time.Sleep(900 * time.Millisecond)
 }
 
 // openHub types /workbench and submits it; the first Enter may only accept an argument completion.
@@ -263,4 +287,31 @@ func TestLiveToolDisplayViewExplainsAnEmptyStateAndEditsWhenASchemaExists(t *tes
 		s.keys("Enter")
 		s.waitFor("preview-lines", 10*time.Second)
 	})
+}
+
+func TestLiveHubSearchNarrowsEntriesAndOpensTheMatch(t *testing.T) {
+	s := startTUI(t, t.TempDir())
+	hub := s.openHub()
+	if !strings.Contains(hub, "Tool display") || !strings.Contains(hub, "Sessions") {
+		t.Fatalf("hub lacks entries before searching:\n%s", hub)
+	}
+	s.typeText("messag")
+	screen := s.waitFor("search: messag", 10*time.Second)
+	if !strings.Contains(screen, "Sessions") || strings.Contains(screen, "Tool display") || strings.Contains(screen, "Integrations") {
+		t.Fatalf("the search did not narrow the list to the messaging entry:\n%s", screen)
+	}
+	s.capture("hub-search")
+	s.keys("Escape")
+	cleared := s.waitFor("Integrations", 10*time.Second)
+	if strings.Contains(cleared, "search: messag") {
+		t.Fatalf("escape must clear the search before closing the hub:\n%s", cleared)
+	}
+	s.typeText("zzzz")
+	if screen := s.waitFor("No entry matches", 10*time.Second); strings.Contains(screen, "Sessions") {
+		t.Fatalf("a search without a match still lists entries:\n%s", screen)
+	}
+	s.keys("Escape")
+	s.typeText("jobs")
+	s.keys("Enter")
+	s.waitFor("Workbench › Jobs", 10*time.Second)
 }

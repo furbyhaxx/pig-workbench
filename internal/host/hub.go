@@ -80,8 +80,13 @@ func (a *app) hub(ctx sdk.Context) error {
 		if strings.TrimSpace(choice) == "" {
 			return nil
 		}
-		selected = panel.selected
-		a.runFromHub(ctx, choice, panel.items[panel.selected].label)
+		label := choice
+		for i, item := range panel.items {
+			if item.value == choice {
+				selected, label = i, item.label
+			}
+		}
+		a.runFromHub(ctx, choice, label)
 		if err := ctx.Err(); err != nil {
 			return nil
 		}

@@ -1,0 +1,16 @@
+
+
+ Warning: tmux extended-keys is
+ off. Modified Enter keys may not
+ work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+────────────────────────────────────
+ Workbench · /tmp/TestLiveHubSearc…
+ search: messag▏
+→ Sessions
+ enter open · type to search · esc…
+────────────────────────────────────
+/tmp/TestLiveHubSearchNarrowsEntr...
+0.0%/32k (auto)                 mock
