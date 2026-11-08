@@ -1,0 +1,16 @@
+
+
+────────────────────────────────────
+ Workbench › Tool display · user
+ search: ▏
+→ child-density
+  density
+  enabled
+  (1/6)
+ "compact" [defaults] · saved, but
+ nothing reads it yet ·
+ enter change · ctrl+s save · ctrl…
+────────────────────────────────────
+/tmp/pw-defect.HaYLMn
+0.0%/32k (auto)                 mock
+web ready

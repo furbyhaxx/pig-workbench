@@ -183,7 +183,7 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			if err != nil || !display.enabled {
 				return fitPresentationLines([]string{entry.descriptor.Label + " · presentation disabled; delegation appliesAfterReload"}, width, 2), nil
 			}
-			return renderPresentationCall(entry.descriptor, args, rc, s.callRoot(rc.ToolCallID), width), nil
+			return renderPresentationCall(entry.descriptor, args, rc, s.callRoot(rc.ToolCallID), width, display.shorten), nil
 		},
 		Result: func(_ sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
 			display, err := cache.get(s, entry)

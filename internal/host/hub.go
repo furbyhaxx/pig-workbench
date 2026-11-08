@@ -25,6 +25,17 @@ func (a *app) hubItems(ctx sdk.Context, s *session) []hubItem {
 	}
 	items := a.hubItemsStatic()
 	items[0].description, items[1].description = tools, jobs
+	display := "Nothing to configure: no extension registered one"
+	if snapshot, _ := s.settings.Inspect(); snapshot != nil {
+		if n := len(s.displayGroups(snapshot, "", "")); n > 0 {
+			display = fmt.Sprintf("%d tool(s) with display preferences", n)
+		}
+	}
+	for i := range items {
+		if items[i].value == "settings tools" {
+			items[i].description = display
+		}
+	}
 	return items
 }
 

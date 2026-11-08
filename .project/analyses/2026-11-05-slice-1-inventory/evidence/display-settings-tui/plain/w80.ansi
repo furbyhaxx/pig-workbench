@@ -1,0 +1,16 @@
+
+
+[38;5;5m────────────────────────────────────────────────────────────────────────────────
+[39m Workbench › Tool display
+ Tool display preferences
+
+ Nothing to configure yet.
+
+ These preferences appear when another extension registers a tool presentation
+ with Workbench, for example a web-search extension. Workbench's own tools
+ (read, edit, bash, ...) use PiG's standard rows and have no display
+ preferences in this version.
+ lines 1-8 of 10
+ up scroll · pageDown page · escape/ctrl+c close
+[2m/tmp/pw-defect.HaYLMn[0m
+[2m0.0%/32k (auto)                                                             mock

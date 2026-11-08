@@ -1,0 +1,16 @@
+
+
+[38;5;5m────────────────────────────────────────────────────────────────────────────────
+[39m Workbench › Tool display · user
+ search: ▏
+[38;5;5m→ child-density                   "compact" [defaults] · reference-producer/w[39m…
+  density[2m                         "normal" [defaults] · reference-producer/we[0m…
+  enabled[2m                         true [defaults] · reference-producer/web_se[0m…
+[2m  (1/6)[0m
+ "compact" [defaults] · saved, but nothing reads it yet ·
+ reference-producer/web_search
+ enter change · ctrl+s save · ctrl+r reset · tab scope · escape/ctrl+c back
+[38;5;5m────────────────────────────────────────────────────────────────────────────────
+[2m[39m/tmp/pw-defect.HaYLMn[0m
+[2m0.0%/32k (auto)                                                             mock
+[0mweb ready

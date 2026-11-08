@@ -15,6 +15,9 @@ type Target struct {
 	Value string
 	// Root is the root the value was resolved against; empty means none.
 	Root string
+	// NoFish turns off fish shortening of parent segments (SPEC-0003 §10.1 rule 6); the
+	// shortest-form and elision fallbacks still keep the result within the width.
+	NoFish bool
 }
 
 // Display renders target at width terminal cells, applying the shortest form,
@@ -22,7 +25,7 @@ type Target struct {
 func Display(t Target, width int) string {
 	authority, prefix, rest, isPath := split(t.Value)
 	if !isPath {
-		return prefix + fit(rest, width)
+		return prefix + fit(rest, width, !t.NoFish)
 	}
 	shown := rest
 	if home, err := os.UserHomeDir(); err == nil && home != "" {
@@ -46,9 +49,9 @@ func Display(t Target, width int) string {
 		if available < 1 {
 			available = 1
 		}
-		return prefix + authority + ":" + fit(shown, available)
+		return prefix + authority + ":" + fit(shown, available, !t.NoFish)
 	}
-	return prefix + fit(shown, width)
+	return prefix + fit(shown, width, !t.NoFish)
 }
 
 // split separates an authority-bearing URL from its path. isPath is false for
@@ -100,14 +103,14 @@ func relativeTo(root, value string) (string, bool) {
 
 // fit shortens shown to width: first by fish shortening non-final segments from
 // the left, then by eliding middle segments, then inside the basename.
-func fit(shown string, width int) string {
+func fit(shown string, width int, fish bool) string {
 	if width <= 0 || tui.VisibleWidth(shown) <= width {
 		return shown
 	}
 	original, trailing := splitSegments(shown)
 	segments := append([]string(nil), original...)
 	last := len(segments) - 1
-	for index := firstShortenable(segments); index < last; index++ {
+	for index := firstShortenable(segments); fish && index < last; index++ {
 		if segments[index] == ".." {
 			continue
 		}

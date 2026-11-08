@@ -18,7 +18,7 @@ type tuiSession struct {
 	env    []string
 }
 
-func startTUI(t *testing.T, root string) *tuiSession {
+func startTUI(t *testing.T, root string, fixtures ...string) *tuiSession {
 	t.Helper()
 	runtime := shortRuntime(t)
 	t.Setenv("XDG_RUNTIME_DIR", runtime)
@@ -28,10 +28,40 @@ func startTUI(t *testing.T, root string) *tuiSession {
 	t.Cleanup(server.Close)
 	writeFixtureProvider(t, agent, server.URL)
 	s := &tuiSession{t: t, socket: filepath.Join(runtime, "tmux.sock"), env: append(os.Environ(), "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))}
-	s.tmux("new-session", "-d", "-s", "wb", "-x", "100", "-y", "32", "-c", root, "pig", "--offline", "--no-session", "-ne", "-e", repoRoot(t), "--model", "workbench-fixture/mock")
-	t.Cleanup(func() { _ = exec.Command("tmux", "-S", s.socket, "kill-server").Run() })
+	command := []string{"new-session", "-d", "-s", "wb", "-x", "100", "-y", "32", "-c", root, "pig", "--offline", "--no-session", "-ne", "-e", repoRoot(t)}
+	for _, fixture := range fixtures {
+		command = append(command, "-e", filepath.Join(repoRoot(t), "internal/host/testdata", fixture))
+	}
+	s.tmux(append(command, "--model", "workbench-fixture/mock")...)
+	stopTUI(t, s.socket, "wb")
 	s.waitFor("0.0%/32k", 20*time.Second)
 	return s
+}
+
+// stopTUI registers a cleanup that ends the tmux-hosted pig and waits until it has exited,
+// so TempDir removal never races a process still writing its logs and state.
+func stopTUI(t *testing.T, socket, session string) {
+	t.Helper()
+	pid := ""
+	if out, err := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_pid}").Output(); err == nil {
+		pid = strings.TrimSpace(string(out))
+	}
+	t.Cleanup(func() {
+		_ = exec.Command("tmux", "-S", socket, "kill-server").Run()
+		if pid == "" {
+			return
+		}
+		deadline := time.Now().Add(15 * time.Second)
+		for time.Now().Before(deadline) {
+			if _, err := os.Stat("/proc/" + pid); err != nil {
+				time.Sleep(300 * time.Millisecond)
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		_ = exec.Command("kill", "-9", "-"+pid).Run()
+		time.Sleep(time.Second)
+	})
 }
 
 func (s *tuiSession) tmux(args ...string) string {
@@ -182,4 +212,44 @@ func TestLiveEveryHubEntryOpensATitledPanelWithoutAnError(t *testing.T) {
 		s.waitFor("Workbench · ", 10*time.Second)
 		s.keys("Down")
 	}
+}
+
+func TestLiveToolDisplayViewExplainsAnEmptyStateAndEditsWhenASchemaExists(t *testing.T) {
+	t.Run("plain Workbench", func(t *testing.T) {
+		s := startTUI(t, t.TempDir())
+		hub := s.openHub()
+		if !strings.Contains(hub, "Tool display") || !strings.Contains(hub, "Nothing to configure") {
+			t.Fatalf("hub does not say the entry is empty:\n%s", hub)
+		}
+		s.keys("Down", "Down", "Down", "Enter")
+		screen := s.waitFor("Workbench › Tool display", 10*time.Second)
+		for _, want := range []string{"Nothing to configure yet", "another extension registers", "/workbench integrations"} {
+			if !strings.Contains(strings.Join(strings.Fields(screen), " "), want) {
+				t.Fatalf("empty state does not explain itself (%q missing):\n%s", want, screen)
+			}
+		}
+		if strings.Contains(screen, "No registered or dormant") {
+			t.Fatalf("the bare empty-state message came back:\n%s", screen)
+		}
+	})
+	t.Run("with a registered presentation", func(t *testing.T) {
+		root := t.TempDir()
+		s := startTUI(t, root, "reference-producer")
+		s.waitFor("web ready", 20*time.Second)
+		hub := s.openHub()
+		if !strings.Contains(hub, "tool(s) with display preferences") {
+			t.Fatalf("hub does not count the registered schema:\n%s", hub)
+		}
+		s.keys("Down", "Down", "Down", "Enter")
+		panel := s.waitFor("Workbench › Tool display · user", 10*time.Second)
+		if !strings.Contains(panel, "density") || !strings.Contains(panel, "preview-lines") || !strings.Contains(panel, "reference-producer/web_search") {
+			t.Fatalf("display preferences are not an editable settings list:\n%s", panel)
+		}
+		if strings.Contains(panel, "edit.mode") {
+			t.Fatalf("the panel is not limited to tool display settings:\n%s", panel)
+		}
+		s.typeText("preview")
+		s.keys("Enter")
+		s.waitFor("preview-lines", 10*time.Second)
+	})
 }

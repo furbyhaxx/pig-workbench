@@ -3,6 +3,7 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/creachadair/tomledit/parser"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,6 +32,8 @@ type settingsPanel struct {
 	scopeIndex  int
 	staged      map[string]stagedChange
 	filter      string
+	prefix      string
+	heading     string
 	selected    int
 	editing     string
 	input       string
@@ -49,12 +52,12 @@ func (p *settingsPanel) scope() config.Scope { return p.scopes[p.scopeIndex] }
 // visible returns the definitions matching the search text.
 func (p *settingsPanel) visible() []config.Definition {
 	needle := strings.ToLower(strings.TrimSpace(p.filter))
-	if needle == "" {
-		return p.definitions
-	}
 	var out []config.Definition
 	for _, definition := range p.definitions {
-		if strings.Contains(strings.ToLower(definition.Key), needle) || strings.Contains(strings.ToLower(definition.Description), needle) {
+		if !strings.HasPrefix(definition.Key, p.prefix) {
+			continue
+		}
+		if needle == "" || strings.Contains(strings.ToLower(definition.Key), needle) || strings.Contains(strings.ToLower(definition.Description), needle) {
 			out = append(out, definition)
 		}
 	}
@@ -161,8 +164,26 @@ func (p *settingsPanel) edits() []config.Edit {
 	return edits
 }
 
+// applicationText says in plain words whether changing a setting does anything.
+func applicationText(application string) string {
+	switch application {
+	case "live":
+		return "takes effect now"
+	case "registered":
+		return "saved, but nothing reads it yet"
+	case "unavailable":
+		return "saved, not applied"
+	default:
+		return application
+	}
+}
+
 func (p *settingsPanel) title(width int) string {
-	title := "Workbench › Settings · " + string(p.scope())
+	heading := p.heading
+	if heading == "" {
+		heading = "Settings"
+	}
+	title := "Workbench › " + heading + " · " + string(p.scope())
 	if p.dirty() {
 		title += fmt.Sprintf(" · %d unsaved", len(p.staged))
 	}
@@ -177,14 +198,22 @@ func (p *settingsPanel) View(width int) kit.View {
 	items := make([]kit.SelectItem, len(rows))
 	for i, definition := range rows {
 		value, source := p.valueOf(definition)
-		items[i] = kit.SelectItem{Value: definition.Key, Label: definition.Key, Description: fitLine(fmt.Sprintf("%s [%s]", value, source), max(16, width-34))}
+		label, owner := definition.Key, ""
+		if parts, err := parser.ParseKey(definition.Key); err == nil && len(parts) == 4 && parts[0] == "tools" {
+			label, owner = parts[3], " · "+parts[1]+"/"+parts[2]
+		}
+		items[i] = kit.SelectItem{Value: definition.Key, Label: label, Description: fitLine(fmt.Sprintf("%s [%s]%s", value, source, owner), max(16, width-34))}
 	}
 	maxVisible := listRows(p.height(), 10, 12)
 	list := kit.NewSelectList("settings", items, maxVisible)
 	list.SetSelectedIndex(max(0, min(p.selected, max(0, len(items)-1))))
 	detail := "No setting matches the search."
 	if definition, ok := p.current(); ok {
-		detail = "applies: " + definition.Application + " · project: " + string(definition.Project) + " · " + definition.Description
+		value, source := p.valueOf(definition)
+		detail = value + " [" + source + "] · " + applicationText(definition.Application) + " · " + definition.Description
+		if parts, err := parser.ParseKey(definition.Key); err == nil && len(parts) == 4 && parts[0] == "tools" {
+			detail = value + " [" + source + "] · " + applicationText(definition.Application) + " · " + parts[1] + "/" + parts[2]
+		}
 	}
 	search := "search: " + p.filter + "▏"
 	hint := "enter change · ctrl+s save · ctrl+r reset · tab scope · " + sdk.KeyText("tui.select.cancel") + " back"

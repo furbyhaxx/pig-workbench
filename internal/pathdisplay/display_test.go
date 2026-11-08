@@ -87,3 +87,18 @@ func TestResourceURIsKeepTheirScheme(t *testing.T) {
 		}
 	}
 }
+
+func TestNoFishElidesInsteadOfAbbreviatingAndStaysWithinWidth(t *testing.T) {
+	value := "/srv/projects/pi-workbench/src/renderers.ts"
+	fish := Display(Target{Value: value}, 22)
+	plain := Display(Target{Value: value, NoFish: true}, 22)
+	if fish != "/s/p/p/s/renderers.ts" {
+		t.Fatalf("fish golden changed: %q", fish)
+	}
+	if strings.Contains(plain, "/s/p/") || !strings.Contains(plain, "…") || !strings.HasSuffix(plain, "renderers.ts") || tui.VisibleWidth(plain) > 22 {
+		t.Fatalf("shortening off must elide, keep the basename and fit: %q", plain)
+	}
+	if got := Display(Target{Value: value, NoFish: true}, 200); got != value {
+		t.Fatalf("a path that fits must be unchanged: %q", got)
+	}
+}

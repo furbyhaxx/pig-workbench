@@ -124,6 +124,9 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 	rest = strings.TrimSpace(rest)
 	switch verb {
 	case "tools":
+		if rest == "" && panelsAvailable(ctx) {
+			return a.toolDisplayPanel(ctx, work, s)
+		}
 		return a.displaySettingsCommand(ctx, work, s, rest)
 	case "":
 		if panelsAvailable(ctx) {
@@ -220,6 +223,23 @@ func (a *app) saveSettingEdits(ctx sdk.Context, work context.Context, s *session
 }
 
 func (a *app) settingsPanel(ctx sdk.Context, work context.Context, s *session) error {
+	return a.openSettingsPanel(ctx, work, s, "", "")
+}
+
+// toolDisplayPanel edits per-tool display preferences, or explains why there are none.
+func (a *app) toolDisplayPanel(ctx sdk.Context, work context.Context, s *session) error {
+	snapshot, _ := s.settings.Inspect()
+	if snapshot == nil || len(s.displayGroups(snapshot, "", "")) == 0 {
+		a.present(ctx, "Workbench › Tool display", noToolDisplayText)
+		return nil
+	}
+	return a.openSettingsPanel(ctx, work, s, "tools.", "Tool display")
+}
+
+// noToolDisplayText is shown when no extension has registered a tool presentation.
+const noToolDisplayText = "Tool display preferences\n\nNothing to configure yet.\n\nThese preferences appear when another extension registers a tool presentation with Workbench, for example a web-search extension. Workbench's own tools (read, edit, bash, ...) use PiG's standard rows and have no display preferences in this version.\n\nSee /workbench integrations for the extensions currently registered."
+
+func (a *app) openSettingsPanel(ctx sdk.Context, work context.Context, s *session, prefix, heading string) error {
 	snapshot, status := s.settings.Inspect()
 	if snapshot == nil {
 		return fmt.Errorf("no valid settings snapshot is available: %s", status.Error)
@@ -236,6 +256,7 @@ func (a *app) settingsPanel(ctx sdk.Context, work context.Context, s *session) e
 		fresh, err := s.settings.Current()
 		return result, fresh, err
 	})
+	panel.prefix, panel.heading = prefix, heading
 	_, err := ctx.Custom(panel, nil)
 	return err
 }

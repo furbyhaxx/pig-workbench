@@ -12,6 +12,7 @@ type effectiveDisplay struct {
 	density  string
 	preview  int
 	metrics  map[string]bool
+	shorten  bool
 	revision uint64
 }
 
@@ -56,7 +57,8 @@ func displayFromSnapshot(snapshot *config.Snapshot, entry presentationRegistrati
 	density, _ := get("density")
 	preview, _ := get("preview-lines")
 	metrics, _ := get("metrics")
-	result := effectiveDisplay{enabled: enabled.Value.(bool), density: density.Value.(string), preview: int(preview.Value.(int64)), metrics: map[string]bool{}, revision: snapshot.Revision()}
+	shorten, _ := get("target-shortening")
+	result := effectiveDisplay{enabled: enabled.Value.(bool), density: density.Value.(string), preview: int(preview.Value.(int64)), metrics: map[string]bool{}, shorten: shorten.Value != false, revision: snapshot.Revision()}
 	for _, id := range metrics.Value.([]string) {
 		result.metrics[id] = true
 	}

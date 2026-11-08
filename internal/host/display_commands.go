@@ -115,10 +115,10 @@ func (s *session) displayGroups(snapshot *config.Snapshot, owner, key string) []
 func displayGroupLines(groups []displayGroupView, width int) []string {
 	lines := []string{"Tool display preferences"}
 	if len(groups) == 0 {
-		return append(lines, "No registered or dormant display schemas.")
+		return []string{"Tool display preferences", "Nothing to configure yet.", "Another extension must register a tool presentation; Workbench's own tools have none."}
 	}
 	for _, group := range groups {
-		pending := false
+		var pending []string
 		for _, field := range group.Fields {
 			parts, _ := parser.ParseKey(field.Definition.Key)
 			name := noticeText(parts[3], 0)
@@ -130,10 +130,12 @@ func displayGroupLines(groups []displayGroupView, width int) []string {
 				value = tui.TruncateToWidth(value, max(1, width-tui.VisibleWidth(name)-tui.VisibleWidth(scope)-2), "…", false)
 			}
 			lines = append(lines, noticeText(name+" "+value+" "+scope, width))
-			pending = pending || field.Effective.Application != "live"
+			if field.Effective.Application != "live" {
+				pending = append(pending, parts[3])
+			}
 		}
-		if pending {
-			lines = append(lines, "Some controls not applied.")
+		if len(pending) > 0 {
+			lines = append(lines, noticeText("Saved but not applied: "+strings.Join(pending, ", "), width))
 		}
 		if group.AppliesAfterReload {
 			lines = append(lines, "Renderer claim appliesAfterReload.")
@@ -181,7 +183,7 @@ func (a *app) displaySettingsCommand(ctx sdk.Context, work context.Context, s *s
 			return errors.New("no registered or dormant display schema matches that owner/key")
 		}
 		if ctx.Mode() == "tui" {
-			a.notify(ctx, strings.Join(displayGroupLines(groups, ctx.Width()), "\n"))
+			a.present(ctx, "Workbench › Tool display", strings.Join(displayGroupLines(groups, ctx.Width()), "\n"))
 			return nil
 		}
 		output := map[string]any{"toolDisplay": groups, "settings": status}

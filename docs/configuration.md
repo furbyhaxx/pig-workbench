@@ -41,9 +41,9 @@ Settings marked `unavailable` are retained and validated but do not control thei
 
 Presentation descriptors register typed values under `tools.<owner>.<stable-key>.<field>`; TOML quoting preserves dots in owner/key names as literal segments. Producer defaults sit below user, trusted-project and runtime overrides. Withdrawal keeps overrides and marks the schema unavailable; re-registration reuses the stable identity. Descriptor type changes must use a new key or an explicit migration.
 
-`enabled`, `density`, `preview-lines` and `metrics` now report `live` and affect the shared renderer. Compact density is header-only; an explicit zero preview is retained, and `metrics = []` hides metrics. Changing these values never changes tool execution. If rendering was already cached, disabling shows a bounded raw fallback and reports `appliesAfterReload` for delegation to the producer/host; before first resolution it delegates directly.
+`enabled`, `density`, `preview-lines`, `metrics` and `target-shortening` report `live` and affect the shared renderer; `target-shortening = false` turns off fish abbreviation of parent folders (the shortest relative/absolute form and elision still apply). Compact density is header-only; an explicit zero preview is retained, and `metrics = []` hides metrics. Changing these values never changes tool execution. If rendering was already cached, disabling shows a bounded raw fallback and reports `appliesAfterReload` for delegation to the producer/host; before first resolution it delegates directly.
 
-Target-shortening, child-density and producer-specific controls still report `registered` until their consumers are integrated. Do not infer applied rendering from a successful save of a registered-only control.
+`child-density` and producer-specific controls still report `registered` (the panel says "saved, but nothing reads it yet"): Workbench draws no child rows, and producer-declared controls need the producer to read them. Do not infer applied rendering from a successful save of a registered-only control.
 
 ```text
 /workbench settings tools

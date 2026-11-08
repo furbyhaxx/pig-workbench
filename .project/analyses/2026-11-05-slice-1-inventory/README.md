@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 55
+  revision: 56
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-09T12:00:00+01:00"
+  updated_at: "2026-11-09T17:15:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 55
-      reason: "User-reported defect: /workbench was a flat completion list that dumped text and threw"
-      changes: ["Reproduced the reported error in a real TUI", "Added the hub, scrollable panels and an editable settings panel", "Added real-TUI regression tests; layout awaits user review"]
+    - revision: 56
+      reason: "User saw an empty Tool display panel they could not review"
+      changes: ["Explained the empty state and the hub count", "Tool display opens the editable settings panel when schemas exist and shows owner/tool per row", "Wired target-shortening", "Fixed the TUI test cleanup race and recorded the /tmp exhaustion cause"]
 ---
 
 # Scope and evidence
@@ -150,6 +150,14 @@ Reproduced in a real `pig -e .` TUI: `/workbench tools settings` threw `tool "se
 Now, in the TUI: `/workbench` opens a hub (SKETCH-0001 §3 shape) listing 17 views; every entry opens a titled, scrollable, width-wrapped panel and Esc returns to the hub with the selection kept; `/workbench settings` opens a settings panel with search, value and source per setting, staged edits (toggle, choice cycle, typed integers and strings with bounds), per-scope save, reset staging and a discard guard. An unknown tool name now warns instead of failing the command. RPC and print keep plain text. Real-TUI tests: `TestLiveEveryHubEntryOpensATitledPanelWithoutAnError`, `TestLiveWorkbenchMenuOpensInteractivePanelsInTUI` (including a save that is read back from `Workbench.toml`), `TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard`, `TestLiveToolsWithAnUnknownNameWarnsInsteadOfFailingTheCommand` (confirmed to fail on the old behaviour); logs: [check](evidence/menu-check.log), [race](evidence/menu-race.log), [full integration](evidence/menu-all.log).
 
 **Awaiting user layout review** (these are new surfaces): captures at 36/57/80/140 columns and 16 rows in `evidence/menu-tui/{hub,settings,tools}/`. Not done: panels for jobs actions (kill/wait), instruction pins, trust editing and session messaging are still read-only views, not interactive editors; the hub is not searchable; array-valued settings cannot be edited in the panel; no mouse support was exercised; sizing was measured on one terminal emulator (tmux).
+
+# Tool display view (second user report)
+
+The user ran plain `pig -e .` and saw only "No registered or dormant display schemas." My earlier captures had the reference producer loaded, so I never showed the state a normal session has. Workbench's own tools have no display preferences (their density renderers are PLAN-0004 C1-C3), so that screen is correct but explained nothing and the hub offered it as if usable.
+
+Now: the hub entry reads "Nothing to configure: no extension registered one" or "N tool(s) with display preferences"; with no schema the panel says why and points to `/workbench integrations`; with schemas `Tool display` opens the interactive settings panel limited to `tools.`, labelled by field with `owner/tool` and a plain-language status ("takes effect now" / "saved, but nothing reads it yet"). Rows used to show only `tools.reference-producer.web_s` (truncated, indistinguishable) - fixed. `target-shortening` is now wired (`pathdisplay.Target.NoFish`) and reports `live`; `child-density` stays stored-only because Workbench draws no child rows. Test: `TestLiveToolDisplayViewExplainsAnEmptyStateAndEditsWhenASchemaExists` (real TUI, both states). Captures: `evidence/display-settings-tui/plain/` (what a bare `pig -e .` shows) and `with-producer/`, at 36/57/80/140 columns and 16 rows.
+
+Environment findings: the first full run failed with `no space left on device` because `/tmp` is a 32 GB tmpfs at 99% (mostly other programs' data, which I did not touch) and every integration test builds the extension into a temp cache. I removed only my own `TestLive*` and scratch files. Gates now run with `TMPDIR=$HOME/.cache/pig-workbench-test-tmp/work` (outside any repository: a `TMPDIR` inside this repo made project-detection tests find the repo's own `.git`). A real harness race was also fixed: TUI tests killed tmux and removed the temp dir while `pig` was still writing (`TempDir RemoveAll cleanup: directory not empty`); `stopTUI` now waits for the process. One transient failure of `TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard` (two runs of 15.7 s, in a wide group while another job loaded the machine) did not reproduce in 9 later runs; its cause is **not established**. Logs: [check](evidence/tool-display-check.log), [race](evidence/tool-display-race.log), [full integration](evidence/tool-display-all.log).
 
 # Baseline gates
 

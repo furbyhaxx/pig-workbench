@@ -218,7 +218,7 @@ func TestPresentationHeaderShortensTargetsToWidth(t *testing.T) {
 	snapshot := presentation.Snapshot{Title: "Read", Phase: presentation.PhaseSettled, Target: &presentation.Target{Kind: "path", Value: "/srv/projects/pi-workbench/internal/host/presentation_render.go"}}
 	descriptor := presentation.Descriptor{Label: "Read"}
 	for _, width := range []int{36, 57, 80, 140} {
-		header := presentationHeader(descriptor, snapshot, false, width, "", nil)
+		header := presentationHeader(descriptor, snapshot, false, width, "", nil, true)
 		if got := tui.VisibleWidth(header); got > width/2+24 {
 			t.Errorf("width %d: header %q is %d cells", width, header, got)
 		}

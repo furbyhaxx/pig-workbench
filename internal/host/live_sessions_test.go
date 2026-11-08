@@ -541,7 +541,7 @@ func TestLiveActivitySettingsControlWidget(t *testing.T) {
 				return string(out)
 			}
 			tmux("new-session", "-d", "-s", "workbench", "-x", "80", "-y", "24", "-c", root, "pig", "--offline", "--no-session", "-e", repoRoot(t), "--model", "workbench-fixture/mock", "--tools", "bash")
-			t.Cleanup(func() { _ = exec.Command("tmux", "-S", socket, "kill-server").Run() })
+			stopTUI(t, socket, "workbench")
 			boundaries := func(capture string) []int {
 				var lines []int
 				for i, line := range strings.Split(capture, "\n") {

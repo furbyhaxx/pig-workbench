@@ -33,7 +33,7 @@ func displayDefinitions(owner, key string, d presentation.Descriptor) ([]config.
 		metrics = append(metrics, metric.ID)
 	}
 	definitions := []config.Definition{field("enabled", config.Boolean, true), density, preview, field("metrics", config.Strings, metrics), field("target-shortening", config.Boolean, true), children}
-	for i := 0; i < 4; i++ {
+	for _, i := range []int{0, 1, 2, 3, 4} {
 		definitions[i].Application = "live"
 	}
 	used := map[string]bool{}

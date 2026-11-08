@@ -12,9 +12,9 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
-func renderPresentationCall(descriptor presentation.Descriptor, args map[string]any, render sdk.ToolRenderContext, root string, width int) []string {
+func renderPresentationCall(descriptor presentation.Descriptor, args map[string]any, render sdk.ToolRenderContext, root string, width int, shorten bool) []string {
 	parts := []string{descriptor.Label}
-	if target, ok := firstArgumentField(args, descriptor.CallFields, root, width); ok {
+	if target, ok := firstArgumentField(args, descriptor.CallFields, root, width, shorten); ok {
 		parts = append(parts, target)
 	} else if len(args) == 0 {
 		parts = append(parts, "arguments not retained")
@@ -54,7 +54,7 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 		}
 	}
 	snapshot.Metrics = metrics
-	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width, root, render.DurationMs)}
+	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width, root, render.DurationMs, display.shorten)}
 	preview := descriptor.DefaultDisplay.PreviewLines
 	switch descriptor.DefaultDisplay.Density {
 	case "compact":
@@ -100,14 +100,14 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 	return fitPresentationLines(lines, width, preview+8)
 }
 
-func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int, root string, hostDuration *int64) string {
+func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int, root string, hostDuration *int64, shorten bool) string {
 	title := snapshot.Title
 	if title == "" {
 		title = descriptor.Label
 	}
 	parts := []string{title}
 	if snapshot.Target != nil && snapshot.Target.Value != "" {
-		parts = append(parts, pathdisplay.Display(pathdisplay.Target{Value: snapshot.Target.Value, Root: root}, width/2))
+		parts = append(parts, pathdisplay.Display(pathdisplay.Target{Value: snapshot.Target.Value, Root: root, NoFish: !shorten}, width/2))
 	}
 	status := string(snapshot.Phase)
 	if snapshot.Outcome != nil {
@@ -286,7 +286,7 @@ func tablePresentationLines(table *presentation.TableBlock) []string {
 	return lines
 }
 
-func firstArgumentField(args map[string]any, fields []presentation.CallField, root string, width int) (string, bool) {
+func firstArgumentField(args map[string]any, fields []presentation.CallField, root string, width int, shorten bool) (string, bool) {
 	values := make([]string, 0, len(fields))
 	for _, field := range fields {
 		value, ok := argumentField(args, field.Pointer)
@@ -294,7 +294,7 @@ func firstArgumentField(args map[string]any, fields []presentation.CallField, ro
 			continue
 		}
 		if field.Format == "path" {
-			value = pathdisplay.Display(pathdisplay.Target{Value: value, Root: root}, max(8, width/2))
+			value = pathdisplay.Display(pathdisplay.Target{Value: value, Root: root, NoFish: !shorten}, max(8, width/2))
 		}
 		values = append(values, strings.TrimSpace(field.Label+" "+value))
 		if len(values) == 3 {
