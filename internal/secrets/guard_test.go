@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 type failingGuard struct {
@@ -582,5 +583,46 @@ func TestRedactMessagesHandlesPiGNativeToolCallAndCustomMessages(t *testing.T) {
 	call := out[2].(map[string]any)["content"].([]any)[0].(map[string]any)
 	if call["arguments"].(map[string]any)["command"] != "echo "+placeholder || call["name"] != "bash" || call["arguments"].(map[string]any)["background"] != true {
 		t.Fatalf("toolCall arguments must be redacted by value and keep their shape: %#v", call)
+	}
+}
+
+// largeContext builds about 1.2 MB of messages, roughly a 300k-token context,
+// with a known secret in every tenth message.
+func largeContext(secret string) []any {
+	filler := strings.Repeat("The quick brown fox jumps over the lazy dog. ", 20)
+	messages := make([]any, 0, 1300)
+	for i := 0; i < 1300; i++ {
+		text := filler
+		if i%10 == 0 {
+			text += " token " + secret
+		}
+		role := "user"
+		if i%2 == 1 {
+			role = "assistant"
+		}
+		messages = append(messages, map[string]any{"role": role, "content": text})
+	}
+	return messages
+}
+
+// The bound is a regression guard (about 100 times the measured 47 ms, so race builds pass), not a latency promise.
+func TestRedactMessagesLargeContextStaysBounded(t *testing.T) {
+	detector, _, key := newTestGuard(t)
+	secret := "benchmark-guard-secret-value"
+	if err := detector.Learn([]byte(secret), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	out, err := RedactMessages(detector, largeContext(secret))
+	elapsed := time.Since(start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded := mustJSON(t, out)
+	if strings.Contains(encoded, secret) || !strings.Contains(encoded, Placeholder(key, []byte(secret))) {
+		t.Fatal("large context was not redacted")
+	}
+	if elapsed > 5*time.Second {
+		t.Fatalf("redacting a ~1.2 MB context took %s", elapsed)
 	}
 }

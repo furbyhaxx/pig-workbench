@@ -224,3 +224,42 @@ func TestLiveABackgroundBashCallDoesNotTriggerTheWithheldNotice(t *testing.T) {
 		}
 	}
 }
+
+// TestLiveWriteReceivesTheRealValueFromAPlaceholder: substitution is not bash-specific.
+func TestLiveWriteReceivesTheRealValueFromAPlaceholder(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Kd3sP8", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("key="+token+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	placeholderOf := func() string {
+		recorder.mu.Lock()
+		defer recorder.mu.Unlock()
+		return regexp.MustCompile(`red-sec-[a-z2-7]{16}`).FindString(recorder.bodies[len(recorder.bodies)-1])
+	}
+	recorder.calls = []scriptedCall{{"read", map[string]any{"path": "notes.txt"}}}
+	recorder.next = func(index int) *scriptedCall {
+		if index == 1 {
+			return &scriptedCall{"write", map[string]any{"path": "copied.txt", "content": "token=" + placeholderOf() + "\n"}}
+		}
+		return nil
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+	fixture.send("script", "prompt", "Copy the key with write.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	copied, err := os.ReadFile(filepath.Join(root, "copied.txt"))
+	if err != nil || string(copied) != "token="+token+"\n" {
+		t.Fatalf("write received %q, %v", copied, err)
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, token) {
+			t.Fatalf("request %d carries the real token", i)
+		}
+	}
+}

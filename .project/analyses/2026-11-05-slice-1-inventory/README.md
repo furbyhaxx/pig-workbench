@@ -290,3 +290,19 @@ Not implemented from SPEC-0008 §6: `jobs wait until=output`, a `signal` argumen
 | Secret question: vault, placeholder, usable `env` in the next bash | PASS after test added | `TestLiveAskedSecretIsUsableAsEnvInTheNextBashCall` |
 | Duplicate local/remote submission, wrong generation, bridge, `/answer`, `/tldr` | Slice 2 (W6) | not claimed |
 | Coordinator, broadcast, `agent://by-project` | Slice 2 | not claimed |
+
+## SPEC-0013 §11 and SPEC-0010 §9 local rows (audit)
+
+| Row | Result | Evidence |
+|---|---|---|
+| No known secret in provider requests (turns, files, commands, prompts) | PASS | `TestLiveProviderRequestsNeverCarryAKnownSecret`, `TestRedactProviderPayload*` |
+| Compaction and branch-summary requests | PARTIAL | covered only by the generic `before_provider_request` final pass; no capture of an actual compaction or branch-summary request |
+| Placeholder in bash, write; transcript keeps the placeholder | PASS after test added | `TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder`, `TestLiveWriteReceivesTheRealValueFromAPlaceholder` |
+| Placeholder in edit, another extension's HTTP call, codemode child | PARTIAL | one substitution hook serves every tool call; no per-tool test for these three |
+| Same value, same placeholder across sessions, nukii vector | PASS | `TestPlaceholderDerivationAndDetection` (independent vector), persisted key tests |
+| Key or vault failure withholds visibly, recovers without restart | PASS | `TestLiveBrokenSecretsPolicySendsNothingToTheProvider`, `TestSecretsBoundaryRecoversWithoutRestartAfterAFailedBuild` |
+| `ask_user` secret, env in bash and jobs | PASS | `TestLiveAskedSecretIsUsableAsEnvInTheNextBashCall`, `TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted` |
+| Opt-in extension inference, grants | PASS | `TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure` |
+| Throughput | MEASURED | ~1.2 MB (about 300k tokens) of messages with a secret in every tenth: 47 ms and 16 MB allocated per request on an Intel Core Ultra 7 265H, no memoization (the spec's memoization is not implemented). `TestRedactMessagesLargeContextStaysBounded` guards against a blow-up only (5 s limit so race builds pass); no latency budget is promised. |
+| `secret://`, `.not-a-secret`, `secrets://` | Slice 2 | not claimed |
+| SPEC-0010 §9 configuration rows | PASS | Phase B evidence plus `TestLiveCatalogSettingsHaveBehavioralConsumers` |
