@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 51
+  revision: 52
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T14:23:19+01:00"
+  updated_at: "2026-11-08T17:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 51
-      reason: "Protect retained tool metadata, not only model-bound content"
-      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
+    - revision: 52
+      reason: "Close absent-producer replay and codemode capture gaps"
+      changes: ["Dormant display schemas and overrides restore on resume without a live registration", "Nested codemode call identities captured and inspectable; arguments not retained", "Retained producer results remain readable after producer removal"]
 ---
 
 # Scope and evidence
@@ -130,6 +130,10 @@ The first full integration run failed because source ownership verification corr
 `TestLiveRetainedToolMetadataNeverPersistsKnownSecrets` reproduced known values in actual JSONL result metadata after command substitution and secret-bearing resource paths. Tool-result content, details and structured content are now protected before persistence; metadata JSON keys/values are redacted, collisions/unsupported data fail closed, and Workbench's captured presentation update copies are protected too. This corrects SPEC-0013's earlier unsafe assumption that non-provider Details could remain untouched.
 
 Observed checks: [check](evidence/retained-redaction-check.log), [race](evidence/retained-redaction-race.log), [full host integration](evidence/retained-redaction-all.log), [repeated unit cases](evidence/retained-redaction-unit.log), and [three actual-host runs](evidence/retained-redaction-live.log). The shell still receives real substituted values, while retained commands, resource URIs, JSON keys and structured fields do not persist them. Existing session files are **not** rewritten or claimed repaired. Native third-party live progress rendering is not globally transformed; only Workbench's retained update copies are protected.
+
+# Absent-producer replay and codemode capture
+
+Observed in actual PiG hosts ([log](evidence/replay-and-children-live.log), repeated twice): dormant display schemas and overrides survive resume without the producer and report `application: unavailable` with no live registration; a retained producer result stays readable through `session://by-id/<id>/transcript`; `/workbench codemode` lists nested call IDs and ok/error status from `parentToolCallId`, bounded and without arguments. Stock PiG still draws codemode's own child rows, and child records are runtime-only. SPEC-0003 §8 rows 8.1, 8.8 and 8.9 are therefore evidenced for data and settings; rich replay chrome is not claimed.
 
 # Baseline gates
 

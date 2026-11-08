@@ -38,6 +38,28 @@ func TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides(t 
 	}
 }
 
+func TestLiveRetainedProducerResultIsReadableAfterProducerRemoval(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"web_search", map[string]any{"query": "retained result"}}}}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	producer := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock")
+	producer.send("call", "prompt", "Run the reference tool.")
+	producer.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	producer.close()
+	id := storedSessionID(t, root)
+	later, laterRecorder := startInRoot(t, root, []scriptedCall{{"read", map[string]any{"path": "session://by-id/" + id + "/transcript"}}})
+	later.send("replay", "prompt", "Read the old transcript.")
+	later.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	laterRecorder.mu.Lock()
+	defer laterRecorder.mu.Unlock()
+	results := toolResults(t, laterRecorder.bodies[len(laterRecorder.bodies)-1])
+	if len(results) == 0 || !strings.Contains(results[0], "Fixture result") {
+		t.Fatalf("retained producer result was unreadable without the producer: %v", results)
+	}
+}
+
 func TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict(t *testing.T) {
 	results := runScriptedWith(t, t.TempDir(), "web_search,read", "", []string{"reference-producer"},
 		func([]string) scriptedCall { return scriptedCall{"web_search", map[string]any{"query": "lifecycle"}} },
