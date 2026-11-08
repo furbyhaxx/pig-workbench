@@ -315,7 +315,12 @@ func (a *app) instructionsCommand(ctx sdk.Context, args string) error {
 		result, err = a.pinInstruction(ctx, class, rest, "user")
 	case "unpin":
 		result, err = a.unpinInstruction(ctx, rest)
-	case "ls", "":
+	case "":
+		if panelsAvailable(ctx) {
+			return a.instructionsPanel(ctx)
+		}
+		result, err = a.listInstructionPins()
+	case "ls":
 		result, err = a.listInstructionPins()
 	case "rules":
 		result, err = a.instructionRules(ctx)
@@ -460,4 +465,29 @@ func (a *app) framesCommand(ctx sdk.Context) error {
 	}
 	a.notify(ctx, strings.Join(lines, "\n"))
 	return nil
+}
+
+func (a *app) instructionsPanel(ctx sdk.Context) error {
+	s, err := a.current()
+	if err != nil {
+		return err
+	}
+	title, _ := a.hubTitle.Load().(string)
+	if title == "" {
+		title = "Workbench › Instructions"
+	}
+	panel := &instructionsPanel{
+		title:  title,
+		height: ctx.Height,
+		pins: func() []instructionPin {
+			s.contextFrames.mu.Lock()
+			defer s.contextFrames.mu.Unlock()
+			return append([]instructionPin(nil), s.contextFrames.pins...)
+		},
+		rules: func() (string, error) { return a.instructionRules(ctx) },
+		pin:   func(path string) (string, error) { return a.pinInstruction(ctx, "", path, "user") },
+		unpin: func(path string) (string, error) { return a.unpinInstruction(ctx, path) },
+	}
+	_, err = ctx.Custom(panel, nil)
+	return err
 }

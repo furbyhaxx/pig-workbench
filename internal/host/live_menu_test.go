@@ -407,3 +407,47 @@ func TestLiveJobsPanelKillsWaitsAndRefreshesARealJob(t *testing.T) {
 	s.keys("Escape")
 	s.waitFor("enter open · k stop", 10*time.Second)
 }
+
+func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "BACKLOG.md"), []byte("# Backlog\n- [ ] one\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	s.openHub()
+	s.keys("Down", "Down", "Down", "Down", "Enter")
+	empty := s.waitFor("Workbench › Instructions", 10*time.Second)
+	if !strings.Contains(empty, "No pinned instruction files") {
+		t.Fatalf("the panel does not start empty:\n%s", empty)
+	}
+	s.keys("p")
+	s.waitFor("Path of the file to pin", 10*time.Second)
+	s.typeSlowly("BACKLOG.md")
+	s.keys("Enter")
+	pinned := s.waitFor("pinned", 10*time.Second)
+	if !strings.Contains(pinned, "BACKLOG.md") {
+		t.Fatalf("the pin is not listed:\n%s", pinned)
+	}
+	s.capture("instructions-pinned")
+	s.keys("v")
+	s.waitFor("› rules", 10*time.Second)
+	s.keys("Escape")
+	s.waitFor("p pin · u unpin", 10*time.Second)
+	s.keys("Escape", "Escape")
+	s.typeText("/workbench instructions ls")
+	s.keys("Enter")
+	time.Sleep(time.Second)
+	if !strings.Contains(s.screen(), "Pinned instruction files") {
+		s.keys("Enter")
+	}
+	live := s.waitFor("Pinned instruction files", 10*time.Second)
+	if !strings.Contains(live, "BACKLOG.md") {
+		t.Fatalf("the live pin state lacks the pin made in the panel:\n%s", live)
+	}
+	s.keys("Escape")
+	s.openHub()
+	s.keys("Down", "Down", "Down", "Down", "Enter")
+	s.waitFor("p pin · u unpin", 10*time.Second)
+	s.keys("u")
+	s.waitFor("unpinned", 10*time.Second)
+}

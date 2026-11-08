@@ -1,0 +1,16 @@
+
+[Extensions]
+  pig-workbench
+
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────
+ Workbench › Instructions
+→ BACKLOG.md                      backlog · user · /tmp/TestLiveInstructionsPa
+ pinned /tmp/TestLiveInstructionsPanelPinsAndUnpinsAFile3034291857/001/BACKLOG…
+ p pin · u unpin · v rules · escape/ctrl+c close
+────────────────────────────────────────────────────────────────────────────────
+/tmp/TestLiveInstructionsPanelPinsAndUnpinsAFile3034291857/001
+0.0%/32k (auto)                                                             mock
