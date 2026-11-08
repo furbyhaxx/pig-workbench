@@ -386,3 +386,42 @@ func promotedJob(t *testing.T, settings string) (*requestRecorder, *rpcFixture, 
 	})
 	return recorder, fixture, match[1], requestsAfterFirst
 }
+
+// TestLiveJobsToolWaitsForOutputAndSendsASignal drives the new jobs arguments through the real
+// agent loop: wait until=output on one stream, then kill with a non-terminating signal.
+func TestLiveJobsToolWaitsForOutputAndSendsASignal(t *testing.T) {
+	root := t.TempDir()
+	idOf := func(results []string) string {
+		match := regexp.MustCompile(`Job ([0-9a-f]{32}):`).FindStringSubmatch(results[0])
+		if match == nil {
+			t.Fatalf("no job id in %q", results[0])
+		}
+		return match[1]
+	}
+	results := runScripted(t, root, "bash,jobs",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "trap 'echo got-int >&2; exit 0' INT; echo ready; while :; do sleep 0.1; done", "background": true, "timeout_seconds": 30}}
+		},
+		func(r []string) scriptedCall {
+			return scriptedCall{"jobs", map[string]any{"action": "wait", "id": idOf(r), "until": "output", "stream": "stdout", "timeout_seconds": 10}}
+		},
+		func(r []string) scriptedCall {
+			return scriptedCall{"jobs", map[string]any{"action": "kill", "id": idOf(r), "signal": "INT"}}
+		},
+		func(r []string) scriptedCall {
+			return scriptedCall{"jobs", map[string]any{"action": "output", "id": idOf(r), "stream": "stderr"}}
+		},
+		func(r []string) scriptedCall {
+			return scriptedCall{"jobs", map[string]any{"action": "wait", "id": idOf(r), "until": "output", "timeout_seconds": 5}}
+		},
+	)
+	if !strings.Contains(results[1], "ready") || !strings.Contains(results[1], "running") {
+		t.Fatalf("output wait did not return the stdout bytes while running: %q", results[1])
+	}
+	if !strings.Contains(results[2], "exited") || strings.Contains(results[2], "cancelled") {
+		t.Fatalf("INT must end the job through its own handler, not a cancel: %q", results[2])
+	}
+	if !strings.Contains(results[3], "got-int") || strings.Contains(results[3], "ready") {
+		t.Fatalf("stderr view must show only the handler's line: %q", results[3])
+	}
+}

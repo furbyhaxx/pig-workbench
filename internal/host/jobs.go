@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -28,7 +29,7 @@ type jobMetadataStore struct {
 
 func (a *app) registerJobs(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay. timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}}}, Execute: a.bash})
-	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; status/output/wait/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait is cancellable without killing a background job; kill terminates its process group. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}}}, Execute: a.jobsTool})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; status/output/wait/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait returns at exit by default; until=output returns when new bytes pass the cursor. wait is cancellable without killing a background job. kill terminates its process group; signal=INT|HUP|QUIT sends that signal instead and reports the observed state. stream=stdout|stderr reads one stream; its cursor counts only that stream's bytes. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}, "until": map[string]any{"type": "string", "enum": []string{"exit", "output"}}, "stream": map[string]any{"type": "string", "enum": []string{"combined", "stdout", "stderr"}}, "signal": map[string]any{"type": "string", "enum": []string{"TERM", "INT", "HUP", "QUIT", "KILL"}}}}, Execute: a.jobsTool})
 }
 
 type bashParams struct {
@@ -143,7 +144,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if state, err := s.jobs.Status(id); err == nil && state.Running {
 		a.watchJobCompletion(s, id)
 	}
-	return s.jobResult(id, 0)
+	return s.jobResult(id, jobs.StreamCombined, 0)
 }
 
 // watchJobCompletion sends one notice when a job that outlived its tool call
@@ -196,6 +197,43 @@ type jobParams struct {
 	Text    string  `json:"text"`
 	Cursor  int64   `json:"cursor"`
 	Timeout float64 `json:"timeout_seconds"`
+	Until   string  `json:"until"`
+	Stream  string  `json:"stream"`
+	Signal  string  `json:"signal"`
+}
+
+func jobStream(name string) (jobs.Stream, error) {
+	switch name {
+	case "", "combined":
+		return jobs.StreamCombined, nil
+	case "stdout":
+		return jobs.StreamStdout, nil
+	case "stderr":
+		return jobs.StreamStderr, nil
+	}
+	return 0, fmt.Errorf("unknown stream %q; use combined, stdout or stderr", name)
+}
+
+// waitOutput returns once the stream has bytes past cursor or the job has ended.
+func (s *session) waitOutput(ctx context.Context, id string, stream jobs.Stream, cursor int64) error {
+	for {
+		data, _, _, _, err := s.jobs.Stream(id, stream, cursor, 1)
+		if err != nil && !errors.Is(err, jobs.ErrLogEvicted) {
+			return err
+		}
+		state, err := s.jobs.Status(id)
+		if err != nil {
+			return err
+		}
+		if len(data) > 0 || !state.Running {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
 }
 
 func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
@@ -205,6 +243,20 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	if input.Cursor < 0 || input.Timeout < 0 || input.Timeout > 3600 {
 		return nil, errors.New("invalid output cursor or wait timeout")
+	}
+	stream, err := jobStream(input.Stream)
+	if err != nil {
+		return nil, err
+	}
+	if input.Until != "" && input.Until != "exit" && input.Until != "output" || input.Until != "" && input.Action != "wait" {
+		return nil, errors.New("until applies to wait and takes exit or output")
+	}
+	if input.Signal != "" && input.Action != "kill" {
+		return nil, errors.New("signal applies to kill")
+	}
+	signal, forceSignal := jobSignals[input.Signal]
+	if input.Signal != "" && !forceSignal {
+		return nil, fmt.Errorf("unsupported signal %q; supported: TERM INT HUP QUIT KILL", input.Signal)
 	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
@@ -239,10 +291,25 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 			wait, cancel = context.WithTimeout(work, time.Duration(input.Timeout*float64(time.Second)))
 		}
 		defer cancel()
-		if _, err := s.jobs.Wait(wait, input.ID); err != nil && !errors.Is(err, context.DeadlineExceeded) {
-			return nil, err
+		var waitErr error
+		if input.Until == "output" {
+			waitErr = s.waitOutput(wait, input.ID, stream, input.Cursor)
+		} else {
+			_, waitErr = s.jobs.Wait(wait, input.ID)
+		}
+		if waitErr != nil && !errors.Is(waitErr, context.DeadlineExceeded) {
+			return nil, waitErr
 		}
 	case "kill":
+		if forceSignal && signal != syscall.SIGTERM && signal != syscall.SIGKILL {
+			if err := s.jobs.Signal(input.ID, signal); err != nil {
+				return nil, err
+			}
+			settle, cancel := context.WithTimeout(work, 500*time.Millisecond)
+			_, _ = s.jobs.Wait(settle, input.ID)
+			cancel()
+			break
+		}
 		if err := s.jobs.Cancel(input.ID); err != nil {
 			return nil, err
 		}
@@ -258,7 +325,7 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	default:
 		return nil, errors.New("unknown jobs action")
 	}
-	return s.jobResult(input.ID, input.Cursor)
+	return s.jobResult(input.ID, stream, input.Cursor)
 }
 
 func jobLabel(state jobs.JobState, metadata jobMetadata) string {
@@ -295,12 +362,12 @@ func (s *session) jobListText() string {
 	return b.String()
 }
 
-func (s *session) jobResult(id string, cursor int64) (sdk.ToolResult, error) {
+func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.ToolResult, error) {
 	state, err := s.jobs.Status(id)
 	if err != nil {
 		return sdk.ToolResult{}, err
 	}
-	output, next, truncated, gap, err := s.jobs.Output(id, cursor, 48<<10)
+	output, next, truncated, gap, err := s.jobs.Stream(id, stream, cursor, 48<<10)
 	if err != nil && !errors.Is(err, jobs.ErrLogEvicted) {
 		return sdk.ToolResult{}, err
 	}

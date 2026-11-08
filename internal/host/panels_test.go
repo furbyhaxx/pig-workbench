@@ -1,10 +1,13 @@
 package host
 
 import (
+	"context"
+	"errors"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
@@ -170,5 +173,58 @@ func TestJobListTextIsHumanReadableNotJSON(t *testing.T) {
 	got := s.jobListText()
 	if !strings.Contains(got, id) || !strings.Contains(got, "exited (exit 3)") || !strings.Contains(got, "exit 3") || strings.HasPrefix(got, "[") {
 		t.Fatalf("job row is not readable: %q", got)
+	}
+}
+
+func newJobTestSession(t *testing.T) *session {
+	t.Helper()
+	manager, err := jobs.NewManager(jobs.ManagerOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { manager.Close() })
+	return &session{jobs: manager, jobMeta: jobMetadataStore{values: map[string]jobMetadata{}}}
+}
+
+func TestJobWaitUntilOutputReturnsBeforeExitAndPerStreamCursorsAreIndependent(t *testing.T) {
+	s := newJobTestSession(t)
+	id, err := s.jobs.Start(t.Context(), jobs.Spec{Command: []string{"sh", "-c", "echo out1; echo err1 >&2; sleep 5"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wait, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+	defer cancel()
+	if err := s.waitOutput(wait, id, jobs.StreamStderr, 0); err != nil {
+		t.Fatalf("wait for stderr output: %v", err)
+	}
+	result, err := s.jobResult(id, jobs.StreamStderr, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(result.Content, "err1") || strings.Contains(result.Content, "out1") || !strings.Contains(result.Content, "running") {
+		t.Fatalf("stderr view wrong: %q", result.Content)
+	}
+	next := result.Details.(map[string]any)["cursor"].(int64)
+	short, cancelShort := context.WithTimeout(t.Context(), 200*time.Millisecond)
+	defer cancelShort()
+	if err := s.waitOutput(short, id, jobs.StreamStderr, next); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("no new stderr bytes must time out while the job runs, got %v", err)
+	}
+	if err := s.jobs.Cancel(id); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.waitOutput(t.Context(), id, jobs.StreamStderr, next); err != nil {
+		t.Fatalf("an ended job must release an output wait: %v", err)
+	}
+}
+
+func TestJobStreamNameIsValidated(t *testing.T) {
+	for _, name := range []string{"", "combined", "stdout", "stderr"} {
+		if _, err := jobStream(name); err != nil {
+			t.Errorf("%q: %v", name, err)
+		}
+	}
+	if _, err := jobStream("stdin"); err == nil {
+		t.Fatal("unknown stream accepted")
 	}
 }
