@@ -1,10 +1,13 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 	"unicode"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -12,6 +15,10 @@ import (
 
 // ProviderRequestChannel carries Workbench requests to registered contributions.
 const ProviderRequestChannel = "workbench:v1:provider-request"
+
+// ProviderCancelChannel carries cancellation of one in-flight provider request.
+// It is separate because the host serializes a listener per channel, so a busy handler cannot see a cancel queued behind it.
+const ProviderCancelChannel = "workbench:v1:provider-cancel"
 
 // ProviderReplyChannel carries contribution replies back to Workbench.
 const ProviderReplyChannel = "workbench:v1:provider-reply"
@@ -28,6 +35,17 @@ type ProviderRequest struct {
 	Method         string          `json:"method"`
 	Params         json.RawMessage `json:"params"`
 	TimeoutMS      int             `json:"timeoutMs,omitempty"`
+
+	ctx context.Context
+}
+
+// Context is cancelled when the request's budget elapses or Workbench sends a cancel for it.
+// A handler doing more than bounded validation must poll it and stop with a "cancelled" error.
+func (r ProviderRequest) Context() context.Context {
+	if r.ctx == nil {
+		return context.Background()
+	}
+	return r.ctx
 }
 
 // Receipt acknowledges one accepted registration.
@@ -170,7 +188,35 @@ func (c *Client) Serve(ext *sdk.Extension, handler ProviderHandler) (func(), err
 	if handler == nil {
 		return nil, errors.New("provider handler must not be nil")
 	}
-	return ext.Events().On(ProviderRequestChannel, func(ctx sdk.Context, value any) error {
+	var activeMu sync.Mutex
+	active := make(map[string]context.CancelFunc)
+	stopCancel, err := ext.Events().On(ProviderCancelChannel, func(_ sdk.Context, value any) error {
+		encoded, err := json.Marshal(value)
+		if err != nil || len(encoded) > ControlBytes {
+			return nil
+		}
+		var request ProviderRequest
+		if err := Decode(encoded, &request); err != nil || request.Version != 1 || request.To != c.identity || request.Method != "cancel" {
+			return nil
+		}
+		var params struct {
+			RequestID string `json:"requestId"`
+		}
+		if Decode(request.Params, &params) != nil {
+			return nil
+		}
+		activeMu.Lock()
+		cancel := active[params.RequestID]
+		activeMu.Unlock()
+		if cancel != nil {
+			cancel()
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	stopRequests, err := ext.Events().On(ProviderRequestChannel, func(ctx sdk.Context, value any) error {
 		encoded, err := json.Marshal(value)
 		if err != nil || len(encoded) > ControlBytes {
 			return nil
@@ -182,6 +228,17 @@ func (c *Client) Serve(ext *sdk.Extension, handler ProviderHandler) (func(), err
 		if request.Version != 1 || request.To != c.identity || !validWireID(request.ID) || !validWireID(request.From.Owner) || !validWireID(request.From.Instance) {
 			return nil
 		}
+		budget := time.Duration(request.TimeoutMS) * time.Millisecond
+		if budget <= 0 {
+			budget = 30 * time.Second
+		}
+		work, cancel := context.WithTimeout(context.Background(), budget)
+		defer cancel()
+		request.ctx = work
+		activeMu.Lock()
+		active[request.ID] = cancel
+		activeMu.Unlock()
+		defer func() { activeMu.Lock(); delete(active, request.ID); activeMu.Unlock() }()
 		reply := Reply{Version: 1, ID: request.ID, SessionID: request.SessionID, Generation: request.Generation, To: request.From}
 		result, protocol := handler(ctx, request)
 		switch {
@@ -197,6 +254,11 @@ func (c *Client) Serve(ext *sdk.Extension, handler ProviderHandler) (func(), err
 		}
 		return ctx.Events().Emit(ProviderReplyChannel, reply)
 	})
+	if err != nil {
+		stopCancel()
+		return nil, err
+	}
+	return func() { stopRequests(); stopCancel() }, nil
 }
 
 func validWireID(value string) bool {

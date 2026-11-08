@@ -270,3 +270,53 @@ func TestLiveRepeatedReadHintPreservesSourceAndResetsOnRevision(t *testing.T) {
 		t.Fatalf("changed revision inherited hint: %q", results[3])
 	}
 }
+
+func startSlowProviderRead(t *testing.T, env map[string]string) (*rpcFixture, string) {
+	t.Helper()
+	gate := filepath.Join(t.TempDir(), "slow")
+	t.Setenv("WORKBENCH_REFERENCE_CANCEL_PROBE", gate)
+	for key, value := range env {
+		t.Setenv(key, value)
+	}
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "kb://slow/probe"}}}}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("read", "prompt", "Read the slow resource.")
+	return fixture, gate
+}
+
+func waitForFile(t *testing.T, path string, within time.Duration, what string) string {
+	t.Helper()
+	deadline := time.Now().Add(within)
+	for {
+		if data, err := os.ReadFile(path); err == nil {
+			return string(data)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%s did not happen within %s", what, within)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func TestLiveProviderHandlerObservesTheRequestDeadline(t *testing.T) {
+	fixture, gate := startSlowProviderRead(t, map[string]string{"WORKBENCH_REFERENCE_QUERY_TIMEOUT_MS": "700"})
+	waitForFile(t, gate+".entered", 10*time.Second, "provider entry")
+	if got := waitForFile(t, gate+".stopped", 8*time.Second, "cooperative stop"); !strings.Contains(got, "deadline") {
+		t.Fatalf("handler stopped for the wrong reason: %q", got)
+	}
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+}
+
+func TestLiveAbortedReadCancelsTheCooperativeProvider(t *testing.T) {
+	fixture, gate := startSlowProviderRead(t, nil)
+	waitForFile(t, gate+".entered", 10*time.Second, "provider entry")
+	fixture.sendRaw("abort", "abort", nil)
+	if got := waitForFile(t, gate+".stopped", 8*time.Second, "cooperative stop"); !strings.Contains(got, "cancel") {
+		t.Fatalf("handler stopped for the wrong reason: %q", got)
+	}
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+}

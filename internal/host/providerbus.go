@@ -39,6 +39,8 @@ type providerBus struct {
 	sessionID  string
 	generation string
 	events     func() (sdk.Context, bool)
+	// cancelEvents is the extension-level bus: unlike a request-bound one it stays usable after the caller aborted.
+	cancelEvents sdk.EventBus
 
 	mu       sync.Mutex
 	pending  map[string]*providerPending
@@ -100,9 +102,12 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 		return err
 	}
 	defer release()
-	events, ok := b.events()
+	emitter, ok := b.events()
 	if !ok {
 		return errProviderUnavailable
+	}
+	if bound, ok := ctx.Value(hostRequestKey{}).(sdk.Context); ok {
+		emitter = bound
 	}
 	encoded, err := json.Marshal(params)
 	if err != nil {
@@ -127,12 +132,16 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 	b.pending[request.ID] = pending
 	b.mu.Unlock()
 	defer func() { b.mu.Lock(); delete(b.pending, request.ID); b.mu.Unlock() }()
-	emitErr := events.Events().Emit(api.ProviderRequestChannel, request)
+	emitErr := emitter.Events().Emit(api.ProviderRequestChannel, request)
 	b.mu.Lock()
 	replies := append([]api.Reply(nil), pending.replies...)
 	b.mu.Unlock()
 	switch len(replies) {
 	case 0:
+		if emitErr != nil || ctx.Err() != nil {
+			// The host releases only the caller (P3); the listener keeps running until told to stop.
+			b.cancelRemote(to, request.ID)
+		}
 		if emitErr != nil {
 			return fmt.Errorf("emit provider request: %w", emitErr)
 		}
@@ -159,4 +168,14 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 		return fmt.Errorf("provider result shape is invalid: %w", err)
 	}
 	return nil
+}
+
+// cancelRemote tells a provider that stopped being awaited to stop; it needs no reply and is best effort.
+func (b *providerBus) cancelRemote(to api.Identity, requestID string) {
+	var token [16]byte
+	if _, err := rand.Read(token[:]); err != nil {
+		return
+	}
+	params, _ := json.Marshal(map[string]string{"requestId": requestID})
+	_ = b.cancelEvents.Emit(api.ProviderCancelChannel, api.ProviderRequest{Version: 1, ID: hex.EncodeToString(token[:]), SessionID: b.sessionID, Generation: b.generation, From: b.identity, To: to, Method: "cancel", Params: params})
 }

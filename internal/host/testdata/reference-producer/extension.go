@@ -1,10 +1,12 @@
 package fixture
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -42,6 +44,7 @@ var documents = map[string]string{
 	"kb://paged/other.txt":     "not markdown\n",
 	"kb://totals/unknown":      "source with unknown total\n",
 	"kb://totals/empty":        "",
+	"kb://slow/probe":          "slow\n",
 }
 
 func execute(request api.ResourceRequest) (any, *api.Error) {
@@ -200,6 +203,9 @@ func handle(_ sdk.Context, request api.ProviderRequest) (any, *api.Error) {
 		if err := json.Unmarshal(request.Params, &params); err != nil {
 			return nil, &api.Error{Code: "invalidRequest", Message: "bad resource request"}
 		}
+		if gate := os.Getenv("WORKBENCH_REFERENCE_CANCEL_PROBE"); gate != "" && params.URI == "kb://slow/probe" && params.Operation == "read" {
+			return awaitStop(gate, request.Context())
+		}
 		return execute(params)
 	case "fetch":
 		var params api.FetchRequest
@@ -262,6 +268,13 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 		{"resourceProvider", "git", map[string]any{"label": "Git objects", "summary": "Read-only files of a repository at a revision", "schemes": []string{"git"}, "capabilities": []string{"stat", "read", "list"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "guide": "Use `ls git://fixture/` to browse the fixture repository.", "guideRevision": "1", "limits": map[string]any{"pageBytes": 51200, "pageLines": 2000, "concurrency": 4}}},
 		{"statusSegment", "web", map[string]any{"label": "web", "priority": 10, "maxColumns": 24}},
 		{"frameProducer", "reference.research", map[string]any{"label": "Research notices", "kinds": []string{"notice", "info"}, "contextFields": []any{map[string]any{"source": "session.model", "field": "knowledge_cutoff"}}}},
+	}
+	if ms := os.Getenv("WORKBENCH_REFERENCE_QUERY_TIMEOUT_MS"); ms != "" {
+		value, err := strconv.Atoi(ms)
+		if err != nil {
+			return err
+		}
+		contributions[1].descriptor["limits"].(map[string]any)["queryTimeMs"] = value
 	}
 	if os.Getenv("WORKBENCH_MUTATION_FIXTURE") == "1" {
 		contributions = append(contributions, struct {
@@ -603,4 +616,17 @@ func probeFrames(ctx sdk.Context, active *api.Client, binding api.Discovery, reg
 	encoded, _ := json.Marshal(map[string]any{"frames": "probed", "duplicateSameFrame": first != nil && again != nil && first["frameId"] == again["frameId"], "changedDuplicate": changedCode, "followUp": followUpCode, "undeclaredKind": undeclaredCode, "foreignSource": foreignCode, "statusState": status["state"], "statusErr": statusErr == nil, "cancelState": cancelled["state"], "cancelErr": cancelErr == nil, "cancelAgain": againCode})
 	ctx.Notify(string(encoded), "info")
 	return nil
+}
+
+// awaitStop blocks like a long query and records why a cooperative handler was told to stop.
+func awaitStop(gate string, ctx context.Context) (any, *api.Error) {
+	_ = os.WriteFile(gate+".entered", []byte("ready"), 0600)
+	select {
+	case <-ctx.Done():
+		_ = os.WriteFile(gate+".stopped", []byte(ctx.Err().Error()), 0600)
+		return nil, &api.Error{Code: "cancelled", Message: "stopped by Workbench", Outcome: "notApplied"}
+	case <-time.After(20 * time.Second):
+		_ = os.WriteFile(gate+".stopped", []byte("never told to stop"), 0600)
+		return nil, &api.Error{Code: "internal", Message: "no stop signal"}
+	}
 }

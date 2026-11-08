@@ -82,6 +82,7 @@ type session struct {
 }
 
 type app struct {
+	extEvents sdk.EventBus
 	// forcePanels > 0 while a hub entry runs, so every result shows in a panel instead of a vanishing toast.
 	forcePanels atomic.Int32
 	hubTitle    atomic.Value
@@ -94,11 +95,19 @@ type app struct {
 type requestContext struct{ sdk.Context }
 
 func (requestContext) Deadline() (time.Time, bool) { return time.Time{}, false }
-func (requestContext) Value(any) any               { return nil }
+func (r requestContext) Value(key any) any {
+	if key == (hostRequestKey{}) {
+		return r.Context
+	}
+	return nil
+}
+
+// hostRequestKey carries the SDK request context so a provider emit is released when its tool call is aborted (P3).
+type hostRequestKey struct{}
 
 // Register wires session lifecycle and the implemented tools and commands.
 func Register(ext *sdk.Extension) {
-	a := &app{syntax: syntax.New()}
+	a := &app{syntax: syntax.New(), extEvents: ext.Events()}
 	ext.OnSessionStart(a.start)
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
@@ -176,6 +185,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	host := ctx
 	hostContext := func() (sdk.Context, bool) { return host, true }
 	bus := newProviderBus(id, generation, hostContext)
+	bus.cancelEvents = a.extEvents
 	fetch := &fetchRouter{bus: bus}
 	var current *session
 	providers, scratch, err := buildRouter(ctx, settings, manager, fetch, func() (*session, bool) { return current, current != nil })
