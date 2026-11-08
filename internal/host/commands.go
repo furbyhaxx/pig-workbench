@@ -173,6 +173,27 @@ func (a *app) jobsCommand(ctx sdk.Context, args string) error {
 		if err != nil {
 			return err
 		}
+		if panelsAvailable(ctx) {
+			title, _ := a.hubTitle.Load().(string)
+			if title == "" {
+				title = "Workbench › Jobs"
+			}
+			panel := &jobsPanel{title: title, rows: s.jobRows, height: ctx.Height}
+			panel.act = func(id, action string) (string, error) {
+				params := map[string]any{"action": action, "id": id}
+				if action == "wait" {
+					params["timeout_seconds"] = 3
+				}
+				result, err := a.jobsTool(ctx, params)
+				if err != nil {
+					return "", err
+				}
+				return result.(sdk.ToolResult).Content, nil
+			}
+			if _, err := ctx.Custom(panel, nil); err == nil {
+				return nil
+			}
+		}
 		a.notify(ctx, s.jobListText())
 		return nil
 	}

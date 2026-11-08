@@ -22,10 +22,16 @@ type tuiSession struct {
 
 func startTUI(t *testing.T, root string, fixtures ...string) *tuiSession {
 	t.Helper()
+	return startTUIScripted(t, root, nil, fixtures...)
+}
+
+// startTUIScripted starts a TUI whose mock provider answers the first prompts with these tool calls.
+func startTUIScripted(t *testing.T, root string, calls []scriptedCall, fixtures ...string) *tuiSession {
+	t.Helper()
 	runtime := shortRuntime(t)
 	t.Setenv("XDG_RUNTIME_DIR", runtime)
 	agent := filepath.Join(root, "agent")
-	recorder := &requestRecorder{}
+	recorder := &requestRecorder{calls: calls}
 	server := recorder.serve(t)
 	t.Cleanup(server.Close)
 	writeFixtureProvider(t, agent, server.URL)
@@ -357,4 +363,47 @@ func TestLiveSettingsPanelEditsAnArraySettingAndPersistsIt(t *testing.T) {
 	if err != nil || strings.Contains(string(data), `"kb"`) {
 		t.Fatalf("the removed item is still persisted: %v\n%s", err, data)
 	}
+}
+
+func TestLiveJobsPanelKillsWaitsAndRefreshesARealJob(t *testing.T) {
+	root := t.TempDir()
+	calls := []scriptedCall{
+		{"bash", map[string]any{"command": "sh -c 'echo panel-job-output; sleep 300'", "background": true}},
+		{"bash", map[string]any{"command": "sh -c 'echo quick-done'", "background": true}},
+	}
+	s := startTUIScripted(t, root, calls)
+	s.typeText("start two jobs")
+	s.keys("Enter")
+	s.waitFor("done", 30*time.Second)
+	s.openHub()
+	s.keys("Down", "Enter")
+	list := s.waitFor("Workbench › Jobs", 10*time.Second)
+	if !strings.Contains(list, "running") || !strings.Contains(list, "enter open · k stop") {
+		t.Fatalf("the jobs panel does not list the running job with its actions:\n%s", list)
+	}
+	s.capture("jobs-list")
+	s.keys("Enter")
+	detail := s.waitFor("panel-job-output", 10*time.Second)
+	s.capture("jobs-detail")
+	s.keys("r")
+	s.waitFor("Refreshed", 10*time.Second)
+	s.keys("w")
+	s.waitFor("Waited on", 15*time.Second)
+	if !strings.Contains(s.screen(), "running") {
+		t.Fatalf("a timed-out wait must leave the job running:\n%s\n%s", detail, s.screen())
+	}
+	s.keys("k")
+	s.waitFor("Stop job", 10*time.Second)
+	s.keys("n")
+	s.waitFor("Stop cancelled", 10*time.Second)
+	if !strings.Contains(s.screen(), "running") {
+		t.Fatalf("cancelling the confirmation stopped the job:\n%s", s.screen())
+	}
+	s.keys("k", "y")
+	stopped := s.waitFor("Stopped", 10*time.Second)
+	if !strings.Contains(stopped, "cancelled") {
+		t.Fatalf("the job did not report cancelled after the confirmed stop:\n%s", stopped)
+	}
+	s.keys("Escape")
+	s.waitFor("enter open · k stop", 10*time.Second)
 }

@@ -1,0 +1,16 @@
+ finished: exited (exit 0)
+ Command: sh -c 'echo quick-done'
+ Read job://287e689c601df4cd0000000000000002/log or use
+ the jobs tool for its output.
+ </system-notice>
+
+
+1 jobs
+─────────────────────────────────────────────────────────
+ Workbench › Jobs › 287e689c601df4cd0000000000000001 · …
+ Job 287e689c601df4cd0000000000000001: running
+ panel-job-output
+ k stop · w wait · r refresh · escape/ctrl+c back
+─────────────────────────────────────────────────────────
+/tmp/TestLiveJobsPanelKillsWaitsAndRefreshesARealJob25...
+16.9%/32k (auto)                                     mock

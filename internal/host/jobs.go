@@ -342,13 +342,10 @@ func jobLabel(state jobs.JobState, metadata jobMetadata) string {
 	return label
 }
 
-// jobListText renders the session's jobs for people; the jobs tool keeps its JSON for models.
-func (s *session) jobListText() string {
+// jobRows lists the session's jobs for people and panels.
+func (s *session) jobRows() []jobRow {
 	states := s.jobs.List()
-	if len(states) == 0 {
-		return "No jobs in this session."
-	}
-	var b strings.Builder
+	rows := make([]jobRow, 0, len(states))
 	for _, state := range states {
 		s.jobMeta.mu.Lock()
 		metadata := s.jobMeta.values[state.ID]
@@ -357,7 +354,20 @@ func (s *session) jobListText() string {
 		if state.Exit != nil && !state.Running {
 			label += fmt.Sprintf(" (exit %d)", state.Exit.Code)
 		}
-		fmt.Fprintf(&b, "%s  %s  %s\n", state.ID, label, noticeText(metadata.Command, 0))
+		rows = append(rows, jobRow{id: state.ID, label: label, command: noticeText(metadata.Command, 0)})
+	}
+	return rows
+}
+
+// jobListText renders the session's jobs for people; the jobs tool keeps its JSON for models.
+func (s *session) jobListText() string {
+	rows := s.jobRows()
+	if len(rows) == 0 {
+		return "No jobs in this session."
+	}
+	var b strings.Builder
+	for _, row := range rows {
+		fmt.Fprintf(&b, "%s  %s  %s\n", row.id, row.label, row.command)
 	}
 	return b.String()
 }
