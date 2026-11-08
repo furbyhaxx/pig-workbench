@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -36,6 +37,21 @@ type contextFrameState struct {
 	steered map[string]bool
 	// wakes bounds how often each external producer may start a turn.
 	wakes *messaging.Limiter
+	// retained is the most recent completed explicit instruction target set (SPEC-0007 §5); the next
+	// prompt keeps those scopes so a nested rule is not withdrawn and re-delivered every turn.
+	retained         []string
+	retainedLocation uint64
+	retainedEpoch    string
+}
+
+// retainedFor returns the retained explicit targets while the location and context epoch are unchanged.
+func (c *contextFrameState) retainedFor(location uint64, epoch string) []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.retainedLocation != location || c.retainedEpoch != epoch {
+		return nil
+	}
+	return slices.Clone(c.retained)
 }
 
 func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) {
@@ -180,6 +196,9 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		targets, _ := data["workbenchInstructionTargets"].([]string)
 		if len(targets) == 0 {
 			targets = []string{current.Cwd}
+			if data["workbenchToolContext"] != true {
+				targets = append(targets, s.contextFrames.retainedFor(current.Revision, epoch)...)
+			}
 		}
 		seen := make(map[string]bool)
 		for _, target := range targets {
@@ -258,6 +277,9 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	}
 	var withdrawals []string
 	explicitTargets, _ := data["workbenchInstructionTargets"].([]string)
+	if len(explicitTargets) > 0 {
+		state.retained, state.retainedLocation, state.retainedEpoch = explicitTargets, current.Revision, epoch
+	}
 	// A tool call without its own file targets (codemode, bash) only adds cwd-derived scope; it must not
 	// withdraw what an explicit target selected, or a nested call would lose its own instructions.
 	keepTouched := data["workbenchToolContext"] == true && len(explicitTargets) == 0

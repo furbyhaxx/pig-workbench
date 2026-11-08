@@ -713,3 +713,59 @@ func TestLiveCodemodeCannotHideAMutationTargetFromTheInstructionBarrier(t *testi
 		t.Fatalf("the retried write did not land: %v %q", err, data)
 	}
 }
+
+// A nested rule delivered by a touch stays applicable to the next prompt: SPEC-0007 retains the most
+// recent completed target set, so the next prompt neither withdraws it nor blocks a write beside it.
+func TestLiveNestedInstructionsSurviveTheNextPrompt(t *testing.T) {
+	root := t.TempDir()
+	for name, text := range map[string]string{
+		".git/HEAD":         "ref: refs/heads/main\n",
+		"AGENTS.md":         "Root rule.\n",
+		"pkg/sub/AGENTS.md": "NESTED-RULE-MARKER applies under pkg/sub.\n",
+		"pkg/sub/a.txt":     "a\n",
+	} {
+		path := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	scripted := map[int]scriptedCall{
+		0: {"read", map[string]any{"path": "pkg/sub/a.txt"}},
+		2: {"write", map[string]any{"path": "pkg/sub/b.txt", "content": "b\n"}},
+	}
+	recorder := &requestRecorder{next: func(index int) *scriptedCall {
+		if call, ok := scripted[index]; ok {
+			return &call
+		}
+		return nil
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+	for _, id := range []string{"first", "second"} {
+		fixture.send(id, "prompt", "Go.")
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 4 {
+		t.Fatalf("got %d requests, want 4", len(recorder.bodies))
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Contains(last, "no longer applies") {
+		t.Fatal("the next prompt withdrew a nested rule that still applies")
+	}
+	if strings.Contains(last, "instructionContextChanged") {
+		t.Fatal("the write beside an already delivered nested rule was blocked")
+	}
+	if got := strings.Count(last, "NESTED-RULE-MARKER"); got != 1 {
+		t.Fatalf("the nested rule reached the model %d times, want exactly once", got)
+	}
+	if data, err := os.ReadFile(filepath.Join(root, "pkg/sub/b.txt")); err != nil || string(data) != "b\n" {
+		t.Fatalf("the write did not land: %v %q", err, data)
+	}
+}
