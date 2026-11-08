@@ -145,7 +145,9 @@ func (b *statusBoard) remove(registrationID string) {
 	}
 }
 
-func (b *statusBoard) close() {
+// close clears the status segments through ctx, the live shutdown context: the session-start
+// context the board retains is stale once a replacement runs and its UI calls would wait on the host.
+func (b *statusBoard) close(ctx sdk.Context) {
 	b.mu.Lock()
 	b.closed = true
 	segments := make([]*statusSegment, 0, len(b.segments))
@@ -156,11 +158,9 @@ func (b *statusBoard) close() {
 		segments = append(segments, segment)
 	}
 	b.mu.Unlock()
-	if ctx, ok := b.host(); ok {
-		for _, segment := range segments {
-			if segment.descriptor.Placement == "status" {
-				ctx.SetStatus(statusKey(segment), "")
-			}
+	for _, segment := range segments {
+		if segment.descriptor.Placement == "status" {
+			ctx.SetStatus(statusKey(segment), "")
 		}
 	}
 }

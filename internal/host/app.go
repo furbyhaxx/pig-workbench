@@ -337,7 +337,7 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 	a.session = nil
 	a.mu.Unlock()
 	if old != nil {
-		old.status.close()
+		old.status.close(ctx)
 		if old.activity != nil {
 			old.activity.close(ctx)
 		}

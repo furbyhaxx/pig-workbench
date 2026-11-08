@@ -7,11 +7,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -251,4 +257,79 @@ func hasAll(have []string, want ...string) []string {
 		}
 	}
 	return missing
+}
+
+// providerTap records every request body that pig sends to the real provider. It sits in front of
+// the builtin deepseek provider through a models.json baseUrl override; headers (the key) are never kept.
+type providerTap struct {
+	mu     sync.Mutex
+	bodies []string
+}
+
+func startProviderTap(t *testing.T, root string) *providerTap {
+	t.Helper()
+	upstream, _ := url.Parse("https://api.deepseek.com")
+	tap := &providerTap{}
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	proxy.FlushInterval = -1
+	director := proxy.Director
+	proxy.Director = func(r *http.Request) {
+		director(r)
+		r.Host = upstream.Host
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		if strings.Contains(r.URL.Path, "chat/completions") {
+			tap.mu.Lock()
+			tap.bodies = append(tap.bodies, string(body))
+			tap.mu.Unlock()
+		}
+		proxy.ServeHTTP(w, r)
+	}))
+	t.Cleanup(server.Close)
+	agent := filepath.Join(root, "agent")
+	if err := os.MkdirAll(agent, 0700); err != nil {
+		t.Fatal(err)
+	}
+	models, _ := json.Marshal(map[string]any{"providers": map[string]any{"deepseek": map[string]any{"baseUrl": server.URL}}})
+	if err := os.WriteFile(filepath.Join(agent, "models.json"), models, 0600); err != nil {
+		t.Fatal(err)
+	}
+	return tap
+}
+
+func (p *providerTap) requests() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append([]string(nil), p.bodies...)
+}
+
+// count is how many times marker appears in the request at index (JSON-escaped text is unescaped first).
+func (p *providerTap) count(index int, marker string) int {
+	requests := p.requests()
+	if index >= len(requests) {
+		return -1
+	}
+	return strings.Count(requests[index], marker)
+}
+
+// save writes the recorded requests with the key and key-shaped tokens removed.
+func (p *providerTap) save(t *testing.T, name string) {
+	t.Helper()
+	out := os.Getenv("LIVE_EVAL_OUT")
+	if out == "" {
+		return
+	}
+	if err := os.MkdirAll(out, 0755); err != nil {
+		t.Fatal(err)
+	}
+	text := strings.Join(p.requests(), "\n")
+	if key := os.Getenv("DEEPSEEK_API_KEY"); key != "" {
+		text = strings.ReplaceAll(text, key, "<redacted>")
+	}
+	text = keyShape.ReplaceAllString(text, "<redacted>")
+	if err := os.WriteFile(filepath.Join(out, name), []byte(text), 0644); err != nil {
+		t.Fatal(err)
+	}
 }

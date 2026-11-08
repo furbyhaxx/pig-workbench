@@ -396,3 +396,33 @@ func waitForState(t *testing.T, f *rpcFixture, wantIdle bool) {
 		t.Fatalf("idle = %v, want %v: %+v", result["idle"], wantIdle, result)
 	}
 }
+
+// TestLiveForkWithAContributedStatusSegmentDoesNotDeadlock: the session replacement closes the old
+// status board while the host holds the fork request open, so the clear must run on the live context.
+func TestLiveForkWithAContributedStatusSegmentDoesNotDeadlock(t *testing.T) {
+	root := t.TempDir()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		data, _ := json.Marshal(map[string]any{"id": "r", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": map[string]any{"role": "assistant", "content": "ok"}, "finish_reason": "stop"}}})
+		fmt.Fprintf(w, "data: %s\n\ndata: [DONE]\n\n", data)
+	}))
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	f := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock")
+	f.send("first", "prompt", "first")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	f.sendRaw("forks", "get_fork_messages", nil)
+	listed := f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "forks" })
+	messages, _ := listed["data"].(map[string]any)["messages"].([]any)
+	if len(messages) == 0 {
+		t.Fatalf("no fork point: %+v", listed)
+	}
+	entry, _ := messages[0].(map[string]any)["entryId"].(string)
+	f.sendRaw("fork", "fork", map[string]any{"entryId": entry})
+	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "fork" })
+}

@@ -542,9 +542,13 @@ func Extension() *sdk.Extension {
 			ctx.Notify(`{"ownershipProbe":"accepted"}`, "info")
 			return nil
 		}
-		if fields := strings.Fields(args); len(fields) >= 3 && fields[0] == "wake" {
-			// wake <eventKey> <true|false> [delivery]: publish one alert and report the receipt or error code.
+		command, customBody, hasBody := strings.Cut(args, " -- ")
+		if fields := strings.Fields(command); len(fields) >= 3 && fields[0] == "wake" {
+			// wake <eventKey> <true|false> [delivery] [-- body]: publish one alert and report the receipt or error code.
 			params := map[string]any{"eventKey": fields[1], "kind": "warning", "source": "reference.alerts", "body": "ALERT-BODY-" + fields[1], "wake": fields[2] == "true"}
+			if hasBody {
+				params["body"] = strings.TrimSpace(customBody)
+			}
 			if len(fields) > 3 {
 				params["delivery"] = fields[3]
 			}
