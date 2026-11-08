@@ -293,3 +293,42 @@ func TestLiveAskInPrintModeIsUnavailable(t *testing.T) {
 		t.Fatalf("print mode must return interactionUnavailable promptly, got %d requests", len(recorder.bodies))
 	}
 }
+
+// TestLiveAskedSecretIsUsableAsEnvInTheNextBashCall covers SPEC-0009 §10: the
+// value reaches the vault, history keeps the placeholder, and the next bash
+// call sees the real value through its environment.
+func TestLiveAskedSecretIsUsableAsEnvInTheNextBashCall(t *testing.T) {
+	root := t.TempDir()
+	secret := "ghp_" + strings.Repeat("Zx8cV7", 5)
+	marker := filepath.Join(root, "env-matched")
+	form := map[string]any{"title": "Token", "questions": []any{
+		map[string]any{"id": "token", "label": "Token", "prompt": "Your token", "type": "secret", "secret": map[string]any{"name": "ask-env-token", "scope": "global", "env": "ASK_ENV_TOKEN"}},
+	}}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"ask_user", form},
+		{"bash", map[string]any{"command": `[ "$ASK_ENV_TOKEN" = "` + secret + `" ] && touch ` + marker + ` && echo matched`}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPC(t, root, "--model", "workbench-fixture/mock", "--tools", "ask_user,bash")
+	fixture.send("ask", "prompt", "Ask for the token, then use it.")
+	event := fixture.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "input"
+	})
+	response, _ := json.Marshal(map[string]any{"type": "extension_ui_response", "id": event["id"], "value": secret})
+	if _, err := fmt.Fprintf(fixture.stdin, "%s\n", response); err != nil {
+		t.Fatal(err)
+	}
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatalf("bash did not receive the real value: %v", err)
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for _, body := range recorder.bodies {
+		if strings.Contains(body, secret) {
+			t.Fatal("the raw secret reached a provider request")
+		}
+	}
+}

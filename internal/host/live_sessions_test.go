@@ -682,3 +682,31 @@ func rewriteHeartbeat(t *testing.T, path string, at time.Time) {
 		t.Fatal(err)
 	}
 }
+
+// TestLiveStaleAddressesAreRefusedWithTheCurrentSession covers SPEC-0011 §10:
+// a message for a replaced session answers sessionChanged and an expired one
+// answers expired; neither reaches the model.
+func TestLiveStaleAddressesAreRefusedWithTheCurrentSession(t *testing.T) {
+	runtime := shortRuntime(t)
+	receiver := startLiveSession(t, runtime, nil)
+	records := waitForRecords(t, runtime, 1)
+	var receiverID string
+	var data map[string]any
+	for id, r := range records {
+		receiverID, data = id, r
+	}
+	stale := messagingEnvelope("another-session-id-0001", 0)
+	if reply := callEndpoint(t, runtime, data, stale); reply["status"] != "rejected" || reply["reason"] != "sessionChanged" {
+		t.Fatalf("a message for another session must answer sessionChanged, got %v", reply)
+	}
+	expired := messagingEnvelope(receiverID, 0)
+	expired.ID = "m-expired"
+	expired.ExpiresAt = time.Now().Add(-time.Minute)
+	if reply := callEndpoint(t, runtime, data, expired); reply["status"] != "rejected" || reply["reason"] != "expired" {
+		t.Fatalf("an expired message must answer expired, got %v", reply)
+	}
+	time.Sleep(300 * time.Millisecond)
+	if len(receiver.requests()) != 0 {
+		t.Fatal("a refused message woke the receiver")
+	}
+}

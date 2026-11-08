@@ -275,3 +275,18 @@ Verified against code in the continuation; two bullets were not met as written a
 | PTY keys, remote/SSH, worktrees | Slice 2 (W3) | not claimed |
 
 Not implemented from SPEC-0008 §6: `jobs wait until=output`, a `signal` argument on `kill`, `stream` selection and `failedToStart`/`stopping` as distinct states; the state label set is running, exited, cancelled, timedOut.
+
+## SPEC-0011 §10 and SPEC-0009 §10 local rows (audit)
+
+| Row | Result | Evidence |
+|---|---|---|
+| Discovery, third-user and wrong-token refusal | PASS | `TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes`, `TestWrongTokenGetsNoReplyAndNothingIsDelivered`, `TestAuthenticatedPeerReachesTheHandler` |
+| Idle wake, busy steer, waitingForUser untouched | PASS | `TestLiveBusyReceiverIsSteeredNotWoken`, `TestLiveWaitingReceiverGetsTheMessageAsTheReadResult` |
+| `sessionChanged`, expiry | PASS after test added | `TestLiveStaleAddressesAreRefusedWithTheCurrentSession` (protocol-level; a real `/new` replacement was not driven) |
+| Stale record cleanup after `kill -9` | PASS | `TestLiveACrashedSessionsRecordIsPrunedByTheNextStart` |
+| maxHops, rate, blocked peers | PASS | `TestLiveAgentReplyIncrementsHopAndStopsWake`, `TestSessionMessageSettingsAffectDelivery`, `TestLiveSessionsCommandSendsRedactsAndHonoursBlock` |
+| Secret typed by the sender, envelope escape | PASS | `TestLiveSecretTypedByTheSenderNeverReachesTheReceiversProvider`, frames envelope unit tests |
+| Ask types, pending recovery, timeout, print | PASS | `TestLiveAsk*` set, `internal/ask` dialog and record tests |
+| Secret question: vault, placeholder, usable `env` in the next bash | PASS after test added | `TestLiveAskedSecretIsUsableAsEnvInTheNextBashCall` |
+| Duplicate local/remote submission, wrong generation, bridge, `/answer`, `/tldr` | Slice 2 (W6) | not claimed |
+| Coordinator, broadcast, `agent://by-project` | Slice 2 | not claimed |
