@@ -114,7 +114,13 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 			}
 			ctx = context.WithValue(ctx, displayTrustKey{}, trusted)
 		}
-		return a.registerContribution(ctx, s, request)
+		result, failure := a.registerContribution(ctx, s, request)
+		if failure == nil && params.Kind == string(contribution.KindToolPresentation) {
+			if err := a.retainDisplaySchema(host, s, request, result); err != nil {
+				host.Notify("Display schema registered but not retained for replay: "+noticeText(err.Error(), 0), "warning")
+			}
+		}
+		return result, failure
 	case "unregister":
 		if current, err := s.contributions.Get(request.From, request.RegistrationID); err == nil && current.Kind == contribution.KindToolPresentation {
 			trusted, err := host.IsProjectTrusted()

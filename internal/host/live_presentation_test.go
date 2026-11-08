@@ -5,11 +5,38 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/furbyhaxx/pig-workbench/api"
 )
+
+func TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"web_search", map[string]any{"query": "retained result"}}}}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	first := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock")
+	first.send("call", "prompt", "Run the reference tool.")
+	first.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	first.command("saved", "/workbench settings tools set user reference-producer web_search density \"compact\"")
+	first.close()
+	id := storedSessionID(t, root)
+	resumed := startRPCWithExtensions(t, root, true, nil, "--session", id)
+	entry := settingsNotice(t, resumed, "dormant", "show tools.reference-producer.web_search.density")["entry"].(map[string]any)
+	if entry["value"] != "compact" || entry["scope"] != "user" || entry["application"] != "unavailable" {
+		t.Fatalf("dormant resume lost override or claimed a live consumer: %+v", entry)
+	}
+	resumed.send("group", "prompt", "/workbench settings tools reference-producer web_search")
+	event := resumed.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && strings.Contains(fmt.Sprint(e["message"]), `"toolDisplay"`)
+	})
+	if !strings.Contains(fmt.Sprint(event["message"]), `"active": false`) || strings.Contains(fmt.Sprint(event["message"]), `"registrationId"`) {
+		t.Fatal("retained descriptor restored a live registration")
+	}
+}
 
 func TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict(t *testing.T) {
 	results := runScriptedWith(t, t.TempDir(), "web_search,read", "", []string{"reference-producer"},

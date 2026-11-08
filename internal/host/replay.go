@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -25,32 +26,11 @@ func restoreLocation(ctx sdk.Context, manager *location.Manager) error {
 	if err != nil {
 		return err
 	}
-	if leaf == nil {
-		return resetLocation(ctx, manager)
+	chain, err := storedBranch(requestContext{ctx}, entries, leaf)
+	if err != nil {
+		return err
 	}
-	index := make(map[string]storedEntry, len(entries))
-	for _, raw := range entries {
-		var entry storedEntry
-		if err := json.Unmarshal(raw, &entry); err != nil {
-			return errors.New("cannot decode session entry for location replay")
-		}
-		if entry.ID != "" {
-			index[entry.ID] = entry
-		}
-	}
-	seen := make(map[string]bool)
-	for id := *leaf; id != ""; {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if seen[id] {
-			return errors.New("session entry parent chain contains a cycle")
-		}
-		seen[id] = true
-		entry, ok := index[id]
-		if !ok {
-			return errors.New("session entry parent chain is incomplete")
-		}
+	for _, entry := range chain {
 		if entry.Type == "custom" && entry.CustomType == "pig-workbench.location" {
 			var change location.Change
 			if err := json.Unmarshal(entry.Data, &change); err != nil {
@@ -61,9 +41,42 @@ func restoreLocation(ctx sdk.Context, manager *location.Manager) error {
 			}
 			return manager.RestoreContext(requestContext{ctx}, change.Current)
 		}
-		id = entry.ParentID
 	}
 	return resetLocation(ctx, manager)
+}
+
+func storedBranch(ctx context.Context, entries []json.RawMessage, leaf *string) ([]storedEntry, error) {
+	if leaf == nil {
+		return nil, nil
+	}
+	index := make(map[string]storedEntry, len(entries))
+	for _, raw := range entries {
+		var entry storedEntry
+		if err := json.Unmarshal(raw, &entry); err != nil {
+			return nil, errors.New("cannot decode stored session entry")
+		}
+		if entry.ID != "" {
+			index[entry.ID] = entry
+		}
+	}
+	seen := make(map[string]bool)
+	var chain []storedEntry
+	for id := *leaf; id != ""; {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if seen[id] {
+			return nil, errors.New("session entry parent chain contains a cycle")
+		}
+		seen[id] = true
+		entry, ok := index[id]
+		if !ok {
+			return nil, errors.New("session entry parent chain is incomplete")
+		}
+		chain = append(chain, entry)
+		id = entry.ParentID
+	}
+	return chain, nil
 }
 
 func resetLocation(ctx sdk.Context, manager *location.Manager) error {

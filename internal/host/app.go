@@ -271,6 +271,9 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		return ctx.AppendEntry("pig-workbench.skills", map[string]any{"schemaVersion": 1, "loaded": loaded, "declined": declined})
 	}}
 	restoreSkills(ctx, s.skills)
+	if err := restoreDisplaySchemas(ctx, s); err != nil {
+		ctx.Notify(noticeText("Retained display schemas were not restored: "+err.Error(), 0), "warning")
+	}
 	current = s
 	a.mu.Lock()
 	a.session = s
