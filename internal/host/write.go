@@ -206,10 +206,12 @@ func (a *app) writeControl(ctx sdk.Context, work context.Context, s *session, ta
 	}
 	switch target.Scheme {
 	case "skill":
-		if err := (skillProvider{}).unload(s, target.URI, content); err != nil {
+		withdrawn, err := (skillProvider{}).unload(s, target.URI, content)
+		if err != nil {
 			return sdk.ToolResult{}, err
 		}
-		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI}}, nil
+		_ = ctx.SendMessage("pig-workbench.skill", "skills unloaded, stop applying them: "+strings.Join(withdrawn, ", ")+"\n", false, sdk.SendMessageOptions{})
+		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI, "withdrawn": withdrawn}}, nil
 	case "agent":
 		message, receipt, err := a.agentWrite(work, s, target.URI, content)
 		if err != nil {

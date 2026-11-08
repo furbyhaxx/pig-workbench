@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -19,6 +21,7 @@ type skillState struct {
 	loaded   map[string]bool
 	declined map[string]bool
 	replayed map[string]bool
+	order    []string
 	touched  []string
 	roots    func() []string
 	persist  func(loaded, declined []string) error
@@ -111,7 +114,8 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
-	if len(parts) != 1 || parts[0] == "loaded" {
+	name := strings.Join(parts, "/")
+	if len(parts) == 0 || len(parts) > 2 || parts[0] == "loaded" || parts[len(parts)-1] == "ctl" {
 		return resource.ReadResult{}, errors.New("read skill://<name> to load one skill")
 	}
 	s, err := p.session()
@@ -122,7 +126,7 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
-	skill, err := skills.Find(catalog, parts[0])
+	skill, err := skills.Find(catalog, name)
 	if err != nil {
 		return resource.ReadResult{}, resource.ErrNotFound
 	}
@@ -132,7 +136,7 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	}
 	repeat := s.skills.loaded[skill.Name]
 	replayed := s.skills.replayed[skill.Name]
-	s.skills.loaded[skill.Name] = true
+	s.skills.markLoaded(skill.Name)
 	delete(s.skills.declined, skill.Name)
 	if replayed {
 		delete(s.skills.replayed, skill.Name)
@@ -154,27 +158,58 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	return resource.ReadResult{Content: page.Content, Facts: page}, nil
 }
 
-func (p skillProvider) unload(s *session, uri, content string) error {
+func (p skillProvider) unload(s *session, uri, content string) ([]string, error) {
 	parts, err := splitSkill(uri)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if len(parts) != 2 || parts[1] != "ctl" || strings.TrimSpace(content) != "unload" {
-		return fmt.Errorf("skill:// writes only <name>/ctl with unload")
+	if len(parts) < 2 || len(parts) > 3 || parts[len(parts)-1] != "ctl" || strings.TrimSpace(content) != "unload" {
+		return nil, fmt.Errorf("skill:// writes only <name>/ctl with unload")
 	}
+	name := strings.Join(parts[:len(parts)-1], "/")
+	catalog, _ := s.skills.catalog()
 	s.skills.mu.Lock()
-	if s.skills.loaded == nil || !s.skills.loaded[parts[0]] {
+	if s.skills.loaded == nil || !s.skills.loaded[name] {
 		s.skills.mu.Unlock()
-		return resource.ErrNotFound
+		return nil, resource.ErrNotFound
 	}
-	delete(s.skills.loaded, parts[0])
 	if s.skills.declined == nil {
 		s.skills.declined = map[string]bool{}
 	}
-	s.skills.declined[parts[0]] = true
+	withdrawn := []string{name}
+	for i := 0; i < len(withdrawn); i++ {
+		parent, err := skills.Find(catalog, withdrawn[i])
+		if err != nil {
+			continue
+		}
+		for _, skill := range catalog.Skills {
+			if skill.Parent != "" && skill.Parent == filepath.Base(parent.Dir) && s.skills.loaded[skill.Name] && !slices.Contains(withdrawn, skill.Name) {
+				withdrawn = append(withdrawn, skill.Name)
+			}
+		}
+	}
+	for _, gone := range withdrawn {
+		s.skills.markUnloaded(gone)
+	}
+	s.skills.declined[name] = true
 	s.skills.mu.Unlock()
 	s.skills.save()
-	return nil
+	return withdrawn, nil
+}
+
+// markLoaded records a load; the caller holds mu.
+func (st *skillState) markLoaded(name string) {
+	st.loaded[name] = true
+	if !slices.Contains(st.order, name) {
+		st.order = append(st.order, name)
+	}
+}
+
+// markUnloaded forgets a load; the caller holds mu.
+func (st *skillState) markUnloaded(name string) {
+	delete(st.loaded, name)
+	delete(st.replayed, name)
+	st.order = slices.DeleteFunc(st.order, func(item string) bool { return item == name })
 }
 
 func (st *skillState) save() {
@@ -182,7 +217,12 @@ func (st *skillState) save() {
 		return
 	}
 	st.mu.Lock()
-	loaded, declined := keys(st.loaded), keys(st.declined)
+	loaded, declined := slices.Clone(st.order), keys(st.declined)
+	for name, on := range st.loaded {
+		if on && !slices.Contains(loaded, name) {
+			loaded = append(loaded, name)
+		}
+	}
 	st.mu.Unlock()
 	_ = st.persist(loaded, declined)
 }
@@ -228,7 +268,7 @@ func restoreSkills(ctx sdk.Context, state *skillState) {
 		}
 		state.mu.Lock()
 		for _, name := range record.Loaded {
-			state.loaded[name] = true
+			state.markLoaded(name)
 			state.replayed[name] = true
 		}
 		for _, name := range record.Declined {
@@ -259,7 +299,7 @@ func (s *session) deliverAutoSkills(ctx sdk.Context) {
 			if s.skills.loaded == nil {
 				s.skills.loaded = map[string]bool{}
 			}
-			s.skills.loaded[skill.Name] = true
+			s.skills.markLoaded(skill.Name)
 		}
 		s.skills.mu.Unlock()
 		if already {
@@ -272,4 +312,39 @@ func (s *session) deliverAutoSkills(ctx sdk.Context) {
 		_ = ctx.SendMessage("pig-workbench.skill", "skill "+skill.Name+" auto-loaded\n"+body, false, sdk.SendMessageOptions{})
 		s.skills.save()
 	}
+}
+
+const skillReplayBudget = 20
+
+// replaySkills tells the model, after compaction, which skills it loaded earlier, newest first, as pointers.
+func (s *session) replaySkills(ctx sdk.Context) {
+	if s == nil || s.skills == nil {
+		return
+	}
+	s.skills.mu.Lock()
+	names := slices.Clone(s.skills.order)
+	slices.Reverse(names)
+	if len(names) > skillReplayBudget {
+		names = names[:skillReplayBudget]
+	}
+	for _, name := range names {
+		s.skills.replayed[name] = true
+	}
+	s.skills.mu.Unlock()
+	if len(names) == 0 {
+		return
+	}
+	var text strings.Builder
+	text.WriteString("skills loaded earlier (read skill://<name> before relying on them):\n")
+	for _, name := range names {
+		text.WriteString("- skill://" + name + "\n")
+	}
+	_ = ctx.SendMessage("pig-workbench.skill", text.String(), false, sdk.SendMessageOptions{})
+}
+
+func (a *app) replaySkills(ctx sdk.Context, _ map[string]any) (any, error) {
+	if s, err := a.current(); err == nil {
+		s.replaySkills(ctx)
+	}
+	return nil, nil
 }

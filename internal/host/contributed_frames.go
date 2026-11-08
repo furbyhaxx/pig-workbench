@@ -406,14 +406,30 @@ func (a *app) contextFieldsSet(host sdk.Context, s *session, request api.Request
 	if err := json.Unmarshal(params.Fields, &fields); err != nil || fields == nil && string(params.Fields) != "{}" {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params.fields", Message: "fields must be an object", Outcome: "notApplied"}
 	}
-	for name := range fields {
-		if !slices.Contains(producer.descriptor.ContextFields, contextFieldClaim{Source: params.Source, Field: name}) {
-			return nil, &api.Error{Code: "permissionDenied", Field: "params.fields." + name, Message: "field is not claimed by this producer", Outcome: "notApplied"}
-		}
+	values, failure := contributedFieldValues(producer, params.Source, fields)
+	if failure != nil {
+		return nil, failure
 	}
 	model, err := host.GetModelInfo()
 	if err != nil || model.Provider != params.Model.Provider || model.ID != params.Model.ID {
 		return nil, &api.Error{Code: "staleRevision", Field: "params.model", Message: "model does not match the current session model", Outcome: "notApplied"}
+	}
+	s.producers.mu.Lock()
+	if len(values) == 0 {
+		delete(s.producers.fields, producer.registrationID)
+	} else {
+		s.producers.fields[producer.registrationID] = contributedFields{owner: producer.owner.Owner, registrationID: producer.registrationID, model: params.Model, fields: values}
+	}
+	s.producers.mu.Unlock()
+	return map[string]any{"accepted": true}, nil
+}
+
+// contributedFieldValues validates one owner's claimed fields and returns their model-facing values.
+func contributedFieldValues(producer frameProducer, source string, fields map[string]json.RawMessage) (map[string]any, *api.Error) {
+	for name := range fields {
+		if !slices.Contains(producer.descriptor.ContextFields, contextFieldClaim{Source: source, Field: name}) {
+			return nil, &api.Error{Code: "permissionDenied", Field: "params.fields." + name, Message: "field is not claimed by this producer", Outcome: "notApplied"}
+		}
 	}
 	values := map[string]any{}
 	if raw, ok := fields["knowledge_cutoff"]; ok {
@@ -436,12 +452,5 @@ func (a *app) contextFieldsSet(host sdk.Context, s *session, request api.Request
 		}
 		values["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source, "contributedBy": producer.owner.Owner}
 	}
-	s.producers.mu.Lock()
-	if len(values) == 0 {
-		delete(s.producers.fields, producer.registrationID)
-	} else {
-		s.producers.fields[producer.registrationID] = contributedFields{owner: producer.owner.Owner, registrationID: producer.registrationID, model: params.Model, fields: values}
-	}
-	s.producers.mu.Unlock()
-	return map[string]any{"accepted": true}, nil
+	return values, nil
 }

@@ -33,6 +33,7 @@ type Catalog struct {
 func Scan(roots []string) (Catalog, error) {
 	var catalog Catalog
 	seen := map[string]bool{}
+	var found []Skill
 	for _, root := range roots {
 		info, err := os.Stat(root)
 		if err != nil || !info.IsDir() {
@@ -46,15 +47,26 @@ func Scan(roots []string) (Catalog, error) {
 			if err != nil {
 				return nil
 			}
-			if seen[skill.Name] {
-				return nil
-			}
-			seen[skill.Name] = true
-			catalog.Skills = append(catalog.Skills, skill)
+			found = append(found, skill)
 			return nil
 		})
 		if err != nil {
 			return catalog, err
+		}
+	}
+	for _, pass := range []bool{false, true} {
+		for _, skill := range found {
+			if (skill.Parent != "") != pass {
+				continue
+			}
+			if seen[skill.Name] && pass {
+				skill.Name = skill.Parent + "/" + skill.Name
+			}
+			if seen[skill.Name] {
+				continue
+			}
+			seen[skill.Name] = true
+			catalog.Skills = append(catalog.Skills, skill)
 		}
 	}
 	return catalog, nil

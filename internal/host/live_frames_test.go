@@ -145,3 +145,75 @@ func TestLiveCompactionResendsContextFactsOnce(t *testing.T) {
 		}
 	}
 }
+
+// TestLiveCompactionReplaysLoadedSkillsAsPointers asserts that a skill read before compaction comes back
+// as a pointer, never as its body, and that a re-read answers with a pointer instead of a fresh instruction.
+func TestLiveCompactionReplaysLoadedSkillsAsPointers(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, ".agents", "skills", "alpha")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: alpha\ndescription: d\n---\nSKILL-BODY-MARKER\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	var requests []string
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			http.Error(w, "invalid JSON", 400)
+			return
+		}
+		messages, _ := json.Marshal(request["messages"])
+		mu.Lock()
+		requests = append(requests, string(messages))
+		calls++
+		first := calls == 1
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": "fixture", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if first {
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "load-1", "type": "function", "function": map[string]any{"name": "read", "arguments": `{"path":"skill://alpha"}`}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "fixture finished"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "settings.json"), []byte(`{"compaction":{"enabled":true,"keepRecentTokens":1}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	f := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	f.send("p0", "prompt", "load the skill")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	f.send("p1", "prompt", "second")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	f.sendRaw("compact", "compact", nil)
+	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "compact" })
+	mu.Lock()
+	before := len(requests)
+	mu.Unlock()
+	f.send("p2", "prompt", "third")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	mu.Lock()
+	defer mu.Unlock()
+	if len(requests) <= before {
+		t.Fatal("no provider request after compaction")
+	}
+	last := requests[len(requests)-1]
+	if !strings.Contains(last, "skills loaded earlier") || !strings.Contains(last, "skill://alpha") {
+		t.Fatalf("loaded skill pointer missing after compaction: %.600s", last)
+	}
+	if strings.Contains(last, "SKILL-BODY-MARKER") {
+		t.Fatal("skill body was presented again after compaction")
+	}
+}

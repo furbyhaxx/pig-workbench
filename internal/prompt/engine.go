@@ -192,6 +192,8 @@ func (e *Engine) evaluate(state *renderState, name string, input *exec.Context) 
 		Methods:           builtins.Methods,
 	}
 	environment.Context.Set("range", rangeFunction)
+	environment.Context.Set("has_tool", hasToolFunction(input))
+	environment.Context.Set("variant", variantFunction(input, e.loader))
 	loads := &loaderState{}
 	loader := &templateLoader{source: e.loader, ctx: state.ctx, maxDepth: e.maxIncludeDepth, state: loads}
 	template, err := exec.NewTemplate(name, cfg, loader, environment)

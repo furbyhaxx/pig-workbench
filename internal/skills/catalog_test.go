@@ -74,3 +74,21 @@ func writeSkill(t *testing.T, path, name, description, whenFile string) {
 		t.Fatal(err)
 	}
 }
+
+func TestNestedSkillCollidingWithTopLevelNameIsQualifiedByParent(t *testing.T) {
+	root := filepath.Join(t.TempDir(), ".agents", "skills")
+	writeSkill(t, filepath.Join(root, "alpha", "SKILL.md"), "alpha", "top", "")
+	writeSkill(t, filepath.Join(root, "beta", "SKILL.md"), "beta", "top beta", "")
+	writeSkill(t, filepath.Join(root, "alpha", "skills", "beta", "SKILL.md"), "beta", "nested beta", "")
+	catalog, err := Scan([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	nested, err := Find(catalog, "alpha/beta")
+	if err != nil || nested.Description != "nested beta" {
+		t.Fatalf("nested skill must load as alpha/beta: %+v %v", nested, err)
+	}
+	if top, err := Find(catalog, "beta"); err != nil || top.Description != "top beta" {
+		t.Fatalf("top-level beta lost: %+v %v", top, err)
+	}
+}

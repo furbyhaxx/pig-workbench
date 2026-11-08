@@ -114,6 +114,7 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.restore)
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
+	ext.OnEvent("session_compact", a.replaySkills)
 	ext.OnEvent(sdk.EventAgentStart, a.onAgentStart)
 	ext.OnEvent(sdk.EventAgentEnd, a.onAgentEnd)
 	ext.OnEvent("input", a.redactInput)

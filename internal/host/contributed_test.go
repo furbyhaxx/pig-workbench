@@ -1,9 +1,11 @@
 package host
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/api"
 )
 
 func TestFetchBackendSelectionPrefersMostSpecificRule(t *testing.T) {
@@ -88,5 +90,49 @@ func TestFrameProducerDescriptorRejectsInternalAndUnknownFields(t *testing.T) {
 		if _, err := parseFrameProducer([]byte(payload)); err == nil {
 			t.Errorf("%s accepted", name)
 		}
+	}
+}
+
+func TestContributedFieldValuesRefuseInvalidClaims(t *testing.T) {
+	producer := frameProducer{owner: api.Identity{Owner: "web"}, descriptor: frameProducerDescriptor{ContextFields: []contextFieldClaim{{Source: "session.model", Field: "knowledge_cutoff"}}}}
+	field := func(payload string) map[string]json.RawMessage {
+		return map[string]json.RawMessage{"knowledge_cutoff": json.RawMessage(payload)}
+	}
+	good := `{"date":"2025-06-01","basis":"estimated","source":"vendor card"}`
+	values, failure := contributedFieldValues(producer, "session.model", field(good))
+	if failure != nil {
+		t.Fatalf("valid claim refused: %+v", failure)
+	}
+	cutoff := values["knowledge_cutoff"].(map[string]any)
+	if cutoff["basis"] != "estimated" || cutoff["contributedBy"] != "web" {
+		t.Fatalf("basis and owner must stay visible: %v", cutoff)
+	}
+	for name, test := range map[string]struct {
+		source string
+		fields map[string]json.RawMessage
+		code   string
+	}{
+		"unclaimed field":   {"session.model", map[string]json.RawMessage{"name": json.RawMessage(`"x"`)}, "permissionDenied"},
+		"wrong source":      {"session.date", field(good), "permissionDenied"},
+		"impossible date":   {"session.model", field(`{"date":"2025-02-30","basis":"explicit","source":"s"}`), "invalidRequest"},
+		"loose date":        {"session.model", field(`{"date":"2025-6-1","basis":"explicit","source":"s"}`), "invalidRequest"},
+		"unknown basis":     {"session.model", field(`{"date":"2025-06-01","basis":"guess","source":"s"}`), "invalidRequest"},
+		"control in source": {"session.model", field(`{"date":"2025-06-01","basis":"explicit","source":"a\u001b[31m"}`), "invalidRequest"},
+	} {
+		if _, failure := contributedFieldValues(producer, test.source, test.fields); failure == nil || failure.Code != test.code {
+			t.Errorf("%s: failure = %+v, want %s", name, failure, test.code)
+		}
+	}
+}
+
+func TestContributedFieldsApplyOnlyToTheirModel(t *testing.T) {
+	registry := newProducerRegistry()
+	bound := modelBinding{Provider: "p", ID: "m1"}
+	registry.fields["reg"] = contributedFields{owner: "web", registrationID: "reg", model: bound, fields: map[string]any{"knowledge_cutoff": 1}}
+	if got := registry.modelFields(bound); len(got) != 1 {
+		t.Fatalf("bound model lost its fields: %v", got)
+	}
+	if got := registry.modelFields(modelBinding{Provider: "p", ID: "m2"}); len(got) != 0 {
+		t.Fatalf("a model change must not inherit stale data: %v", got)
 	}
 }
