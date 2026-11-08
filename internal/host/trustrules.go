@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -93,6 +94,9 @@ func trustAllows(settings *config.Manager, dir string) bool {
 
 // trustCommand implements /workbench trust [ls|add allow|deny <dir>|rm <dir>].
 func (a *app) trustCommand(ctx sdk.Context, args string) error {
+	if strings.TrimSpace(args) == "" && panelsAvailable(ctx) {
+		return a.trustPanel(ctx)
+	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
 		return err
@@ -124,6 +128,16 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 	default:
 		return errors.New("usage: /workbench trust [ls | add allow|deny <absolute dir> | rm <absolute dir>]")
 	}
+	count, err := a.editTrustRules(ctx, s, work, baseline, verb, rest)
+	if err != nil {
+		return err
+	}
+	a.notify(ctx, fmt.Sprintf("Trust rules saved to user settings (%d rule(s)). This does not change PiG's own /trust store.", count))
+	return nil
+}
+
+// editTrustRules applies one add or rm to the user-scope rules and returns the rule count saved.
+func (a *app) editTrustRules(ctx sdk.Context, s *session, work context.Context, baseline *config.Snapshot, verb, rest string) (int, error) {
 	var current []string
 	if entry, ok := baseline.Get("trust.rules"); ok {
 		current, _ = entry.Value.([]string)
@@ -133,7 +147,7 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 	case "add":
 		rule, err := parseTrustRule(rest)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		updated = slices.DeleteFunc(updated, func(text string) bool {
 			existing, err := parseTrustRule(text)
@@ -143,7 +157,7 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 	case "rm":
 		dir := filepath.Clean(rest)
 		if rest == "" || !filepath.IsAbs(dir) {
-			return errors.New("usage: /workbench trust rm <absolute dir>")
+			return 0, errors.New("usage: /workbench trust rm <absolute dir>")
 		}
 		before := len(updated)
 		updated = slices.DeleteFunc(updated, func(text string) bool {
@@ -151,7 +165,7 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 			return err == nil && existing.dir == dir
 		})
 		if len(updated) == before {
-			return fmt.Errorf("no trust rule for %s", dir)
+			return 0, fmt.Errorf("no trust rule for %s", dir)
 		}
 	}
 	result, saveErr := s.settings.Save(work, config.User, baseline, []config.Edit{{Key: "trust.rules", Value: updated}}, ctx.IsProjectTrusted)
@@ -159,8 +173,46 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 		a.settingsChanged(ctx, s, result.Revision, result.Changed)
 	}
 	if saveErr != nil {
-		return saveErr
+		return 0, saveErr
 	}
-	a.notify(ctx, fmt.Sprintf("Trust rules saved to user settings (%d rule(s)). This does not change PiG's own /trust store.", len(updated)))
-	return nil
+	return len(updated), nil
+}
+
+// trustPanel lists the user's trust rules; each add or remove admits and saves like the command.
+func (a *app) trustPanel(ctx sdk.Context) error {
+	title, _ := a.hubTitle.Load().(string)
+	if title == "" {
+		title = "Workbench › Trust"
+	}
+	rules := func() ([]string, []string) {
+		s, err := a.current()
+		if err != nil {
+			return nil, nil
+		}
+		snapshot, err := s.settings.Current()
+		if err != nil {
+			return nil, nil
+		}
+		parsed, invalid := trustRulesFrom(snapshot)
+		texts := make([]string, len(parsed))
+		for i, rule := range parsed {
+			texts[i] = rule.String()
+		}
+		return texts, invalid
+	}
+	edit := func(verb, rest string) error {
+		s, work, release, err := a.admit(ctx)
+		if err != nil {
+			return err
+		}
+		defer release()
+		baseline, err := s.settings.Current()
+		if err != nil {
+			return err
+		}
+		_, err = a.editTrustRules(ctx, s, work, baseline, verb, rest)
+		return err
+	}
+	_, err := ctx.Custom(&trustPanel{title: title, rules: rules, edit: edit, height: ctx.Height}, nil)
+	return err
 }

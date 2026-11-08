@@ -451,3 +451,35 @@ func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
 	s.keys("u")
 	s.waitFor("unpinned", 10*time.Second)
 }
+
+func TestLiveTrustPanelAddsAndRemovesARulePersistently(t *testing.T) {
+	root := t.TempDir()
+	rule := "allow " + filepath.Join(root, "nested")
+	s := startTUI(t, root)
+	s.openHub()
+	s.keys("Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Enter")
+	empty := s.waitFor("Workbench › Trust", 10*time.Second)
+	if !strings.Contains(empty, "No trust rules") {
+		t.Fatalf("the panel does not start empty:\n%s", empty)
+	}
+	s.keys("a")
+	s.waitFor("allow <absolute dir>", 10*time.Second)
+	s.typeSlowly(rule)
+	s.keys("Enter")
+	saved := s.waitFor("Saved allow", 15*time.Second)
+	s.capture("trust-rules")
+	if !strings.Contains(saved, "nested") {
+		t.Fatalf("the rule is not listed:\n%s", saved)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
+	if err != nil || !strings.Contains(string(data), rule) {
+		t.Fatalf("the rule was not persisted: %v\n%s", err, data)
+	}
+	s.keys("d")
+	s.waitFor("Removed allow", 15*time.Second)
+	data, err = os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
+	if err != nil || strings.Contains(string(data), rule) {
+		t.Fatalf("the removed rule is still persisted: %v\n%s", err, data)
+	}
+	s.waitFor("No trust rules", 10*time.Second)
+}
