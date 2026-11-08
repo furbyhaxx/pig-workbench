@@ -1,0 +1,26 @@
+=== RUN   TestLiveProviderHandlerObservesTheRequestDeadline
+--- PASS: TestLiveProviderHandlerObservesTheRequestDeadline (1.50s)
+=== RUN   TestLiveAbortedReadCancelsTheCooperativeProvider
+--- PASS: TestLiveAbortedReadCancelsTheCooperativeProvider (0.89s)
+=== RUN   TestLiveUnregisterStopsAndDrainsARunningProviderRead
+--- PASS: TestLiveUnregisterStopsAndDrainsARunningProviderRead (0.87s)
+=== RUN   TestLiveProviderProgressShowsInTheResourcesInspectorWhileRunning
+--- PASS: TestLiveProviderProgressShowsInTheResourcesInspectorWhileRunning (0.86s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (1.18s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.03s)
+=== RUN   TestLiveProviderMutationsWithoutConfirmation
+--- PASS: TestLiveProviderMutationsWithoutConfirmation (1.29s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.79s)
+=== RUN   TestLiveServiceFailuresRPC
+--- PASS: TestLiveServiceFailuresRPC (0.32s)
+=== RUN   TestLiveServiceDiscoveryRPC
+--- PASS: TestLiveServiceDiscoveryRPC (1.03s)
+=== RUN   TestLivePythonClientSpeaksTheWireProtocol
+--- PASS: TestLivePythonClientSpeaksTheWireProtocol (0.95s)
+=== RUN   TestLivePythonProviderServesAReadThroughWorkbench
+--- PASS: TestLivePythonProviderServesAReadThroughWorkbench (1.08s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	12.809s

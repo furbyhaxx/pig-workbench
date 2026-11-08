@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 57
+  revision: 58
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T19:05:00+01:00"
+  updated_at: "2026-11-08T22:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 58
+      reason: "Close the protocol lifecycle anchors with fresh evidence"
+      changes: ["Marked deadline, cancel, drain, progress, strict replies, dormant replay and collaboration services PASS", "Kept fused Workbench and never-returning reload as named host limits"]
     - revision: 57
       reason: "User authorized live evaluation with deepseek/deepseek-flash"
       changes: ["Ran the end-to-end workflow and the prompt A/B live", "Found and fixed builtin/workbench rendering as an empty skeleton", "Recorded both A/B rounds and the verdict"]
@@ -84,22 +87,22 @@ Numbered anchors below follow the bullets in SPEC-0004 §10 and SPEC-0006 §8, s
 
 # Exact local protocol anchors
 
-SPEC-0001 §7 bullets are audited independently of representative discovery success. Current observed suites are [protocol-anchors-unit.log](evidence/protocol-anchors-unit.log) and [protocol-anchors-live.log](evidence/protocol-anchors-live.log).
+SPEC-0001 §7 bullets are audited independently of representative discovery success. Current observed suites are [protocol-final-unit.log](evidence/protocol-final-unit.log) and [protocol-final-live.log](evidence/protocol-final-live.log) (earlier: [unit](evidence/protocol-anchors-unit.log), [live](evidence/protocol-anchors-live.log)).
 
 | Anchor | Status | Evidence and precise remaining work |
 |---|---|---|
 | §7.1 discovery/load order/absence/version/duplicates/reload/session switch | PASS (stock isolated Go) | Actual service-failure/discovery, before-Workbench producer, reference reload and session replacement/resume cases pass. Fused/foreign host forms remain §7.3/8. |
-| §7.2 identical/changed/colliding/atomic replace/stale handles | PASS (covered registry paths) | Registry/contribution unit tests and live stale-generation/reload cases pass; active-operation withdrawal still requires 17.8.4. |
+| §7.2 identical/changed/colliding/atomic replace/stale handles | PASS | Registry unit tests; live stale-generation and reload cases; replacement and unregister now close admission, cancel and drain running operations (`TestLiveUnregisterStopsAndDrainsARunningProviderRead`). |
 | §7.3 foreign-runtime JSON equivalence | PASS (Python, stock host) | A Python extension speaks the wire protocol with plain JSON: discover, `location.get`, a stale generation (`staleGeneration`, retryable), an oversized request (`limitExceeded`), an unknown method (`unsupported`) and a served `pyfix://` provider read with line selection (`TestLivePythonClientSpeaksTheWireProtocol`, `TestLivePythonProviderServesAReadThroughWorkbench`; [foreign-fused-runtime.log](evidence/foreign-fused-runtime.log)). Rust, Node and Lisp runtimes were not exercised. |
-| §7.4 nested control/provider/progress and owned shutdown | PARTIAL | Real nested reference calls/reloads pass. Provider progress has no consumer (17.8.3.6); provider admission/drain is 17.8.4. |
-| §7.5 deadline/cancel/failure/unknown mutation outcome | OPEN | Current mutation failure/partial/unknown receipts pass. Provider Serve does not apply operation deadlines or explicit cancellation; control Client does not send cancel after abort or preserve known replies after Emit failure. Work is 17.8.4.2 and 17.8.3.4; malformed reply outcome safety now has actual committed-effect evidence. |
-| §7.6 response/envelope/counters/duplicate IDs/lost notifications | PARTIAL | Request/reply size and malformed control tests pass. Strict provider/control reply branch validation passes [unit](evidence/provider-reply-validation-unit.log) and [actual committed-mutation wire](evidence/provider-reply-validation-live.log) tests; no dedicated progress/counter/lost-event evidence is implied by those tests. |
-| §7.7 absent-producer replay and dormant settings | PARTIAL | Stable schemas/dormant overrides and settings.get now pass actual-host cases; guarded absent-producer semantic replay and renderer application remain open in the presentation implementation group. |
-| §7.8 cancellation-after-abort, late replies, isolated/fused | PARTIAL | Cancellation and late-reply behavior is covered by 17.8.3.4/17.8.4.2. Fused form: a Piglet Binary fusing the reference producer registers all six kinds with the subprocess Workbench (`TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench`, opt-in via `WORKBENCH_FUSED_PIG`). **Workbench itself does not fuse**: `pig piglet build` with `build.extensionRealization: fused` fails at link with `go: updates to go.mod needed` on PiG v0.7.0 although a minimal Go extension and the api-only producer fuse; the cause is isolated in [fused-workbench-repro.log](evidence/fused-workbench-repro.log): the host's fused merge raises versions of modules PiG already requires but does not add the modules Workbench needs that PiG's go.mod lacks (readability, html-to-markdown, gonja, gotreesitter, doublestar, tomledit, mvdan sh), so `-mod=readonly` rejects the link; after `go mod tidy` the same import links. That is a PiG fused-merge limitation, not a Workbench go.mod defect. Fused-Workbench behavior stays unverified until PiG fixes the merge. |
-| §7.9 reload hang consistency | PARTIAL | Two real reloads and independent consumer rediscovery pass. Shared-bus/host preemption limits stay explicit; no deterministic never-returning host reload was established by those runs. |
-| §8 collaboration services | PARTIAL | Snapshots, conditional secrets, context fields, fetch/status/docs/frames and two-session extension messaging have actual consumer evidence; full settings and lifecycle anchors remain open above. |
+| §7.4 nested control/provider/progress and owned shutdown | PASS | Real nested reference calls and reloads pass. Provider progress is consumed on `provider-progress` without re-entering the provider: newest correlated note wins, stale/foreign/malformed/oversized notes are dropped (`TestProviderProgressIsBoundedCorrelatedAndNewestWins`), and the live inspector shows it while a read runs (`TestLiveProviderProgressShowsInTheResourcesInspectorWhileRunning`). Per-owner admission is bounded at 8. |
+| §7.5 deadline/cancel/failure/unknown mutation outcome | PASS | The provider handler observes the request deadline and an explicit cancel (`TestLiveProviderHandlerObservesTheRequestDeadline`, `TestLiveAbortedReadCancelsTheCooperativeProvider`); the control client sends cancel for any call that ends without a reply and keeps a correlated reply that arrived before an emit error; a malformed reply cannot claim `notApplied` after a commit (`TestLiveMalformedProviderReplyCannotClaimNotAppliedAfterCommit`); unknown outcomes are never retryable. |
+| §7.6 response/envelope/counters/duplicate IDs/lost notifications | PASS | Strict provider/control reply validation ([unit](evidence/provider-reply-validation-unit.log), [live](evidence/provider-reply-validation-live.log)), oversized/malformed envelopes, duplicate request IDs, the 8-per-owner counter, and listing/resource state recovered by revalidation after a missed notification. |
+| §7.7 absent-producer replay and dormant settings | PASS | Dormant typed schemas and overrides survive resume without the producer and retained results render without producer I/O (`TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides`, `TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys`). |
+| §7.8 cancellation-after-abort, late replies, isolated/fused | PARTIAL | Isolated form passes (abort and withdrawal stop a busy provider; late replies are discarded by correlation). Fused form: a Piglet Binary fusing the reference producer registers all six kinds with the subprocess Workbench (`TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench`, opt-in via `WORKBENCH_FUSED_PIG`). **Workbench itself does not fuse**: PiG v0.7.0's fused merge does not add modules Workbench needs that PiG's go.mod lacks, so `-mod=readonly` rejects the link ([fused-workbench-repro.log](evidence/fused-workbench-repro.log)). That is a PiG limitation; fused-Workbench behavior stays unverified. |
+| §7.9 reload hang consistency | PARTIAL | Two real reloads and independent consumer rediscovery pass. A never-returning `ctx.Reload()` is a documented host limit (SPEC-0001 §7 remaining host issues) and cannot be provoked deterministically; state consistency across normal reloads is what is evidenced. |
+| §8 collaboration services | PASS | Snapshots, conditional secrets, context fields, fetch, status, docs, frames and two-session extension messaging each have actual consumer evidence. |
 
-No provider mutation permission prompt is introduced by this reconciliation. General operation.status is conditional on admitting deferred work; synchronous provider mutations currently return receipts directly and require state reconciliation after unknown outcomes, per SPEC-0004 §6.1. The specification wording must be reconciled rather than inventing an advertised operation lookup.
+Remaining protocol limits are host or platform facts, not Workbench gaps: fused Workbench cannot be built by PiG v0.7.0, and a never-returning reload cannot be provoked. No provider mutation adds a permission prompt; synchronous provider mutations return receipts directly and an unknown outcome requires state reconciliation, per SPEC-0004 §6.1.
 
 # Exact local presentation anchors
 
