@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
@@ -329,4 +331,41 @@ func (a *app) emitRegistrationChanged(s *session, registrationID, change string)
 		return
 	}
 	_ = s.host.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":" + registrationID + ":" + change, Type: "registration.changed", RegistrationID: registrationID, Data: map[string]any{"change": change}})
+}
+
+func (a *app) resourcesChanged(s *session, request api.Request) (any, *api.Error) {
+	var params api.ResourcesChangedParams
+	if err := api.Decode(request.Params, &params); err != nil {
+		return nil, &api.Error{Code: "invalidRequest", Field: "params", Message: "resources.changed expects change, optional uri and revision", Outcome: "notApplied"}
+	}
+	switch params.Change {
+	case "created", "modified", "removed", "reset":
+	default:
+		return nil, &api.Error{Code: "invalidRequest", Field: "params.change", Message: "change must be created, modified, removed or reset", Outcome: "notApplied"}
+	}
+	registration, err := s.contributions.Get(request.From, request.RegistrationID)
+	if err != nil {
+		return nil, contributionProtocolError(err)
+	}
+	if registration.Kind != contribution.KindResourceProvider {
+		return nil, &api.Error{Code: "invalidRequest", Field: "registrationId", Message: "registration is not a resource provider", Outcome: "notApplied"}
+	}
+	descriptor, err := resource.ParseProviderDescriptor(registration.Descriptor)
+	if err != nil {
+		return nil, contributionProtocolError(err)
+	}
+	prefix := params.URI
+	if prefix != "" {
+		scheme, rest, _ := strings.Cut(prefix, "://")
+		if !slices.Contains(descriptor.Schemes, scheme) || !strings.Contains(prefix, "://") {
+			return nil, &api.Error{Code: "permissionDenied", Field: "params.uri", Message: "uri is outside the registration's schemes", Outcome: "notApplied"}
+		}
+		prefix = descriptor.Schemes[0] + "://" + rest
+	}
+	dropped := s.listCursors.invalidate(request.RegistrationID, prefix)
+	sequence := s.resourceEvents.Add(1)
+	if s.host != (sdk.Context{}) {
+		_ = s.host.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:resources:%s:%d", s.generation, request.RegistrationID, sequence), Type: "resources.changed", RegistrationID: request.RegistrationID, Data: map[string]any{"change": params.Change, "uri": params.URI, "revision": params.Revision}})
+	}
+	return map[string]any{"invalidated": dropped}, nil
 }

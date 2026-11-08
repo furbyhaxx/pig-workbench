@@ -48,7 +48,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 |---|---|---|
 | `location` | `location.get` | — |
 | `presentation` | `register`, `unregister`, `describe`, `settings.get` | `toolPresentation` (SPEC-0003 §2) |
-| `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`, declared mutations) | `resourceProvider` (SPEC-0004 §2) |
+| `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`, declared mutations); you → Workbench: `resources.changed` | `resourceProvider` (SPEC-0004 §2) |
 | `fetch` | Workbench → you: `fetch` | `fetchBackend` (SPEC-0004 §11) |
 | `status` | `status.update` | `statusSegment` (SPEC-0009 §9) |
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
@@ -56,6 +56,8 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
 | `sessions` | `sessions.list`, `sessions.send` | — (advertised when the session endpoint is available) |
 | `secrets` | `secrets.redact` | — (advertised only to granted owners) |
+
+`resources.changed` (`Client.ResourcesChanged`) takes `{uri?, change, revision?}` with your `registrationId`: `change` is `created`, `modified`, `removed` or `reset`, and an empty `uri` covers the whole registration. Workbench drops retained listing cursors under that prefix and emits a `resources.changed` event. It is a hint, never a substitute for revision checks: a missed notification still ends in `staleRevision` from your provider, because every retained cursor carries the revision it was issued at. The URI must belong to one of the registration's schemes.
 
 `sessions.list` returns the discoverable live sessions of the same user (no tokens). `sessions.send` takes `{target, channel, subject, body, attachments, wake}`. Channel `ext:<your owner>` delivers a `sessions.message` event (`api.SessionsMessageEvent`) on the event channel of the target session; it never wakes the agent and never becomes a frame. Channel `agent` delivers to the model as a peer-attributed data frame, untrusted unless that peer has been trusted. The answer is the synchronous receipt (`accepted` with `woken`, `steered`, `delivered` or `queued`, or `rejected` with a reason). Sending on another owner's channel is `permissionDenied`.
 

@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,4 +103,23 @@ func (s *listingCursorStore) get(token string, binding cursorBinding, uri string
 	entry.sequence = s.sequence
 	s.entries[token] = entry
 	return entry, nil
+}
+
+// invalidate drops retained cursors of one registration under a URI prefix; an empty prefix drops all of them.
+func (s *listingCursorStore) invalidate(registration, prefix string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	dropped := 0
+	for key, entry := range s.entries {
+		if entry.Binding.Registration != registration {
+			continue
+		}
+		if prefix != "" && !strings.HasPrefix(entry.Requested, prefix) && !strings.HasPrefix(entry.Canonical, prefix) {
+			continue
+		}
+		delete(s.entries, key)
+		s.bytes -= entry.bytes
+		dropped++
+	}
+	return dropped
 }

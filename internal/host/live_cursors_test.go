@@ -99,3 +99,39 @@ func TestLiveListingCursorExpiresAfterReload(t *testing.T) {
 		t.Fatalf("cursor survived reload: %v", results)
 	}
 }
+
+func TestLiveProviderResourcesChangedInvalidatesRetainedCursors(t *testing.T) {
+	root := t.TempDir()
+	var saved atomic.Value
+	recorder := &requestRecorder{next: func(index int) *scriptedCall {
+		switch index {
+		case 0:
+			return &scriptedCall{"ls", map[string]any{"path": "kb://paged/", "limit": 1}}
+		case 2:
+			return &scriptedCall{"ls", map[string]any{"path": "kb://paged/", "cursor": saved.Load().(string)}}
+		}
+		return nil
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "ls")
+	fixture.send("first", "prompt", "List the first page.")
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+	recorder.mu.Lock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	recorder.mu.Unlock()
+	saved.Store(cursorOf(t, results[len(results)-1]))
+	fixture.send("changed", "prompt", "/reference resources-changed")
+	fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"resourcesChanged":"sent"`)
+	})
+	fixture.send("second", "prompt", "Continue with the retained cursor.")
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results = toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if last := results[len(results)-1]; !strings.Contains(last, "expired or belongs") {
+		t.Fatalf("a provider change notification did not invalidate the cursor locally: %s", last)
+	}
+}

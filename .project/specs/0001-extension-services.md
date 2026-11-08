@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-08T20:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; the authoring surface is frozen by api/contract_test.go"]
+    - revision: 9
+      reason: "Provider invalidation notifications (SPEC-0004 §8) needed a caller-side method"
+      changes: ["Added the additive resources.changed method; no existing wire shape changed"]
 
 ---
 
@@ -130,6 +133,7 @@ Methods:
 | operation.status | operationId → receipt state for admitted deferred work |
 | cancel | requestId of the caller's own pending request → no reply; idempotent |
 | location.get | → current location (§8) |
+| resources.changed | registrationId of a `resourceProvider`, `{uri?, change, revision?}` → `{invalidated}`; drops retained cursors under the prefix and re-emits the event; a hint, not a revision substitute (SPEC-0004 §8) |
 | status.update | registrationId of a `statusSegment`, text and style → accepted (SPEC-0009 §9) |
 | snapshots.view / snapshots.status / snapshots.touched | Edit-tracking service for other tools (SPEC-0005 §10) |
 | sessions.list / sessions.send | Live-session messaging (SPEC-0011 §8) |

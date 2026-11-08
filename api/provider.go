@@ -133,6 +133,20 @@ type ResourceResult struct {
 	Receipt      *MutationReceipt `json:"receipt,omitempty"`
 }
 
+// ResourcesChangedParams tells Workbench that a registered resource provider's data changed.
+// An empty URI covers the whole registration; Change is created, modified, removed or reset.
+// The notification is a hint: revision checks stay authoritative.
+type ResourcesChangedParams struct {
+	URI      string `json:"uri,omitempty"`
+	Change   string `json:"change"`
+	Revision string `json:"revision,omitempty"`
+}
+
+// ResourcesChanged invalidates Workbench's retained state for one of this client's resource providers.
+func (c *Client) ResourcesChanged(ctx sdk.Context, endpoint Discovery, registrationID string, params ResourcesChangedParams) error {
+	return c.Call(ctx, endpoint, "resources.changed", params, nil, &CallOptions{RegistrationID: registrationID})
+}
+
 // FetchRequest asks a fetch backend for one URL (SPEC-0004 §11).
 type FetchRequest struct {
 	URL       string   `json:"url"`

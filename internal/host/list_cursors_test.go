@@ -76,3 +76,33 @@ func TestListingCursorBindsIdentityResourceAndSnapshotWithoutExposingPayload(t *
 		t.Fatal("expired cursor accepted")
 	}
 }
+
+func TestListingCursorInvalidationDropsOnlyTheAffectedRegistrationAndPrefix(t *testing.T) {
+	var store listingCursorStore
+	now := time.Now()
+	one := cursorBinding{Registration: "one", Descriptor: "rev", Generation: "g", Instance: "i"}
+	two := cursorBinding{Registration: "two", Descriptor: "rev", Generation: "g", Instance: "i"}
+	put := func(binding cursorBinding, uri string) string {
+		token, err := store.put(listingCursor{Binding: binding, Requested: uri, Canonical: uri, Raw: "next-" + uri}, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return token
+	}
+	inside, outside, other := put(one, "kb://docs/a/"), put(one, "kb://docs/b/"), put(two, "mem://x/")
+	if dropped := store.invalidate("one", "kb://docs/a/"); dropped != 1 {
+		t.Fatalf("prefix invalidation dropped %d cursors, want 1", dropped)
+	}
+	if _, err := store.get(inside, one, "kb://docs/a/", now); err == nil {
+		t.Fatal("cursor under the changed prefix survived")
+	}
+	if _, err := store.get(outside, one, "kb://docs/b/", now); err != nil {
+		t.Fatalf("unrelated cursor was dropped: %v", err)
+	}
+	if dropped := store.invalidate("one", ""); dropped != 1 {
+		t.Fatalf("whole-registration invalidation dropped %d, want 1", dropped)
+	}
+	if _, err := store.get(other, two, "mem://x/", now); err != nil {
+		t.Fatalf("another registration's cursor was dropped: %v", err)
+	}
+}

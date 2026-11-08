@@ -34,6 +34,7 @@ type activeRequest struct {
 type session struct {
 	readHistory         readHistory
 	listCursors         listingCursorStore
+	resourceEvents      atomic.Uint64
 	editState           editState
 	presentations       *presentationCatalog
 	presentationData    presentationCache

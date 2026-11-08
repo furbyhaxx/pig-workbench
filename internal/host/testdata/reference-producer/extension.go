@@ -487,6 +487,13 @@ func Extension() *sdk.Extension {
 			ctx.Notify(string(encoded), "info")
 			return nil
 		}
+		if strings.TrimSpace(args) == "resources-changed" {
+			if err := active.ResourcesChanged(ctx, binding, registered["resourceProvider"].RegistrationID, api.ResourcesChangedParams{URI: "kb://paged/", Change: "modified", Revision: "catalog-1"}); err != nil {
+				return err
+			}
+			ctx.Notify(`{"resourcesChanged":"sent"}`, "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "withdraw-presentation" {
 			if err := active.Unregister(ctx, binding, registered["toolPresentation"].RegistrationID); err != nil {
 				return err
