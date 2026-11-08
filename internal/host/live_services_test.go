@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -273,5 +274,98 @@ func TestLiveServiceDiscoveryRPC(t *testing.T) {
 	}
 	if fourth["generation"] == first["generation"] {
 		t.Fatal("resume reused an old service generation")
+	}
+}
+
+// TestLivePythonClientSpeaksTheWireProtocol runs a non-Go extension against Workbench
+// so the JSON contract is shown to be runtime-independent (SPEC-0001 §7).
+func TestLivePythonClientSpeaksTheWireProtocol(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 is not installed")
+	}
+	f := startRPCWithExtensions(t, t.TempDir(), true, []string{"python-client"})
+	f.send("python", "prompt", "/python-fixture")
+	event := f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"pythonFixture"`)
+	})
+	var result struct {
+		Fixture struct {
+			Major          float64  `json:"major"`
+			Capabilities   []string `json:"capabilities"`
+			CWD            string   `json:"cwd"`
+			Stale          string   `json:"stale"`
+			StaleRetryable bool     `json:"staleRetryable"`
+			Oversized      string   `json:"oversized"`
+			Unknown        string   `json:"unknown"`
+		} `json:"pythonFixture"`
+	}
+	if err := json.Unmarshal([]byte(event["message"].(string)), &result); err != nil {
+		t.Fatal(err)
+	}
+	got := result.Fixture
+	if got.Major != 1 || !slices.Contains(got.Capabilities, "location") || got.CWD == "" {
+		t.Fatalf("python discovery or location.get disagreed with Go: %+v", got)
+	}
+	if got.Stale != "staleGeneration" || !got.StaleRetryable || got.Oversized != "limitExceeded" || got.Unknown != "unsupported" {
+		t.Fatalf("python saw different failure codes than the Go client: %+v", got)
+	}
+}
+
+// TestLivePythonProviderServesAReadThroughWorkbench reads a pyfix:// resource served by a
+// Python extension, so provider routing is shown to work for a non-Go owner.
+func TestLivePythonProviderServesAReadThroughWorkbench(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 is not installed")
+	}
+	repo := repoRoot(t)
+	root := t.TempDir()
+	var mu sync.Mutex
+	var requests []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		index := len(requests)
+		requests = append(requests, body)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": fmt.Sprintf("r%d", index), "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if index == 0 {
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "r0", "type": "function", "function": map[string]any{"name": "read", "arguments": `{"path":"pyfix://fixture/doc.txt:2-3"}`}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "done"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	output := runPigJSON(t, ctx, repo, root, root, []string{"-e", filepath.Join(repo, "internal/host/testdata/python-client")}, "read the python resource")
+	mu.Lock()
+	defer mu.Unlock()
+	if len(requests) != 2 {
+		t.Fatalf("expected two provider calls, got %d\n%s", len(requests), output[max(0, len(output)-3000):])
+	}
+	all, _ := requests[1]["messages"].([]any)
+	last, _ := json.Marshal(all[len(all)-1])
+	messages := last
+	for _, want := range []string{"2:python line 2", "3:python line 3", "pyfix://fixture/doc.txt"} {
+		if !strings.Contains(string(messages), want) {
+			t.Errorf("python-served read lacks %q:\n%s", want, messages)
+		}
+	}
+	if strings.Contains(string(messages), "python line 4") {
+		t.Errorf("python-served read ignored the selector:\n%s", messages)
 	}
 }

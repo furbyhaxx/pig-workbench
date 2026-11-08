@@ -447,3 +447,32 @@ func TestLiveStoredSearchKeyIsRedactedInJobLogs(t *testing.T) {
 		t.Fatalf("the job log must show a placeholder where the key was:\n%.1500s", bodies[3])
 	}
 }
+
+// TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench runs a Piglet Binary that
+// fuses the reference producer beside the subprocess Workbench (SPEC-0001 §7). It needs a
+// binary built with `pig piglet build` and is skipped without WORKBENCH_FUSED_PIG.
+func TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench(t *testing.T) {
+	binary := os.Getenv("WORKBENCH_FUSED_PIG")
+	if binary == "" {
+		t.Skip("WORKBENCH_FUSED_PIG names no fused Piglet Binary")
+	}
+	repo := repoRoot(t)
+	root := t.TempDir()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	cmd := exec.CommandContext(ctx, binary, "--offline", "--session-dir", filepath.Join(root, "sessions"), "-e", repo, "--mode", "rpc")
+	cmd.Dir = root
+	for _, v := range os.Environ() {
+		if !strings.HasPrefix(v, "PIG_") && !strings.HasPrefix(v, "PI_") {
+			cmd.Env = append(cmd.Env, v)
+		}
+	}
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+filepath.Join(root, "agent"), "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+	f := newRPCFixture(t, cmd, ctx, cancel)
+	f.send("status", "prompt", "/reference status")
+	record := f.wait(func(record map[string]any) bool {
+		return record["type"] == "extension_ui_request" && record["method"] == "notify" && strings.Contains(fmt.Sprint(record["message"]), `"reference":"registered"`)
+	})
+	if !strings.Contains(fmt.Sprint(record["message"]), `"kinds":6`) {
+		t.Fatalf("fused producer did not register every kind with Workbench: %v", record["message"])
+	}
+}

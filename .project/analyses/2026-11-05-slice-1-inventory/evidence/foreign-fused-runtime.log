@@ -1,0 +1,16 @@
+=== RUN   TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench
+--- PASS: TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench (0.76s)
+=== RUN   TestLivePythonClientSpeaksTheWireProtocol
+--- PASS: TestLivePythonClientSpeaksTheWireProtocol (0.92s)
+=== RUN   TestLivePythonProviderServesAReadThroughWorkbench
+--- PASS: TestLivePythonProviderServesAReadThroughWorkbench (1.13s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.834s
+--- minimal Go extension fuses (host PiG v0.7.0)
+Built /tmp/fused2/min-pig (70037664 bytes)
+--- reference producer (api client) fuses
+Built ref-pig (70250656 bytes)
+--- Workbench itself does not fuse; piglet.yaml build.extensionRealization: fused
+[fused-probe] go: updates to go.mod needed; to update it:
+[fused-probe] 	go mod tidy
+(same failure with go.mod bumped to the merged logrus/x-exp versions and flock v0.13.0)
