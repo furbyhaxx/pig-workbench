@@ -231,6 +231,30 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 | Equal bytes, different trust do not deduplicate | PARTIAL | `TestDuplicateUsesMostRestrictiveRoleAndLimits` covers the engine; no host-level test with two trust levels |
 | Host duplicate context suppression | PASS | `TestLiveCompactionResendsContextFactsOnce`, `TestLiveFramesAndInstructionRulesCommands` |
 
+# SPEC-0014 §12 results (prompt, skills, contributed fields)
+
+Verified against code in the continuation; two bullets were not met as written and were fixed, one stays open.
+
+| Acceptance bullet | Status | Evidence |
+|---|---|---|
+| Golden renders, section order, `<cwd>` unchanged after `cd` | PASS | `TestFixtureSectionOrder`, `TestBuiltinWorkbenchRendersRequiredSections`, `TestBuiltinWorkbenchCarriesHostInputs`, `TestLiveForcedPromptCarriesHostInputs` |
+| Template chain: shadowing, `builtin/` not shadowable, traversal, symlink, strict undefined, limits | PASS | `internal/prompt/filesystem_test.go`, `TestRenderStableAndStrictUndefined`, `TestIncludeDepth`, `TestLoopCancellation` |
+| Conditionals `family`, `glob`, `regex` | PASS | `TestFamilyGlobAndRegexMatchAndMiss` |
+| Conditionals `has_tool`, `variant` | **Missing, now implemented** | These two globals did not exist. `helpers.go` adds them; `TestHasToolAndVariantSelectTextPerModelAndLoadout` covers a family, an unmatched family, an absent tool, a missing variant and a non-string argument |
+| Epoch stability, model/tool change re-render | PASS | `TestPromptEpochIsStableForTheSameText`, `TestPromptEpochChangesWhenTheToolListChanges`, `TestWalkReplaceChangesOnlyTheExactServedPrompt` |
+| Late-section splice, render fallback | PASS | `TestUnmatchedLateSectionIsDeliveredOnTheNextPromptOfItsBranch`, `TestRenderErrorDoesNotReplaceTheHostPrompt` |
+| Frames: date every input, compaction, branch, precede user message | PASS | `TestBeforePromptRequiresAllSixContextFrames`, `TestLiveCompactionResendsContextFactsOnce`, `TestLiveResumeDoesNotResendDeliveredContextFrames` |
+| Contributed model fields: wrong owner, unknown field, bad date, explicit vs estimated, stale model | PASS, after a refactor | Validation was inline in a handler that needs a live SDK context, so it had no test. It is now `contributedFieldValues`; `TestContributedFieldValuesRefuseInvalidClaims`, `TestContributedFieldsApplyOnlyToTheirModel`, `TestFrameProducerDescriptorRejectsInternalAndUnknownFields`. Delivery and rendering: `TestLiveReferenceProducer*` |
+| Contributed fields: duplicate claim, unregister withdrawal, compaction repeat | PARTIAL | Duplicate claim is refused at registration (`internal/contribution/registry_test.go`); withdrawal is a one-line delete in the unregister closure with no dedicated test; compaction repeat rides the session.model frame covered by the compaction test but with no contributed field present |
+| Skills: budget ladder, load, repeated load, `when` | PASS | `TestListDropsBundledDescriptionsFirst`, `TestSkillReadLoadsAndUnloadDeclines`, `TestWhenFilesHidesUnmatchedSkill`, `TestLiveSkillsListingBudgetChangesTheCommandOutput` |
+| Skills: unload withdraws revealed sub-skills | **Not met, fixed** | Unload removed only the named skill, leaving a revealed child recorded as loaded. `TestUnloadWithdrawsRevealedSubSkills`; a frame now tells the model to stop applying the withdrawn skills |
+| Skills: nested name collision loads as `<parent>/<child>` | **Not met, fixed** | A nested skill whose name matched a top-level one was silently dropped, or hid the top-level one depending on walk order. `TestNestedSkillCollidingWithTopLevelNameIsQualifiedByParent` |
+| Skills: replay after compaction as pointers, never fresh | **Not met, fixed** | Replay only ran on resume. `session_compact` now sends a newest-first pointer list (20 skills at most) and marks the skills replayed. `TestLiveCompactionReplaysLoadedSkillsAsPointers` fails without the handler |
+| Skills: `auto_load` delivery, declined after unload | PARTIAL | Implemented and exercised only through the catalog tests; no live test drives an `auto_load` delivery |
+| Skills: `listing = "frame"` leaves the system prompt unchanged | NOT PROVEN | `skills.listing` is not a setting in this version; the listing always rides the prompt |
+| Instructions `select = "all"` | Slice 2 | PLAN-0003 W5 |
+| Prompt A/B on fixed tasks | PASS for no regression | See the live A/B section above; per-family adapters remain Slice 3 |
+
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
