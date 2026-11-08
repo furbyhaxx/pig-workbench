@@ -1,32 +1,32 @@
-mkdir -p "$REPO/.tmp"
-cp go.mod "$REPO/.tmp/go.mod"
-if test -f go.sum; then cp go.sum "$REPO/.tmp/go.sum"; else : > "$REPO/.tmp/go.sum"; fi
-printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$REPO/.tmp/go.mod"
-go test -race -modfile="$REPO/.tmp/go.mod" ./...
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+go test -race -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./...
 ?   	github.com/furbyhaxx/pig-workbench	[no test files]
 ok  	github.com/furbyhaxx/pig-workbench/api	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/ask	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/config	2.113s
+ok  	github.com/furbyhaxx/pig-workbench/internal/config	2.168s
 ok  	github.com/furbyhaxx/pig-workbench/internal/contribution	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/endpoint	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/fileedit	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/fileio	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/frames	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/hashline	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.886s
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	5.858s
 ok  	github.com/furbyhaxx/pig-workbench/internal/htmlread	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/instructions	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/jobs	9.604s
+ok  	github.com/furbyhaxx/pig-workbench/internal/jobs	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/lifecycle	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/location	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/messaging	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/pathdisplay	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/presentation	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/project	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/prompt	1.123s
-ok  	github.com/furbyhaxx/pig-workbench/internal/resource	1.149s
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.076s
-ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/prompt	1.125s
+ok  	github.com/furbyhaxx/pig-workbench/internal/resource	1.060s
+ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.094s
+ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	2.705s
 ok  	github.com/furbyhaxx/pig-workbench/internal/sessionstore	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/skills	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/syntax	1.506s
+ok  	github.com/furbyhaxx/pig-workbench/internal/skills	1.012s
+ok  	github.com/furbyhaxx/pig-workbench/internal/syntax	1.530s

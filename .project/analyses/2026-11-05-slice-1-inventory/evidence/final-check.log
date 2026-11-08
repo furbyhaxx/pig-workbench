@@ -1,21 +1,21 @@
 files="$(find . -type f -name '*.go' -not -path './.*' -print0 | xargs -0 -r gofmt -l)"; test -z "$files" || { printf '%s\n' "$files"; exit 1; }
-mkdir -p "$REPO/.tmp"
-cp go.mod "$REPO/.tmp/go.mod"
-if test -f go.sum; then cp go.sum "$REPO/.tmp/go.sum"; else : > "$REPO/.tmp/go.sum"; fi
-printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$REPO/.tmp/go.mod"
-go vet -modfile="$REPO/.tmp/go.mod" ./...
-go test -modfile="$REPO/.tmp/go.mod" ./...
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+go vet -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./...
+go test -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./...
 ?   	github.com/furbyhaxx/pig-workbench	[no test files]
 ok  	github.com/furbyhaxx/pig-workbench/api	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/ask	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/config	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/config	0.091s
 ok  	github.com/furbyhaxx/pig-workbench/internal/contribution	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/endpoint	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/fileedit	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/fileio	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/frames	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/hashline	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	0.727s
 ok  	github.com/furbyhaxx/pig-workbench/internal/htmlread	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/instructions	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/jobs	(cached)
@@ -25,19 +25,19 @@ ok  	github.com/furbyhaxx/pig-workbench/internal/messaging	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/pathdisplay	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/presentation	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/project	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/prompt	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/resource	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/prompt	0.096s
+ok  	github.com/furbyhaxx/pig-workbench/internal/resource	0.097s
+ok  	github.com/furbyhaxx/pig-workbench/internal/search	0.023s
+ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	0.814s
 ok  	github.com/furbyhaxx/pig-workbench/internal/sessionstore	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/skills	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/skills	0.003s
 ok  	github.com/furbyhaxx/pig-workbench/internal/syntax	(cached)
 pig install . --validate-only --json
 {
   "valid": true,
   "name": "pig-workbench",
-  "source": "$REPO",
-  "hash": "fec746d365cc5c7114562c7e481e02b3a738b03cdf83d9176823e4a8dafc268b",
+  "source": "/mnt/Projects/furbyhaxx/pig-workbench",
+  "hash": "3e0eb99199da9eb2d6e6fb9a153f36bc21796df9035d454a4b3237fa7889ba3c",
   "tools": [
     "ask_user",
     "bash",
@@ -167,7 +167,7 @@ pig install . --validate-only --json
   "definition": {
     "form": "factory",
     "language": "go",
-    "root": "$REPO",
+    "root": "/mnt/Projects/furbyhaxx/pig-workbench",
     "package": "github.com/furbyhaxx/pig-workbench",
     "factory": "Extension",
     "packable": true,
