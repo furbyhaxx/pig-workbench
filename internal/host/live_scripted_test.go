@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -907,5 +908,141 @@ func TestLiveForcedPromptCarriesHostInputs(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("forced prompt lacks %q", want)
 		}
+	}
+}
+
+// TestLiveCompactionInvalidatesSeenSnapshots proves compaction cannot resurrect seen state:
+// a tag delivered before /compact no longer authorizes an edit, and the file stays untouched.
+func TestLiveCompactionInvalidatesSeenSnapshots(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src.txt")
+	if err := os.WriteFile(path, []byte(lines(20)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	var tag, editResult string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			Messages []map[string]any `json:"messages"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil || len(request.Messages) == 0 {
+			http.Error(w, "bad JSON", 400)
+			return
+		}
+		last := request.Messages[len(request.Messages)-1]
+		for i := len(request.Messages) - 1; i >= 0; i-- {
+			last = request.Messages[i]
+			if last["role"] != "user" || !strings.HasPrefix(strings.TrimSpace(toolMessageText(last)), "<system-info") {
+				break
+			}
+		}
+		text := strings.TrimSpace(toolMessageText(last))
+		mu.Lock()
+		call := scriptedCall{}
+		switch {
+		case last["role"] == "tool" && fileTagPattern.MatchString(text):
+			tag = fileTagPattern.FindStringSubmatch(text)[1]
+		case last["role"] == "tool":
+			editResult = text
+		case strings.HasSuffix(text, "read it"):
+			call = scriptedCall{"read", map[string]any{"path": "src.txt"}}
+		case strings.HasSuffix(text, "edit now"):
+			call = scriptedCall{"edit", map[string]any{"hashline": "[src.txt#" + tag + "]\nPUT 3.=3:\n+resurrected\n"}}
+		}
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, reason any) {
+			data, _ := json.Marshal(map[string]any{"id": "compaction", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": reason}}})
+			fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if call.tool != "" {
+			encoded, _ := json.Marshal(call.args)
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "c-" + call.tool, "type": "function", "function": map[string]any{"name": call.tool, "arguments": string(encoded)}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "ok"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "settings.json"), []byte(`{"compaction":{"enabled":true,"keepRecentTokens":1}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	f := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,edit")
+	for i, prompt := range []string{"hello", "read it", "again"} {
+		f.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	}
+	mu.Lock()
+	if tag == "" {
+		mu.Unlock()
+		t.Fatal("the read never delivered a tag")
+	}
+	mu.Unlock()
+	f.sendRaw("compact", "compact", nil)
+	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "compact" })
+	f.send("edit", "prompt", "edit now")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	mu.Lock()
+	defer mu.Unlock()
+	if got := readFile(t, path); got != lines(20) {
+		t.Fatalf("compaction resurrected seen state; file now:\n%s", got)
+	}
+	if editResult == "" || strings.Contains(editResult, "resurrected") {
+		t.Fatalf("the edit after compaction was not refused: %q", editResult)
+	}
+}
+
+// TestLiveCodemodeEditRefusesUnseenLinesLikeTheDirectTool proves direct and codemode edits share one safety path.
+func TestLiveCodemodeEditRefusesUnseenLinesLikeTheDirectTool(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src.txt")
+	if err := os.WriteFile(path, []byte(lines(60)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	editCode := func(tag string) string {
+		patch := "[src.txt#" + tag + "]\nPUT 40.=40:\n+replaced\n"
+		return "try { text(await tools.edit({hashline: " + strconv.Quote(patch) + "})); } catch (e) { text('REFUSED: ' + e.message); }"
+	}
+	results := runScripted(t, root, "read,edit,codemode",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "src.txt:1-5"}} },
+		func(prior []string) scriptedCall {
+			return scriptedCall{"edit", map[string]any{"hashline": "[src.txt#" + tagOf(t, prior[0]) + "]\nPUT 40.=40:\n+replaced\n"}}
+		},
+		func(prior []string) scriptedCall {
+			return scriptedCall{"codemode", map[string]any{"code": editCode(tagOf(t, prior[0]))}}
+		},
+	)
+	if got := readFile(t, path); got != lines(60) {
+		t.Fatalf("an unseen line was edited:\n%s", got[:200])
+	}
+	for name, result := range map[string]string{"direct": results[1], "codemode": results[2]} {
+		if !strings.Contains(result, "not seen") || !strings.Contains(result, "read them before editing") {
+			t.Errorf("%s refusal differs: %s", name, result)
+		}
+	}
+}
+
+// TestLiveWriteNeverInstallsATruncatedReadCopy proves a copied partial read cannot replace the file.
+func TestLiveWriteNeverInstallsATruncatedReadCopy(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src.txt")
+	if err := os.WriteFile(path, []byte(lines(60)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read,write",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "src.txt:1-5"}} },
+		func(prior []string) scriptedCall {
+			return scriptedCall{"write", map[string]any{"path": "src.txt", "content": prior[0]}}
+		},
+	)
+	if got := readFile(t, path); got != lines(60) {
+		t.Fatalf("a truncated read copy replaced the file:\n%s", got)
+	}
+	if !strings.Contains(results[1], "complete") {
+		t.Fatalf("refusal does not name the complete-source requirement: %s", results[1])
 	}
 }

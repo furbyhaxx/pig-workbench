@@ -199,6 +199,22 @@ At commit `9da6882` on Linux, `just check` (including validation), `just race` a
 
 Three repeated race-enabled runs passed for job manager cancellation, watcher joins and lifecycle shutdown ([leaks-unit.log](evidence/leaks-unit.log)), and for live crash reclamation, session-end job termination and reference-producer reload ([leaks-integration.log](evidence/leaks-integration.log)). These targeted checks are not a comprehensive heap or goroutine leak proof. The real TUI job/scratch reload path is not repeated by these three cases.
 
+# Exact edit anchors (SPEC-0005 §8)
+
+| Acceptance bullet | Status | Evidence |
+|---|---|---|
+| Replacements, same-gap order, empty file, EOF without newline, CRLF/BOM, mixed endings | PASS | `TestStageLinesGapOrderingAndRangeBoundaries`, `TestStageLinesEmptySourceAndEndpointGaps`, `TestStageLinesTerminalNewline`, `TestPlanBatchPreservesBOMAndEndings`, `TestRestoreMixedEndings` |
+| Cross-file CUT/paste, named registers over calls, duplicate/undefined use | PASS | `TestPlanBatchCrossFileBlockCutAndPaste`, `TestPlanBatchRefusesUnseenInteriorAndUndefinedRegister`, `TestPlanBatchRegisterOrderAcrossRepeatedSections`, `TestLiveBlockCutPastesIntoAnotherFileThroughARegister`. Cyclic use cannot be expressed: a register is captured from the original coordinates before any paste resolves |
+| Block cases: decorators, comments, anti-swallowing, Markdown fences | PASS for Go, Python and Markdown | `TestGoBlockAnchors`, `TestPythonIndentationAndDecorators`, `TestMarkdownHeadingSectionsRespectFences`, `TestLiveBlockReplaceUsesSyntaxBoundariesAndRefusesAnUnanchoredLine`. Other grammars use the shared analysis but have no per-language fixtures |
+| Tag collision, wrong resource, stale shifted spans, ambiguous repeated code | PASS | `TestStoreChoosesNewestVersionWithNormalizedTag`, `TestStoreLimitsAndCanonicalResourceBinding`, `TestRelocateOpsRefusesAmbiguousCurrentMatches`, `TestRelocateOpsRefusesDuplicateAfterIntendedOccurrenceChanged`, `TestLiveEditAnOlderTagRecoversAgainstTheNewestSnapshot`, `TestLiveEditRelocatesOnlyWhenTheTargetIsUnambiguous` |
+| Eight-character evidence boundary, payload body comparison | NOT IMPLEMENTED AS WRITTEN | Relocation is stricter by design: an anchor moves only when its exact content plus up to three neighbours on each side matches once in both sources, else the target alone must be unique; everything else is refused. The donor's payload-body comparison with a shared character budget does not exist here. This refuses more than the donor, never less; it is recorded as an intentional difference, not a pass |
+| Hidden summary lines, column caps, unseen block interiors rejected | PASS | `TestLiveEditRefusesLinesTheModelNeverSaw`, `TestLiveEditRefusesALineTheReadBudgetCutInHalf`, `TestCheckSeenPreciseMissingSpans` |
+| Compaction cannot resurrect seen state | PASS | `TestLiveCompactionInvalidatesSeenSnapshots` (real `/compact`, then an edit with the pre-compaction tag is refused and the file is unchanged) |
+| Rename races, symlink swaps, read-only provider, crash/cancel between commits | PASS | `TestCommitMoveNeverOverwritesRacingDestination`, `TestCommitRejectsSourceReplacedDuringBatch`, `TestCommitReplacementThroughSymlinkPreservesLinkAndMode`, `TestCommitInjectedFailureKeepsFirstCommit`, `TestCommitCancellation`, `TestAtomicWriteFileRefusesRacingDestination`, `TestLiveReferenceProducerSeams` (unadvertised edit refused before dispatch) |
+| Exact-text mode on original source; write never installs truncated output | PASS | `TestExactEditsUseOriginalSourceAndPreserveBytes`, `TestLiveTaggedAndExactEditUseObservedSource`, `TestLiveWriteNeverInstallsATruncatedReadCopy` |
+| Direct and codemode yield identical safety | PASS for the unseen-line refusal | `TestLiveCodemodeEditRefusesUnseenLinesLikeTheDirectTool` |
+| All donor fixtures pinned to a source revision | NOT PROVEN | The behaviors are covered by this repository's own tests; no pinned donor corpus is run, so this bullet is not claimed |
+
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
