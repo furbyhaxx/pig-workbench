@@ -304,3 +304,42 @@ func TestLiveSessionEndTerminatesJobs(t *testing.T) {
 	<-f.done
 	f.exitErr = nil
 }
+
+// TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice covers SPEC-0008 §5
+// promotion and §7 completion: the same job ID survives the promotion, and its
+// end reaches the model once, on the next prompt, without waking it.
+func TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": "sleep 1; echo promoted-done", "yield_seconds": 0.2}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "bash,jobs")
+	fixture.send("first", "prompt", "Start the slow command.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	first := recorder.bodies[len(recorder.bodies)-1]
+	requestsAfterFirst := len(recorder.bodies)
+	recorder.mu.Unlock()
+	match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(first)
+	if match == nil {
+		t.Fatalf("promotion did not return the running job: %s", first)
+	}
+	fixture.wait(func(event map[string]any) bool {
+		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "Background job "+match[1]+" finished")
+	})
+	recorder.mu.Lock()
+	if len(recorder.bodies) != requestsAfterFirst {
+		recorder.mu.Unlock()
+		t.Fatal("completion woke the model")
+	}
+	recorder.mu.Unlock()
+	fixture.send("second", "prompt", "Anything new?")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Count(last, "Background job "+match[1]+" finished") != 1 || !strings.Contains(last, "job://"+match[1]+"/log") {
+		t.Fatalf("completion notice missing or duplicated on the next prompt: %s", last)
+	}
+}

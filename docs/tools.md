@@ -124,7 +124,7 @@ jobs {"action":"wait","id":"<job id>","timeout_seconds":30}
 jobs {"action":"output","id":"<job id>","cursor":0}
 ```
 
-Commands capture the Workbench location, use Bash when installed (otherwise `/bin/sh`), and default to a 120-second hard deadline. `timeout_seconds: 0` disables that deadline. `yield_seconds` promotes a still-running foreground command after that delay. `background` returns immediately; request cancellation then does not cancel the owned job. Foreground cancellation and `jobs kill` terminate the process group. Stdin is closed unless `interactive` is true.
+Commands capture the Workbench location, use Bash when installed (otherwise `/bin/sh`), and default to a 120-second hard deadline. `timeout_seconds: 0` disables that deadline. `yield_seconds` promotes a still-running foreground command after that delay. `background` returns immediately; request cancellation then does not cancel the owned job. Foreground cancellation and `jobs kill` terminate the process group. Stdin is closed unless `interactive` is true. When a background or promoted job ends on its own (not killed on request), Workbench queues one `workbench.jobs` notice for the next prompt and shows a user notice; it carries no output, never wakes the model and is not consumed by viewing `job://` or `/workbench jobs`.
 
 The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `write` and `eof`. Output pages report their next byte cursor and any eviction gap. Completed jobs are retained up to the manager cap; retired IDs fail explicitly. Session shutdown owns cleanup. Linux requires pidfd process-group signalling and refuses unsupported kernels before starting commands. Windows group cleanup remains unsupported.
 
