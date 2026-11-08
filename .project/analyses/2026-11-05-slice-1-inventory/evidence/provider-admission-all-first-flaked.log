@@ -1,0 +1,7 @@
+--- FAIL: TestLiveCatalogSettingsHaveBehavioralConsumers (25.81s)
+    --- FAIL: TestLiveCatalogSettingsHaveBehavioralConsumers/activity (4.25s)
+        --- FAIL: TestLiveCatalogSettingsHaveBehavioralConsumers/activity/disabled (1.95s)
+            testing.go:1619: TempDir RemoveAll cleanup: unlinkat /tmp/TestLiveCatalogSettingsHaveBehavioralConsumersactivitydisabled3254715713/001/agent: directory not empty
+FAIL
+FAIL	github.com/furbyhaxx/pig-workbench/internal/host	201.970s
+FAIL

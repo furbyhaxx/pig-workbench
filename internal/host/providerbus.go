@@ -24,6 +24,9 @@ func (e *providerError) Error() string {
 	return "provider failed: " + e.protocol.Code + ": " + e.protocol.Message
 }
 
+// maxProviderInFlight is SPEC-0001 §4's per-owner bound on concurrent provider operations.
+const maxProviderInFlight = 8
+
 type providerPending struct {
 	to      api.Identity
 	replies []api.Reply
@@ -37,12 +40,34 @@ type providerBus struct {
 	generation string
 	events     func() (sdk.Context, bool)
 
-	mu      sync.Mutex
-	pending map[string]*providerPending
+	mu       sync.Mutex
+	pending  map[string]*providerPending
+	inFlight map[string]int
+}
+
+// admit reserves one in-flight slot for owner; the caller must run the returned release exactly once.
+func (b *providerBus) admit(owner string) (func(), error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.inFlight[owner] >= maxProviderInFlight {
+		return nil, &providerError{protocol: &api.Error{Code: "busy", Message: fmt.Sprintf("provider %q has %d operations in flight", owner, maxProviderInFlight), Retryable: true, Outcome: "notApplied"}}
+	}
+	b.inFlight[owner]++
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			b.mu.Lock()
+			b.inFlight[owner]--
+			if b.inFlight[owner] <= 0 {
+				delete(b.inFlight, owner)
+			}
+			b.mu.Unlock()
+		})
+	}, nil
 }
 
 func newProviderBus(sessionID, generation string, events func() (sdk.Context, bool)) *providerBus {
-	return &providerBus{identity: api.Identity{Owner: "pig-workbench", Instance: generation}, sessionID: sessionID, generation: generation, events: events, pending: make(map[string]*providerPending)}
+	return &providerBus{identity: api.Identity{Owner: "pig-workbench", Instance: generation}, sessionID: sessionID, generation: generation, events: events, pending: make(map[string]*providerPending), inFlight: make(map[string]int)}
 }
 
 func (b *providerBus) onReply(_ sdk.Context, value any) error {
@@ -70,6 +95,11 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	release, err := b.admit(to.Owner)
+	if err != nil {
+		return err
+	}
+	defer release()
 	events, ok := b.events()
 	if !ok {
 		return errProviderUnavailable

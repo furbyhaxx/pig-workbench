@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 53
+  revision: 54
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T18:00:00+01:00"
+  updated_at: "2026-11-08T19:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 53
-      reason: "Stamp call roots, label missing arguments and let host duration win"
-      changes: ["Path call fields are shortened per field against the root recorded at tool_call", "Missing and streaming arguments are labelled, host duration overrides a producer approximation only when the producer reported one"]
+    - revision: 54
+      reason: "Enforce the SPEC-0001 per-owner provider operation bound"
+      changes: ["Provider calls admit at most 8 in-flight operations per owner and refuse the rest as busy/notApplied before dispatch", "Recorded one intermittent TempDir cleanup flake in an unrelated activity test"]
 ---
 
 # Scope and evidence
@@ -138,6 +138,10 @@ Observed in actual PiG hosts ([log](evidence/replay-and-children-live.log), repe
 # Recorded target roots and host metric authority
 
 Call headers now shorten only `path`-format fields, against the working root recorded at `tool_call` (bounded to 512 calls, runtime-only), so a later `cd` cannot rewrite an earlier row; calls from before this runtime show absolute paths. Missing arguments render `arguments not retained` and streaming ones `partial arguments`. A host-recorded duration replaces a producer `durationMs` metric but never creates one the producer did not report. Covered by unit tests ([check](evidence/target-roots-check.log), [race](evidence/target-roots-race.log), [full integration](evidence/target-roots-all.log)); a real TUI capture of a call row after `cd` was not taken, so renderer output is verified at function level only.
+
+# Provider admission bound
+
+\`providerBus.call\` now reserves one of 8 per-owner slots before any emit and releases it exactly once; the ninth concurrent operation returns \`busy\`, \`retryable\`, \`notApplied\` without reaching the provider, and another owner is unaffected. SPEC-0001 §4 defines only the per-owner bound: the resource-provider descriptor has **no** per-registration limit field, so none is implemented and none is claimed. Unit tests cover the bound, single release and no-emit-at-limit. [check](evidence/provider-admission-check.log), [race](evidence/provider-admission-race.log). The first full integration run ([log](evidence/provider-admission-all-first-flaked.log)) failed once in \`TestLiveCatalogSettingsHaveBehavioralConsumers/activity/disabled\` with \`TempDir RemoveAll cleanup: directory not empty\` (a pig process still writing into its agent dir during teardown); that test passed 3 of 3 and its activity subtest 5 of 5 alone, and the full rerun passed ([log](evidence/provider-admission-all-rerun.log)). This is an unfixed, intermittent harness race, not evidence of a product defect.
 
 # Baseline gates
 

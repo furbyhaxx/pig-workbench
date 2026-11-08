@@ -1,6 +1,7 @@
 package host
 
 import (
+	"errors"
 	"testing"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -27,5 +28,52 @@ func TestProviderBusRejectsMalformedReplyBranches(t *testing.T) {
 				t.Fatal("malformed provider reply became an apparent result")
 			}
 		})
+	}
+}
+
+func TestProviderBusAdmissionIsBoundedPerOwnerAndReleasedOnce(t *testing.T) {
+	bus := newProviderBus("session", "generation", nil)
+	var releases []func()
+	for range maxProviderInFlight {
+		release, err := bus.admit("alpha")
+		if err != nil {
+			t.Fatal(err)
+		}
+		releases = append(releases, release)
+	}
+	_, err := bus.admit("alpha")
+	var provider *providerError
+	if !errors.As(err, &provider) || provider.protocol.Code != "busy" || provider.protocol.Outcome != "notApplied" || !provider.protocol.Retryable {
+		t.Fatalf("ninth operation was not refused as busy/notApplied: %v", err)
+	}
+	if release, err := bus.admit("beta"); err != nil {
+		t.Fatalf("another owner was throttled by alpha: %v", err)
+	} else {
+		release()
+	}
+	releases[0]()
+	releases[0]()
+	if _, err := bus.admit("alpha"); err != nil {
+		t.Fatalf("slot was not freed: %v", err)
+	}
+	if _, err := bus.admit("alpha"); err == nil {
+		t.Fatal("double release freed a second slot")
+	}
+	for _, release := range releases[1:] {
+		release()
+	}
+}
+
+func TestProviderCallFailsBeforeEmitWhenOwnerIsAtItsLimit(t *testing.T) {
+	bus := newProviderBus("session", "generation", func() (sdk.Context, bool) { t.Fatal("emit reached despite the limit"); return sdk.Context{}, false })
+	for range maxProviderInFlight {
+		if _, err := bus.admit("alpha"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	err := bus.call(t.Context(), api.Identity{Owner: "alpha", Instance: "i"}, "reg", "resource.execute", map[string]any{}, nil, 0)
+	var provider *providerError
+	if !errors.As(err, &provider) || provider.protocol.Code != "busy" {
+		t.Fatalf("limit was not enforced before dispatch: %v", err)
 	}
 }
