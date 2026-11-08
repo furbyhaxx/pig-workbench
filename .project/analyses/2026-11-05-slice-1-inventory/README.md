@@ -215,6 +215,22 @@ Three repeated race-enabled runs passed for job manager cancellation, watcher jo
 | Direct and codemode yield identical safety | PASS for the unseen-line refusal | `TestLiveCodemodeEditRefusesUnseenLinesLikeTheDirectTool` |
 | All donor fixtures pinned to a source revision | NOT PROVEN | The behaviors are covered by this repository's own tests; no pinned donor corpus is run, so this bullet is not claimed |
 
+# Exact instruction anchors (SPEC-0007 §10, local)
+
+| Acceptance bullet | Status | Evidence |
+|---|---|---|
+| Selection table, filename precedence, root missing, same root/nearest, boundaries | PASS | `TestOverrideWinsAndBoundaryStops`, `TestRootNearestAndSymlinkDirectoryBoundaries`, `TestUserRootsPrecedeProject`, `TestNestedRepositoryRequiresExplicitConsent`, `TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule`. `select = "all"` ordering is Slice 2 (`TestPlacementsAndSelectAll` covers only the engine). A linked-worktree boundary has no dedicated test |
+| Parallel multi-read batches in different subtrees | PASS, after a defect fix | `TestLiveCodemodeParallelReadsDeliverTheUnionOfInstructions`. It reproduced one pending frame sent twice when two tool calls overlapped; fixed in `frame_context.go` by tracking frames already steered until confirmed |
+| Completion out of order, cwd transition during pending discovery | NOT PROVEN | Overlap is exercised, but neither forced completion order nor a `cd` during discovery has a test |
+| Pin add/unpin, branch fork, authority separation | PASS | `TestLivePinnedBacklogStaysDeliveredAndPoliciesHold`, `TestPinsFollowTheActiveBranchOnly`, `TestPinnableClassRefusesSteeringAndNamesAmbiguity`, `TestLivePrivateNotesUpdateAndPinnedNotesWithdrawOnProjectChange`. Pin replace-nearest and trust revocation of an existing pin are not covered by a named test |
+| BACKLOG counts, malformed pointers, oversized source, cap change, reorder | PASS | `TestBoundedScanReportsUnknownOmissions`, `TestMalformedPointerRemainsVisibleWithDiagnostic`, `TestContinuationBudgetDoesNotOscillate`, `TestViewsReserveFooterAndKeepWholeLines`, `TestLiveBacklogShowsAMissingPointerTarget` |
+| Diff reconstructs the delivered view byte for byte; no absent baseline | PASS | `TestUnifiedDiffAppliesByteForByte`, `TestApplyDiffRefusesAWrongBase`, `TestLiveChangedInstructionsArriveAsADiffAgainstTheDeliveredView`, `TestLiveInstructionChangedAcrossCompactionArrivesAsOneFullView` |
+| New file, deletion, turn-boundary healing | PASS | `TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn`. There is no filesystem watcher: sources are re-evaluated at each prompt and tool boundary, so watcher overflow and remote disconnect do not apply locally |
+| Mutation blocked before new instructions; codemode cannot hide targets | PASS, after a defect fix | `TestLiveMutationIsBlockedOnceWhenNewInstructionsApply`, `TestLiveTruncatedSteeringBlocksMutationsUntilFullyRead`, `TestLiveCodemodeCannotHideAMutationTargetFromTheInstructionBarrier`. The codemode retry was blocked forever because a target-less parent call withdrew the touched instruction; target-less calls no longer withdraw |
+| Self-edit transformation, failed persistence never marks delivered | PARTIAL | The diff base advances only when the frame is confirmed in context (`confirmContextFrames`), so a persistence or delivery failure cannot move it. No test forces that failure |
+| Equal bytes, different trust do not deduplicate | PARTIAL | `TestDuplicateUsesMostRestrictiveRoleAndLimits` covers the engine; no host-level test with two trust levels |
+| Host duplicate context suppression | PASS | `TestLiveCompactionResendsContextFactsOnce`, `TestLiveFramesAndInstructionRulesCommands` |
+
 # Acceptance blockers
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
