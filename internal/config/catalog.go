@@ -233,7 +233,7 @@ func Catalog() []Definition {
 			d.Description = "Enable builtin prompt takeover when delivery is force and instructions are enabled; rendering failure retains PiG's prompt."
 		case "prompt.delivery":
 			d.Application = "live"
-			d.Description = "Only force replaces PiG's prompt; auto and sections retain PiG pending authorized A/B evaluation."
+			d.Description = "Only force replaces PiG's prompt; auto and sections retain PiG; the live A/B was too small to change the default."
 		case "prompt.template":
 			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
 		case "skills.listing-budget":
