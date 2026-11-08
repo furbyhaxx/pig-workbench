@@ -259,6 +259,8 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 		return a.skillsCommand(ctx)
 	case "prompt":
 		return a.promptCommand(ctx)
+	case "codemode":
+		return a.codemodeCommand(ctx, rest)
 	case "frames":
 		return a.framesCommand(ctx)
 	case "instructions":
@@ -276,6 +278,6 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 	case "trust":
 		return a.trustCommand(ctx, rest)
 	default:
-		return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
+		return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | codemode [call id] | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
 	}
 }

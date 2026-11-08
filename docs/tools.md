@@ -105,6 +105,10 @@ cd {"reset": true}
 
 Inspects or changes the Workbench working location. It never changes PiG's process or session `cwd`. A transition waits at most two seconds for active mutations, persists a revisioned record, and only then becomes active. Relative `cd` against an unavailable stored location is refused instead of silently falling back.
 
+### Codemode child calls
+
+`/workbench codemode [call id]` lists nested calls Workbench observed in this runtime: parent ID, child ID, tool name and `running`/`ok`/`error`. Arguments and output are never retained. Records are bounded (128 parents, 64 children each, with an omitted count) and are lost on reload or resume; stock PiG still draws codemode's own child rows.
+
 ## `bash` and `jobs`
 
 ```text

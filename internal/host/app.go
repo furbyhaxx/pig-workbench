@@ -70,6 +70,7 @@ type session struct {
 	status              *statusBoard
 	docs                *docsCatalog
 	producers           *producerRegistry
+	children            *childCalls
 	endpoint            *sessionEndpoint
 	activity            *activityLine
 	installedMu         sync.Mutex
@@ -107,6 +108,8 @@ func Register(ext *sdk.Extension) {
 	ext.OnToolResult(a.capturePresentationFinal)
 	ext.OnToolResult(a.confirmRead)
 	ext.OnEvent(sdk.EventToolExecutionUpdate, a.capturePresentationUpdate)
+	ext.OnEvent(sdk.EventToolExecutionStart, a.captureChildStart)
+	ext.OnEvent(sdk.EventToolExecutionEnd, a.captureChildEnd)
 	ext.OnEvent("before_agent_start", a.contextFrames)
 	ext.OnEvent("before_provider_request", a.spliceLatePrompt)
 	ext.OnEvent("before_provider_request", a.redactProviderRequest)
@@ -220,6 +223,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		status:        newStatusBoard(hostContext),
 		docs:          docs,
 		producers:     newProducerRegistry(),
+		children:      newChildCalls(),
 	}
 	fetch.project = s.projectIdentity
 	docs.guide = s.schemeGuide
