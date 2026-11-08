@@ -42,7 +42,8 @@ func TestLiveWriteRevisionAndLs(t *testing.T) {
 		}{
 			{"write", map[string]any{"path": "created.txt", "content": "hello\nworld\n"}},
 			{"read", map[string]any{"path": "created.txt:1-1:raw"}},
-			{"write", map[string]any{"path": "created.txt", "content": "stale\n", "expectedRevision": "deadbeef"}},
+			{"write", map[string]any{"path": "created.txt", "content": "stale\n", "expectedRevision": strings.Repeat("ab", 32)}},
+			{"write", map[string]any{"path": "created.txt", "content": "stale\n", "expectedRevision": "4a1e"}},
 			{"ls", map[string]any{"path": "."}},
 			{"write", map[string]any{"path": "created.txt", "content": "fresh\n"}},
 		}
@@ -70,8 +71,8 @@ func TestLiveWriteRevisionAndLs(t *testing.T) {
 	output := runPigJSON(t, ctx, repo, root, work, []string{"--tools", "read,write,ls"}, "exercise")
 	mu.Lock()
 	defer mu.Unlock()
-	if len(requests) < 6 {
-		t.Fatalf("expected 6 provider calls, got %d\n%s", len(requests), output)
+	if len(requests) < 7 {
+		t.Fatalf("expected 7 provider calls, got %d\n%s", len(requests), output)
 	}
 	text := func(i int) string {
 		data, _ := json.Marshal(requests[i]["messages"])
@@ -83,8 +84,11 @@ func TestLiveWriteRevisionAndLs(t *testing.T) {
 	if !strings.Contains(text(3), "staleRevision") {
 		t.Fatalf("wrong revision was not refused: %s", text(3))
 	}
-	if !strings.Contains(text(4), "created.txt") || !strings.Contains(text(4), "work") {
-		t.Fatalf("listing did not use the captured location: %s", text(4))
+	if !strings.Contains(text(4), "64-hex Revision") {
+		t.Fatalf("a malformed revision must be refused with the receipt hint: %s", text(4))
+	}
+	if !strings.Contains(text(5), "created.txt") || !strings.Contains(text(5), "work") {
+		t.Fatalf("listing did not use the captured location: %s", text(5))
 	}
 	data, err := os.ReadFile(filepath.Join(work, "created.txt"))
 	if err != nil {
