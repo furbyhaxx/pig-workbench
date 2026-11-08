@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 59
+  revision: 60
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T00:00:00+01:00"
+  updated_at: "2026-11-08T23:45:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 60
+      reason: "User review: wake-capable frames, tuning, remaining local gaps and live frame and instruction evaluation"
+      changes: ["Recorded the live wake, tool-tuning, frame and instruction results", "Recorded the fork deadlock and nested-instruction withdrawal fixes", "Corrected stale not-done statements for the panels and live evaluation"]
     - revision: 59
       reason: "Close the SPEC-0003 §8 presentation anchors"
       changes: ["Replaced the stale presentation ledger with final per-anchor evidence", "Added a preset/density/state/width matrix test and a foreign-tool-without-Workbench live test", "Named stock codemode child rows as the remaining host limit"]
@@ -158,7 +161,7 @@ Reproduced in a real `pig -e .` TUI: `/workbench tools settings` threw `tool "se
 
 Now, in the TUI: `/workbench` opens a hub (SKETCH-0001 §3 shape) listing 17 views; every entry opens a titled, scrollable, width-wrapped panel and Esc returns to the hub with the selection kept; `/workbench settings` opens a settings panel with search, value and source per setting, staged edits (toggle, choice cycle, typed integers and strings with bounds), per-scope save, reset staging and a discard guard. An unknown tool name now warns instead of failing the command. RPC and print keep plain text. Real-TUI tests: `TestLiveEveryHubEntryOpensATitledPanelWithoutAnError`, `TestLiveWorkbenchMenuOpensInteractivePanelsInTUI` (including a save that is read back from `Workbench.toml`), `TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard`, `TestLiveToolsWithAnUnknownNameWarnsInsteadOfFailingTheCommand` (confirmed to fail on the old behaviour); logs: [check](evidence/menu-check.log), [race](evidence/menu-race.log), [full integration](evidence/menu-all.log).
 
-**Awaiting user layout review** (these are new surfaces): captures at 36/57/80/140 columns and 16 rows in `evidence/menu-tui/{hub,settings,tools}/`. Not done: panels for jobs actions (kill/wait), instruction pins, trust editing and session messaging are still read-only views, not interactive editors; the hub is not searchable; array-valued settings cannot be edited in the panel; no mouse support was exercised; sizing was measured on one terminal emulator (tmux).
+**Awaiting user layout review** (these are new surfaces): captures at 36/57/80/140 columns and 16 rows in `evidence/menu-tui/{hub,settings,tools}/`. Later (review follow-up below): the hub is searchable, array settings are editable and the jobs, pins, trust and sessions panels are interactive. Still not exercised: mouse input; sizing was measured on one terminal emulator (tmux).
 
 # Tool display view (second user report)
 
@@ -259,7 +262,7 @@ Verified against code in the continuation; two bullets were not met as written a
 
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
 - Declared provider mutations are wired without new permission prompts under SPEC-0004 revision 8. Provider hashline editing remains unavailable; the full ownership-row evidence mapping and slice exit remain open. Redirects implement a static-word form, not general shell redirection.
-- Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
+- Live evaluation ran on deepseek/deepseek-flash after the user authorized it: the prompt A/B, the tool-description suite, an end-to-end workflow, wake delivery, frames and instructions (see the review follow-up). The scripted-provider evidence above is still the proof for mechanics a live model does not exercise, such as compaction, pins and the capped-BACKLOG diff.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.
 
 ## SPEC-0008 §8 local rows (audit)
@@ -306,3 +309,23 @@ Not implemented from SPEC-0008 §6: `jobs wait until=output`, a `signal` argumen
 | Throughput | MEASURED | ~1.2 MB (about 300k tokens) of 1,300 distinct messages with a 61-entry vault: 450 ms per pass before memoization (each string reloaded and decrypted the whole vault), 120 ms cold and 2 ms warm after it. The detector now caches the decrypted known-value snapshot and per-text results keyed by a vault version (size and mtime), so any append, soft delete or learn invalidates both. `TestRedactMessagesMemoizesUnchangedEntriesAgainstTheVaultVersion`, `TestMemoDoesNotOutliveAVaultChange`, `TestMemoStopsHidingAValueAfterItIsSoftDeleted`. `TestRedactMessagesLargeContextStaysBounded` keeps a loose 5 s guard; no latency budget is promised. |
 | `secret://`, `.not-a-secret`, `secrets://` | Slice 2 | not claimed |
 | SPEC-0010 §9 configuration rows | PASS | Phase B evidence plus `TestLiveCatalogSettingsHaveBehavioralConsumers` |
+
+## Review follow-up: wake, tuning, frames and instructions (live)
+
+All runs use deepseek/deepseek-flash with the key from the environment; transcripts and captured provider requests are redacted and kept under `evidence/`. Samples are small (n=1 to 3) and one model, so they show behavior, not statistics.
+
+| Area | Result | Evidence |
+|---|---|---|
+| Frame wake | `wake` is a publish flag (SPEC-0002 rev 9); a finished background job wakes an idle model, a `wake=false` frame never starts a turn and reaches the model with the next prompt, `wake=true` starts one | `TestLiveEvalFinishedJobWakesTheModelAndAQuietFrameDoesNot`; `jobs.wake-on-completion` (default true) |
+| Tool, parameter and error text | Tuned only against observed DeepSeek failures: tool errors 21 to 4, calls 173 to 131, shell reads 14 to 1, 66 of 66 tasks pass, held-out tasks 0 errors | `liveeval_tools_test.go`, commit `b00f7a9` |
+| Frames inject once and deduplicate | The startup notice appears exactly once in every request over five turns; a duplicate publish is delivered once; a restarted session replays history without repeating a frame; a fork does not inherit a frame delivered only on the abandoned branch | `TestLiveEvalFramesInjectOnceAndDeduplicate`, `evidence/live-frames/` |
+| Frames are useful and untrusted data does not steer | 9 of 9: a relevant frame is used unprompted, an irrelevant one neither derails nor leaks, an injected instruction in untrusted frame data is not obeyed | `TestLiveEvalFramesAreUsefulAndUntrustedFramesDoNotSteerTheModel` |
+| Instructions inject, update and are obeyed | Root AGENTS.md once with no host duplicate; nested rule once on touch and obeyed; an external edit arrives as one diff update and is obeyed; root BACKLOG.md pointers arrive once from the first request and are used | `TestLiveEvalInstructionsInjectOnceDiffAndAreObeyed`, `evidence/live-instructions/` |
+
+Defects the live runs found, each fixed with a regression test that failed first:
+
+- **Fork deadlock.** `fork` (and any session replacement) hung forever when a contributed status segment existed, because `statusBoard.close` called the host through the retained session-start context. It now uses the live shutdown context. `TestLiveForkWithAContributedStatusSegmentDoesNotDeadlock`.
+- **Nested instructions withdrawn every prompt.** A nested AGENTS.md delivered by a touch was withdrawn at the next prompt and re-delivered on the next touch, costing a blocked write and a duplicate view. SPEC-0007 retains the most recent completed target set; the host now does until the location, the context epoch or the next explicit target changes. `TestLiveNestedInstructionsSurviveTheNextPrompt`.
+- **Untested refusal.** A malformed `expectedRevision` was refused with a helpful message but no test; `TestLiveWriteRevisionAndLs` now covers it and uses a well-formed wrong revision for the stale case.
+
+Still not evaluated with a live model: pins, the capped-BACKLOG diff, compaction with instructions, and a bash-capable injection against frame data (only `read` was available in that scenario).

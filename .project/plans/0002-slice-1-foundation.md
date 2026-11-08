@@ -5,12 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 60
+  revision: 61
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-08T21:50:00+01:00"
+  updated_at: "2026-11-08T23:45:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 61
+      reason: "User review after the final report: job notices must wake, tuning and frame and instruction behavior needed live evidence, and local gaps needed closing"
+      changes: ["Frames carry wake=true/false (SPEC-0002 rev 9); finished jobs wake the model", "Tuned tool, parameter and error text against observed DeepSeek failures", "Closed jobs wait/kill/stream, redaction memoization, interactive panels and a real session replacement test", "Live frame and instruction evaluation found and fixed a fork deadlock and per-prompt nested-instruction withdrawal"]
     - revision: 60
       reason: "Close the local acceptance audit and record final gates and the live evaluation"
       changes: ["Recorded the SPEC-0008, SPEC-0009, SPEC-0010, SPEC-0011 and SPEC-0013 audit results", "Added background-job completion notices", "Recorded green check, race and integration gates and named the remaining PARTIAL rows"]
