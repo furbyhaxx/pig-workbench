@@ -1,6 +1,7 @@
 package host
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -132,6 +133,72 @@ func TestPresentationUnusableDetailsKeepTheRawResult(t *testing.T) {
 		lines, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Content: raw, Details: details}, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}, 80)
 		if err != nil || !strings.Contains(strings.Join(lines, "\n"), "Fixture result") {
 			t.Errorf("%s lost the raw result: %q, %v", name, lines, err)
+		}
+	}
+}
+
+func TestEveryPresetAndStateFitsEveryWidthWithBoundedHeight(t *testing.T) {
+	long := "https://example.test/" + strings.Repeat("deep/path/", 12) + "page"
+	wide := "日本語のとても長い見出し " + strings.Repeat("wide ", 30)
+	blocks := []any{
+		map[string]any{"kind": "text", "text": strings.Repeat(wide+"\n", 30), "role": "error"},
+		map[string]any{"kind": "code", "text": strings.Repeat("go build ./...\n", 40), "language": "sh"},
+		map[string]any{"kind": "notice", "text": wide, "severity": "warning"},
+		map[string]any{"kind": "table", "table": map[string]any{
+			"columns": []any{map[string]any{"id": "u", "label": "URL", "cell": "uri"}},
+			"rows":    []any{[]any{map[string]any{"kind": "uri", "value": long}}},
+		}},
+	}
+	states := map[string]map[string]any{
+		"preparing": {"phase": "preparing", "outcome": nil, "complete": nil},
+		"running":   {"phase": "running", "outcome": nil, "complete": nil},
+		"succeeded": {},
+		"failed":    {"outcome": "failed", "effects": "partial", "error": map[string]any{"code": "upstream", "message": wide}},
+		"cancelled": {"outcome": "cancelled"},
+		"timedOut":  {"outcome": "timedOut"},
+		"denied":    {"outcome": "denied"},
+		"unknown":   {"outcome": "unknown", "effects": "unknown"},
+	}
+	for _, preset := range []string{"generic", "text", "fileRead", "fileEdit", "search", "process", "questionnaire", "composite"} {
+		for _, density := range []string{"compact", "normal", "full"} {
+			descriptor := fmt.Sprintf(`{"toolNames":["build_run"],"label":"Matrix","presentationVersion":1,"preset":%q,"defaultDisplay":{"density":%q,"previewLines":5},"callFields":[{"pointer":"/target","label":"target","format":"path"}],"metricDefinitions":[]}`, preset, density)
+			a := &app{}
+			s := presentationSession(t)
+			registerPresentation(t, a, s, "build-tools", "i-1", "build_run", descriptor)
+			a.session = s
+			renderers := a.resolveToolRenderer("build_run", func() *sdk.ToolRenderers { return nil })
+			if renderers == nil {
+				t.Fatalf("%s: no renderer", preset)
+			}
+			for name, state := range states {
+				snapshot := map[string]any{"title": wide, "target": map[string]any{"kind": "uri", "value": long}, "blocks": blocks}
+				for key, value := range state {
+					snapshot[key] = value
+				}
+				details := webSearchDetails(snapshot)
+				for key, value := range details["workbenchPresentation"].(map[string]any) {
+					if value == nil {
+						delete(details["workbenchPresentation"].(map[string]any), key)
+					}
+				}
+				for _, width := range []int{36, 57, 80, 140} {
+					lines, err := renderers.Result(sdk.Context{}, sdk.ToolRenderResult{Details: details}, sdk.ToolRenderResultOptions{IsPartial: name == "running"}, sdk.ToolRenderContext{}, width)
+					if err != nil {
+						t.Fatalf("%s/%s/%s/%d: %v", preset, density, name, width, err)
+					}
+					if strings.Contains(strings.Join(lines, "\n"), "presentation unavailable") {
+						t.Fatalf("%s/%s/%s/%d: fixture fell back to the raw view: %q", preset, density, name, width, lines)
+					}
+					if len(lines) == 0 || len(lines) > 60 {
+						t.Errorf("%s/%s/%s/%d: %d rows", preset, density, name, width, len(lines))
+					}
+					for _, line := range lines {
+						if tui.VisibleWidth(line) > width || strings.ContainsAny(line, "\x1b\x07") {
+							t.Errorf("%s/%s/%s/%d: bad row %q", preset, density, name, width, line)
+						}
+					}
+				}
+			}
 		}
 	}
 }

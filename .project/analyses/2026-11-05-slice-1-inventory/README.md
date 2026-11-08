@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 58
+  revision: 59
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T22:40:00+01:00"
+  updated_at: "2026-11-08T00:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 59
+      reason: "Close the SPEC-0003 §8 presentation anchors"
+      changes: ["Replaced the stale presentation ledger with final per-anchor evidence", "Added a preset/density/state/width matrix test and a foreign-tool-without-Workbench live test", "Named stock codemode child rows as the remaining host limit"]
     - revision: 58
       reason: "Close the protocol lifecycle anchors with fresh evidence"
       changes: ["Marked deadline, cancel, drain, progress, strict replies, dormant replay and collaboration services PASS", "Kept fused Workbench and never-returning reload as named host limits"]
@@ -106,24 +109,24 @@ Remaining protocol limits are host or platform facts, not Workbench gaps: fused 
 
 # Exact local presentation anchors
 
-SPEC-0003 §8 bullets are audited against its in-scope §2–6/§10 contract. Current observed cases are [presentation-anchors-unit.log](evidence/presentation-anchors-unit.log) and [presentation-anchors-live.log](evidence/presentation-anchors-live.log).
+SPEC-0003 §8 bullets audited against the in-scope §2–§6 and §10 contract after all presentation work. Final observed runs: [unit](evidence/presentation-final-unit.log) and [real PiG hosts](evidence/presentation-final-live.log).
 
-| Anchor | Status | Evidence and remaining work |
+| Anchor | Status | Evidence |
 |---|---|---|
-| §8.1 foreign tool/normal renderer/settings/producer independence | PARTIAL | Actual reference rendering data, owner-scoped settings.get, dynamic catalog and dormant overrides pass. Renderer application and absent-producer semantic replay remain 17.8.10.7/9. |
-| §8.2 opt-in ownership and visible conflicts | OPEN | Host-source ownership verification passes [unit](evidence/presentation-ownership-unit.log) and [actual foreign-claim refusal](evidence/presentation-ownership-live.log) cases. First-use/appliesAfterReload late-claim, restoration and withdrawal paths pass [unit](evidence/presentation-resolver-limits-unit.log) cases; actual seam/reload regressions remain green ([evidence](evidence/presentation-resolver-limits-live.log)). |
-| §8.3 host error and monotonic final state | PASS (captured lifecycle) | Host-error truth, stale running updates, final conflict diagnostics and nonterminal final fallback pass [unit/cache](evidence/presentation-lifecycle-cache-unit.log) and [actual streamed update](evidence/presentation-lifecycle-cache-live.log) tests. |
-| §8.4 incomplete success vs partial-commit failure | PASS (semantic headers) | Plain lifecycle/host-error/typed snapshot tests distinguish completeness, outcome and effects. |
-| §8.5 preset/state widths, height, hostile text | PARTIAL | Width and hostile-byte cases pass, including actual web-shaped data. Exhaustive configured preset/state/short-height verification remains 17.8.10.8/9, not inferred from one search card. |
-| §8.6 donor path display and authority/basename | PASS (formatter) | Path-display package goldens and hostile/width fixtures pass. Historical root stamping and mutable-cwd independence in tool rows remain 17.8.10.10. |
-| §8.7 unknown metrics/images/malformed/unsupported/children | PARTIAL | Typed schema rejection, raw fallback, zero-vs-absent metrics and image/children shapes are exercised. Actual capture/replay and missing-args labels remain 17.8.10.9/10. |
-| §8.8 settings precedence/reset/dormancy/replacement/invalidation | OPEN | The config engine now supports typed dynamic owner/key schemas with quoted-key safe saves, trust, precedence/reset and dormancy ([unit evidence](evidence/dynamic-display-config-unit.log)). Producer activation, dormant overrides and incompatible-type rollback now pass [unit](evidence/presentation-display-schema-unit.log) and [actual host](evidence/presentation-display-schema-live.log) cases. Enabled/density/preview/metric controls now apply live through revision-keyed caches ([unit rendering](evidence/effective-display-rendering-unit.log), [actual settings/event](evidence/effective-display-settings-live.log), [full integration](evidence/effective-display-full-integration.log)); other controls remain registered-only. settings.get/catalog also pass [unit](evidence/display-settings-get-unit.log) and [actual host](evidence/display-settings-get-live.log) cases; grouped editing is implemented with provisional captures awaiting user review; monotonic snapshot lifecycle, replay and recorded-target/host-metric work remain 17.8.10.8–10. |
-| §8.9 direct/codemode semantics and no-I/O replay | OPEN | Stock codemode's native child renderer is an explicit host limitation. Workbench has no child-capture inspector or guarded semantic replay path yet; 17.8.10.9 owns actual evidence. |
-| §8.10 cached resolver claims/unregister/D89 | OPEN | Resolver first-use descriptor identity now drives appliesAfterReload receipts and pending withdrawal inspection. Unit late-claim/restore/withdrawal cases and actual reference reload regressions pass; display revision invalidation remains the settings implementation task. |
-| §5 hot render path | PASS (identified retained calls) | Stream/final/context hooks validate on data change; repeated width/settings renders use bounded immutable snapshots/layouts. Historical misses bootstrap once; unidentified cards validate independently rather than borrowing another call's state. Full integration passes ([evidence](evidence/presentation-lifecycle-full-integration.log)). |
-| §10 recorded target/root and metric authority | OPEN | Shared formatter is tested, but tool headers do not carry a recorded root and host-known metric precedence is not reconciled. Work is 17.8.10.10. |
+| §8.1 foreign tool renders, appears in settings, keeps working after Workbench unload | PASS | `TestLiveReferenceProducerSeams` (renderer on real data), `TestLiveForeignToolKeepsWorkingWithoutWorkbench` (producer alone, tool result intact), `TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues`, `TestLiveGroupedDisplaySettingsEditResetAndInspection` |
+| §8.2 no override for non-opted-in tools; visible conflicts | PASS | `TestToolPresentationRegistrationDrivesTheResolver` (unregistered tool reaches next), `TestPresentationClaimRequiresVerifiedToolOwnership`, `TestLivePresentationOwnerCannotClaimAnotherExtensionsTool`, first-use `appliesAfterReload` receipts |
+| §8.3 host error and monotonic final state | PASS | `TestPresentationCacheNeverResurrectsSettledOrConflictingFinals`, `TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict`, host-error row in `TestPresentationPlainRowPerLifecycleState` |
+| §8.4 incomplete success vs partial-commit failure | PASS | `TestPresentationPlainRowPerLifecycleState` |
+| §8.5 every preset and state at 36/57/80/140 columns, bounded height, hostile text | PASS (plain renderer) | `TestEveryPresetAndStateFitsEveryWidthWithBoundedHeight`: 8 presets x 3 densities x 8 states x 4 widths on the typed path with wide runes and long URIs; it fails when the width bound is tightened by one cell. `TestPresentationHostileTerminalBytesNeverReachTheRow` covers escape bytes. Short height is the row-count bound; kit panels are Slice 3. |
+| §8.6 donor path display, authority and basename | PASS | `internal/pathdisplay` goldens; `TestPresentationCallUsesRecordedRootAndLabelsMissingOrPartialArguments` for recorded roots |
+| §8.7 unknown metrics, images, malformed Details, unsupported versions, omitted children | PASS | `TestDecode*` schema cases, `TestPresentationUnusableDetailsKeepTheRawResult`, `TestLiveCodemodeChildIdentitiesAreRetainedForInspection` |
+| §8.8 precedence, reset, dormancy, replacement, invalidation | PASS for enabled/density/previewLines/metric visibility/target shortening; PARTIAL for others | `TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys`, `TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues`, dynamic display config unit tests. Child-density and producer-declared custom toggles are stored and reported but nothing renders from them, because Workbench draws no child rows (host limit below). |
+| §8.9 direct vs codemode semantics, replay without producer performs no I/O | PARTIAL | Replay: `TestLiveRetainedProducerResultIsReadableAfterProducerRemoval`, `TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides`. Codemode: stock PiG draws child rows itself, so Workbench captures child identities for inspection only (`TestLiveCodemodeChildIdentitiesAreRetainedForInspection`); unified child formatting needs the fork hook (PLAN-0004 C4). |
+| §8.10 cached resolver claims, unregister, no foreign next() call | PASS | resolver first-use tracking tests, `TestLiveReferenceProducerReload`; no foreign renderer marker is ever called |
+| §5 hot render path | PASS | `TestPresentationCacheOwnsValidatedDataAndSeparatesCalls`, `TestPresentationCacheRetentionIsBoundedAndFinalCannotRemainRunning` |
+| §10 recorded target root, host metric authority | PASS | `TestPresentationCallUsesRecordedRootAndLabelsMissingOrPartialArguments`, `TestPresentationHeaderHostDurationOverridesProducerApproximationOnly` |
 
-These gaps are founded Slice 1 data/settings/lifecycle behavior, not deferred rich-panel polish. None is silently moved to Slice 3.
+Remaining PARTIAL rows are host limits (stock codemode child rows) and are named, not hidden; kit panels and designed layouts stay Slice 3.
 
 # Provisional grouped display settings view
 

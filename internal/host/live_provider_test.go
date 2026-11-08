@@ -39,7 +39,17 @@ func repoRoot(t *testing.T) string {
 
 func runPigJSON(t *testing.T, ctx context.Context, repo, root, dir string, args []string, prompt string) []byte {
 	t.Helper()
-	command := []string{"--offline", "--no-session", "-e", repo, "--mode", "json", "--model", "workbench-fixture/mock"}
+	return runPigJSONWith(t, ctx, []string{repo}, root, dir, args, prompt)
+}
+
+// runPigJSONWith runs one JSON-mode prompt with exactly the listed extensions loaded.
+func runPigJSONWith(t *testing.T, ctx context.Context, extensions []string, root, dir string, args []string, prompt string) []byte {
+	t.Helper()
+	command := []string{"--offline", "--no-session"}
+	for _, extension := range extensions {
+		command = append(command, "-e", extension)
+	}
+	command = append(command, "--mode", "json", "--model", "workbench-fixture/mock")
 	command = append(command, args...)
 	command = append(command, prompt)
 	cmd := exec.CommandContext(ctx, "pig", command...)

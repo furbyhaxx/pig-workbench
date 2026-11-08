@@ -1,0 +1,30 @@
+=== RUN   TestLiveCodemodeChildIdentitiesAreRetainedForInspection
+--- PASS: TestLiveCodemodeChildIdentitiesAreRetainedForInspection (0.95s)
+=== RUN   TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides
+--- PASS: TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides (1.39s)
+=== RUN   TestLiveRetainedProducerResultIsReadableAfterProducerRemoval
+--- PASS: TestLiveRetainedProducerResultIsReadableAfterProducerRemoval (1.73s)
+=== RUN   TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict
+--- PASS: TestLivePresentationUpdatesRetainFailedFinalAndExposeConflict (0.76s)
+=== RUN   TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues
+--- PASS: TestLiveDisplaySettingsChangedCarriesOnlyBoundDisplayValues (0.74s)
+=== RUN   TestLiveGroupedDisplaySettingsEditResetAndInspection
+--- PASS: TestLiveGroupedDisplaySettingsEditResetAndInspection (0.75s)
+=== RUN   TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues
+--- PASS: TestLiveDisplaySettingsGetReportsOnlyEffectiveDisplayValues (0.77s)
+=== RUN   TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys
+--- PASS: TestLivePresentationDefaultsAndDormantOverridesFollowStableKeys (0.82s)
+=== RUN   TestLivePresentationOwnerCannotClaimAnotherExtensionsTool
+--- PASS: TestLivePresentationOwnerCannotClaimAnotherExtensionsTool (0.88s)
+=== RUN   TestLiveReferenceProducerReload
+--- PASS: TestLiveReferenceProducerReload (1.20s)
+=== RUN   TestLiveReferenceProducerSeams
+--- PASS: TestLiveReferenceProducerSeams (1.07s)
+=== RUN   TestLiveReferenceProducerFrameRules
+--- PASS: TestLiveReferenceProducerFrameRules (0.82s)
+=== RUN   TestLiveReferenceProducerLoadsBeforeWorkbench
+--- PASS: TestLiveReferenceProducerLoadsBeforeWorkbench (0.75s)
+=== RUN   TestLiveForeignToolKeepsWorkingWithoutWorkbench
+--- PASS: TestLiveForeignToolKeepsWorkingWithoutWorkbench (0.32s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	13.980s

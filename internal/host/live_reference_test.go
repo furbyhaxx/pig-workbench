@@ -476,3 +476,57 @@ func TestLiveFusedReferenceProducerRegistersWithSubprocessWorkbench(t *testing.T
 		t.Fatalf("fused producer did not register every kind with Workbench: %v", record["message"])
 	}
 }
+
+// TestLiveForeignToolKeepsWorkingWithoutWorkbench loads the pig-web-shaped producer alone:
+// its tool must execute and return its own result when Workbench is not loaded (SPEC-0003 §8).
+func TestLiveForeignToolKeepsWorkingWithoutWorkbench(t *testing.T) {
+	repo := repoRoot(t)
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	if err := os.MkdirAll(work, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	var requests []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, `{"data":[{"id":"mock","object":"model"}]}`)
+			return
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		index := len(requests)
+		requests = append(requests, body)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": fmt.Sprintf("r%d", index), "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		if index == 0 {
+			send(map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"index": 0, "id": "r0", "type": "function", "function": map[string]any{"name": "web_search", "arguments": `{"query":"fixture"}`}}}}, nil)
+			send(map[string]any{}, "tool_calls")
+		} else {
+			send(map[string]any{"role": "assistant", "content": "done"}, nil)
+			send(map[string]any{}, "stop")
+		}
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	output := runPigJSONWith(t, ctx, []string{filepath.Join(repo, "internal/host/testdata/reference-producer")}, root, work, nil, "search")
+	mu.Lock()
+	defer mu.Unlock()
+	if len(requests) != 2 {
+		t.Fatalf("expected two provider calls, got %d\n%s", len(requests), output[max(0, len(output)-3000):])
+	}
+	messages, _ := requests[1]["messages"].([]any)
+	last, _ := json.Marshal(messages[len(messages)-1])
+	if !strings.Contains(string(last), "Fixture result") {
+		t.Fatalf("foreign tool result lost without Workbench: %s", last)
+	}
+}
