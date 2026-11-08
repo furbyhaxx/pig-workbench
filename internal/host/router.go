@@ -81,6 +81,14 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	return router, scratch, nil
 }
 
+// cutScheme strips "scheme://", or "scheme:" which is how url.URL prints an empty host and path.
+func cutScheme(uri, scheme string) (string, bool) {
+	if rest, ok := strings.CutPrefix(uri, scheme+"://"); ok {
+		return rest, true
+	}
+	return strings.CutPrefix(uri, scheme+":")
+}
+
 func sessionKey(ctx sdk.Context) string {
 	if id, err := ctx.GetSessionID(); err == nil && id != "" {
 		return id

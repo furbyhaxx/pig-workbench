@@ -219,7 +219,7 @@ type docsTarget struct {
 }
 
 func splitDocs(uri string) (docsTarget, error) {
-	rest, ok := strings.CutPrefix(uri, "docs://")
+	rest, ok := cutScheme(uri, "docs")
 	if !ok {
 		return docsTarget{}, errors.New("docs provider requires a docs:// URI")
 	}

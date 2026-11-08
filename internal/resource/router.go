@@ -196,11 +196,33 @@ func (r *Router) Read(ctx context.Context, target Target, budget Budget) (ReadRe
 	if err := ctx.Err(); err != nil {
 		return ReadResult{}, err
 	}
-	result, err := provider.Read(ctx, ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: budget})
+	request := ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: budget}
+	result, err := provider.Read(ctx, request)
 	if err != nil {
+		if listed, ok := readAsDirectory(ctx, provider, request); ok {
+			return listed, nil
+		}
 		return ReadResult{}, fmt.Errorf("read %s: %w", target.Requested, err)
 	}
 	return result, nil
+}
+
+// readAsDirectory renders a provider's directory as the same listing view files use,
+// for providers whose Read serves only leaf resources.
+func readAsDirectory(ctx context.Context, provider Provider, request ReadRequest) (ReadResult, bool) {
+	stat, err := provider.Stat(ctx, request.URI)
+	if err != nil || stat.Kind != EntryDir || request.Selector.Raw || len(request.Selector.Ranges)+len(request.Selector.Tails) > 1 {
+		return ReadResult{}, false
+	}
+	listing, err := provider.List(ctx, request.URI, "", 2000)
+	if err != nil {
+		return ReadResult{}, false
+	}
+	result, err := renderDirectory(ctx, listing, request)
+	if err != nil {
+		return ReadResult{}, false
+	}
+	return result, true
 }
 
 var reserved = map[string]bool{

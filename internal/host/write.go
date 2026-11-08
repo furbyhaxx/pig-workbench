@@ -22,7 +22,7 @@ import (
 func (a *app) registerWriteAndList(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "write", Label: "write",
-		Description:   "Create or fully replace a local file or declared writable provider resource; use edit for local partial changes. Relative paths resolve against the Workbench location. For local files, expectedRevision requires an unchanged file, content is written atomically, existing modes are preserved, and directories are not created. Control writes also support job:// stdin and ctl, skill:// unload, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl; their own policy and confirmation rules apply.",
+		Description:   "Create or fully replace a local file or declared writable provider resource; use edit for local partial changes. Relative paths resolve against the Workbench location. For local files, expectedRevision requires an unchanged file, content is written atomically, existing modes are preserved, and directories are not created. local://<name> writes a file into the session scratch (existing directory, 4 MiB maximum, no revision checks). Control writes also support job:// stdin and ctl, skill:// unload, agent://<id>/inbox, session://<id>/title and session://self/instructions/ctl; their own policy and confirmation rules apply.",
 		PromptSnippet: "Create or fully replace one file, optionally guarded by the revision you read.",
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"path", "content"}, "properties": map[string]any{
 			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file, writable provider URI or supported control URI."},
@@ -116,6 +116,12 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	if _, contributed := s.contributedDescriptor(target.Scheme); contributed {
 		return a.mutateProvider(work, s, target, "write", "", &input.Content, input.ExpectedRevision)
 	}
+	if target.Scheme == "local" {
+		if hasExpectedRevision {
+			return nil, errors.New("expectedRevision is supported only for local files; the scratch write was not performed")
+		}
+		return a.writeScratch(work, s, target, input.Content)
+	}
 	if hasExpectedRevision && target.Scheme != "file" {
 		return nil, errors.New("expectedRevision is supported only for local files; the control write was not performed")
 	}
@@ -173,6 +179,25 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	receipt := fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(input.Content), target.URI, revision)
 	s.rememberWritten(ctx.ToolCallID(), epoch, target, []byte(input.Content), receipt)
 	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision}}, nil
+}
+
+// writeScratch writes one file into the session's private local:// scratch.
+func (a *app) writeScratch(work context.Context, s *session, target resource.Target, content string) (sdk.ToolResult, error) {
+	provider, err := s.router.Provider(target)
+	if err != nil {
+		return sdk.ToolResult{}, err
+	}
+	scratch, ok := provider.(*resource.LocalProvider)
+	if !ok {
+		return sdk.ToolResult{}, errors.New("local:// scratch is unavailable this session")
+	}
+	canonical, created, err := scratch.Write(work, target.URI, []byte(content))
+	if err != nil {
+		return sdk.ToolResult{}, err
+	}
+	digest := sha256.Sum256([]byte(content))
+	revision := hex.EncodeToString(digest[:])
+	return sdk.ToolResult{Content: fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(content), canonical, revision), Details: map[string]any{"uri": canonical, "revision": revision, "bytes": len(content), "created": created}}, nil
 }
 
 func (a *app) writeControl(ctx sdk.Context, work context.Context, s *session, target resource.Target, content string) (sdk.ToolResult, error) {

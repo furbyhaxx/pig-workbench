@@ -29,6 +29,8 @@ Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 li
 
 Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.
 
+Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill://`, `job://`, a registered provider's directory) returns the same paged listing view a local directory does; a provider only needs to implement listing.
+
 `http(s)://` reads can use a registered fetch backend or the builtin static reader. In the builtin reader, HTML is converted to readable Markdown by default, while `:raw` keeps the decoded document. Credentials in URLs, bare hosts without an explicit `/`, non-http(s) redirects and redirect cycles are refused; redirects are reauthorized per hop within an 8-hop limit. Charset metadata is decoded, bodies and rendered output are capped at 4 MiB, binary media is refused, and page facts name the handler, content type, final URI and notices. Scripts are never executed and meta/script redirects are reported, not followed.
 
 `artifact://specs/0001-x.md` resolves to the nearest `.project/` directory above the session's project root, so every worktree and subdirectory of a project sees the same artifact tree without absolute paths. Paths cannot escape it, and a working location with no artifact tree reports not-found.
@@ -56,6 +58,8 @@ write {"path": "notes.md", "content": "text", "expectedRevision": "<revision fro
 ```
 
 Creates or fully replaces one local file. A supplied `expectedRevision` must match the file's current digest or the write is refused with `staleRevision`. The replacement is atomic (same-directory temporary file, flush, rename), an existing file keeps its mode, a new file is created `0600`, and the parent directory must already exist. Line selectors are rejected; use `edit` for partial changes.
+
+`local://<name>` writes a file into the session scratch: the parent directory must already exist, the content is limited to 4 MiB, links and directories are refused, nothing outside the scratch root is reachable, and `expectedRevision` is rejected. The replacement is atomic.
 
 Declared writable provider resources also accept `write`, with a 32 KiB content limit and the encoded 64 KiB control-envelope limit. Workbench captures the current revision (or absence) and the provider rechecks it at commit; an explicit `expectedRevision` must match. Results report committed, notApplied, partial or unknown, never automatic retries. There are no new permission or confirmation prompts for contributed mutations.
 

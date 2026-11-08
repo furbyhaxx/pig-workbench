@@ -171,6 +171,11 @@ func readDirectory(ctx context.Context, path string, request ReadRequest) (ReadR
 	if err != nil {
 		return ReadResult{}, err
 	}
+	return renderDirectory(ctx, listing, request)
+}
+
+// renderDirectory turns one listing page into the stable, pageable directory view.
+func renderDirectory(ctx context.Context, listing Listing, request ReadRequest) (ReadResult, error) {
 	var body strings.Builder
 	for _, entry := range listing.Entries {
 		switch entry.Kind {

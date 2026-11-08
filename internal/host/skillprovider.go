@@ -36,7 +36,7 @@ type skillProvider struct{ source func() (*session, bool) }
 func (skillProvider) Scheme() string { return "skill" }
 
 func splitSkill(uri string) ([]string, error) {
-	rest, ok := strings.CutPrefix(uri, "skill://")
+	rest, ok := cutScheme(uri, "skill")
 	if !ok {
 		return nil, errors.New("skill provider requires a skill:// URI")
 	}

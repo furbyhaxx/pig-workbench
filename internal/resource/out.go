@@ -279,3 +279,69 @@ func (p *LocalProvider) Read(ctx context.Context, request ReadRequest) (ReadResu
 	}
 	return ReadResult{Content: page.Content, Facts: page}, nil
 }
+
+// LocalWriteLimit bounds one scratch write.
+const LocalWriteLimit = 4 << 20
+
+// Write creates or replaces one scratch file below an existing directory and reports
+// its canonical URI. Symlinks, directories and paths outside the scratch root are refused.
+func (p *LocalProvider) Write(ctx context.Context, uri string, data []byte) (string, bool, error) {
+	if len(data) > LocalWriteLimit {
+		return "", false, fmt.Errorf("scratch write of %d bytes exceeds the %d-byte limit", len(data), LocalWriteLimit)
+	}
+	path, err := p.path(uri)
+	if err != nil {
+		return "", false, err
+	}
+	rel, err := filepath.Rel(p.root, path)
+	if err != nil || rel == "." {
+		return "", false, errors.New("local:// write needs a file name below the scratch root")
+	}
+	if err := ctx.Err(); err != nil {
+		return "", false, err
+	}
+	root, err := os.OpenRoot(p.root)
+	if err != nil {
+		return "", false, err
+	}
+	defer root.Close()
+	created := true
+	switch info, err := root.Lstat(rel); {
+	case err == nil && info.Mode().IsRegular():
+		created = false
+	case err == nil:
+		return "", false, errors.New("local:// target is a directory or link; only regular scratch files can be written")
+	case !errors.Is(err, os.ErrNotExist):
+		return "", false, err
+	}
+	if parent := filepath.Dir(rel); parent != "." {
+		info, err := root.Stat(parent)
+		if err != nil || !info.IsDir() {
+			return "", false, errors.New("parent directory does not exist in the scratch; directories are not created")
+		}
+	}
+	var token [6]byte
+	if _, err := rand.Read(token[:]); err != nil {
+		return "", false, err
+	}
+	temporary := filepath.Join(filepath.Dir(rel), ".write-"+hex.EncodeToString(token[:]))
+	file, err := root.OpenFile(temporary, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return "", false, fmt.Errorf("create scratch file: %w", err)
+	}
+	_, writeErr := file.Write(data)
+	if writeErr == nil {
+		writeErr = file.Sync()
+	}
+	if closeErr := file.Close(); writeErr == nil {
+		writeErr = closeErr
+	}
+	if writeErr == nil {
+		writeErr = root.Rename(temporary, rel)
+	}
+	if writeErr != nil {
+		_ = root.Remove(temporary)
+		return "", false, fmt.Errorf("write scratch file: %w", writeErr)
+	}
+	return "local://" + filepath.ToSlash(rel), created, nil
+}

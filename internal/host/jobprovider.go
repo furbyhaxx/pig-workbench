@@ -22,7 +22,7 @@ func (jobProvider) Scheme() string { return "job" }
 var jobFiles = []string{"status", "cmdline", "cwd", "log", "stdout", "stderr", "stdin", "ctl"}
 
 func splitJob(uri string) ([]string, error) {
-	rest, ok := strings.CutPrefix(uri, "job://")
+	rest, ok := cutScheme(uri, "job")
 	if !ok {
 		return nil, errors.New("job provider requires a job:// URI")
 	}

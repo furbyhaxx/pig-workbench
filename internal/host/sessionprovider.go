@@ -29,11 +29,7 @@ func (p sessionProvider) current() (sdk.Context, error) {
 }
 
 func splitSession(uri string) ([]string, error) {
-	rest, ok := strings.CutPrefix(uri, "session://")
-	if !ok {
-		// url.URL prints an empty host and path as "session:".
-		rest, ok = strings.CutPrefix(uri, "session:")
-	}
+	rest, ok := cutScheme(uri, "session")
 	if !ok {
 		return nil, errors.New("session provider requires a session:// URI")
 	}

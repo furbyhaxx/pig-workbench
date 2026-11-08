@@ -830,3 +830,50 @@ func mustJSON(value any) string {
 	data, _ := json.Marshal(value)
 	return string(data)
 }
+
+// TestLiveTreeRootsListAndScratchIsWritable pins the tree roots a real model reads first.
+func TestLiveTreeRootsListAndScratchIsWritable(t *testing.T) {
+	root := t.TempDir()
+	skill := filepath.Join(root, ".agents", "skills", "alpha")
+	if err := os.MkdirAll(skill, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skill, "SKILL.md"), []byte("---\nname: alpha\ndescription: first skill\n---\nbody\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	calls := []scriptedCall{
+		{"read", map[string]any{"path": "session://self"}},
+		{"read", map[string]any{"path": "session://"}},
+		{"read", map[string]any{"path": "docs://workbench/"}},
+		{"read", map[string]any{"path": "docs://"}},
+		{"read", map[string]any{"path": "skill://"}},
+		{"write", map[string]any{"path": "local://note.txt", "content": "scratch-ok"}},
+		{"read", map[string]any{"path": "local://note.txt"}},
+		{"read", map[string]any{"path": "local://"}},
+		{"write", map[string]any{"path": "local://../escape.txt", "content": "x"}},
+		{"read", map[string]any{"path": "job://"}},
+		{"read", map[string]any{"path": "agent://"}},
+		{"read", map[string]any{"path": "cfg://"}},
+	}
+	steps := make([]scriptStep, len(calls))
+	for i, call := range calls {
+		steps[i] = func([]string) scriptedCall { return call }
+	}
+	results := runScripted(t, root, "read,write", steps...)
+	for i, want := range map[int]string{0: "transcript", 1: "by-id", 2: "schemes", 3: "workbench", 4: "alpha", 5: "local://note.txt", 6: "scratch-ok", 7: "note.txt"} {
+		if !strings.Contains(results[i], want) || strings.Contains(results[i], "unsupported") || strings.Contains(results[i], "not found") {
+			t.Errorf("step %d (%s) lacks %q: %s", i, calls[i].args["path"], want, results[i])
+		}
+	}
+	if strings.Contains(results[8], "Wrote") {
+		t.Errorf("scratch write escaped its root: %s", results[8])
+	}
+	for i := 9; i < len(results); i++ {
+		if strings.Contains(results[i], "requires a") || strings.Contains(results[i], "unsupported") || strings.Contains(results[i], "not found") {
+			t.Errorf("bare root %s failed: %s", calls[i].args["path"], results[i])
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "escape.txt")); err == nil {
+		t.Error("scratch write created a file outside the scratch")
+	}
+}

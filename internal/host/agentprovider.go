@@ -24,11 +24,7 @@ type agentProvider struct{ source func() (*session, bool) }
 func (agentProvider) Scheme() string { return "agent" }
 
 func splitAgent(uri string) ([]string, url.Values, error) {
-	rest, ok := strings.CutPrefix(uri, "agent://")
-	if !ok {
-		// url.URL prints an empty host and path as "agent:".
-		rest, ok = strings.CutPrefix(uri, "agent:")
-	}
+	rest, ok := cutScheme(uri, "agent")
 	if !ok {
 		return nil, nil, errors.New("agent provider requires an agent:// URI")
 	}

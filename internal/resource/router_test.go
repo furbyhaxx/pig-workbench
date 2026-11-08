@@ -360,3 +360,96 @@ func (provider) List(context.Context, string, string, int) (Listing, error) {
 func (provider) Read(context.Context, ReadRequest) (ReadResult, error) {
 	return ReadResult{}, ErrUnsupported
 }
+
+type dirOnlyProvider struct {
+	readErr error
+	file    bool
+}
+
+func (dirOnlyProvider) Scheme() string { return "tree" }
+func (p dirOnlyProvider) Stat(_ context.Context, uri string) (StatResult, error) {
+	kind := EntryDir
+	if p.file {
+		kind = EntryFile
+	}
+	return StatResult{URI: uri, Kind: kind}, nil
+}
+func (dirOnlyProvider) List(_ context.Context, uri, _ string, _ int) (Listing, error) {
+	return Listing{Complete: true, Entries: []Entry{{Name: "child", URI: uri + "/child", Kind: EntryDir}, {Name: "leaf", URI: uri + "/leaf", Kind: EntryFile}}}, nil
+}
+func (p dirOnlyProvider) Read(context.Context, ReadRequest) (ReadResult, error) {
+	return ReadResult{}, p.readErr
+}
+
+func TestRouterReadListsADirectoryTheProviderCannotRead(t *testing.T) {
+	budget := Budget{Bytes: 4096, Lines: 100}
+	for name, readErr := range map[string]error{"unsupported": ErrUnsupported, "provider-specific": errors.New("read tree://<name> to load one item")} {
+		t.Run(name, func(t *testing.T) {
+			router := NewRouter()
+			if err := router.Register(dirOnlyProvider{readErr: readErr}); err != nil {
+				t.Fatal(err)
+			}
+			result, err := router.Read(context.Background(), Target{Requested: "tree://root", Scheme: "tree", URI: "tree://root"}, budget)
+			if err != nil {
+				t.Fatalf("directory read failed: %v", err)
+			}
+			if !strings.Contains(result.Content, "child/") || !strings.Contains(result.Content, "leaf") || result.Facts.CoordinateSpace != "directory-lines" {
+				t.Fatalf("listing not rendered: %+v", result)
+			}
+		})
+	}
+	router := NewRouter()
+	if err := router.Register(dirOnlyProvider{readErr: ErrUnsupported, file: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := router.Read(context.Background(), Target{Requested: "tree://f", Scheme: "tree", URI: "tree://f"}, budget); !errors.Is(err, ErrUnsupported) {
+		t.Fatalf("a file read failure was masked: %v", err)
+	}
+}
+
+func TestLocalProviderWriteIsConfinedAndReadable(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "scratch")
+	provider, err := NewLocalProvider(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	canonical, created, err := provider.Write(ctx, "local://note.txt", []byte("scratch-ok\n"))
+	if err != nil || !created || canonical != "local://note.txt" {
+		t.Fatalf("write = %q created=%v err=%v", canonical, created, err)
+	}
+	if _, created, err = provider.Write(ctx, "local://note.txt", []byte("replaced\n")); err != nil || created {
+		t.Fatalf("replace created=%v err=%v", created, err)
+	}
+	page, err := provider.Read(ctx, ReadRequest{URI: "local://note.txt", Budget: Budget{Bytes: 4096, Lines: 100}})
+	if err != nil || !strings.Contains(page.Content, "replaced") {
+		t.Fatalf("readback: %+v %v", page, err)
+	}
+	if entries, _ := os.ReadDir(root); len(entries) != 1 {
+		t.Fatalf("temporary files left behind: %v", entries)
+	}
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "link")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	for _, uri := range []string{"local://../escape.txt", "local://link/escape.txt", "local://missing-dir/a.txt", "local://", "local://note.txt/child"} {
+		if _, _, err := provider.Write(ctx, uri, []byte("x")); err == nil {
+			t.Errorf("write to %q was accepted", uri)
+		}
+	}
+	if entries, _ := os.ReadDir(outside); len(entries) != 0 {
+		t.Fatalf("scratch write escaped: %v", entries)
+	}
+	if err := os.Symlink(filepath.Join(outside, "target"), filepath.Join(root, "evil")); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := provider.Write(ctx, "local://evil", []byte("x")); err == nil {
+		t.Error("write through a dangling escaping symlink was accepted")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "target")); err == nil {
+		t.Fatal("write followed a symlink out of scratch")
+	}
+	if _, _, err := provider.Write(ctx, "local://big", make([]byte, LocalWriteLimit+1)); err == nil {
+		t.Error("oversized scratch write accepted")
+	}
+}
