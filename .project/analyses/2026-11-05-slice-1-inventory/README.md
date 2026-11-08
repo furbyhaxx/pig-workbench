@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 56
+  revision: 57
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-09T17:15:00+01:00"
+  updated_at: "2026-11-08T19:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 57
+      reason: "User authorized live evaluation with deepseek/deepseek-flash"
+      changes: ["Ran the end-to-end workflow and the prompt A/B live", "Found and fixed builtin/workbench rendering as an empty skeleton", "Recorded both A/B rounds and the verdict"]
     - revision: 56
       reason: "User saw an empty Tool display panel they could not review"
       changes: ["Explained the empty state and the hub count", "Tool display opens the editable settings panel when schemas exist and shows owner/tool per row", "Wired target-shortening", "Fixed the TUI test cleanup race and recorded the /tmp exhaustion cause"]
@@ -158,6 +161,27 @@ The user ran plain `pig -e .` and saw only "No registered or dormant display sch
 Now: the hub entry reads "Nothing to configure: no extension registered one" or "N tool(s) with display preferences"; with no schema the panel says why and points to `/workbench integrations`; with schemas `Tool display` opens the interactive settings panel limited to `tools.`, labelled by field with `owner/tool` and a plain-language status ("takes effect now" / "saved, but nothing reads it yet"). Rows used to show only `tools.reference-producer.web_s` (truncated, indistinguishable) - fixed. `target-shortening` is now wired (`pathdisplay.Target.NoFish`) and reports `live`; `child-density` stays stored-only because Workbench draws no child rows. Test: `TestLiveToolDisplayViewExplainsAnEmptyStateAndEditsWhenASchemaExists` (real TUI, both states). Captures: `evidence/display-settings-tui/plain/` (what a bare `pig -e .` shows) and `with-producer/`, at 36/57/80/140 columns and 16 rows.
 
 Environment findings: the first full run failed with `no space left on device` because `/tmp` is a 32 GB tmpfs at 99% (mostly other programs' data, which I did not touch) and every integration test builds the extension into a temp cache. I removed only my own `TestLive*` and scratch files. Gates now run with `TMPDIR=$HOME/.cache/pig-workbench-test-tmp/work` (outside any repository: a `TMPDIR` inside this repo made project-detection tests find the repo's own `.git`). A real harness race was also fixed: TUI tests killed tmux and removed the temp dir while `pig` was still writing (`TempDir RemoveAll cleanup: directory not empty`); `stopTUI` now waits for the process. One transient failure of `TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard` (two runs of 15.7 s, in a wide group while another job loaded the machine) did not reproduce in 9 later runs; its cause is **not established**. Logs: [check](evidence/tool-display-check.log), [race](evidence/tool-display-race.log), [full integration](evidence/tool-display-all.log).
+
+# Live evaluation (deepseek/deepseek-flash, user-authorized 08.11.2026)
+
+Harness: `just live-eval` (build tags `integration liveeval`, key from `pig auth print-api-key` into the environment only, never retained). Transcripts are in [evidence/live-eval](evidence/live-eval/) with the key and key-shaped tokens removed (zero hits).
+
+**End-to-end workflow** ([workflow.jsonl](evidence/live-eval/workflow.jsonl)): one real agent run drove all ten tools (`ls`, `find`, `grep`, `read`, `edit`, `write`, `bash`, `jobs`, `cd`, `ask_user`) and the `cfg`, `docs`, `session`, `artifact`, `skill` and `local` schemes. Each step is judged from disk, events and tool arguments, not from the model's report. Its first attempt exposed three defects (tree roots listed nothing, `local://` scratch was not writable, `ls` on a bare scheme root failed), fixed in `307681c`. The retained run passed every step; tokens: 14549 in, 1169 out, 116736 cache-read.
+
+**Prompt A/B**, fixed tasks (bug fix, rename across files, count answer, run-and-write, read line 317 of a long file), 3 repetitions per task, fresh session and fixture each, pass judged from disk:
+
+| Round | Arm | Pass | Tool calls | Tool errors | Input tokens | Cache hit |
+|---|---|---|---|---|---|---|
+| 1 | PiG prompt (`auto`) | 14/15 | 39 | 4 | 91 925 | 70.8% |
+| 1 | `builtin/workbench` (`force`) | 15/15 | 63 | 12 | 71 632 | 74.1% |
+| 2 | PiG prompt (`auto`) | 15/15 | 39 | 1 | 91 494 | 69.2% |
+| 2 | `builtin/workbench` (`force`) | 15/15 | 40 | 2 | 70 591 | 75.8% |
+
+Round 1 is **not a verdict**: the served prompt was 473 bytes against PiG's 6 899 because `renderBuiltinPrompt` passed only the project root, so `<tools>`, rules, skills and the append text rendered empty ([round 1](evidence/live-eval/ab-round1/)). That is a Slice 1 defect against SPEC-0014 §7 and was fixed in `977c84b`: the template now renders declared tools with snippets, tool and prompt guidelines, the active edit mode, host skills, registered schemes and append text (6 116 bytes served; [round 2](evidence/live-eval/ab-round2/)).
+
+Verdict on round 2: no regression and a measurable saving. Both arms passed 15/15; the Workbench prompt used 23% fewer input tokens, a higher cache-hit share and equal tool calls and time. The tool-error difference (1 vs 2) and the PiG arm's drop from 4 errors to 1 between rounds with no change to that arm show the per-call error counts are noise at n=15, so they support no ranking. Limits: one model, five small tasks, three repetitions, no confidence intervals, and the PiG arm's prompt included this machine's user-level skill catalog while the Workbench arm lists the same host skills. **`prompt.delivery = "auto"` still serves PiG's prompt**: this evidence shows no regression, not a case for flipping the default, and SPEC-0014 §12's golden-transcript comparison and per-family adapters remain Slice 3.
+
+Defects the live runs surfaced that this evidence does not close: DeepSeek's first `edit` attempt is often the exact-text form that the default `edit.mode = hashline` refuses (the donor's per-model rule that maps DeepSeek to `replace` is G5.9, Slice 2), and a `{path, hashline}` call fails validation with "edits: missing". Both recover on the next call.
 
 # Baseline gates
 
