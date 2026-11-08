@@ -1,0 +1,59 @@
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval"
+DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./internal/host -run 'TestLiveEvalPromptAB' -count=1 -v -timeout 30m
+=== RUN   TestLiveEvalPromptAB
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: pig-prompt fix-bug #1 pass=true calls=4 errors=1 in=6385 out=276 cacheRead=23168 7s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: pig-prompt fix-bug #2 pass=true calls=5 errors=1 in=6507 out=346 cacheRead=29312 8s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: pig-prompt fix-bug #3 pass=true calls=4 errors=1 in=6448 out=318 cacheRead=23296 7s 
+    liveeval_ab_test.go:161: pig-prompt rename-across-files #1 pass=true calls=2 errors=0 in=6064 out=224 cacheRead=11264 4s 
+    liveeval_ab_test.go:146: turn task: read failed (recovered or not, see checks): {"content":[{"text":"\"$TMP/010\" is not a regular file","type":"text"}],"details":{}}
+    liveeval_ab_test.go:161: pig-prompt rename-across-files #2 pass=true calls=5 errors=1 in=6578 out=412 cacheRead=29056 9s 
+    liveeval_ab_test.go:161: pig-prompt rename-across-files #3 pass=true calls=2 errors=0 in=6032 out=211 cacheRead=11264 4s 
+    liveeval_ab_test.go:161: pig-prompt find-and-answer #1 pass=true calls=2 errors=0 in=6001 out=93 cacheRead=11136 3s 
+    liveeval_ab_test.go:161: pig-prompt find-and-answer #2 pass=false calls=2 errors=0 in=6044 out=131 cacheRead=11136 4s answer "6" lacks 5
+    liveeval_ab_test.go:161: pig-prompt find-and-answer #3 pass=true calls=3 errors=0 in=6197 out=201 cacheRead=17408 5s 
+    liveeval_ab_test.go:161: pig-prompt run-and-write #1 pass=true calls=2 errors=0 in=5913 out=158 cacheRead=11392 4s 
+    liveeval_ab_test.go:161: pig-prompt run-and-write #2 pass=true calls=3 errors=0 in=6286 out=233 cacheRead=17024 6s 
+    liveeval_ab_test.go:161: pig-prompt run-and-write #3 pass=true calls=2 errors=0 in=6007 out=246 cacheRead=11392 5s 
+    liveeval_ab_test.go:161: pig-prompt read-range #1 pass=true calls=1 errors=0 in=5820 out=48 cacheRead=5504 3s 
+    liveeval_ab_test.go:161: pig-prompt read-range #2 pass=true calls=1 errors=0 in=5824 out=48 cacheRead=5504 3s 
+    liveeval_ab_test.go:161: pig-prompt read-range #3 pass=true calls=1 errors=0 in=5819 out=48 cacheRead=5504 3s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: workbench-prompt fix-bug #1 pass=true calls=4 errors=1 in=4921 out=290 cacheRead=16896 6s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: workbench-prompt fix-bug #2 pass=true calls=4 errors=1 in=4872 out=375 cacheRead=17024 6s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: workbench-prompt fix-bug #3 pass=true calls=5 errors=1 in=4828 out=355 cacheRead=17152 7s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: workbench-prompt rename-across-files #1 pass=true calls=10 errors=3 in=5821 out=837 cacheRead=23424 9s 
+    liveeval_ab_test.go:161: workbench-prompt rename-across-files #2 pass=true calls=4 errors=0 in=4717 out=311 cacheRead=12544 6s 
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"Validation failed for tool \"edit\":\n  - edits: missing\n\nReceived arguments:\n{\n  \"path\": \"a.txt\",\n  \"hashline\": \"[a.txt#F2B2]\\nPUT 1.=1:\\n+call loadUser(1)\"\n}","t
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"Validation failed for tool \"edit\":\n  - edits: missing\n\nReceived arguments:\n{\n  \"path\": \"b.txt\",\n  \"hashline\": \"[b.txt#00E7]\\nPUT 1.=1:\\n+def loadUser(id): pass\"\
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"Validation failed for tool \"edit\":\n  - edits: missing\n\nReceived arguments:\n{\n  \"path\": \"c.txt\",\n  \"hashline\": \"[c.txt#601F]\\nPUT 1.=1:\\n+# uses loadUser twice: lo
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:146: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_ab_test.go:161: workbench-prompt rename-across-files #3 pass=true calls=13 errors=6 in=5860 out=857 cacheRead=28288 10s 
+    liveeval_ab_test.go:161: workbench-prompt find-and-answer #1 pass=true calls=3 errors=0 in=4637 out=187 cacheRead=12288 5s 
+    liveeval_ab_test.go:161: workbench-prompt find-and-answer #2 pass=true calls=2 errors=0 in=4398 out=82 cacheRead=8064 4s 
+    liveeval_ab_test.go:161: workbench-prompt find-and-answer #3 pass=true calls=3 errors=0 in=4610 out=176 cacheRead=12288 5s 
+    liveeval_ab_test.go:161: workbench-prompt run-and-write #1 pass=true calls=3 errors=0 in=4662 out=189 cacheRead=12416 5s 
+    liveeval_ab_test.go:161: workbench-prompt run-and-write #2 pass=true calls=4 errors=0 in=4522 out=357 cacheRead=12672 6s 
+    liveeval_ab_test.go:161: workbench-prompt run-and-write #3 pass=true calls=4 errors=0 in=4871 out=219 cacheRead=16256 6s 
+    liveeval_ab_test.go:161: workbench-prompt read-range #1 pass=true calls=1 errors=0 in=4250 out=48 cacheRead=3968 3s 
+    liveeval_ab_test.go:161: workbench-prompt read-range #2 pass=true calls=1 errors=0 in=4263 out=48 cacheRead=3968 3s 
+    liveeval_ab_test.go:161: workbench-prompt read-range #3 pass=true calls=2 errors=0 in=4400 out=91 cacheRead=8064 4s 
+    liveeval_ab_test.go:202: SUMMARY pig-prompt        runs=15 pass=14 toolCalls=39 toolErrors=4 input=91925 output=2993 cacheRead=223360 cacheHit=70.8% seconds=73
+    liveeval_ab_test.go:202: SUMMARY workbench-prompt  runs=15 pass=15 toolCalls=63 toolErrors=12 input=71632 output=4422 cacheRead=205312 cacheHit=74.1% seconds=86
+--- PASS: TestLiveEvalPromptAB (159.30s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	159.306s
+exit=0
