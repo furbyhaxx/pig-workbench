@@ -320,3 +320,20 @@ func TestLiveAbortedReadCancelsTheCooperativeProvider(t *testing.T) {
 	}
 	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
 }
+
+func TestLiveUnregisterStopsAndDrainsARunningProviderRead(t *testing.T) {
+	fixture, gate := startSlowProviderRead(t, nil)
+	waitForFile(t, gate+".entered", 10*time.Second, "provider entry")
+	started := time.Now()
+	fixture.send("withdraw", "prompt", "/reference withdraw-kb")
+	fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), "kbFixture")
+	})
+	if took := time.Since(started); took > 4*time.Second {
+		t.Fatalf("withdrawal waited %s instead of draining on the cooperative stop", took)
+	}
+	if got := waitForFile(t, gate+".stopped", 4*time.Second, "cooperative stop"); !strings.Contains(got, "cancel") {
+		t.Fatalf("handler stopped for the wrong reason: %q", got)
+	}
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+}

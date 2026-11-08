@@ -96,6 +96,7 @@ func (s *session) setInstalled(registrationID string, cleanup func()) {
 		s.installed = make(map[string]func())
 	}
 	s.installed[registrationID] = cleanup
+	s.bus.reopen(registrationID)
 }
 
 func (s *session) withdrawInstalled(registrationID string) {
@@ -103,6 +104,8 @@ func (s *session) withdrawInstalled(registrationID string) {
 	cleanup := s.installed[registrationID]
 	delete(s.installed, registrationID)
 	s.installedMu.Unlock()
+	// Admission closes and running operations stop before the scheme leaves the router.
+	s.bus.withdraw(registrationID, providerDrainBound)
 	if cleanup != nil {
 		cleanup()
 	}

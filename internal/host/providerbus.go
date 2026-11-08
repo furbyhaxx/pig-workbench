@@ -27,6 +27,9 @@ func (e *providerError) Error() string {
 // maxProviderInFlight is SPEC-0001 §4's per-owner bound on concurrent provider operations.
 const maxProviderInFlight = 8
 
+// providerDrainBound caps how long a withdrawal waits for cooperative operations to stop.
+const providerDrainBound = 5 * time.Second
+
 type providerPending struct {
 	to      api.Identity
 	replies []api.Reply
@@ -41,10 +44,101 @@ type providerBus struct {
 	events     func() (sdk.Context, bool)
 	// cancelEvents is the extension-level bus: unlike a request-bound one it stays usable after the caller aborted.
 	cancelEvents sdk.EventBus
+	cancelReady  bool
 
 	mu       sync.Mutex
 	pending  map[string]*providerPending
 	inFlight map[string]int
+	regs     map[string]*registrationOps
+}
+
+// registrationOps tracks the operations running against one registration so a withdrawal can stop and drain them.
+type registrationOps struct {
+	closed bool
+	active map[string]api.Identity
+	idle   chan struct{}
+}
+
+// begin admits one operation against a registration unless it was withdrawn; the caller runs end exactly once.
+func (b *providerBus) begin(registrationID, requestID string, to api.Identity) (func(), error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ops := b.regs[registrationID]
+	if ops == nil {
+		ops = &registrationOps{active: make(map[string]api.Identity)}
+		b.regs[registrationID] = ops
+	}
+	if ops.closed {
+		return nil, &providerError{protocol: &api.Error{Code: "unavailable", Message: "the provider registration was withdrawn", Outcome: "notApplied"}}
+	}
+	ops.active[requestID] = to
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			b.mu.Lock()
+			defer b.mu.Unlock()
+			delete(ops.active, requestID)
+			if len(ops.active) == 0 && ops.idle != nil {
+				close(ops.idle)
+				ops.idle = nil
+			}
+		})
+	}, nil
+}
+
+// withdrawn reports whether the registration was closed, so an unanswered call can say why.
+func (b *providerBus) withdrawn(registrationID string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ops := b.regs[registrationID]
+	return ops != nil && ops.closed
+}
+
+// withdraw closes admission for a registration, tells running operations to stop and waits up to
+// wait for them to end. It reports whether everything drained; it never holds b.mu while waiting.
+func (b *providerBus) withdraw(registrationID string, wait time.Duration) bool {
+	b.mu.Lock()
+	ops := b.regs[registrationID]
+	if ops == nil {
+		ops = &registrationOps{active: make(map[string]api.Identity)}
+		b.regs[registrationID] = ops
+	}
+	ops.closed = true
+	running := make(map[string]api.Identity, len(ops.active))
+	for id, to := range ops.active {
+		running[id] = to
+	}
+	var idle chan struct{}
+	if len(running) > 0 {
+		if ops.idle == nil {
+			ops.idle = make(chan struct{})
+		}
+		idle = ops.idle
+	}
+	b.mu.Unlock()
+	for id, to := range running {
+		b.cancelRemote(to, id)
+	}
+	if idle == nil {
+		return true
+	}
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case <-idle:
+		return true
+	case <-timer.C:
+		return false
+	}
+}
+
+// reopen admits operations again after a replacement installed a usable provider.
+func (b *providerBus) reopen(registrationID string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if ops := b.regs[registrationID]; ops != nil {
+		ops.closed = false
+	}
 }
 
 // admit reserves one in-flight slot for owner; the caller must run the returned release exactly once.
@@ -69,7 +163,7 @@ func (b *providerBus) admit(owner string) (func(), error) {
 }
 
 func newProviderBus(sessionID, generation string, events func() (sdk.Context, bool)) *providerBus {
-	return &providerBus{identity: api.Identity{Owner: "pig-workbench", Instance: generation}, sessionID: sessionID, generation: generation, events: events, pending: make(map[string]*providerPending), inFlight: make(map[string]int)}
+	return &providerBus{identity: api.Identity{Owner: "pig-workbench", Instance: generation}, sessionID: sessionID, generation: generation, events: events, pending: make(map[string]*providerPending), inFlight: make(map[string]int), regs: make(map[string]*registrationOps)}
 }
 
 func (b *providerBus) onReply(_ sdk.Context, value any) error {
@@ -102,13 +196,6 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 		return err
 	}
 	defer release()
-	emitter, ok := b.events()
-	if !ok {
-		return errProviderUnavailable
-	}
-	if bound, ok := ctx.Value(hostRequestKey{}).(sdk.Context); ok {
-		emitter = bound
-	}
 	encoded, err := json.Marshal(params)
 	if err != nil {
 		return fmt.Errorf("encode provider request: %w", err)
@@ -127,6 +214,18 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 	if frame, err := json.Marshal(request); err != nil || len(frame) > api.ControlBytes {
 		return &providerError{protocol: &api.Error{Code: "limitExceeded", Message: fmt.Sprintf("provider request exceeds %d bytes", api.ControlBytes), Outcome: "notApplied"}}
 	}
+	end, err := b.begin(registrationID, request.ID, to)
+	if err != nil {
+		return err
+	}
+	defer end()
+	emitter, ok := b.events()
+	if !ok {
+		return errProviderUnavailable
+	}
+	if bound, ok := ctx.Value(hostRequestKey{}).(sdk.Context); ok {
+		emitter = bound
+	}
 	pending := &providerPending{to: to}
 	b.mu.Lock()
 	b.pending[request.ID] = pending
@@ -144,6 +243,9 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 		}
 		if emitErr != nil {
 			return fmt.Errorf("emit provider request: %w", emitErr)
+		}
+		if b.withdrawn(registrationID) {
+			return &providerError{protocol: &api.Error{Code: "unavailable", Message: "the provider registration was withdrawn during the operation", Outcome: "unknown"}}
 		}
 		if err := ctx.Err(); err != nil {
 			return err
@@ -172,6 +274,9 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 
 // cancelRemote tells a provider that stopped being awaited to stop; it needs no reply and is best effort.
 func (b *providerBus) cancelRemote(to api.Identity, requestID string) {
+	if !b.cancelReady {
+		return
+	}
 	var token [16]byte
 	if _, err := rand.Read(token[:]); err != nil {
 		return

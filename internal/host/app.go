@@ -185,7 +185,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	host := ctx
 	hostContext := func() (sdk.Context, bool) { return host, true }
 	bus := newProviderBus(id, generation, hostContext)
-	bus.cancelEvents = a.extEvents
+	bus.cancelEvents, bus.cancelReady = a.extEvents, true
 	fetch := &fetchRouter{bus: bus}
 	var current *session
 	providers, scratch, err := buildRouter(ctx, settings, manager, fetch, func() (*session, bool) { return current, current != nil })

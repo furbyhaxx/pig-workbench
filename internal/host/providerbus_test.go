@@ -3,6 +3,7 @@ package host
 import (
 	"errors"
 	"testing"
+	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
@@ -75,5 +76,67 @@ func TestProviderCallFailsBeforeEmitWhenOwnerIsAtItsLimit(t *testing.T) {
 	var provider *providerError
 	if !errors.As(err, &provider) || provider.protocol.Code != "busy" {
 		t.Fatalf("limit was not enforced before dispatch: %v", err)
+	}
+}
+
+func TestWithdrawnRegistrationRefusesNewOperationsBeforeDispatch(t *testing.T) {
+	bus := newProviderBus("session", "generation", func() (sdk.Context, bool) {
+		t.Fatal("emit reached a withdrawn registration")
+		return sdk.Context{}, false
+	})
+	if !bus.withdraw("reg", time.Second) {
+		t.Fatal("an idle registration did not drain")
+	}
+	err := bus.call(t.Context(), api.Identity{Owner: "alpha", Instance: "i"}, "reg", "resource.execute", map[string]any{}, nil, 0)
+	var provider *providerError
+	if !errors.As(err, &provider) || provider.protocol.Code != "unavailable" || provider.protocol.Outcome != "notApplied" {
+		t.Fatalf("withdrawn registration was dispatched or mislabelled: %v", err)
+	}
+}
+
+func TestWithdrawWaitsForActiveOperationsAndReopenRestoresTheProvider(t *testing.T) {
+	bus := newProviderBus("session", "generation", nil)
+	to := api.Identity{Owner: "alpha", Instance: "i"}
+	end, err := bus.begin("reg", "req-1", to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	drained := make(chan bool, 1)
+	go func() { drained <- bus.withdraw("reg", 5*time.Second) }()
+	select {
+	case <-drained:
+		t.Fatal("withdraw returned while an operation was still running")
+	case <-time.After(50 * time.Millisecond):
+	}
+	if _, err := bus.begin("reg", "req-2", to); err == nil {
+		t.Fatal("admission stayed open while draining")
+	}
+	end()
+	select {
+	case ok := <-drained:
+		if !ok {
+			t.Fatal("withdraw reported an undrained registration after the operation ended")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("withdraw did not return after the last operation ended")
+	}
+	if _, err := bus.begin("reg", "req-3", to); err == nil {
+		t.Fatal("registration reopened without an install")
+	}
+	bus.reopen("reg")
+	if end, err := bus.begin("reg", "req-4", to); err != nil {
+		t.Fatalf("rollback reinstall did not restore the provider: %v", err)
+	} else {
+		end()
+	}
+}
+
+func TestWithdrawGivesUpAfterTheBoundAndReportsIt(t *testing.T) {
+	bus := newProviderBus("session", "generation", nil)
+	if _, err := bus.begin("reg", "stuck", api.Identity{Owner: "alpha", Instance: "i"}); err != nil {
+		t.Fatal(err)
+	}
+	if bus.withdraw("reg", 30*time.Millisecond) {
+		t.Fatal("a hung operation was reported as drained")
 	}
 }

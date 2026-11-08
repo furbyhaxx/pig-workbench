@@ -497,6 +497,13 @@ func Extension() *sdk.Extension {
 			ctx.Notify(`{"presentationFixture":"withdrawn"}`, "info")
 			return nil
 		}
+		if strings.TrimSpace(args) == "withdraw-kb" {
+			if err := active.Unregister(ctx, binding, registered["resourceProvider"].RegistrationID); err != nil {
+				return err
+			}
+			ctx.Notify(`{"kbFixture":"withdrawn"}`, "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "register-presentation" {
 			if err := register(ctx, ext); err != nil {
 				return err
