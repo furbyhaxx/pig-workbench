@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "approved"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-08T20:30:00+01:00"
+  updated_at: "2026-11-08T19:32:26+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "Provider invalidation notifications (SPEC-0004 §8) needed a caller-side method"
       changes: ["Added the additive resources.changed method; no existing wire shape changed"]
+    - revision: 10
+      reason: "Client cancellation needed a channel a busy request handler cannot block"
+      changes: ["Added the workbench:v1:cancel channel for explicit cancel envelopes; cancel on workbench:v1:request is still accepted", "Client sends cancel for every non-discover call that ends without a reply and keeps a correlated reply that arrived before an emit error"]
 
 ---
 

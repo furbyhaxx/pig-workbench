@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -100,6 +101,19 @@ func Extension() *sdk.Extension {
 				return err
 			}
 			if request.Method != "discover" {
+				modeMu.Lock()
+				currentMode := mode
+				modeMu.Unlock()
+				switch currentMode {
+				case "reply-then-fail":
+					reply := api.Reply{Version: 1, ID: request.ID, SessionID: request.SessionID, Generation: "fixture-generation", To: request.From, OK: true, Result: map[string]any{"applied": true}}
+					if err := ctx.Events().Emit(api.ReplyChannel, reply); err != nil {
+						return err
+					}
+					return errors.New("a sibling listener failed after the reply")
+				case "fail-silently":
+					return errors.New("listener failed without replying")
+				}
 				return nil
 			}
 			reply := api.Reply{Version: 1, ID: request.ID, SessionID: request.SessionID, Generation: "fixture-generation", To: request.From}
@@ -125,6 +139,28 @@ func Extension() *sdk.Extension {
 			return err
 		}
 		defer unsubscribe()
+		var cancelMu sync.Mutex
+		var cancelled []string
+		stopCancel, err := ext.Events().On(api.CancelChannel, func(_ sdk.Context, value any) error {
+			request, err := api.DecodeRequest(value)
+			if err != nil || request.Method != "cancel" {
+				return nil
+			}
+			var params struct {
+				RequestID string `json:"requestId"`
+			}
+			if err := api.Decode(request.Params, &params); err != nil {
+				return nil
+			}
+			cancelMu.Lock()
+			cancelled = append(cancelled, params.RequestID)
+			cancelMu.Unlock()
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		defer stopCancel()
 		_, err = client.Discover(ctx)
 		var protocol *api.Error
 		if !errors.As(err, &protocol) || protocol.Code != "incompatibleVersion" {
@@ -147,6 +183,26 @@ func Extension() *sdk.Extension {
 		var transport *api.TransportError
 		if !errors.As(err, &transport) || transport.Outcome != "unknown" || transport.RequestID == "" || !errors.Is(err, api.ErrUnavailable) {
 			return fmt.Errorf("missing mutation receipt was not unknown: %v", err)
+		}
+		modeMu.Lock()
+		mode = "reply-then-fail"
+		modeMu.Unlock()
+		var known map[string]any
+		if err := client.Call(ctx, endpoint, "location.get", map[string]any{}, &known, nil); err != nil || known["applied"] != true {
+			return fmt.Errorf("a correlated reply was discarded because another listener failed: %v", err)
+		}
+		modeMu.Lock()
+		mode = "fail-silently"
+		modeMu.Unlock()
+		err = client.Call(ctx, endpoint, "location.get", map[string]any{}, &known, nil)
+		if !errors.As(err, &transport) || transport.Outcome != "unknown" || transport.RequestID == "" {
+			return fmt.Errorf("a failed emit without a reply was not unknown: %v", err)
+		}
+		cancelMu.Lock()
+		sent := slices.Clone(cancelled)
+		cancelMu.Unlock()
+		if len(sent) == 0 || sent[len(sent)-1] != transport.RequestID {
+			return fmt.Errorf("cancel did not carry the original request identity: sent=%v request=%s", sent, transport.RequestID)
 		}
 		ctx.Notify(`{"fixtureErrors":"passed"}`, "info")
 		return nil

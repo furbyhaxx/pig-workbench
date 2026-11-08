@@ -34,7 +34,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 
 ## Semantics you can rely on
 
-- `client.Call` performs no retries. Mutations returning a `*TransportError` have outcome `unknown` once emitted; reconcile by request ID or query state instead of repeating blindly.
+- `client.Call` performs no retries. Mutations returning a `*TransportError` have outcome `unknown` once emitted; reconcile by request ID or query state instead of repeating blindly. When a call ends without a reply (emit failure, no responder, caller deadline) the client also sends a best-effort `cancel` carrying that request ID on `workbench:v1:cancel`, so a cooperative Workbench handler stops; a reply that arrived before the failure is kept as the call's answer.
 - `timeoutMs` is a cooperative budget. The shared bus cannot preempt a hung listener.
 - `ErrUnavailable` means no Workbench answered within the call; use your own fallback rather than assuming its services ran.
 - `TransportError.Error()` omits request payloads; its unwrapped cause is separate and must be handled carefully.

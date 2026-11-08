@@ -161,6 +161,23 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 	}
 }
 
+// cancelRequest serves cancel envelopes that arrive on their own channel.
+func (a *app) cancelRequest(ctx sdk.Context, value any) error {
+	request, err := api.DecodeRequest(value)
+	if err != nil || request.Method != "cancel" {
+		return nil
+	}
+	s, _, release, admitErr := a.admit(ctx)
+	if admitErr != nil {
+		return nil
+	}
+	defer release()
+	if request.SessionID != s.id {
+		return nil
+	}
+	return a.cancelService(s, request)
+}
+
 func (a *app) cancelService(s *session, request api.Request) error {
 	if request.Generation != s.generation {
 		return nil

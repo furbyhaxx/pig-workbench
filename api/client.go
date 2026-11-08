@@ -226,15 +226,20 @@ func (c *Client) exchange(ctx sdk.Context, request Request) ([]Reply, bool, erro
 	if err := ctx.Err(); err != nil {
 		return nil, false, err
 	}
-	if err := ctx.Events().Emit(RequestChannel, request); err != nil {
-		return nil, true, err
-	}
+	emitErr := ctx.Events().Emit(RequestChannel, request)
 	c.mu.Lock()
 	replies := slices.Clone(pending.replies)
 	closed := c.closed
 	c.mu.Unlock()
+	// A correlated reply is a known outcome even when another listener failed the emit.
 	if len(replies) > 0 {
 		return replies, true, nil
+	}
+	if !request.discover() {
+		c.cancel(ctx, request)
+	}
+	if emitErr != nil {
+		return nil, true, emitErr
 	}
 	if closed {
 		return nil, true, ErrClosed
@@ -243,6 +248,21 @@ func (c *Client) exchange(ctx sdk.Context, request Request) ([]Reply, bool, erro
 		return nil, true, err
 	}
 	return nil, true, nil
+}
+
+// cancel asks Workbench to stop one of this client's requests; it is best effort and expects no reply.
+func (r Request) discover() bool { return r.Method == "discover" }
+
+func (c *Client) cancel(ctx sdk.Context, request Request) {
+	params, err := json.Marshal(map[string]string{"requestId": request.ID})
+	if err != nil {
+		return
+	}
+	id, err := randomID()
+	if err != nil {
+		return
+	}
+	_ = ctx.Events().Emit(CancelChannel, Request{Version: 1, ID: id, SessionID: request.SessionID, Generation: request.Generation, From: c.identity, Method: "cancel", Params: params})
 }
 
 func (c *Client) onReply(_ sdk.Context, value any) error {

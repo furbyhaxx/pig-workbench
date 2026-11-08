@@ -262,7 +262,14 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		s.supervisor.Stop()
 		return nil, a.fail(fmt.Errorf("subscribe Workbench provider replies: %w", err))
 	}
-	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies() }
+	unsubscribeCancel, err := ctx.Events().On(api.CancelChannel, a.cancelRequest)
+	if err != nil {
+		unsubscribe()
+		unsubscribeReplies()
+		s.supervisor.Stop()
+		return nil, a.fail(fmt.Errorf("subscribe Workbench cancellation: %w", err))
+	}
+	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies(); unsubscribeCancel() }
 	// A reload or a crash skips shutdown cleanup, and the host delivers no
 	// session_shutdown to a reloaded runtime, so the next start of this session
 	// reclaims the job process groups its predecessor left behind.

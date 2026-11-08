@@ -17,6 +17,11 @@ const RequestChannel = "workbench:v1:request"
 // ReplyChannel carries addressed Workbench replies.
 const ReplyChannel = "workbench:v1:reply"
 
+// CancelChannel carries `cancel` requests for a caller's own in-flight control request.
+// It is separate from RequestChannel because the host serializes a listener per channel,
+// so a cancel queued behind a busy handler on RequestChannel would never be seen.
+const CancelChannel = "workbench:v1:cancel"
+
 // EventChannel carries generation-scoped Workbench notifications.
 const EventChannel = "workbench:v1:event"
 
