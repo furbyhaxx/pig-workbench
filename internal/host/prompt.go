@@ -14,7 +14,7 @@ import (
 )
 
 // promptOverride replaces PiG's prompt only for an explicit force delivery.
-// auto stays on PiG until the approved A/B run.
+// auto stays on PiG; the live A/B was too small to change the default.
 func promptOverride(enabled bool, delivery, rendered string) (string, bool) {
 	if !enabled || delivery != "force" || rendered == "" {
 		return "", false
