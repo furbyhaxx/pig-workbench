@@ -15,7 +15,7 @@ Tool-result protection covers content plus retained `details` and `structuredCon
 
 ## Editing settings in the TUI
 
-`/workbench settings` opens a panel listing every setting with its effective value and source. `enter` toggles a boolean, cycles a choice or opens a typed prompt for integers and strings; typing in the list searches. `tab` switches between user, runtime and (when trusted) project scope. Edits stay staged and marked `[unsaved]` until `ctrl+s`; a failed save shows the exact reason and keeps your edits, and `escape` with unsaved edits asks first. `ctrl+r` stages a reset of the selected setting at the current scope. Array-valued settings are not editable in the panel; use `/workbench settings set`. Outside the TUI, `/workbench settings` prints the same data as JSON.
+`/workbench settings` opens a panel listing every setting with its effective value and source. `enter` toggles a boolean, cycles a choice or opens a typed prompt for integers and strings; typing in the list searches. `tab` switches between user, runtime and (when trusted) project scope. Edits stay staged and marked `[unsaved]` until `ctrl+s`; a failed save shows the exact reason and keeps your edits, and `escape` with unsaved edits asks first. `ctrl+r` stages a reset of the selected setting at the current scope. `enter` on an array-valued setting opens a list editor: `enter` changes an item, the last row adds one, `d` removes the selected item and `escape` stages the whole replacement array (arrays are never appended to). Outside the TUI, `/workbench settings` prints the same data as JSON.
 
 ## Example
 

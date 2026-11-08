@@ -37,6 +37,7 @@ type settingsPanel struct {
 	selected    int
 	editing     string
 	input       string
+	array       *arrayEditor
 	message     string
 	armed       bool
 	height      func() int
@@ -104,7 +105,7 @@ func (p *settingsPanel) valueOf(definition config.Definition) (text, source stri
 
 func editable(definition config.Definition) bool {
 	switch definition.Kind {
-	case config.Boolean, config.Integer, config.String:
+	case config.Boolean, config.Integer, config.String, config.Strings:
 		return true
 	}
 	return false
@@ -191,6 +192,9 @@ func (p *settingsPanel) title(width int) string {
 }
 
 func (p *settingsPanel) View(width int) kit.View {
+	if p.array != nil {
+		return p.array.view(p, width)
+	}
 	if p.editing != "" {
 		return p.editView(width)
 	}
@@ -247,6 +251,10 @@ func printable(data string) (string, bool) {
 }
 
 func (p *settingsPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) {
+	if p.array != nil {
+		p.array.handleInput(data)
+		return sdk.RemoteComponentResult{}, nil
+	}
 	if p.editing != "" {
 		return sdk.RemoteComponentResult{}, nil
 	}
@@ -298,6 +306,10 @@ func (p *settingsPanel) flush() {
 }
 
 func (p *settingsPanel) HandleViewEvent(event kit.Event) (sdk.RemoteComponentResult, error) {
+	if p.array != nil {
+		p.array.handleEvent(p, event)
+		return sdk.RemoteComponentResult{}, nil
+	}
 	if p.editing != "" {
 		return p.handleEdit(event)
 	}
@@ -323,6 +335,12 @@ func (p *settingsPanel) HandleViewEvent(event kit.Event) (sdk.RemoteComponentRes
 		}
 		if !editable(definition) {
 			p.message = definition.Key + " is not editable here; use /workbench settings set " + string(p.scope()) + " " + definition.Key + " <TOML value>."
+			return sdk.RemoteComponentResult{}, nil
+		}
+		if definition.Kind == config.Strings {
+			p.array = &arrayEditor{key: definition.Key, items: p.currentStrings(definition)}
+			p.array.original = slices.Clone(p.array.items)
+			p.message = ""
 			return sdk.RemoteComponentResult{}, nil
 		}
 		if value, ok := p.next(definition); ok {

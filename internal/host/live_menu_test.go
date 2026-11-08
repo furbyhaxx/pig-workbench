@@ -315,3 +315,46 @@ func TestLiveHubSearchNarrowsEntriesAndOpensTheMatch(t *testing.T) {
 	s.keys("Enter")
 	s.waitFor("Workbench › Jobs", 10*time.Second)
 }
+
+func TestLiveSettingsPanelEditsAnArraySettingAndPersistsIt(t *testing.T) {
+	root := t.TempDir()
+	s := startTUI(t, root)
+	s.openHub()
+	s.keys("Down", "Down", "Enter")
+	s.waitFor("Workbench › Settings · user", 10*time.Second)
+	s.typeText("guides.disabled")
+	s.waitFor("search: guides.disabled", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("+ add item", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("New item", 10*time.Second)
+	s.typeText("kb")
+	s.keys("Enter")
+	screen := s.waitFor("changed;", 10*time.Second)
+	if !strings.Contains(screen, "kb") {
+		t.Fatalf("the added item is not listed:\n%s", screen)
+	}
+	s.capture("settings-array")
+	s.keys("Escape")
+	staged := s.waitFor("[unsaved]", 10*time.Second)
+	if !strings.Contains(staged, `["kb"] [unsaved]`) {
+		t.Fatalf("the array was not staged as a whole:\n%s", staged)
+	}
+	s.keys("C-s")
+	s.waitFor("Saved 1 to user", 10*time.Second)
+	data, err := os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
+	if err != nil || !strings.Contains(string(data), `disabled = ["kb"]`) {
+		t.Fatalf("array setting was not persisted: %v\n%s", err, data)
+	}
+	s.keys("Enter")
+	s.waitFor("kb", 10*time.Second)
+	s.typeText("d")
+	s.keys("Escape")
+	s.waitFor("[unsaved]", 10*time.Second)
+	s.keys("C-s")
+	s.waitFor("Saved 1 to user", 10*time.Second)
+	data, err = os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
+	if err != nil || strings.Contains(string(data), `"kb"`) {
+		t.Fatalf("the removed item is still persisted: %v\n%s", err, data)
+	}
+}
