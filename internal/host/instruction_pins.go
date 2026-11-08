@@ -327,7 +327,7 @@ func (a *app) instructionsCommand(ctx sdk.Context, args string) error {
 	if err != nil {
 		return err
 	}
-	notify(ctx, result)
+	a.notify(ctx, result)
 	return nil
 }
 
@@ -458,6 +458,6 @@ func (a *app) framesCommand(ctx sdk.Context) error {
 	if len(lines) == 0 {
 		lines = append(lines, "No frames in this session.")
 	}
-	notify(ctx, strings.Join(lines, "\n"))
+	a.notify(ctx, strings.Join(lines, "\n"))
 	return nil
 }

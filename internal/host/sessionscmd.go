@@ -45,7 +45,7 @@ func (a *app) sessionsCommand(ctx sdk.Context, args string) error {
 		if len(records) == 0 {
 			out.WriteString("No other live session is discoverable.\n")
 		}
-		notify(ctx, out.String())
+		a.notify(ctx, out.String())
 		return nil
 	case "send":
 		target, text, _ := strings.Cut(rest, " ")
@@ -56,7 +56,7 @@ func (a *app) sessionsCommand(ctx sdk.Context, args string) error {
 		if err != nil {
 			return err
 		}
-		notify(ctx, receiptText(target, receipt))
+		a.notify(ctx, receiptText(target, receipt))
 		return nil
 	case "trust", "untrust", "block", "unblock":
 		if rest == "" {
@@ -78,7 +78,7 @@ func (a *app) sessionsCommand(ctx sdk.Context, args string) error {
 			delete(e.blocked, id)
 		}
 		e.mu.Unlock()
-		notify(ctx, fmt.Sprintf("%s: %s", verb, shortID(id)))
+		a.notify(ctx, fmt.Sprintf("%s: %s", verb, shortID(id)))
 		return nil
 	case "hide", "show":
 		e.mu.Lock()
@@ -86,7 +86,7 @@ func (a *app) sessionsCommand(ctx sdk.Context, args string) error {
 		e.refreshLocked(ctx)
 		e.publishLocked(ctx)
 		e.mu.Unlock()
-		notify(ctx, "This session is now "+map[bool]string{true: "hidden from discovery (existing conversations keep working)", false: "discoverable"}[verb == "hide"]+".")
+		a.notify(ctx, "This session is now "+map[bool]string{true: "hidden from discovery (existing conversations keep working)", false: "discoverable"}[verb == "hide"]+".")
 		return nil
 	}
 	return errors.New("usage: /workbench sessions [ls | send <session> <text> | trust|untrust|block|unblock <session> | hide | show]")

@@ -1,0 +1,16 @@
+
+
+2 live sessions
+[38;5;5m─────────────────────────────────────────────────────────
+[39m Workbench › Settings · user
+ search: ▏
+[38;5;5m→ edit.mode                       "hashline" [defaults][39m
+  edit.enforce-seen-lines[2m         true [defaults][0m
+  edit.model-repair.enabled[2m       false [defaults][0m
+[2m  (1/96)[0m
+ Select hashline, exact-text replace, or auto edit
+ input; captured at the next turn boundary. · applies:
+ enter change · ctrl+s save · ctrl+r reset · tab scope …
+[38;5;5m─────────────────────────────────────────────────────────
+[2m[39m/tmp/pw-defect.HaYLMn[0m
+[2m0.0%/32k (auto)                                      mock

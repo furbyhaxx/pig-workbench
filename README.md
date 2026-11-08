@@ -13,7 +13,7 @@ just check   # format check, vet, tests and PiG validation
 pig -e .     # load the extension in a session
 ```
 
-Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workbench settings catalog` to see which settings are applied. See [tools](docs/tools.md), [configuration](docs/configuration.md) and [extension services](docs/extension-services.md) for contracts and examples.
+In the TUI, `/workbench` opens a menu of every Workbench view; Enter opens one and Esc returns to the menu. `/workbench settings` opens an editable settings panel. In RPC and print mode the same commands print plain text. Use `/workbench show` for a text overview, `/tools` to inspect tool schemas and `/workbench settings catalog` to see which settings are applied. See [tools](docs/tools.md), [configuration](docs/configuration.md) and [extension services](docs/extension-services.md) for contracts and examples.
 
 ## What works
 
@@ -23,7 +23,7 @@ Use `/workbench` for an overview, `/tools` to inspect tool schemas and `/workben
 - **Instructions and frames:** Applicable steering, backlog and trusted-project private notes arrive as attributed frames. `/workbench instructions` manages inspection and permitted pins; `/workbench frames` inspects frames. Truncated instruction views block applicable mutations until the full current file is read, including all tagged edit sources and move destinations; files over 4 MiB must be reduced. Changes are reconciled at prompt or tool boundaries, not by native file watchers.
 - **Questions and secrets:** `ask_user` uses native interactive dialogs; headless use reports `interactionUnavailable`. Unanswered forms can be inspected, resumed or discarded through `/workbench ask`. The secrets boundary redacts known values from model-bound content and retained result metadata, and supports encrypted secret answers and controlled substitution.
 - **Sessions:** `agent://` and `/workbench sessions` provide authenticated same-user session discovery and messaging, including idle wake and busy steering. `/workbench sessions` can also trust, block, hide or show peers. Session trees and titles are accessible through `session://`.
-- **Inspection:** `/workbench settings`, `prompt`, `skills`, `integrations`, `resources`, `trust`, `projects` and `show` expose their respective state. The activity line displays live counts and contributed items; fixed `alt+w` opens its inspection shortcut.
+- **Inspection:** In the TUI these open scrollable panels and the settings panel stages edits per scope (`enter` changes, `ctrl+s` saves, `ctrl+r` stages a reset, `tab` switches scope, typing searches). `/workbench settings`, `prompt`, `skills`, `integrations`, `resources`, `trust`, `projects` and `show` expose their respective state. The activity line displays live counts and contributed items; fixed `alt+w` opens its inspection shortcut.
 - **Extensions:** Protocol v1 exposes location, presentation, resources, fetch, status, docs, frames and snapshots; sessions are advertised when an endpoint is available, and `secrets.redact` only to explicitly granted owners. See [extension services](docs/extension-services.md).
 
 ## Current limitations

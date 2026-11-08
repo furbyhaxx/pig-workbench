@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -124,7 +125,12 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 	switch verb {
 	case "tools":
 		return a.displaySettingsCommand(ctx, work, s, rest)
-	case "", "show":
+	case "":
+		if panelsAvailable(ctx) {
+			return a.settingsPanel(ctx, work, s)
+		}
+		fallthrough
+	case "show":
 		snapshot, status := s.settings.Inspect()
 		output := map[string]any{"settings": status}
 		if snapshot != nil {
@@ -139,7 +145,7 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 				output["entries"] = snapshot.Entries()
 			}
 		}
-		return notifyJSON(ctx, output)
+		return a.notifyJSON(ctx, output)
 	case "catalog":
 		snapshot, _ := s.settings.Inspect()
 		catalog := config.Catalog()
@@ -152,7 +158,7 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 				definitions = append(definitions, definition)
 			}
 		}
-		return notifyJSON(ctx, map[string]any{"catalog": definitions})
+		return a.notifyJSON(ctx, map[string]any{"catalog": definitions})
 	case "reload":
 		trusted, err := ctx.IsProjectTrusted()
 		if err != nil {
@@ -167,7 +173,7 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 		}
 		s.secrets.Reload()
 		a.settingsChanged(ctx, s, snapshot.Revision(), nil)
-		return notifyJSON(ctx, map[string]any{"settings": "reloaded", "configRevision": snapshot.Revision(), "warnings": snapshot.Warnings()})
+		return a.notifyJSON(ctx, map[string]any{"settings": "reloaded", "configRevision": snapshot.Revision(), "warnings": snapshot.Warnings()})
 	case "set", "reset":
 		scope, tail, _ := strings.Cut(rest, " ")
 		tail = strings.TrimSpace(tail)
@@ -191,7 +197,7 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 		if result.Published {
 			a.settingsChanged(ctx, s, result.Revision, result.Changed)
 		}
-		if err := notifyJSON(ctx, map[string]any{"settings": "save", "result": result}); err != nil {
+		if err := a.notifyJSON(ctx, map[string]any{"settings": "save", "result": result}); err != nil {
 			return err
 		}
 		return saveErr
@@ -200,12 +206,46 @@ func (a *app) settingsCommand(ctx sdk.Context, args string) error {
 	}
 }
 
-func notifyJSON(ctx sdk.Context, value any) error {
+// saveSettingEdits writes edits at scope and announces the change, as the set and reset commands do.
+func (a *app) saveSettingEdits(ctx sdk.Context, work context.Context, s *session, scope config.Scope, edits []config.Edit) (config.SaveResult, error) {
+	baseline, err := s.settings.Current()
+	if err != nil {
+		return config.SaveResult{}, err
+	}
+	result, saveErr := s.settings.Save(work, scope, baseline, edits, ctx.IsProjectTrusted)
+	if result.Published {
+		a.settingsChanged(ctx, s, result.Revision, result.Changed)
+	}
+	return result, saveErr
+}
+
+func (a *app) settingsPanel(ctx sdk.Context, work context.Context, s *session) error {
+	snapshot, status := s.settings.Inspect()
+	if snapshot == nil {
+		return fmt.Errorf("no valid settings snapshot is available: %s", status.Error)
+	}
+	scopes := []config.Scope{config.User, config.Runtime}
+	if trusted, err := ctx.IsProjectTrusted(); err == nil && trusted {
+		scopes = []config.Scope{config.User, config.Project, config.Runtime}
+	}
+	panel := newSettingsPanel(snapshot, scopes, ctx.Height, func(scope config.Scope, edits []config.Edit) (config.SaveResult, *config.Snapshot, error) {
+		result, err := a.saveSettingEdits(ctx, work, s, scope, edits)
+		if err != nil {
+			return result, nil, err
+		}
+		fresh, err := s.settings.Current()
+		return result, fresh, err
+	})
+	_, err := ctx.Custom(panel, nil)
+	return err
+}
+
+func (a *app) notifyJSON(ctx sdk.Context, value any) error {
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return err
 	}
-	notify(ctx, string(data))
+	a.notify(ctx, string(data))
 	return nil
 }
 

@@ -118,7 +118,7 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 		for _, text := range invalid {
 			fmt.Fprintf(&out, "! ignored malformed rule: %s\n", noticeText(text, 80))
 		}
-		notify(ctx, out.String())
+		a.notify(ctx, out.String())
 		return nil
 	case "add", "rm":
 	default:
@@ -161,6 +161,6 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 	if saveErr != nil {
 		return saveErr
 	}
-	notify(ctx, fmt.Sprintf("Trust rules saved to user settings (%d rule(s)). This does not change PiG's own /trust store.", len(updated)))
+	a.notify(ctx, fmt.Sprintf("Trust rules saved to user settings (%d rule(s)). This does not change PiG's own /trust store.", len(updated)))
 	return nil
 }

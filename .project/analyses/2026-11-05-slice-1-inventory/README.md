@@ -5,15 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 54
+  revision: 55
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T19:00:00+01:00"
+  updated_at: "2026-11-09T12:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 54
-      reason: "Enforce the SPEC-0001 per-owner provider operation bound"
-      changes: ["Provider calls admit at most 8 in-flight operations per owner and refuse the rest as busy/notApplied before dispatch", "Recorded one intermittent TempDir cleanup flake in an unrelated activity test"]
+    - revision: 55
+      reason: "User-reported defect: /workbench was a flat completion list that dumped text and threw"
+      changes: ["Reproduced the reported error in a real TUI", "Added the hub, scrollable panels and an editable settings panel", "Added real-TUI regression tests; layout awaits user review"]
 ---
 
 # Scope and evidence
@@ -142,6 +142,14 @@ Call headers now shorten only `path`-format fields, against the working root rec
 # Provider admission bound
 
 \`providerBus.call\` now reserves one of 8 per-owner slots before any emit and releases it exactly once; the ninth concurrent operation returns \`busy\`, \`retryable\`, \`notApplied\` without reaching the provider, and another owner is unaffected. SPEC-0001 §4 defines only the per-owner bound: the resource-provider descriptor has **no** per-registration limit field, so none is implemented and none is claimed. Unit tests cover the bound, single release and no-emit-at-limit. [check](evidence/provider-admission-check.log), [race](evidence/provider-admission-race.log). The first full integration run ([log](evidence/provider-admission-all-first-flaked.log)) failed once in \`TestLiveCatalogSettingsHaveBehavioralConsumers/activity/disabled\` with \`TempDir RemoveAll cleanup: directory not empty\` (a pig process still writing into its agent dir during teardown); that test passed 3 of 3 and its activity subtest 5 of 5 alone, and the full rerun passed ([log](evidence/provider-admission-all-rerun.log)). This is an unfixed, intermittent harness race, not evidence of a product defect.
+
+# Interactive menu (user-reported defect)
+
+Reproduced in a real `pig -e .` TUI: `/workbench tools settings` threw `tool "settings" not found`, and `/workbench` was only a 16-item autocomplete list whose entries printed text into the transcript (`/workbench settings` dumped ~100 lines of JSON; long views were cut to the terminal width). Nothing in the extension used a kit panel. This contradicted PLAN-0002's own "plain views" deferral only in degree: the views existed but were not usable.
+
+Now, in the TUI: `/workbench` opens a hub (SKETCH-0001 §3 shape) listing 17 views; every entry opens a titled, scrollable, width-wrapped panel and Esc returns to the hub with the selection kept; `/workbench settings` opens a settings panel with search, value and source per setting, staged edits (toggle, choice cycle, typed integers and strings with bounds), per-scope save, reset staging and a discard guard. An unknown tool name now warns instead of failing the command. RPC and print keep plain text. Real-TUI tests: `TestLiveEveryHubEntryOpensATitledPanelWithoutAnError`, `TestLiveWorkbenchMenuOpensInteractivePanelsInTUI` (including a save that is read back from `Workbench.toml`), `TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard`, `TestLiveToolsWithAnUnknownNameWarnsInsteadOfFailingTheCommand` (confirmed to fail on the old behaviour); logs: [check](evidence/menu-check.log), [race](evidence/menu-race.log), [full integration](evidence/menu-all.log).
+
+**Awaiting user layout review** (these are new surfaces): captures at 36/57/80/140 columns and 16 rows in `evidence/menu-tui/{hub,settings,tools}/`. Not done: panels for jobs actions (kill/wait), instruction pins, trust editing and session messaging are still read-only views, not interactive editors; the hub is not searchable; array-valued settings cannot be edited in the panel; no mouse support was exercised; sizing was measured on one terminal emulator (tmux).
 
 # Baseline gates
 

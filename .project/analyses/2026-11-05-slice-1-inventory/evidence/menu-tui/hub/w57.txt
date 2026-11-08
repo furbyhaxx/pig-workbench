@@ -1,0 +1,16 @@
+
+
+─────────────────────────────────────────────────────────
+ Workbench · /tmp/pw-defect.HaYLMn
+→ Tools                           11 registered · inspe
+  Jobs                            Inspect, wait for and
+  Settings                        Edit scoped settings
+  Tool display                    Per-tool display pref
+  Instructions                    Active AGENTS.md and
+  Frames                          Context frames delive
+  Skills                          Available and loaded
+  (1/17)
+ enter open · escape/ctrl+c close
+─────────────────────────────────────────────────────────
+/tmp/pw-defect.HaYLMn
+0.0%/32k (auto)                                      mock

@@ -218,15 +218,15 @@ func (a *app) activityShortcut(ctx sdk.Context) error {
 	}
 	items := s.activityItems()
 	if len(items) == 0 {
-		notify(ctx, "Workbench activity: idle.")
+		a.notify(ctx, "Workbench activity: idle.")
 		return nil
 	}
-	notify(ctx, "Workbench activity: "+activitySummary(items))
+	a.notify(ctx, "Workbench activity: "+activitySummary(items))
 	if args, ok := strings.CutPrefix(items[0].Open, "/workbench "); ok {
 		return a.workbench(ctx, args)
 	}
 	if items[0].Open != "" {
-		notify(ctx, "Open with "+items[0].Open)
+		a.notify(ctx, "Open with "+items[0].Open)
 	}
 	return nil
 }

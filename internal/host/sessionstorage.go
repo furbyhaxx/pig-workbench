@@ -130,7 +130,7 @@ func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 				fmt.Fprintf(&out, "session storage: per-directory, %s\n", bucket)
 			}
 		}
-		notify(ctx, out.String())
+		a.notify(ctx, out.String())
 		return nil
 	case "unlink-storage":
 		if !bucketOK {
@@ -151,7 +151,7 @@ func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 		if len(result.Kept) > 0 {
 			text += fmt.Sprintf(" %d session file(s) recorded in no restored directory stay in the project storage.", len(result.Kept))
 		}
-		notify(ctx, text+" The running session keeps writing to its file; PiG lists it again after the next resume.")
+		a.notify(ctx, text+" The running session keeps writing to its file; PiG lists it again after the next resume.")
 		return nil
 	}
 	return errors.New("usage: /workbench projects [status | unlink-storage]")

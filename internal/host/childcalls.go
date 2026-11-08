@@ -117,8 +117,8 @@ func (a *app) codemodeCommand(ctx sdk.Context, args string) error {
 	}
 	parents := s.children.snapshot(strings.TrimSpace(args))
 	if len(parents) == 0 {
-		notify(ctx, "No retained codemode child calls for this session runtime. Children from before a reload or resume are not retained here.")
+		a.notify(ctx, "No retained codemode child calls for this session runtime. Children from before a reload or resume are not retained here.")
 		return nil
 	}
-	return notifyJSON(ctx, map[string]any{"codemodeChildren": parents})
+	return a.notifyJSON(ctx, map[string]any{"codemodeChildren": parents})
 }

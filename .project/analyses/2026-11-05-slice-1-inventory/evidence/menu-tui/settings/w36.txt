@@ -1,0 +1,16 @@
+
+
+⚇2
+────────────────────────────────────
+ Workbench › Settings · user
+ search: ▏
+→ edit.mode
+  edit.enforce-seen-lines
+  edit.model-repair.enabled
+  (1/96)
+ Select hashline, exact-text
+ replace, or auto edit input;
+ enter change · ctrl+s save · ctrl…
+────────────────────────────────────
+/tmp/pw-defect.HaYLMn
+0.0%/32k (auto)                 mock

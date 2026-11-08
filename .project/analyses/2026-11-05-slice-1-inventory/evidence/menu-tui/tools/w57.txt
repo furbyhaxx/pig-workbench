@@ -1,0 +1,16 @@
+
+
+─────────────────────────────────────────────────────────
+ Workbench › Tools
+ read [active] Read text from local paths or registered
+ scheme:// resources; relative paths use the Workbench
+ location. Use path suffixes :N, :A-B, :A+C, :-N, comma
+ ranges or :raw (for example src/main.go:20-40) when
+ supported by the provider. Literal filenames win.
+ Exactly one of path or paths (1–32) is required;
+ explicit selector is for one path only. Output is
+ bounded to 50 KiB/2000 lines across the batch; Details
+ lines 1-8 of 101
+ up scroll · pageDown page · escape/ctrl+c close
+/tmp/pw-defect.HaYLMn
+0.0%/32k (auto)                                      mock

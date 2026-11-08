@@ -181,7 +181,7 @@ func (a *app) displaySettingsCommand(ctx sdk.Context, work context.Context, s *s
 			return errors.New("no registered or dormant display schema matches that owner/key")
 		}
 		if ctx.Mode() == "tui" {
-			notify(ctx, strings.Join(displayGroupLines(groups, ctx.Width()), "\n"))
+			a.notify(ctx, strings.Join(displayGroupLines(groups, ctx.Width()), "\n"))
 			return nil
 		}
 		output := map[string]any{"toolDisplay": groups, "settings": status}
@@ -192,7 +192,7 @@ func (a *app) displaySettingsCommand(ctx sdk.Context, work context.Context, s *s
 		if len(encoded) > 48<<10 {
 			return errors.New("display settings exceed the inspection budget; narrow the owner/key filter")
 		}
-		notify(ctx, string(encoded))
+		a.notify(ctx, string(encoded))
 		return nil
 	}
 	identifiers, value, err := commandFields(args, 4)
@@ -217,7 +217,7 @@ func (a *app) displaySettingsCommand(ctx sdk.Context, work context.Context, s *s
 	if result.Published {
 		a.settingsChanged(ctx, s, result.Revision, result.Changed)
 	}
-	if err := notifyJSON(ctx, map[string]any{"settings": "save", "result": result}); err != nil {
+	if err := a.notifyJSON(ctx, map[string]any{"settings": "save", "result": result}); err != nil {
 		return err
 	}
 	return saveErr

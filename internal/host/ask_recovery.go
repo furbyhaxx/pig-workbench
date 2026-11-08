@@ -74,7 +74,7 @@ func (a *app) askCommand(ctx sdk.Context, args string) error {
 		return err
 	}
 	if !found {
-		ctx.Notify("No unanswered ask_user form on this branch.", "info")
+		a.notify(ctx, "No unanswered ask_user form on this branch.")
 		return nil
 	}
 	form, err := ask.ParseQuestions(record.Payload)
@@ -88,7 +88,7 @@ func (a *app) askCommand(ctx sdk.Context, args string) error {
 		for _, question := range form.Questions {
 			fmt.Fprintf(&out, "- %s [%s]: %s\n", question.ID, question.Type, question.Prompt)
 		}
-		ctx.Notify(noticeText(out.String(), 0), "info")
+		a.notify(ctx, out.String())
 		return nil
 	case "discard":
 		if err := resolveAsk(ctx, record, ask.StateCancelled, nil); err != nil {

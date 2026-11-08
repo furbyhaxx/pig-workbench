@@ -139,7 +139,7 @@ func (a *app) integrationsCommand(ctx sdk.Context, args string) error {
 	if !ok {
 		return fmt.Errorf("no live registrations for owner %q", strings.TrimSpace(args))
 	}
-	notify(ctx, text)
+	a.notify(ctx, text)
 	return nil
 }
 
@@ -152,6 +152,6 @@ func (a *app) resourcesCommand(ctx sdk.Context, args string) error {
 	if !ok {
 		return fmt.Errorf("scheme %q is not registered", strings.TrimSpace(args))
 	}
-	notify(ctx, text)
+	a.notify(ctx, text)
 	return nil
 }

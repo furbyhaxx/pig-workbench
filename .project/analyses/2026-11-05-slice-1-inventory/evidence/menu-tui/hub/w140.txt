@@ -1,0 +1,16 @@
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Workbench · /tmp/pw-defect.HaYLMn
+→ Tools                           11 registered · inspect schemas, owners and exposure
+  Jobs                            Inspect, wait for and stop shell jobs
+  Settings                        Edit scoped settings with provenance
+  Tool display                    Per-tool display preferences
+  Instructions                    Active AGENTS.md and notes, pins and caps
+  Frames                          Context frames delivered this session
+  Skills                          Available and loaded skills
+  (1/17)
+ enter open · escape/ctrl+c close
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/tmp/pw-defect.HaYLMn
+0.0%/32k (auto)                                                                                                                         mock

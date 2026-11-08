@@ -222,6 +222,40 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	return s.jobResult(input.ID, input.Cursor)
 }
 
+func jobLabel(state jobs.JobState, metadata jobMetadata) string {
+	label := "running"
+	if !state.Running {
+		label = "exited"
+	}
+	if state.Cancelled {
+		label = "cancelled"
+	}
+	if metadata.TimedOut {
+		label = "timedOut"
+	}
+	return label
+}
+
+// jobListText renders the session's jobs for people; the jobs tool keeps its JSON for models.
+func (s *session) jobListText() string {
+	states := s.jobs.List()
+	if len(states) == 0 {
+		return "No jobs in this session."
+	}
+	var b strings.Builder
+	for _, state := range states {
+		s.jobMeta.mu.Lock()
+		metadata := s.jobMeta.values[state.ID]
+		s.jobMeta.mu.Unlock()
+		label := jobLabel(state, metadata)
+		if state.Exit != nil && !state.Running {
+			label += fmt.Sprintf(" (exit %d)", state.Exit.Code)
+		}
+		fmt.Fprintf(&b, "%s  %s  %s\n", state.ID, label, noticeText(metadata.Command, 0))
+	}
+	return b.String()
+}
+
 func (s *session) jobResult(id string, cursor int64) (sdk.ToolResult, error) {
 	state, err := s.jobs.Status(id)
 	if err != nil {
@@ -247,16 +281,7 @@ func (s *session) jobResult(id string, cursor int64) (sdk.ToolResult, error) {
 	s.jobMeta.mu.Lock()
 	metadata := s.jobMeta.values[id]
 	s.jobMeta.mu.Unlock()
-	label := "running"
-	if !state.Running {
-		label = "exited"
-	}
-	if state.Cancelled {
-		label = "cancelled"
-	}
-	if metadata.TimedOut {
-		label = "timedOut"
-	}
+	label := jobLabel(state, metadata)
 	content := fmt.Sprintf("Job %s: %s\n%s", id, label, output)
 	details := map[string]any{"id": id, "state": label, "running": state.Running, "exit": state.Exit, "error": state.Error, "cursor": next, "truncated": truncated, "gapFrom": gap, "command": metadata.Command, "cwd": metadata.Cwd, "locationRevision": metadata.LocationRevision}
 	failed := state.Error != "" || state.Exit != nil && state.Exit.Code != 0 || metadata.TimedOut

@@ -37,7 +37,7 @@ func (a *app) show(ctx sdk.Context) error {
 	if settings.Stale {
 		text += "\nConfiguration error: " + settings.Error
 	}
-	notify(ctx, text)
+	a.present(ctx, "Workbench › Status", text)
 	return nil
 }
 
@@ -53,7 +53,7 @@ func (a *app) cdCommand(ctx sdk.Context, args string) error {
 	if err != nil {
 		return err
 	}
-	notify(ctx, result.(sdk.ToolResult).Content)
+	a.notify(ctx, result.(sdk.ToolResult).Content)
 	return nil
 }
 
@@ -91,13 +91,37 @@ func (a *app) toolsCommand(ctx sdk.Context, args string) error {
 		lines = append(lines, line)
 	}
 	if filter != "" && len(lines) == 0 {
-		return fmt.Errorf("tool %q not found; use /tools to list names", filter)
+		names := make([]string, len(tools))
+		for i, tool := range tools {
+			names[i] = tool.Name
+		}
+		ctx.Notify(noticeText(fmt.Sprintf("No tool named %q. Tools: %s. Settings and other views start from /workbench.", filter, strings.Join(names, ", ")), 0), "warning")
+		return nil
 	}
-	notify(ctx, strings.Join(lines, "\n"))
+	a.present(ctx, "Workbench › Tools", strings.Join(lines, "\n"))
 	return nil
 }
 
-func notify(ctx sdk.Context, text string) {
+// notify shows short text as a toast and anything longer in a scrollable panel when the TUI is available.
+func (a *app) notify(ctx sdk.Context, text string) {
+	title, _ := a.hubTitle.Load().(string)
+	if title == "" {
+		title = "Workbench"
+	}
+	a.present(ctx, title, text)
+}
+
+// present shows text under title: a scrollable panel for multi-line or wide text in the TUI, a notification elsewhere.
+func (a *app) present(ctx sdk.Context, title, text string) {
+	if panelsAvailable(ctx) && (a.forcePanels.Load() > 0 || strings.Contains(strings.TrimRight(text, "\n"), "\n") || tui.VisibleWidth(text) > max(20, ctx.Width()-4)) {
+		if _, err := ctx.Custom(&textPanel{title: title, text: text, height: ctx.Height}, nil); err == nil {
+			return
+		}
+	}
+	toast(ctx, text)
+}
+
+func toast(ctx sdk.Context, text string) {
 	width := 0
 	if ctx.Mode() == "tui" {
 		width = ctx.Width()
@@ -144,11 +168,19 @@ func (a *app) jobsCommand(ctx sdk.Context, args string) error {
 	default:
 		return fmt.Errorf("usage: /workbench jobs [list | <id> status|output|kill|eof]")
 	}
+	if params["action"] == "list" {
+		s, err := a.current()
+		if err != nil {
+			return err
+		}
+		a.notify(ctx, s.jobListText())
+		return nil
+	}
 	result, err := a.jobsTool(ctx, params)
 	if err != nil {
 		return err
 	}
-	notify(ctx, result.(sdk.ToolResult).Content)
+	a.notify(ctx, result.(sdk.ToolResult).Content)
 	return nil
 }
 
@@ -184,7 +216,7 @@ func (a *app) skillsCommand(ctx sdk.Context) error {
 	if b.Len() == 0 {
 		b.WriteString("no skills\n")
 	}
-	notify(ctx, b.String())
+	a.present(ctx, "Workbench › Skills", b.String())
 	return nil
 }
 
@@ -218,7 +250,7 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 	b.WriteString("rendered builtin/workbench:\n")
 	b.WriteString(rendered)
 	b.WriteString("\ndelivery auto still serves PiG until the approved A/B run; prompt.delivery=force replaces it\n")
-	notify(ctx, b.String())
+	a.notify(ctx, b.String())
 	return nil
 }
 
@@ -245,7 +277,12 @@ func renderBuiltinPrompt(s *session) (string, error) {
 func (a *app) workbench(ctx sdk.Context, args string) error {
 	verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
 	switch verb {
-	case "", "show":
+	case "":
+		if panelsAvailable(ctx) {
+			return a.hub(ctx)
+		}
+		return a.show(ctx)
+	case "show":
 		return a.show(ctx)
 	case "tools":
 		return a.toolsCommand(ctx, rest)

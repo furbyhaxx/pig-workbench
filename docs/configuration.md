@@ -13,6 +13,10 @@ Secret detection policy lives in its own `Secrets.toml` beside each `Workbench.t
 
 Tool-result protection covers content plus retained `details` and `structuredContent` before session persistence. Retained JSON string values and keys are redacted; a guard failure, unsupported shape or redacted-key collision withholds all those fields atomically rather than saving partial plaintext. Native image/audio content blocks retain their existing opaque-binary handling. Presentation update captures are protected before entering Workbench's retained caches.
 
+## Editing settings in the TUI
+
+`/workbench settings` opens a panel listing every setting with its effective value and source. `enter` toggles a boolean, cycles a choice or opens a typed prompt for integers and strings; typing in the list searches. `tab` switches between user, runtime and (when trusted) project scope. Edits stay staged and marked `[unsaved]` until `ctrl+s`; a failed save shows the exact reason and keeps your edits, and `escape` with unsaved edits asks first. `ctrl+r` stages a reset of the selected setting at the current scope. Array-valued settings are not editable in the panel; use `/workbench settings set`. Outside the TUI, `/workbench settings` prints the same data as JSON.
+
 ## Example
 
 ```toml

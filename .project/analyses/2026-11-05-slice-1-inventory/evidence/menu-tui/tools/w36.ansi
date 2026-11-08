@@ -1,0 +1,16 @@
+
+
+[38;5;5m────────────────────────────────────
+[39m Workbench › Tools
+ read [active] Read text from local
+ paths or registered scheme://
+ resources; relative paths use the
+ Workbench location. Use path
+ suffixes :N, :A-B, :A+C, :-N,
+ comma ranges or :raw (for example
+ src/main.go:20-40) when supported
+ by the provider. Literal filenames
+ lines 1-8 of 164
+ up scroll · pageDown page · escap…
+[2m/tmp/pw-defect.HaYLMn[0m
+[2m0.0%/32k (auto)                 mock

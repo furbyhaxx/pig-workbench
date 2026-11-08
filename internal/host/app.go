@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -81,10 +82,13 @@ type session struct {
 }
 
 type app struct {
-	mu      sync.RWMutex
-	session *session
-	initErr error
-	syntax  *syntax.Service
+	// forcePanels > 0 while a hub entry runs, so every result shows in a panel instead of a vanishing toast.
+	forcePanels atomic.Int32
+	hubTitle    atomic.Value
+	mu          sync.RWMutex
+	session     *session
+	initErr     error
+	syntax      *syntax.Service
 }
 
 type requestContext struct{ sdk.Context }
