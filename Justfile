@@ -32,6 +32,11 @@ race: _modfile
 integration: _modfile
 	go test -race -tags=integration -modfile="{{tmp}}/go.mod" ./internal/host
 
+# Opt-in live evaluation with real provider spend; the key stays in the environment.
+live-eval pattern="TestLiveEval": _modfile
+	mkdir -p "{{justfile_directory()}}/.tmp/live-eval"
+	DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-{{justfile_directory()}}/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="{{tmp}}/go.mod" ./internal/host -run '{{pattern}}' -count=1 -v -timeout 30m
+
 validate:
 	pig install . --validate-only --json
 

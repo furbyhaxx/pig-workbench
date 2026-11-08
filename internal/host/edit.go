@@ -67,10 +67,10 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		mode = entry.Value.(string)
 	}
 	if mode == "hashline" && !tagged {
-		return nil, errors.New("edit.mode is hashline; use tagged syntax or explicitly select replace/auto for the next turn")
+		return nil, errors.New("this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here")
 	}
 	if mode == "replace" && tagged {
-		return nil, errors.New("edit.mode is replace; use exact-text edits or explicitly select hashline/auto for the next turn")
+		return nil, errors.New("this session's edit.mode is replace: send {path, edits:[{oldText,newText}]}; tagged {hashline} batches are not accepted here")
 	}
 	var effects []fileedit.Effect
 	var effectURIs []string
