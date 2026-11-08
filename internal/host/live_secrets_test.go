@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -261,5 +263,160 @@ func TestLiveWriteReceivesTheRealValueFromAPlaceholder(t *testing.T) {
 		if strings.Contains(body, token) {
 			t.Fatalf("request %d carries the real token", i)
 		}
+	}
+}
+
+// neverCarries fails when any provider request body holds the real token.
+func neverCarries(t *testing.T, recorder *requestRecorder, token string) {
+	t.Helper()
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, token) {
+			t.Fatalf("request %d carries the real token", i)
+		}
+	}
+}
+
+func lastPlaceholder(recorder *requestRecorder) string {
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	return regexp.MustCompile(`red-sec-[a-z2-7]{16}`).FindString(recorder.bodies[len(recorder.bodies)-1])
+}
+
+// TestLiveEditSubstitutesAPlaceholderIntoTheFileAndKeepsTheTokenFromTheProvider covers edit, the
+// tool with the largest model-written payload.
+func TestLiveEditSubstitutesAPlaceholderIntoTheFileAndKeepsTheTokenFromTheProvider(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Ed7tQ4", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("key="+token+"\nname=old\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "notes.txt"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = 'replace'\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder.next = func(index int) *scriptedCall {
+		if index == 1 {
+			return &scriptedCall{"edit", map[string]any{"path": "notes.txt", "edits": []any{map[string]any{"oldText": "name=old", "newText": "copy=" + lastPlaceholder(recorder)}}}}
+		}
+		return nil
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,edit")
+	fixture.send("script", "prompt", "Copy the key with edit.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	got, err := os.ReadFile(filepath.Join(root, "notes.txt"))
+	if err != nil || string(got) != "key="+token+"\ncopy="+token+"\n" {
+		t.Fatalf("edit wrote %q, %v", got, err)
+	}
+	neverCarries(t, recorder, token)
+}
+
+// TestLiveHTTPBodyWithATokenIsRedactedBeforeTheProvider covers the http(s) reader path.
+func TestLiveHTTPBodyWithATokenIsRedactedBeforeTheProvider(t *testing.T) {
+	token := "ghp_" + strings.Repeat("Ht9sR2", 5)
+	page := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, "<!doctype html><html><head><title>T</title></head><body><article><h1>Keys</h1><p>Use %s for deploys and keep this paragraph long enough to read as an article body.</p></article></body></html>", token)
+	}))
+	defer page.Close()
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": page.URL + "/keys"}}, {"read", map[string]any{"path": page.URL + "/keys:raw"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("script", "prompt", "Read the page.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	neverCarries(t, recorder, token)
+	if lastPlaceholder(recorder) == "" {
+		t.Fatal("the page content reached the model without its placeholder")
+	}
+}
+
+// TestLiveCodemodeChildResultsAreRedactedBeforeTheProvider: a script that prints what its nested
+// read returned must not leak the file's secret.
+func TestLiveCodemodeChildResultsAreRedactedBeforeTheProvider(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Cm5wN8", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("key="+token+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"codemode", map[string]any{"code": "const r = await tools.read({path:'notes.txt'}); text(JSON.stringify(r));"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,codemode")
+	fixture.send("script", "prompt", "Run the script.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	neverCarries(t, recorder, token)
+	if lastPlaceholder(recorder) == "" {
+		t.Fatal("the child result never reached the model, so the test proved nothing")
+	}
+}
+
+// TestLiveAnotherExtensionsFetchBackendBodyIsRedactedBeforeTheProvider: a body served by a
+// contributed fetch backend takes the same tool-result boundary as the builtin reader.
+func TestLiveAnotherExtensionsFetchBackendBodyIsRedactedBeforeTheProvider(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Fb2kM6", 5)
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "https://fixture.test/secret-page"}}, {"read", map[string]any{"path": "https://fixture.test/secret-page:raw"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("script", "prompt", "Read the page.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	neverCarries(t, recorder, token)
+	recorder.mu.Lock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	recorder.mu.Unlock()
+	if !strings.Contains(last, "Deploy keys") || lastPlaceholder(recorder) == "" {
+		t.Fatalf("the backend page did not reach the model with a placeholder:\n%s", last[max(0, len(last)-1800):])
+	}
+}
+
+// TestLiveCompactionRequestCarriesThePlaceholderNotTheSecret captures the summarization request
+// a real /compact sends: it holds the read's content and must hold only its placeholder.
+func TestLiveCompactionRequestCarriesThePlaceholderNotTheSecret(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Cp4vB7", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("deploy key "+token+"\nsecond line\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "notes.txt"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "settings.json"), []byte(`{"compaction":{"enabled":true,"keepRecentTokens":1}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	for i, prompt := range []string{"read the notes", "again", "once more"} {
+		fixture.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	}
+	recorder.mu.Lock()
+	before := len(recorder.bodies)
+	recorder.mu.Unlock()
+	fixture.sendRaw("compact", "compact", nil)
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == "compact" })
+	recorder.mu.Lock()
+	after := len(recorder.bodies)
+	var request string
+	if after > before {
+		request = recorder.bodies[before]
+	}
+	recorder.mu.Unlock()
+	if request == "" {
+		t.Fatal("the compaction made no provider request")
+	}
+	neverCarries(t, recorder, token)
+	if !strings.Contains(request, "red-sec-") {
+		t.Fatalf("the compaction request did not carry the read's content, so the test proved nothing:\n%.1500s", request)
 	}
 }

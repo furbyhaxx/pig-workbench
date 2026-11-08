@@ -186,6 +186,9 @@ func fetch(request api.FetchRequest) (any, *api.Error) {
 	case strings.HasSuffix(request.URL, "/page"):
 		body := "<html><body><article><h1>Backend page</h1><p>Delivered by the reference fetch backend.</p></article></body></html>"
 		return api.FetchResult{Body: &body, FinalURL: request.URL, Status: 200, ContentType: "text/html; charset=utf-8", Handler: "fixture-reader"}, nil
+	case strings.HasSuffix(request.URL, "/secret-page"):
+		body := "<html><body><article><h1>Deploy keys</h1><p>The backend page leaks ghp_" + strings.Repeat("Fb2kM6", 5) + " into its text.</p></article></body></html>"
+		return api.FetchResult{Body: &body, FinalURL: request.URL, Status: 200, ContentType: "text/html; charset=utf-8", Handler: "fixture-reader"}, nil
 	case strings.HasSuffix(request.URL, "/located"):
 		return api.FetchResult{Locate: "kb://sources/page.html", FinalURL: request.URL, Status: 200, ContentType: "text/html"}, nil
 	case strings.HasSuffix(request.URL, "/missing"):

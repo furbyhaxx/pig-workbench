@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -103,6 +104,16 @@ func OpenVault(path string, master []byte) (*Vault, error) {
 		return nil, errors.New("cannot close secret vault")
 	}
 	return v, nil
+}
+
+// Version identifies the vault file's current contents without reading them. Every append,
+// including soft deletes and metadata changes, changes it.
+func (v *Vault) Version() (string, error) {
+	info, err := os.Stat(v.path)
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(info.Size(), 10) + ":" + strconv.FormatInt(info.ModTime().UnixNano(), 10), nil
 }
 
 // Load returns the latest metadata and first ciphertext for every placeholder.

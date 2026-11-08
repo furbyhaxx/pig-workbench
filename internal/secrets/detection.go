@@ -1,11 +1,39 @@
 package secrets
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"strings"
+	"sync"
 )
+
+// Texts shorter than memoMinLength cost less to redact than to hash; the memo holds at most
+// memoMaxEntries entries or memoMaxBytes of changed text before it starts over.
+const (
+	memoMinLength  = 256
+	memoMaxEntries = 8192
+	memoMaxBytes   = 32 << 20
+)
+
+// memoEntry is one redaction result. unchanged avoids holding a second copy of a clean text.
+type memoEntry struct {
+	out       string
+	unchanged bool
+}
+
+// vaultCache holds the decrypted known-value snapshot and redaction results for one vault
+// version. Any vault change drops both, so a learned, deleted or excluded value takes effect
+// on the next call.
+type vaultCache struct {
+	mu      sync.Mutex
+	version string
+	known   map[string]string
+	memo    map[[sha256.Size]byte]memoEntry
+	bytes   int
+}
 
 // minSecretLength is the shortest value ever treated as a secret (SPEC-0013 §2).
 const minSecretLength = 8
@@ -81,6 +109,7 @@ type Detector struct {
 	excludedPlaceholders map[string]struct{}
 	excludedValues       map[string]struct{}
 	excludedShapes       []*regexp.Regexp
+	cache                vaultCache
 }
 
 type detectedValue struct {
@@ -223,10 +252,18 @@ func (d *Detector) Learn(value []byte, kind, source string) error {
 // snapshots the vault per call, so values learned by other sessions are covered.
 // New values are persisted before they are used; no error case returns text.
 func (d *Detector) Redact(text string) (string, error) {
-	known, err := d.knownValues()
+	version, versionErr := d.vault.Version()
+	cacheable := versionErr == nil
+	if cacheable && len(text) >= memoMinLength {
+		if out, ok := d.cache.lookup(version, text); ok {
+			return out, nil
+		}
+	}
+	known, err := d.cachedKnownValues(version, cacheable)
 	if err != nil {
 		return "", err
 	}
+	learned := false
 	for _, found := range d.detect(text) {
 		if _, ok := known[found.value]; ok || d.excludedValue(found.value) {
 			continue
@@ -234,9 +271,77 @@ func (d *Detector) Redact(text string) (string, error) {
 		if err := d.Learn([]byte(found.value), found.kind, "detected"); err != nil {
 			return "", err
 		}
+		if !learned {
+			known = maps.Clone(known)
+			learned = true
+		}
 		known[found.value] = Placeholder(d.hmacKey, []byte(found.value))
 	}
-	return Redact(text, d.hmacKey, known)
+	out, err := Redact(text, d.hmacKey, known)
+	if err == nil && cacheable && !learned && len(text) >= memoMinLength {
+		d.cache.remember(version, text, out)
+	}
+	return out, err
+}
+
+// cachedKnownValues returns the shared read-only snapshot for the vault version, loading it once.
+func (d *Detector) cachedKnownValues(version string, cacheable bool) (map[string]string, error) {
+	if cacheable {
+		d.cache.mu.Lock()
+		if d.cache.version == version && d.cache.known != nil {
+			known := d.cache.known
+			d.cache.mu.Unlock()
+			return known, nil
+		}
+		d.cache.mu.Unlock()
+	}
+	known, err := d.knownValues()
+	if err != nil {
+		return nil, err
+	}
+	if cacheable {
+		d.cache.mu.Lock()
+		d.cache.reset(version)
+		d.cache.known = known
+		d.cache.mu.Unlock()
+	}
+	return known, nil
+}
+
+func (c *vaultCache) reset(version string) {
+	c.version, c.known, c.memo, c.bytes = version, nil, nil, 0
+}
+
+func (c *vaultCache) lookup(version, text string) (string, bool) {
+	key := sha256.Sum256([]byte(text))
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.memo[key]
+	if !ok || c.version != version {
+		return "", false
+	}
+	if entry.unchanged {
+		return text, true
+	}
+	return entry.out, true
+}
+
+func (c *vaultCache) remember(version, text, out string) {
+	key := sha256.Sum256([]byte(text))
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.version != version {
+		return
+	}
+	if c.memo == nil || len(c.memo) >= memoMaxEntries || c.bytes >= memoMaxBytes {
+		c.memo, c.bytes = make(map[[sha256.Size]byte]memoEntry), 0
+	}
+	if out == text {
+		c.memo[key] = memoEntry{unchanged: true}
+		return
+	}
+	c.memo[key] = memoEntry{out: out}
+	c.bytes += len(out)
 }
 
 // Substitute replaces canonical placeholders with their exact values. Unknown,

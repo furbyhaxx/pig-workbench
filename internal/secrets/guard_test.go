@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -624,5 +625,91 @@ func TestRedactMessagesLargeContextStaysBounded(t *testing.T) {
 	}
 	if elapsed > 5*time.Second {
 		t.Fatalf("redacting a ~1.2 MB context took %s", elapsed)
+	}
+}
+
+// busyVaultDetector learns 60 vault entries, like a project with many env and .env secrets.
+func busyVaultDetector(t *testing.T) (*Detector, string) {
+	t.Helper()
+	detector, _, _ := newTestGuard(t)
+	for i := 0; i < 60; i++ {
+		if err := detector.Learn([]byte(fmt.Sprintf("vault-secret-number-%03d-value", i)), "token", "env"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	secret := "benchmark-guard-secret-value"
+	if err := detector.Learn([]byte(secret), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	return detector, secret
+}
+
+// distinctContext makes every message unique, so a memo cannot hide the per-message cost.
+func distinctContext(secret string) []any {
+	messages := largeContext(secret)
+	for i, message := range messages {
+		entry := message.(map[string]any)
+		entry["content"] = fmt.Sprintf("message %d: ", i) + entry["content"].(string)
+	}
+	return messages
+}
+
+// The second pass must reuse the first pass's work; budgets are loose enough for race builds.
+func TestRedactMessagesMemoizesUnchangedEntriesAgainstTheVaultVersion(t *testing.T) {
+	detector, secret := busyVaultDetector(t)
+	messages := distinctContext(secret)
+	start := time.Now()
+	first, err := RedactMessages(detector, messages)
+	cold := time.Since(start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	start = time.Now()
+	second, err := RedactMessages(detector, messages)
+	warm := time.Since(start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("cold %s, warm %s", cold, warm)
+	if mustJSON(t, first) != mustJSON(t, second) || strings.Contains(mustJSON(t, second), secret) {
+		t.Fatal("memoized pass must equal the first pass and carry no secret")
+	}
+	if warm*5 > cold {
+		t.Fatalf("second pass did not reuse the first: cold %s, warm %s", cold, warm)
+	}
+}
+
+func TestMemoDoesNotOutliveAVaultChange(t *testing.T) {
+	detector, _, key := newTestGuard(t)
+	text := strings.Repeat("filler sentence. ", 30) + " later-learned-secret-value " + strings.Repeat("tail. ", 20)
+	before, err := detector.Redact(text)
+	if err != nil || before != text {
+		t.Fatalf("an unknown value must pass through: %v", err)
+	}
+	if err := detector.Learn([]byte("later-learned-secret-value"), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	after, err := detector.Redact(text)
+	if err != nil || strings.Contains(after, "later-learned-secret-value") || !strings.Contains(after, Placeholder(key, []byte("later-learned-secret-value"))) {
+		t.Fatalf("a value learned after a cached clean pass must be redacted: %v %q", err, after)
+	}
+}
+
+func TestMemoStopsHidingAValueAfterItIsSoftDeleted(t *testing.T) {
+	detector, vault, key := newTestGuard(t)
+	value := "soft-delete-memo-value"
+	if err := detector.Learn([]byte(value), "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	text := strings.Repeat("filler sentence. ", 30) + value + strings.Repeat(" tail.", 20)
+	redacted, err := detector.Redact(text)
+	if err != nil || strings.Contains(redacted, value) {
+		t.Fatalf("first pass: %v", err)
+	}
+	if err := vault.Delete(Placeholder(key, []byte(value))); err != nil {
+		t.Fatal(err)
+	}
+	if again, err := detector.Redact(text); err != nil || !strings.Contains(again, value) {
+		t.Fatalf("a deleted value is no longer a secret and must not keep its memoized redaction: %v", err)
 	}
 }
