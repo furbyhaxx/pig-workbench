@@ -1,0 +1,1263 @@
+[
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6046,
+    "output": 135,
+    "cacheRead": 11520,
+    "seconds": 4.708972781
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6398,
+    "output": 306,
+    "cacheRead": 17408,
+    "seconds": 4.98914475
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6052,
+    "output": 165,
+    "cacheRead": 11520,
+    "seconds": 3.954360115
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6146,
+    "output": 121,
+    "cacheRead": 11392,
+    "seconds": 3.816559486
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6034,
+    "output": 143,
+    "cacheRead": 11520,
+    "seconds": 3.876546068
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 5,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "edit",
+      "bash"
+    ],
+    "input": 6641,
+    "output": 372,
+    "cacheRead": 29824,
+    "seconds": 7.531017619
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 6272,
+    "output": 186,
+    "cacheRead": 17408,
+    "seconds": 8.373386005
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 6367,
+    "output": 207,
+    "cacheRead": 17408,
+    "seconds": 8.234864575
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 6324,
+    "output": 190,
+    "cacheRead": 17408,
+    "seconds": 8.092157832
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5867,
+    "output": 57,
+    "cacheRead": 5632,
+    "seconds": 2.725251538
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5875,
+    "output": 59,
+    "cacheRead": 5632,
+    "seconds": 2.906081785
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5862,
+    "output": 57,
+    "cacheRead": 5632,
+    "seconds": 2.7260366339999997
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5916,
+    "output": 99,
+    "cacheRead": 5632,
+    "seconds": 2.757723216
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5881,
+    "output": 82,
+    "cacheRead": 5632,
+    "seconds": 2.652565679
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5894,
+    "output": 99,
+    "cacheRead": 5632,
+    "seconds": 2.732441032
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5914,
+    "output": 51,
+    "cacheRead": 5632,
+    "seconds": 2.836406463
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5920,
+    "output": 51,
+    "cacheRead": 5632,
+    "seconds": 3.125047193
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5914,
+    "output": 51,
+    "cacheRead": 5632,
+    "seconds": 2.449936123
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 5948,
+    "output": 73,
+    "cacheRead": 5632,
+    "seconds": 2.841933515
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 6263,
+    "output": 78,
+    "cacheRead": 11392,
+    "seconds": 3.9046731340000003
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 6266,
+    "output": 78,
+    "cacheRead": 11392,
+    "seconds": 3.927862954
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write"
+    ],
+    "input": 6005,
+    "output": 137,
+    "cacheRead": 11392,
+    "seconds": 4.531304025
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 6222,
+    "output": 164,
+    "cacheRead": 17152,
+    "seconds": 4.900471582
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5887,
+    "output": 80,
+    "cacheRead": 5632,
+    "seconds": 2.763321932
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6107,
+    "output": 163,
+    "cacheRead": 11392,
+    "seconds": 4.050062274
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6121,
+    "output": 142,
+    "cacheRead": 11392,
+    "seconds": 3.981661827
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6104,
+    "output": 163,
+    "cacheRead": 11392,
+    "seconds": 5.016923876
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 6182,
+    "output": 162,
+    "cacheRead": 11392,
+    "seconds": 8.889848156
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 6142,
+    "output": 145,
+    "cacheRead": 11392,
+    "seconds": 8.498134423
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 6180,
+    "output": 163,
+    "cacheRead": 11392,
+    "seconds": 8.57082722
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5885,
+    "output": 101,
+    "cacheRead": 5632,
+    "seconds": 3.048997508
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5878,
+    "output": 72,
+    "cacheRead": 5632,
+    "seconds": 3.009530386
+  },
+  {
+    "label": "t1",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5895,
+    "output": 85,
+    "cacheRead": 5632,
+    "seconds": 2.792524312
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4632,
+    "output": 169,
+    "cacheRead": 12288,
+    "seconds": 3.9776765640000002
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "find",
+      "read",
+      "edit"
+    ],
+    "input": 9732,
+    "output": 254,
+    "cacheRead": 38400,
+    "seconds": 5.7733787020000005
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4621,
+    "output": 170,
+    "cacheRead": 12288,
+    "seconds": 3.714445821
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4599,
+    "output": 141,
+    "cacheRead": 12288,
+    "seconds": 4.570740543
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4600,
+    "output": 143,
+    "cacheRead": 12288,
+    "seconds": 4.254778274
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4606,
+    "output": 158,
+    "cacheRead": 12288,
+    "seconds": 3.826683138
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 4773,
+    "output": 185,
+    "cacheRead": 18048,
+    "seconds": 8.437980998
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 4841,
+    "output": 180,
+    "cacheRead": 17920,
+    "seconds": 7.893588901
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 4819,
+    "output": 165,
+    "cacheRead": 17920,
+    "seconds": 7.676937486
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 4395,
+    "output": 57,
+    "cacheRead": 6656,
+    "seconds": 2.75664687
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 4390,
+    "output": 57,
+    "cacheRead": 6656,
+    "seconds": 2.8708715910000002
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 4422,
+    "output": 76,
+    "cacheRead": 6656,
+    "seconds": 2.91646754
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4436,
+    "output": 99,
+    "cacheRead": 6656,
+    "seconds": 2.821192555
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4438,
+    "output": 99,
+    "cacheRead": 6656,
+    "seconds": 2.714703784
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4442,
+    "output": 99,
+    "cacheRead": 6656,
+    "seconds": 2.853094822
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "ls",
+      "ls",
+      "read"
+    ],
+    "input": 4914,
+    "output": 155,
+    "cacheRead": 17792,
+    "seconds": 5.23041879
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 8,
+    "toolErrors": 3,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "read",
+      "read",
+      "ls",
+      "ls",
+      "read",
+      "read",
+      "read"
+    ],
+    "errors": [
+      "read: {\"content\":[{\"text\":\"read cfg://a.cfg: resource not found\",\"type\":\"text\"}],\"details\":{}}",
+      "read: {\"content\":[{\"text\":\"read cfg://b.cfg: resource not found\",\"type\":\"text\"}],\"details\":{}}",
+      "read: {\"content\":[{\"text\":\"read cfg://c.cfg: resource not found\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 4886,
+    "output": 268,
+    "cacheRead": 18048,
+    "seconds": 4.990044505
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 4450,
+    "output": 51,
+    "cacheRead": 6656,
+    "seconds": 2.926836295
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4832,
+    "output": 78,
+    "cacheRead": 12160,
+    "seconds": 3.701328772
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4830,
+    "output": 78,
+    "cacheRead": 12160,
+    "seconds": 3.670317919
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4832,
+    "output": 78,
+    "cacheRead": 12160,
+    "seconds": 3.907070717
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write"
+    ],
+    "input": 4568,
+    "output": 129,
+    "cacheRead": 12160,
+    "seconds": 4.339756331
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 4690,
+    "output": 164,
+    "cacheRead": 17792,
+    "seconds": 4.634917511
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 4694,
+    "output": 155,
+    "cacheRead": 17792,
+    "seconds": 5.039134696
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4684,
+    "output": 152,
+    "cacheRead": 12160,
+    "seconds": 4.354620964
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4560,
+    "output": 164,
+    "cacheRead": 12288,
+    "seconds": 3.691152619
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4580,
+    "output": 160,
+    "cacheRead": 12288,
+    "seconds": 3.652491844
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 4595,
+    "output": 146,
+    "cacheRead": 12288,
+    "seconds": 8.597159751
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 4608,
+    "output": 146,
+    "cacheRead": 12288,
+    "seconds": 8.444126265
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 4597,
+    "output": 144,
+    "cacheRead": 12288,
+    "seconds": 8.953980325
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4388,
+    "output": 58,
+    "cacheRead": 6656,
+    "seconds": 2.62113152
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4427,
+    "output": 87,
+    "cacheRead": 6656,
+    "seconds": 2.788401414
+  },
+  {
+    "label": "t1",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4400,
+    "output": 72,
+    "cacheRead": 6656,
+    "seconds": 2.747759191
+  }
+]

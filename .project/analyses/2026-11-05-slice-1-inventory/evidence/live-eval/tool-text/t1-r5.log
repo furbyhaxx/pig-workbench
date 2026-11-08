@@ -1,0 +1,28 @@
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval"
+DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./internal/host -run 'TestLiveEvalToolText' -count=1 -v -timeout 30m
+=== RUN   TestLiveEvalToolText
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-three-sites #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-three-sites #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-three-sites #3 pass=true calls=3 errors=0 shellReads=1 bash>read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-three-sites #4 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-three-sites #5 pass=true calls=3 errors=0 shellReads=0 find>read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-insert-function #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-insert-function #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-insert-function #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-insert-function #4 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-insert-function #5 pass=true calls=5 errors=0 shellReads=1 read>edit>read>edit>bash 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-two-functions #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-two-functions #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-two-functions #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-two-functions #4 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1-r5 workbench-prompt edit-two-functions #5 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:319: SUMMARY t1-r5 workbench-prompt/all       runs=15 pass=15 calls=35 toolErrors=0 shellReads=2 input=70294 output=2798
+    liveeval_tools_test.go:319: SUMMARY t1-r5 workbench-prompt/holdout   runs=5 pass=5 calls=10 toolErrors=0 shellReads=0 input=22951 output=856
+    liveeval_tools_test.go:319: SUMMARY t1-r5 workbench-prompt/tune      runs=10 pass=10 calls=25 toolErrors=0 shellReads=2 input=47343 output=1942
+--- PASS: TestLiveEvalToolText (63.89s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	63.899s

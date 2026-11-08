@@ -552,6 +552,26 @@ func TestLiveMutationIsBlockedOnceWhenNewInstructionsApply(t *testing.T) {
 	}
 }
 
+func TestLiveWriteIntoMissingDirectoryReportsTheDirectoryNotInstructionDiscovery(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"write", map[string]any{"path": "notes-missing/guide.md", "content": "# Guide\n"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "write")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 1 || strings.Contains(results[0], "stat target") || !strings.Contains(results[0], "create it first") {
+		t.Fatalf("a write into a missing directory must say so and how to fix it: %q", results)
+	}
+}
+
 func TestLiveFramesAndInstructionRulesCommands(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {

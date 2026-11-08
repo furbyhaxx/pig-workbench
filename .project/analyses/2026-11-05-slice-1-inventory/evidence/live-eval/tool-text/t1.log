@@ -1,0 +1,86 @@
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval"
+DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./internal/host -run 'TestLiveEvalToolText' -count=1 -v -timeout 30m
+=== RUN   TestLiveEvalToolText
+    liveeval_tools_test.go:271: t1 pig-prompt edit-three-sites #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:271: t1 pig-prompt edit-three-sites #2 pass=true calls=3 errors=1 shellReads=0 read>edit>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-three-sites #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-insert-function #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-insert-function #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-insert-function #3 pass=true calls=5 errors=0 shellReads=1 read>edit>read>edit>bash 
+    liveeval_tools_test.go:271: t1 pig-prompt background-job #1 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 pig-prompt background-job #2 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 pig-prompt background-job #3 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 pig-prompt noisy-output #1 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 pig-prompt noisy-output #2 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 pig-prompt noisy-output #3 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-files #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-files #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-files #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 pig-prompt multi-read-sum #1 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: t1 pig-prompt multi-read-sum #2 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: t1 pig-prompt multi-read-sum #3 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: t1 pig-prompt cd-relative #1 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 pig-prompt cd-relative #2 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 pig-prompt cd-relative #3 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 pig-prompt create-in-new-dir #1 pass=true calls=2 errors=0 shellReads=0 bash>write 
+    liveeval_tools_test.go:271: t1 pig-prompt create-in-new-dir #2 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:271: t1 pig-prompt create-in-new-dir #3 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-two-functions #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-two-functions #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt edit-two-functions #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 pig-prompt background-output #1 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 pig-prompt background-output #2 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 pig-prompt background-output #3 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-line-number #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-line-number #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 pig-prompt grep-line-number #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-three-sites #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-three-sites #2 pass=true calls=4 errors=0 shellReads=0 read>find>read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-three-sites #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-insert-function #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-insert-function #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-insert-function #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-job #1 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-job #2 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-job #3 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt noisy-output #1 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 workbench-prompt noisy-output #2 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 workbench-prompt noisy-output #3 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-files #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-files #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-files #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt multi-read-sum #1 pass=true calls=3 errors=0 shellReads=0 ls>ls>read 
+    liveeval_tools_test.go:245: turn task: read failed (recovered or not, see checks): {"content":[{"text":"read cfg://a.cfg: resource not found","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: read failed (recovered or not, see checks): {"content":[{"text":"read cfg://b.cfg: resource not found","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: read failed (recovered or not, see checks): {"content":[{"text":"read cfg://c.cfg: resource not found","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: t1 workbench-prompt multi-read-sum #2 pass=true calls=8 errors=3 shellReads=0 read>read>read>ls>ls>read>read>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt multi-read-sum #3 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: t1 workbench-prompt cd-relative #1 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt cd-relative #2 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt cd-relative #3 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: t1 workbench-prompt create-in-new-dir #1 pass=true calls=2 errors=0 shellReads=0 bash>write 
+    liveeval_tools_test.go:271: t1 workbench-prompt create-in-new-dir #2 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:271: t1 workbench-prompt create-in-new-dir #3 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-two-functions #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-two-functions #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt edit-two-functions #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-output #1 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-output #2 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 workbench-prompt background-output #3 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-line-number #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-line-number #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: t1 workbench-prompt grep-line-number #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:319: SUMMARY t1 pig-prompt/all             runs=33 pass=33 calls=61 toolErrors=1 shellReads=1 input=200408 output=4237
+    liveeval_tools_test.go:319: SUMMARY t1 pig-prompt/holdout         runs=9 pass=9 calls=15 toolErrors=0 shellReads=0 input=54494 output=1196
+    liveeval_tools_test.go:319: SUMMARY t1 pig-prompt/tune            runs=24 pass=24 calls=46 toolErrors=1 shellReads=1 input=145914 output=3041
+    liveeval_tools_test.go:319: SUMMARY t1 workbench-prompt/all       runs=33 pass=33 calls=70 toolErrors=3 shellReads=0 input=157281 output=4337
+    liveeval_tools_test.go:319: SUMMARY t1 workbench-prompt/holdout   runs=9 pass=9 calls=15 toolErrors=0 shellReads=0 input=40839 output=1129
+    liveeval_tools_test.go:319: SUMMARY t1 workbench-prompt/tune      runs=24 pass=24 calls=55 toolErrors=3 shellReads=0 input=116442 output=3208
+--- PASS: TestLiveEvalToolText (301.14s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	301.152s

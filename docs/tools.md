@@ -48,16 +48,16 @@ edit {"hashline": "[notes.md#A1B2]\nPUT 2.=2:\n+replacement\n"}
 edit {"path": "notes.md", "edits": [{"oldText": "before", "newText": "after"}]}
 ```
 
-Tagged edits support PUT, CUT, REM, MV, structural blocks and registers. Seen-line enforcement covers complete consumed ranges. Changed sources are relocated only with unambiguous evidence; otherwise read the current file again. Exact replacements must be unique and non-overlapping. Edits are preflighted and revision-checked; a partial I/O failure reports what landed rather than claiming rollback.
+The tool description the model sees follows the session's `edit.mode`: in `hashline` (the default) it explains only the tagged form with worked operations, in `replace` only exact replacements, in `auto` both. Tagged edits support PUT, CUT (`CUT 7.=8` deletes lines 7-8 and keeps them in a register), REM, MV, structural blocks and registers. Seen-line enforcement covers complete consumed ranges. Changed sources are relocated only with unambiguous evidence; otherwise read the current file again. Exact replacements must be unique and non-overlapping. Edits are preflighted and revision-checked; a partial I/O failure reports what landed rather than claiming rollback.
 
 ## `write`
 
 ```text
 write {"path": "notes.md", "content": "text"}
-write {"path": "notes.md", "content": "text", "expectedRevision": "<revision from read>"}
+write {"path": "notes.md", "content": "text", "expectedRevision": "<64-hex Revision from a write receipt>"}
 ```
 
-Creates or fully replaces one local file. A supplied `expectedRevision` must match the file's current digest or the write is refused with `staleRevision`. The replacement is atomic (same-directory temporary file, flush, rename), an existing file keeps its mode, a new file is created `0600`, and the parent directory must already exist. Line selectors are rejected; use `edit` for partial changes.
+Creates or fully replaces one local file. A supplied `expectedRevision` must be the file's 64-hex digest, as printed in a `write` receipt (`Revision:`), or the write is refused with `staleRevision`; a read header's `#TAG` is not a revision and is refused with an explanation. The replacement is atomic (same-directory temporary file, flush, rename), an existing file keeps its mode, a new file is created `0600`, and the parent directory must already exist (the error says to create it first). Line selectors are rejected; use `edit` for partial changes.
 
 `local://<name>` writes a file into the session scratch: the parent directory must already exist, the content is limited to 4 MiB, links and directories are refused, nothing outside the scratch root is reachable, and `expectedRevision` is rejected. The replacement is atomic.
 

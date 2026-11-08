@@ -1,0 +1,103 @@
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval"
+DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-/mnt/Projects/furbyhaxx/pig-workbench/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./internal/host -run 'TestLiveEvalToolText' -count=1 -v -timeout 30m
+=== RUN   TestLiveEvalToolText
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 2: operation requires a target and at most one register","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: read failed (recovered or not, see checks): {"content":[{"text":"Validation failed for tool \"read\":\n  - raw: unknown field\n\nReceived arguments:\n{\n  \"path\": \"cfg.py\",\n  \"raw\": true\n}","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: baseline pig-prompt edit-three-sites #1 pass=true calls=7 errors=3 shellReads=0 read>edit>edit>read>read>read>edit 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:271: baseline pig-prompt edit-three-sites #2 pass=true calls=4 errors=1 shellReads=0 read>edit>read>edit 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:271: baseline pig-prompt edit-three-sites #3 pass=true calls=3 errors=1 shellReads=0 read>edit>edit 
+    liveeval_tools_test.go:271: baseline pig-prompt edit-insert-function #1 pass=true calls=4 errors=0 shellReads=1 read>edit>bash>bash 
+    liveeval_tools_test.go:271: baseline pig-prompt edit-insert-function #2 pass=true calls=4 errors=0 shellReads=1 read>edit>edit>bash 
+    liveeval_tools_test.go:271: baseline pig-prompt edit-insert-function #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline pig-prompt background-job #1 pass=true calls=3 errors=0 shellReads=1 bash>jobs>bash 
+    liveeval_tools_test.go:271: baseline pig-prompt background-job #2 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: baseline pig-prompt background-job #3 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: baseline pig-prompt noisy-output #1 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:245: turn task: bash failed (recovered or not, see checks): {"content":[{"text":"Job 69e9127bd21913bb0000000000000001: exited\n","type":"text"}],"details":{"command":"./noisy.sh 2\u003e\u00261 | grep -o 'NEEDLE=[0-9]*'","cursor":0,"cwd":"/tmp/TestLiveEvalToolT
+    liveeval_tools_test.go:271: baseline pig-prompt noisy-output #2 pass=true calls=4 errors=1 shellReads=1 bash>ls>bash>bash 
+    liveeval_tools_test.go:271: baseline pig-prompt noisy-output #3 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-files #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-files #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-files #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline pig-prompt multi-read-sum #1 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: baseline pig-prompt multi-read-sum #2 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: baseline pig-prompt multi-read-sum #3 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: baseline pig-prompt cd-relative #1 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline pig-prompt cd-relative #2 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline pig-prompt cd-relative #3 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline pig-prompt create-in-new-dir #1 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:245: turn task: write failed (recovered or not, see checks): {"content":[{"text":"stat target: stat /tmp/TestLiveEvalToolText2473845697/046/docs: no such file or directory","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: baseline pig-prompt create-in-new-dir #2 pass=true calls=4 errors=1 shellReads=0 write>bash>write>bash 
+    liveeval_tools_test.go:271: baseline pig-prompt create-in-new-dir #3 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:271: baseline pig-prompt edit-two-functions #1 pass=true calls=3 errors=1 shellReads=0 read>edit>edit 
+    liveeval_tools_test.go:271: baseline pig-prompt edit-two-functions #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here","type":"text"
+    liveeval_tools_test.go:271: baseline pig-prompt edit-two-functions #3 pass=true calls=3 errors=1 shellReads=0 read>edit>edit 
+    liveeval_tools_test.go:271: baseline pig-prompt background-output #1 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: baseline pig-prompt background-output #2 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: baseline pig-prompt background-output #3 pass=true calls=3 errors=0 shellReads=1 bash>bash>jobs 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-line-number #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-line-number #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline pig-prompt grep-line-number #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-three-sites #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-three-sites #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-three-sites #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 6: PUT payload is missing; provide one or more + rows","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 6: PUT payload is missing; provide one or more + rows","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-insert-function #1 pass=true calls=8 errors=2 shellReads=1 read>edit>read>read>edit>edit>write>bash 
+    liveeval_tools_test.go:245: turn task: write failed (recovered or not, see checks): {"content":[{"text":"staleRevision: /tmp/TestLiveEvalToolText2473845697/076/util.go changed since it was read (expected 2D67, found d33a4dab0747); read it again","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-insert-function #2 pass=true calls=11 errors=1 shellReads=2 read>edit>read>edit>read>edit>bash>write>read>edit>bash 
+    liveeval_tools_test.go:245: turn task: write failed (recovered or not, see checks): {"content":[{"text":"staleRevision: /tmp/TestLiveEvalToolText2473845697/078/util.go changed since it was read (expected file:///tmp/, found bf066b338ed0); read it again","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 2: unknown operation","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 2: unknown operation","type":"text"}],"details":{}}
+    liveeval_tools_test.go:245: turn task: edit failed (recovered or not, see checks): {"content":[{"text":"line 2: PUT payload is missing; provide one or more + rows","type":"text"}],"details":{}}
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-insert-function #3 pass=true calls=14 errors=4 shellReads=0 read>edit>read>write>read>bash>read>edit>read>edit>edit>edit>edit>bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-job #1 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-job #2 pass=true calls=3 errors=0 shellReads=0 bash>jobs>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-job #3 pass=true calls=3 errors=0 shellReads=0 bash>jobs>bash 
+    liveeval_tools_test.go:245: turn task: bash failed (recovered or not, see checks): {"content":[{"text":"Job c2482941af3ca4680000000000000001: exited\nnoisy.sh\n","type":"text"}],"details":{"command":"ls; ./noisy.sh 2\u003e\u00261 | grep -o 'NEEDLE=[0-9]*'","cursor":9,"cwd":"/tmp/Tes
+    liveeval_tools_test.go:271: baseline workbench-prompt noisy-output #1 pass=true calls=3 errors=1 shellReads=2 bash>bash>bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt noisy-output #2 pass=true calls=1 errors=0 shellReads=1 bash 
+    liveeval_tools_test.go:245: turn task: bash failed (recovered or not, see checks): {"content":[{"text":"Job 3340d0f4a6308e650000000000000001: exited\n","type":"text"}],"details":{"command":"./noisy.sh 2\u003e\u00261 | grep -n \"NEEDLE=\"","cursor":0,"cwd":"/tmp/TestLiveEvalToolText2
+    liveeval_tools_test.go:245: turn task: bash failed (recovered or not, see checks): {"content":[{"text":"Job 3340d0f4a6308e650000000000000002: exited\nnoisy.sh\n","type":"text"}],"details":{"command":"ls; ./noisy.sh 2\u003e\u00261 | grep -a \"NEEDLE\"","cursor":9,"cwd":"/tmp/TestLive
+    liveeval_tools_test.go:245: turn task: bash failed (recovered or not, see checks): {"content":[{"text":"Job 3340d0f4a6308e650000000000000003: exited\nexit=126\n 0 /tmp/out.txt\n49 /tmp/err.txt\n49 total\n","type":"text"}],"details":{"command":"./noisy.sh \u003e /tmp/out.txt 2\u003e/
+    liveeval_tools_test.go:271: baseline workbench-prompt noisy-output #3 pass=true calls=4 errors=3 shellReads=2 bash>bash>bash>bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-files #1 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-files #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-files #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline workbench-prompt multi-read-sum #1 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:245: turn task: read failed (recovered or not, see checks): {"content":[{"text":"Read failed: read cfg://a.cfg: resource not found\n\nRead failed: read cfg://b.cfg: resource not found\n\nRead failed: read cfg://c.cfg: resource not found\n\n\nBatch incomplete; 
+    liveeval_tools_test.go:271: baseline workbench-prompt multi-read-sum #2 pass=true calls=4 errors=1 shellReads=0 read>ls>ls>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt multi-read-sum #3 pass=true calls=1 errors=0 shellReads=0 read 
+    liveeval_tools_test.go:271: baseline workbench-prompt cd-relative #1 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt cd-relative #2 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt cd-relative #3 pass=true calls=2 errors=0 shellReads=0 cd>read 
+    liveeval_tools_test.go:271: baseline workbench-prompt create-in-new-dir #1 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt create-in-new-dir #2 pass=true calls=1 errors=0 shellReads=0 bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt create-in-new-dir #3 pass=true calls=3 errors=0 shellReads=0 bash>write>bash 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-two-functions #1 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-two-functions #2 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline workbench-prompt edit-two-functions #3 pass=true calls=2 errors=0 shellReads=0 read>edit 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-output #1 pass=true calls=3 errors=0 shellReads=0 bash>bash>jobs 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-output #2 pass=true calls=3 errors=0 shellReads=1 bash>bash>jobs 
+    liveeval_tools_test.go:271: baseline workbench-prompt background-output #3 pass=true calls=2 errors=0 shellReads=0 bash>jobs 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-line-number #1 pass=true calls=2 errors=0 shellReads=0 grep>ls 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-line-number #2 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:271: baseline workbench-prompt grep-line-number #3 pass=true calls=1 errors=0 shellReads=0 grep 
+    liveeval_tools_test.go:319: SUMMARY baseline pig-prompt/all             runs=33 pass=33 calls=77 toolErrors=9 shellReads=5 input=202324 output=5465
+    liveeval_tools_test.go:319: SUMMARY baseline pig-prompt/holdout         runs=9 pass=9 calls=18 toolErrors=2 shellReads=1 input=54647 output=1426
+    liveeval_tools_test.go:319: SUMMARY baseline pig-prompt/tune            runs=24 pass=24 calls=59 toolErrors=7 shellReads=4 input=147677 output=4039
+    liveeval_tools_test.go:319: SUMMARY baseline workbench-prompt/all       runs=33 pass=33 calls=96 toolErrors=12 shellReads=9 input=156579 output=6659
+    liveeval_tools_test.go:319: SUMMARY baseline workbench-prompt/holdout   runs=9 pass=9 calls=18 toolErrors=0 shellReads=1 input=40653 output=1335
+    liveeval_tools_test.go:319: SUMMARY baseline workbench-prompt/tune      runs=24 pass=24 calls=78 toolErrors=12 shellReads=8 input=115926 output=5324
+--- PASS: TestLiveEvalToolText (356.34s)
+PASS
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	356.345s

@@ -166,6 +166,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	}
 	editMode := s.editState.mode
 	s.editState.mu.Unlock()
+	a.syncEditText(ctx, editMode)
 	for _, fact := range facts {
 		if fact.source == "session.capabilities" {
 			fact.value.(map[string]any)["editMode"] = editMode

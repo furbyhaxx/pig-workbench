@@ -92,6 +92,20 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 	return facts, privateRoot, nil
 }
 
+// nearestExistingDir returns the closest existing ancestor, because a directory that is about to be created inherits its ancestors' instructions.
+func nearestExistingDir(path string) string {
+	for {
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			return path
+		}
+		parent := filepath.Dir(path)
+		if parent == path {
+			return path
+		}
+		path = parent
+	}
+}
+
 func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error) {
 	s, err := a.current()
 	if err != nil {
@@ -128,6 +142,7 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 		if info, err := os.Stat(path); err != nil || !info.IsDir() {
 			path = filepath.Dir(path)
 		}
+		path = nearestExistingDir(path)
 		if !seen[path] {
 			seen[path] = true
 			targets = append(targets, path)

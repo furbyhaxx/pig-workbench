@@ -1,0 +1,292 @@
+[
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4651,
+    "output": 169,
+    "cacheRead": 12288,
+    "seconds": 3.605320444
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4651,
+    "output": 184,
+    "cacheRead": 12288,
+    "seconds": 4.414022443
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "read",
+      "edit"
+    ],
+    "input": 4926,
+    "output": 240,
+    "cacheRead": 17920,
+    "seconds": 5.023475874
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4642,
+    "output": 151,
+    "cacheRead": 12288,
+    "seconds": 3.731862772
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "find",
+      "read",
+      "edit"
+    ],
+    "input": 4809,
+    "output": 188,
+    "cacheRead": 17792,
+    "seconds": 4.804217797
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4625,
+    "output": 144,
+    "cacheRead": 12288,
+    "seconds": 4.0546237529999996
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4631,
+    "output": 144,
+    "cacheRead": 12288,
+    "seconds": 3.862474214
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4590,
+    "output": 131,
+    "cacheRead": 12288,
+    "seconds": 3.768547191
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4628,
+    "output": 163,
+    "cacheRead": 12288,
+    "seconds": 3.285892758
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 5,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "edit",
+      "bash"
+    ],
+    "input": 5190,
+    "output": 428,
+    "cacheRead": 30208,
+    "seconds": 6.721349259
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4593,
+    "output": 171,
+    "cacheRead": 12288,
+    "seconds": 3.898192783
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4593,
+    "output": 170,
+    "cacheRead": 12288,
+    "seconds": 4.416347643
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4595,
+    "output": 180,
+    "cacheRead": 12288,
+    "seconds": 4.17264098
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4575,
+    "output": 153,
+    "cacheRead": 12288,
+    "seconds": 3.766742445
+  },
+  {
+    "label": "t1-r5",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4595,
+    "output": 182,
+    "cacheRead": 12288,
+    "seconds": 4.151460751
+  }
+]

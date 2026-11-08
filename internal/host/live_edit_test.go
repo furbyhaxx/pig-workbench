@@ -191,3 +191,53 @@ func TestLiveTaggedEditRelocatesAcrossExternalChange(t *testing.T) {
 		t.Fatalf("post-edit source did not reach the model: %s", latest)
 	}
 }
+
+// editToolDescription returns the edit description the model received in the last provider request.
+func editToolDescription(t *testing.T, body string) string {
+	t.Helper()
+	var request struct {
+		Tools []struct {
+			Function struct {
+				Name        string `json:"name"`
+				Description string `json:"description"`
+			} `json:"function"`
+		} `json:"tools"`
+	}
+	if err := json.Unmarshal([]byte(body), &request); err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range request.Tools {
+		if tool.Function.Name == "edit" {
+			return tool.Function.Description
+		}
+	}
+	t.Fatal("the provider request carried no edit tool")
+	return ""
+}
+
+func TestLiveEditDescriptionNamesOnlyTheFormTheSessionAccepts(t *testing.T) {
+	for _, tc := range []struct{ mode, want, refused string }{
+		{"hashline", "hashline batch", "Exact-text {path, edits} is not accepted"},
+		{"replace", "exact replacements", "Tagged {hashline} batches are not accepted"},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			root := t.TempDir()
+			recorder := &requestRecorder{}
+			server := recorder.serve(t)
+			defer server.Close()
+			writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+			if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[edit]\nmode = '"+tc.mode+"'\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,edit")
+			fixture.send("p", "prompt", "Go.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			description := editToolDescription(t, recorder.bodies[0])
+			if !strings.Contains(description, tc.want) || !strings.Contains(description, tc.refused) {
+				t.Fatalf("edit.mode=%s description must offer its form and refuse the other: %q", tc.mode, description)
+			}
+		})
+	}
+}

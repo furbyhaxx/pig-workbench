@@ -1,0 +1,293 @@
+[
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 5792,
+    "output": 165,
+    "cacheRead": 11008,
+    "seconds": 4.991097311
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4528,
+    "output": 180,
+    "cacheRead": 12288,
+    "seconds": 3.8906587139999997
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "find",
+      "read",
+      "edit"
+    ],
+    "input": 4701,
+    "output": 204,
+    "cacheRead": 17792,
+    "seconds": 5.094198189
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "read",
+      "edit"
+    ],
+    "input": 4732,
+    "output": 204,
+    "cacheRead": 17920,
+    "seconds": 4.947435363
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4533,
+    "output": 158,
+    "cacheRead": 12288,
+    "seconds": 4.058252883
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4628,
+    "output": 139,
+    "cacheRead": 12160,
+    "seconds": 4.507319584
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": false,
+    "failure": "existing functions changed: \"package util\\n\\nfunc Add(a, b int) int {\\n\\treturn a + b\\n\\nfunc Mul(a, b int) int {\\n\\treturn a * b\\n}\\n\\nfunc Sub(a, b int) int {\\n\\treturn a - b\\n}\\n\"",
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4599,
+    "output": 130,
+    "cacheRead": 12160,
+    "seconds": 4.576561515
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4520,
+    "output": 147,
+    "cacheRead": 12288,
+    "seconds": 3.880923577
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4607,
+    "output": 126,
+    "cacheRead": 12160,
+    "seconds": 4.2871729
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 5,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "write",
+      "bash"
+    ],
+    "input": 5205,
+    "output": 394,
+    "cacheRead": 29824,
+    "seconds": 7.367900237
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4583,
+    "output": 154,
+    "cacheRead": 12160,
+    "seconds": 4.093401936
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4595,
+    "output": 183,
+    "cacheRead": 12160,
+    "seconds": 3.891023873
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4604,
+    "output": 184,
+    "cacheRead": 12160,
+    "seconds": 4.12399213
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 4,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4583,
+    "output": 172,
+    "cacheRead": 12160,
+    "seconds": 4.16755205
+  },
+  {
+    "label": "t2-nodup",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 5,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4606,
+    "output": 172,
+    "cacheRead": 12160,
+    "seconds": 3.810526647
+  }
+]

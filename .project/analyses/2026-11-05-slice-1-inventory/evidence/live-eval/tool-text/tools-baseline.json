@@ -1,0 +1,1344 @@
+[
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 7,
+    "toolErrors": 3,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "edit",
+      "read",
+      "read",
+      "read",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}",
+      "edit: {\"content\":[{\"text\":\"line 2: operation requires a target and at most one register\",\"type\":\"text\"}],\"details\":{}}",
+      "read: {\"content\":[{\"text\":\"Validation failed for tool \\\"read\\\":\\n  - raw: unknown field\\n\\nReceived arguments:\\n{\\n  \\\"path\\\": \\\"cfg.py\\\",\\n  \\\"raw\\\": true\\n}\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6877,
+    "output": 505,
+    "cacheRead": 41984,
+    "seconds": 9.080338818
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6314,
+    "output": 328,
+    "cacheRead": 23424,
+    "seconds": 6.559063618
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6113,
+    "output": 302,
+    "cacheRead": 17408,
+    "seconds": 4.655005565
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "read",
+      "edit",
+      "bash",
+      "bash"
+    ],
+    "input": 6561,
+    "output": 383,
+    "cacheRead": 23168,
+    "seconds": 6.7930173719999996
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "read",
+      "edit",
+      "edit",
+      "bash"
+    ],
+    "input": 6440,
+    "output": 324,
+    "cacheRead": 23424,
+    "seconds": 6.766969585
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6221,
+    "output": 144,
+    "cacheRead": 11136,
+    "seconds": 3.946295007
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "jobs",
+      "bash"
+    ],
+    "input": 6310,
+    "output": 186,
+    "cacheRead": 17152,
+    "seconds": 7.484830505
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 6338,
+    "output": 202,
+    "cacheRead": 17152,
+    "seconds": 7.788459926
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 6286,
+    "output": 184,
+    "cacheRead": 17152,
+    "seconds": 7.551702648
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5892,
+    "output": 76,
+    "cacheRead": 5504,
+    "seconds": 2.8438299799999998
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 1,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "ls",
+      "bash",
+      "bash"
+    ],
+    "errors": [
+      "bash: {\"content\":[{\"text\":\"Job 69e9127bd21913bb0000000000000001: exited\\n\",\"type\":\"text\"}],\"details\":{\"command\":\"./noisy.sh 2\\u003e\\u00261 | grep -o 'NEEDLE=[0-9]*'\",\"cursor\":0,\"cwd\":\"/tmp/TestLiveEvalToolText2473845697/022\",\""
+    ],
+    "input": 6531,
+    "output": 208,
+    "cacheRead": 22912,
+    "seconds": 6.028758319
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5855,
+    "output": 59,
+    "cacheRead": 5504,
+    "seconds": 2.624785343
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5884,
+    "output": 82,
+    "cacheRead": 5504,
+    "seconds": 2.612065645
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5773,
+    "output": 99,
+    "cacheRead": 5632,
+    "seconds": 3.001169907
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5760,
+    "output": 82,
+    "cacheRead": 5632,
+    "seconds": 2.616408461
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5793,
+    "output": 51,
+    "cacheRead": 5632,
+    "seconds": 2.802994239
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5783,
+    "output": 51,
+    "cacheRead": 5632,
+    "seconds": 3.400418026
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 5915,
+    "output": 51,
+    "cacheRead": 5504,
+    "seconds": 2.849245934
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 6202,
+    "output": 78,
+    "cacheRead": 11264,
+    "seconds": 4.274144671
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 6210,
+    "output": 78,
+    "cacheRead": 11264,
+    "seconds": 4.367981631
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 6219,
+    "output": 78,
+    "cacheRead": 11264,
+    "seconds": 3.777323224
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 6200,
+    "output": 170,
+    "cacheRead": 16896,
+    "seconds": 4.949098206
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "write",
+      "bash",
+      "write",
+      "bash"
+    ],
+    "errors": [
+      "write: {\"content\":[{\"text\":\"stat target: stat /tmp/TestLiveEvalToolText2473845697/046/docs: no such file or directory\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6318,
+    "output": 221,
+    "cacheRead": 22784,
+    "seconds": 6.672466376
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 5882,
+    "output": 97,
+    "cacheRead": 5504,
+    "seconds": 2.805735167
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6279,
+    "output": 277,
+    "cacheRead": 17152,
+    "seconds": 5.431423245
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 6057,
+    "output": 182,
+    "cacheRead": 11264,
+    "seconds": 3.687674773
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "edit"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"this session's edit.mode is hashline: read the file, then send {hashline} with [path#TAG] copied from the read output; exact-text {path, edits} is not accepted here\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6222,
+    "output": 265,
+    "cacheRead": 17152,
+    "seconds": 5.05889238
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 6059,
+    "output": 124,
+    "cacheRead": 11136,
+    "seconds": 9.126142808
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 6066,
+    "output": 144,
+    "cacheRead": 11264,
+    "seconds": 8.73802957
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "bash",
+      "jobs"
+    ],
+    "input": 6309,
+    "output": 191,
+    "cacheRead": 17280,
+    "seconds": 9.816633993
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5895,
+    "output": 101,
+    "cacheRead": 5504,
+    "seconds": 2.706653638
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5863,
+    "output": 56,
+    "cacheRead": 5504,
+    "seconds": 2.704599541
+  },
+  {
+    "label": "baseline",
+    "arm": "pig-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 5897,
+    "output": 86,
+    "cacheRead": 5504,
+    "seconds": 2.693713723
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4553,
+    "output": 188,
+    "cacheRead": 12160,
+    "seconds": 4.464102963
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4550,
+    "output": 168,
+    "cacheRead": 12160,
+    "seconds": 3.820577933
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-three-sites",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4536,
+    "output": 170,
+    "cacheRead": 12160,
+    "seconds": 3.827265187
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 8,
+    "toolErrors": 2,
+    "shellReads": 1,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "read",
+      "edit",
+      "edit",
+      "write",
+      "bash"
+    ],
+    "errors": [
+      "edit: {\"content\":[{\"text\":\"line 6: PUT payload is missing; provide one or more + rows\",\"type\":\"text\"}],\"details\":{}}",
+      "edit: {\"content\":[{\"text\":\"line 6: PUT payload is missing; provide one or more + rows\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 5789,
+    "output": 638,
+    "cacheRead": 47872,
+    "seconds": 10.736905013
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 11,
+    "toolErrors": 1,
+    "shellReads": 2,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "edit",
+      "read",
+      "edit",
+      "bash",
+      "write",
+      "read",
+      "edit",
+      "bash"
+    ],
+    "errors": [
+      "write: {\"content\":[{\"text\":\"staleRevision: /tmp/TestLiveEvalToolText2473845697/076/util.go changed since it was read (expected 2D67, found d33a4dab0747); read it again\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 6477,
+    "output": 857,
+    "cacheRead": 69248,
+    "seconds": 14.047760739
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-insert-function",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 14,
+    "toolErrors": 4,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit",
+      "read",
+      "write",
+      "read",
+      "bash",
+      "read",
+      "edit",
+      "read",
+      "edit",
+      "edit",
+      "edit",
+      "edit",
+      "bash"
+    ],
+    "errors": [
+      "write: {\"content\":[{\"text\":\"staleRevision: /tmp/TestLiveEvalToolText2473845697/078/util.go changed since it was read (expected file:///tmp/, found bf066b338ed0); read it again\",\"type\":\"text\"}],\"details\":{}}",
+      "edit: {\"content\":[{\"text\":\"line 2: unknown operation\",\"type\":\"text\"}],\"details\":{}}",
+      "edit: {\"content\":[{\"text\":\"line 2: unknown operation\",\"type\":\"text\"}],\"details\":{}}",
+      "edit: {\"content\":[{\"text\":\"line 2: PUT payload is missing; provide one or more + rows\",\"type\":\"text\"}],\"details\":{}}"
+    ],
+    "input": 7046,
+    "output": 1053,
+    "cacheRead": 89344,
+    "seconds": 19.412648004
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 4710,
+    "output": 185,
+    "cacheRead": 17792,
+    "seconds": 7.434630848
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "read"
+    ],
+    "input": 4737,
+    "output": 184,
+    "cacheRead": 17792,
+    "seconds": 7.745543877
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-job",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs",
+      "bash"
+    ],
+    "input": 4739,
+    "output": 184,
+    "cacheRead": 17792,
+    "seconds": 8.050153292
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 1,
+    "shellReads": 2,
+    "sequence": [
+      "bash",
+      "bash",
+      "bash"
+    ],
+    "errors": [
+      "bash: {\"content\":[{\"text\":\"Job c2482941af3ca4680000000000000001: exited\\nnoisy.sh\\n\",\"type\":\"text\"}],\"details\":{\"command\":\"ls; ./noisy.sh 2\\u003e\\u00261 | grep -o 'NEEDLE=[0-9]*'\",\"cursor\":9,\"cwd\":\"/tmp/TestLiveEvalToolText247"
+    ],
+    "input": 5057,
+    "output": 180,
+    "cacheRead": 17920,
+    "seconds": 5.193252741
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash"
+    ],
+    "input": 4265,
+    "output": 63,
+    "cacheRead": 6656,
+    "seconds": 2.715681209
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "noisy-output",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 3,
+    "shellReads": 2,
+    "sequence": [
+      "bash",
+      "bash",
+      "bash",
+      "bash"
+    ],
+    "errors": [
+      "bash: {\"content\":[{\"text\":\"Job 3340d0f4a6308e650000000000000001: exited\\n\",\"type\":\"text\"}],\"details\":{\"command\":\"./noisy.sh 2\\u003e\\u00261 | grep -n \\\"NEEDLE=\\\"\",\"cursor\":0,\"cwd\":\"/tmp/TestLiveEvalToolText2473845697/090\",\"erro",
+      "bash: {\"content\":[{\"text\":\"Job 3340d0f4a6308e650000000000000002: exited\\nnoisy.sh\\n\",\"type\":\"text\"}],\"details\":{\"command\":\"ls; ./noisy.sh 2\\u003e\\u00261 | grep -a \\\"NEEDLE\\\"\",\"cursor\":9,\"cwd\":\"/tmp/TestLiveEvalToolText24738456",
+      "bash: {\"content\":[{\"text\":\"Job 3340d0f4a6308e650000000000000003: exited\\nexit=126\\n 0 /tmp/out.txt\\n49 /tmp/err.txt\\n49 total\\n\",\"type\":\"text\"}],\"details\":{\"command\":\"./noisy.sh \\u003e /tmp/out.txt 2\\u003e/tmp/err.txt; echo \\\""
+    ],
+    "input": 4999,
+    "output": 261,
+    "cacheRead": 23168,
+    "seconds": 7.962880295
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4286,
+    "output": 82,
+    "cacheRead": 6656,
+    "seconds": 2.663342862
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4309,
+    "output": 99,
+    "cacheRead": 6656,
+    "seconds": 2.754408351
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-files",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4292,
+    "output": 82,
+    "cacheRead": 6656,
+    "seconds": 2.9425604610000002
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 4309,
+    "output": 51,
+    "cacheRead": 6656,
+    "seconds": 3.318748421
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 4,
+    "toolErrors": 1,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "ls",
+      "ls",
+      "read"
+    ],
+    "errors": [
+      "read: {\"content\":[{\"text\":\"Read failed: read cfg://a.cfg: resource not found\\n\\nRead failed: read cfg://b.cfg: resource not found\\n\\nRead failed: read cfg://c.cfg: resource not found\\n\\n\\nBatch incomplete; consult per-resource"
+    ],
+    "input": 4755,
+    "output": 170,
+    "cacheRead": 17792,
+    "seconds": 4.437864158
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "multi-read-sum",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read"
+    ],
+    "input": 4323,
+    "output": 51,
+    "cacheRead": 6656,
+    "seconds": 2.869076091
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4763,
+    "output": 78,
+    "cacheRead": 12032,
+    "seconds": 3.810574781
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4757,
+    "output": 78,
+    "cacheRead": 12032,
+    "seconds": 3.792582339
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "cd-relative",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "cd",
+      "read"
+    ],
+    "input": 4769,
+    "output": 78,
+    "cacheRead": 12032,
+    "seconds": 3.589243641
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 4780,
+    "output": 172,
+    "cacheRead": 17408,
+    "seconds": 5.191708045
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash"
+    ],
+    "input": 4277,
+    "output": 81,
+    "cacheRead": 6656,
+    "seconds": 2.903965443
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "create-in-new-dir",
+    "holdout": false,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "write",
+      "bash"
+    ],
+    "input": 4848,
+    "output": 171,
+    "cacheRead": 17408,
+    "seconds": 5.15679302
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4490,
+    "output": 172,
+    "cacheRead": 12160,
+    "seconds": 4.252389794
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4493,
+    "output": 183,
+    "cacheRead": 12160,
+    "seconds": 3.8576379259999998
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "edit-two-functions",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "read",
+      "edit"
+    ],
+    "input": 4495,
+    "output": 182,
+    "cacheRead": 12160,
+    "seconds": 4.325694804
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "bash",
+      "jobs"
+    ],
+    "input": 4933,
+    "output": 245,
+    "cacheRead": 17920,
+    "seconds": 10.364301787
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 3,
+    "toolErrors": 0,
+    "shellReads": 1,
+    "sequence": [
+      "bash",
+      "bash",
+      "jobs"
+    ],
+    "input": 4753,
+    "output": 182,
+    "cacheRead": 17664,
+    "seconds": 9.875153495
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "background-output",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "bash",
+      "jobs"
+    ],
+    "input": 4520,
+    "output": 147,
+    "cacheRead": 12032,
+    "seconds": 8.5926991
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 1,
+    "pass": true,
+    "toolCalls": 2,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep",
+      "ls"
+    ],
+    "input": 4305,
+    "output": 82,
+    "cacheRead": 6656,
+    "seconds": 3.043953171
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 2,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4379,
+    "output": 56,
+    "cacheRead": 6528,
+    "seconds": 2.9373879240000003
+  },
+  {
+    "label": "baseline",
+    "arm": "workbench-prompt",
+    "task": "grep-line-number",
+    "holdout": true,
+    "rep": 3,
+    "pass": true,
+    "toolCalls": 1,
+    "toolErrors": 0,
+    "shellReads": 0,
+    "sequence": [
+      "grep"
+    ],
+    "input": 4285,
+    "output": 86,
+    "cacheRead": 6656,
+    "seconds": 3.227821573
+  }
+]

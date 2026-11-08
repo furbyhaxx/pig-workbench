@@ -31,7 +31,53 @@ type editParams struct {
 }
 
 func (a *app) registerEdit(ext *sdk.Extension) {
-	ext.RegisterTool(sdk.ToolDefinition{Name: "edit", Label: "edit", Description: "Edit local UTF-8 files using either {hashline} tagged batches from read output, or {path, edits:[{oldText,newText}]} exact replacements. Tagged batches start with [path#TAG] copied from read. Use PUT 2.=2: (replace line 2), PUT 2.=5: (range), PUT >5: (insert after), PUT <1: (BOF), PUT >$: (EOF), or PUT 6*: (structural block); each literal payload row starts with +. edit.mode restricts the accepted branch: hashline, replace, or auto (both); there is never automatic fallback after a rejected patch. CUT, REM, MV and registers are supported. All coordinates refer to the original snapshot; block anchors require syntax evidence. Seen-line guards cover complete consumed ranges. Exact replacements must be unique and non-overlapping. Every resource is preflighted before writes, then locked and revision-checked immediately before atomic replacement. A partial I/O failure reports landed and unattempted effects; there is no rollback. Changed sources are relocated only when anchors are unambiguous; otherwise reread the current source.", PromptSnippet: "Apply tagged original-coordinate edits or unique exact-text replacements.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{"hashline": map[string]any{"type": "string", "minLength": 1}, "path": map[string]any{"type": "string", "minLength": 1}, "edits": map[string]any{"type": "array", "minItems": 1, "maxItems": 128, "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"oldText", "newText"}, "properties": map[string]any{"oldText": map[string]any{"type": "string", "minLength": 1}, "newText": map[string]any{"type": "string"}}}}}, "oneOf": []any{map[string]any{"required": []string{"hashline"}, "maxProperties": 1}, map[string]any{"required": []string{"path", "edits"}, "maxProperties": 2}}}, Execute: a.edit})
+	ext.RegisterTool(a.editDefinition(editModeDefault))
+}
+
+// syncEditText re-registers edit when the session's effective mode differs from the text the model currently sees.
+func (a *app) syncEditText(ctx sdk.Context, mode string) {
+	a.editTextMu.Lock()
+	defer a.editTextMu.Unlock()
+	if mode == a.editTextMode || mode == "" {
+		return
+	}
+	ctx.RegisterTool(a.editDefinition(mode))
+	a.editTextMode = mode
+}
+
+// editModeDefault is the catalog default of edit.mode; the tool text starts here and is refreshed once the session's effective mode is known.
+const editModeDefault = "hashline"
+
+// editDefinition describes edit for the session's effective mode, so the model is told only the form that will be accepted.
+func (a *app) editDefinition(mode string) sdk.ToolDefinition {
+	return sdk.ToolDefinition{Name: "edit", Label: "edit", Description: editDescription(mode), PromptSnippet: "Apply tagged original-coordinate edits or unique exact-text replacements.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{"hashline": map[string]any{"type": "string", "minLength": 1}, "path": map[string]any{"type": "string", "minLength": 1}, "edits": map[string]any{"type": "array", "minItems": 1, "maxItems": 128, "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"oldText", "newText"}, "properties": map[string]any{"oldText": map[string]any{"type": "string", "minLength": 1}, "newText": map[string]any{"type": "string"}}}}}, "oneOf": []any{map[string]any{"required": []string{"hashline"}, "maxProperties": 1}, map[string]any{"required": []string{"path", "edits"}, "maxProperties": 2}}}, Execute: a.edit}
+}
+
+const editHashlineText = `Edit a local UTF-8 file with a hashline batch: read the file first, then send {hashline} that starts with the header line copied from that read, [path#TAG], followed by operations. Line numbers refer to the file as you read it, and every payload row starts with +.
+- PUT 4.=4: replace line 4; PUT 4.=6: replace lines 4-6 (a blank payload line is a lone +)
+- PUT >5: insert after line 5; PUT <1: insert before line 1; PUT >$: append at the end
+- CUT 7.=8 deletes lines 7-8 and keeps them in a register for PUT @name; PUT 6*: replaces the syntax block starting at line 6
+- REM deletes the file; MV new/path moves it
+Example:
+[src/a.go#7F3A]
+PUT 4.=4:
++	return a * b
+`
+
+const editReplaceText = `Edit a local UTF-8 file with exact replacements: {path, edits:[{oldText,newText}]}. Each oldText must match exactly once in the file and edits must not overlap.
+`
+
+const editSharedText = `Writes are atomic per file and rejected when the file changed since your read; a changed source is relocated only when its anchors are unambiguous, otherwise read it again. A partial I/O failure reports what landed (no rollback).`
+
+// editDescription returns the model-facing edit text for one edit.mode value.
+func editDescription(mode string) string {
+	switch mode {
+	case "replace":
+		return editReplaceText + "Tagged {hashline} batches are not accepted in this session. " + editSharedText
+	case "auto":
+		return editHashlineText + "Alternatively send {path, edits:[{oldText,newText}]} with exact replacements: each oldText must match exactly once and edits must not overlap. There is no automatic fallback after a rejected patch. " + editSharedText
+	}
+	return editHashlineText + "Exact-text {path, edits} is not accepted in this session. " + editSharedText
 }
 
 func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {

@@ -84,6 +84,9 @@ type session struct {
 
 type app struct {
 	extEvents sdk.EventBus
+	// editTextMode is the edit.mode the registered edit description was built for.
+	editTextMu   sync.Mutex
+	editTextMode string
 	// forcePanels > 0 while a hub entry runs, so every result shows in a panel instead of a vanishing toast.
 	forcePanels atomic.Int32
 	hubTitle    atomic.Value
@@ -108,7 +111,7 @@ type hostRequestKey struct{}
 
 // Register wires session lifecycle and the implemented tools and commands.
 func Register(ext *sdk.Extension) {
-	a := &app{syntax: syntax.New(), extEvents: ext.Events()}
+	a := &app{syntax: syntax.New(), extEvents: ext.Events(), editTextMode: editModeDefault}
 	ext.OnSessionStart(a.start)
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)

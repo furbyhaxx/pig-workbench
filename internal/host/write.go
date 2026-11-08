@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -28,7 +29,7 @@ func (a *app) registerWriteAndList(ext *sdk.Extension) {
 			"path":             map[string]any{"type": "string", "minLength": 1, "description": "Local file, writable provider URI or supported control URI."},
 			"content":          map[string]any{"type": "string", "description": "Exact complete new content."},
 			"raw":              map[string]any{"type": "boolean", "description": "Write literal content without interpreting copied tagged-read formatting."},
-			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Require the revision reported by read for a local file or writable provider resource; refused when it changed."},
+			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Optional guard: the 64-hex Revision value from an earlier write receipt for this file; refused when the file changed since. A read header #TAG is not a revision. Omit when you have none."},
 		}},
 		Execute: a.write,
 	})
@@ -134,11 +135,14 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	parent := filepath.Dir(target.Path)
 	info, err := os.Stat(parent)
 	if err != nil || !info.IsDir() {
-		return nil, fmt.Errorf("parent directory does not exist or is not a directory: %s", parent)
+		return nil, fmt.Errorf("parent directory does not exist or is not a directory: %s; write does not create directories, create it first (for example bash mkdir -p)", parent)
 	}
 	existing, previous, err := readExisting(target.Path)
 	if err != nil {
 		return nil, err
+	}
+	if input.ExpectedRevision != "" && !revisionToken.MatchString(input.ExpectedRevision) {
+		return nil, fmt.Errorf("expectedRevision must be the 64-hex Revision value from a write receipt; a read header #TAG or URI is not a revision. Omit expectedRevision to write without the guard")
 	}
 	if input.ExpectedRevision != "" && input.ExpectedRevision != previous {
 		return nil, fmt.Errorf("staleRevision: %s changed since it was read (expected %s, found %s); read it again", target.Path, short(input.ExpectedRevision), short(previous))
@@ -259,6 +263,8 @@ func readExisting(path string) (os.FileInfo, string, error) {
 func atomicWriteFile(ctx context.Context, path string, data []byte, mode os.FileMode) (bool, error) {
 	return fileedit.Create(ctx, path, data, mode)
 }
+
+var revisionToken = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 func short(revision string) string {
 	if revision == "" {
