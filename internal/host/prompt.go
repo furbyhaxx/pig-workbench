@@ -3,12 +3,14 @@ package host
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
+	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 )
 
 // promptOverride replaces PiG's prompt only for an explicit force delivery.
@@ -128,4 +130,55 @@ func applyPromptRender(enabled bool, rendered string, renderErr error, delivery 
 	}
 	text, ok := promptOverride(true, delivery, rendered)
 	return text, ok, ""
+}
+
+// decodePromptOptions reads the host's before_agent_start prompt inputs; a shape it cannot read yields none.
+func decodePromptOptions(raw map[string]any) sdk.SystemPromptOptions {
+	var options sdk.SystemPromptOptions
+	if encoded, err := json.Marshal(raw); err == nil {
+		_ = json.Unmarshal(encoded, &options)
+	}
+	return options
+}
+
+// promptData maps the host's real prompt inputs and Workbench's live state onto the template.
+// Instruction files are not passed: SPEC-0007 frames deliver them, and the template would repeat them.
+func promptData(s *session, options sdk.SystemPromptOptions) prompt.Data {
+	hidden := make(map[string]bool, len(options.HiddenTools))
+	for _, name := range options.HiddenTools {
+		hidden[name] = true
+	}
+	declared := make([]string, 0, len(options.SelectedTools))
+	for _, name := range options.SelectedTools {
+		if !hidden[name] {
+			declared = append(declared, name)
+		}
+	}
+	skills := make([]prompt.HostSkill, 0, len(options.Skills))
+	for _, skill := range options.Skills {
+		skills = append(skills, prompt.HostSkill{Name: skill.Name, Description: skill.Description, FilePath: skill.FilePath, BaseDir: skill.BaseDir, DisableModelInvocation: skill.DisableModelInvocation})
+	}
+	root := options.Cwd
+	if root == "" && s.location != nil {
+		root = s.location.Current().Cwd
+	}
+	data := prompt.Data{
+		ProjectRoot: root,
+		Tools:       prompt.Tools{Selected: options.SelectedTools, Declared: declared, Hidden: options.HiddenTools, Snippets: options.ToolSnippets, Guidelines: options.ToolGuidelines},
+		Host:        prompt.Host{CustomPrompt: options.CustomPrompt, Append: options.AppendSystemPrompt, PromptGuidelines: options.PromptGuidelines, Skills: skills},
+	}
+	if s.router != nil {
+		for _, scheme := range s.router.Schemes() {
+			data.Workbench.Schemes = append(data.Workbench.Schemes, prompt.Scheme{Name: scheme})
+		}
+	}
+	if configuration, err := s.settings.Current(); err == nil {
+		if entry, ok := configuration.Get("edit.mode"); ok {
+			data.Workbench.Edit.Mode, _ = entry.Value.(string)
+		}
+		if entry, ok := configuration.Get("secrets.enabled"); ok {
+			data.Workbench.Secrets.Enabled, _ = entry.Value.(bool)
+		}
+	}
+	return data
 }

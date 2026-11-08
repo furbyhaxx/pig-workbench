@@ -877,3 +877,35 @@ func TestLiveTreeRootsListAndScratchIsWritable(t *testing.T) {
 		t.Error("scratch write created a file outside the scratch")
 	}
 }
+
+// TestLiveForcedPromptCarriesHostInputs pins that a forced prompt is built from the host's real
+// inputs; the first A/B run found it served an empty skeleton.
+func TestLiveForcedPromptCarriesHostInputs(t *testing.T) {
+	root := t.TempDir()
+	skill := filepath.Join(root, ".agents", "skills", "alpha")
+	if err := os.MkdirAll(skill, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skill, "SKILL.md"), []byte("---\nname: alpha\ndescription: first skill\n---\nbody\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[prompt]\ndelivery = 'force'\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--approve", "--append-system-prompt", "APPEND-MARKER")
+	fixture.send("go", "prompt", "hello")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	body := recorder.bodies[0]
+	for _, want := range []string{"Workbench resources are reachable by URI", "- read: ", "- edit: ", "tagged {hashline} batches", "APPEND-MARKER", "alpha", "first skill", "Be concise"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("forced prompt lacks %q", want)
+		}
+	}
+}

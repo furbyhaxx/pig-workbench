@@ -238,11 +238,14 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 		}
 		fmt.Fprintf(&b, "%s: %v\n", key, entry.Value)
 	}
-	rendered, err := renderBuiltinPrompt(s)
+	options, err := ctx.GetSystemPromptOptions()
 	if err != nil {
 		return err
 	}
-	s.promptText = rendered
+	rendered, err := renderBuiltinPrompt(s, options)
+	if err != nil {
+		return err
+	}
 	if s.promptErr != "" {
 		fmt.Fprintf(&b, "last error: %s\n", s.promptErr)
 	}
@@ -254,7 +257,7 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 	return nil
 }
 
-func renderBuiltinPrompt(s *session) (string, error) {
+func renderBuiltinPrompt(s *session, options sdk.SystemPromptOptions) (string, error) {
 	loader, err := prompt.NewFileSystemLoader(prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()})
 	if err != nil {
 		return "", err
@@ -263,11 +266,7 @@ func renderBuiltinPrompt(s *session) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	root := ""
-	if s.location != nil {
-		root = s.location.Current().Cwd
-	}
-	rendered, err := engine.Render(context.Background(), "builtin/workbench", prompt.Data{ProjectRoot: root})
+	rendered, err := engine.Render(context.Background(), "builtin/workbench", promptData(s, options))
 	if err != nil {
 		return "", err
 	}

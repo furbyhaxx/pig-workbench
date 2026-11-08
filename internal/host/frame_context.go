@@ -345,7 +345,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 					promptEnabled, _ = entry.Value.(bool)
 				}
 			}
-			rendered, renderErr := renderBuiltinPrompt(s)
+			rendered, renderErr := renderBuiltinPrompt(s, decodePromptOptions(options))
 			text, force, recorded := applyPromptRender(promptEnabled, rendered, renderErr, deliveryMode)
 			s.promptErr = recorded
 			if renderErr == nil {
