@@ -91,6 +91,17 @@ func (s *tuiSession) typeText(text string) {
 	time.Sleep(400 * time.Millisecond)
 }
 
+// typeSlowly sends one character at a time and waits for the full text to be echoed; a burst
+// can be partly dropped while the panel re-renders, and Enter must not follow a half-typed value.
+func (s *tuiSession) typeSlowly(text string) {
+	s.t.Helper()
+	for _, r := range text {
+		s.tmux("send-keys", "-t", "wb", "-l", string(r))
+		time.Sleep(80 * time.Millisecond)
+	}
+	s.waitFor(text, 5*time.Second)
+}
+
 func (s *tuiSession) waitFor(want string, within time.Duration) string {
 	s.t.Helper()
 	deadline := time.Now().Add(within)
@@ -167,7 +178,7 @@ func TestLiveWorkbenchSettingsPanelRefusesInvalidIntegerAndGuardsDiscard(t *test
 	s.waitFor("Workbench › Settings · user", 10*time.Second)
 	s.keys("Down", "Down", "Down", "Enter")
 	s.waitFor("whole number 1 to 65536", 10*time.Second)
-	s.typeText("99999999")
+	s.typeSlowly("99999999")
 	s.keys("Enter")
 	s.waitFor("must be between 1 and 65536", 10*time.Second)
 	s.keys("Escape")

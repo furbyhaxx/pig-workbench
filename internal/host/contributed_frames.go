@@ -172,6 +172,7 @@ type publishParams struct {
 	Resource    string     `json:"resource,omitempty"`
 	Scope       string     `json:"scope,omitempty"`
 	Delivery    string     `json:"delivery,omitempty"`
+	Wake        bool       `json:"wake,omitempty"`
 	CoalesceKey string     `json:"coalesceKey,omitempty"`
 	DataTrust   string     `json:"dataTrust,omitempty"`
 	ExpiresAt   *time.Time `json:"expiresAt,omitempty"`
@@ -222,8 +223,11 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 	if params.Delivery == "" {
 		params.Delivery = "nextBoundary"
 	}
-	if params.Delivery == "followUp" {
-		return nil, &api.Error{Code: "permissionDenied", Field: "params.delivery", Message: "followUp wake is not granted to external producers; retry with nextPrompt", Outcome: "notApplied"}
+	if params.Wake && params.Delivery != "nextBoundary" {
+		return nil, &api.Error{Code: "invalidRequest", Field: "params.wake", Message: "wake requires nextBoundary delivery", Outcome: "notApplied"}
+	}
+	if params.Wake && !producer.descriptor.AllowWake {
+		return nil, &api.Error{Code: "permissionDenied", Field: "params.wake", Message: "this producer did not register allowWake; retry with wake false", Outcome: "notApplied"}
 	}
 	if params.Scope != "" && params.Scope != "session" && params.Scope != "branch" {
 		return nil, &api.Error{Code: "invalidRequest", Field: "params.scope", Message: "scope must be session or branch", Outcome: "notApplied"}
@@ -233,7 +237,7 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 	}
 	// External producers keep data authority: requesting instruction is never self-authorization.
 	authority := "data"
-	publish := frames.Publish{EventKey: params.EventKey, Kind: params.Kind, Source: params.Source, Body: params.Body, Title: params.Title, Summary: params.Summary, SubjectKey: params.SubjectKey, Resource: params.Resource, Delivery: params.Delivery, DataTrust: params.DataTrust, CoalesceKey: params.CoalesceKey, ExpiresAt: params.ExpiresAt}
+	publish := frames.Publish{EventKey: params.EventKey, Kind: params.Kind, Source: params.Source, Body: params.Body, Title: params.Title, Summary: params.Summary, SubjectKey: params.SubjectKey, Resource: params.Resource, Delivery: params.Delivery, Wake: params.Wake, DataTrust: params.DataTrust, CoalesceKey: params.CoalesceKey, ExpiresAt: params.ExpiresAt}
 	receipt, frame, admitted := a.admitFrame(host, s, producer.key, authority, false, publish)
 	if admitted != nil {
 		switch admitted.stage {
@@ -245,16 +249,22 @@ func (a *app) framesPublish(host sdk.Context, s *session, request api.Request) (
 		return nil, &api.Error{Code: "internal", Message: "frame could not be persisted", Outcome: "unknown"}
 	}
 	receipt.Durable = true
-	if params.Delivery == "nextBoundary" && frame.FrameID != "" {
-		encoded, err := frames.EncodeEnvelope(frame)
-		if err == nil {
-			trigger := false
-			err = host.SendMessage("pig-workbench.context", encoded, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: &trigger})
-		}
-		if err != nil {
-			return map[string]any{"frameId": receipt.FrameID, "sequence": receipt.Sequence, "state": "pending", "delivery": receipt.Delivery, "effectiveAuthority": authority, "durable": true, "notice": "host delivery failed; the frame stays pending for the next prompt"}, nil
-		}
+	if receipt.Duplicate || params.Delivery != "nextBoundary" || frame.FrameID == "" {
+		return receipt, nil
 	}
+	wake := params.Wake
+	suppressed := false
+	if wake && !s.contextFrames.wakes.AllowWake(producer.key, time.Now(), s.settingInt("frames.wake-budget", 10)) {
+		wake, suppressed = false, true
+	}
+	outcome, err := a.deliverFrame(host, s, frame, wake)
+	if err != nil {
+		return map[string]any{"frameId": receipt.FrameID, "sequence": receipt.Sequence, "state": "pending", "delivery": receipt.Delivery, "effectiveAuthority": authority, "durable": true, "notice": "host delivery failed; the frame stays pending for the next prompt"}, nil
+	}
+	if suppressed {
+		outcome = "suppressed"
+	}
+	receipt.Wake = outcome
 	return receipt, nil
 }
 
@@ -453,4 +463,51 @@ func contributedFieldValues(producer frameProducer, source string, fields map[st
 		values["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source, "contributedBy": producer.owner.Owner}
 	}
 	return values, nil
+}
+
+// sendFrame sends one admitted frame to the host now; trigger starts a turn on an idle session.
+// The frame is recorded as steered first so the boundary hook does not send it a second time.
+func (a *app) sendFrame(host sdk.Context, s *session, frame frames.Frame, trigger bool) error {
+	encoded, err := frames.EncodeEnvelope(frame)
+	if err != nil {
+		return err
+	}
+	state := s.contextFrames
+	state.mu.Lock()
+	if state.steered == nil {
+		state.steered = make(map[string]bool)
+	}
+	state.steered[frame.FrameID] = true
+	state.mu.Unlock()
+	options := sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}
+	if trigger {
+		options = sdk.SendMessageOptions{DeliverAs: "followUp", TriggerTurn: sdk.Bool(true)}
+	}
+	if err := host.SendMessage("pig-workbench.context", encoded, true, options); err != nil {
+		state.mu.Lock()
+		delete(state.steered, frame.FrameID)
+		state.mu.Unlock()
+		return err
+	}
+	return nil
+}
+
+// deliverFrame applies the wake flag to a nextBoundary frame. An idle session starts a turn; a
+// running one already takes the frame at its next boundary, so no second turn starts. The outcome
+// is "woken", "steered", or empty when no wake was requested.
+func (a *app) deliverFrame(host sdk.Context, s *session, frame frames.Frame, wake bool) (string, error) {
+	if !wake {
+		return "", a.sendFrame(host, s, frame, false)
+	}
+	idle, err := host.IsIdle()
+	if err != nil {
+		return "", err
+	}
+	if err := a.sendFrame(host, s, frame, idle); err != nil {
+		return "", err
+	}
+	if idle {
+		return "woken", nil
+	}
+	return "steered", nil
 }

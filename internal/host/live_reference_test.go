@@ -193,7 +193,7 @@ func TestLiveReferenceProducerFrameRules(t *testing.T) {
 	want := map[string]any{
 		"duplicateSameFrame": true,
 		"changedDuplicate":   "conflict",
-		"followUp":           "permissionDenied",
+		"wakeWithoutAllow":   "permissionDenied",
 		"undeclaredKind":     "permissionDenied",
 		"statusState":        "pending",
 		"statusErr":          true,
@@ -528,5 +528,131 @@ func TestLiveForeignToolKeepsWorkingWithoutWorkbench(t *testing.T) {
 	last, _ := json.Marshal(messages[len(messages)-1])
 	if !strings.Contains(string(last), "Fixture result") {
 		t.Fatalf("foreign tool result lost without Workbench: %s", last)
+	}
+}
+
+// wakeFixture starts Workbench with the wake-capable reference producer and a scripted provider
+// that only answers with text, so every provider request is a turn the host really started.
+func wakeFixture(t *testing.T, settings string) (*liveSession, func(args string) map[string]any) {
+	t.Helper()
+	t.Setenv("WORKBENCH_WAKE_FIXTURE", "1")
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if settings != "" {
+		if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte(settings), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	live := &liveSession{fixture: startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read"), recorder: recorder, root: root}
+	live.fixture.send("ready", "prompt", "/reference status")
+	live.fixture.wait(func(r map[string]any) bool {
+		return r["type"] == "extension_ui_request" && r["method"] == "notify" && strings.Contains(fmt.Sprint(r["message"]), `"reference":"registered"`)
+	})
+	probe := func(args string) map[string]any {
+		t.Helper()
+		key := strings.Fields(args)[0]
+		live.fixture.send("wake-"+key+fmt.Sprint(time.Now().UnixNano()), "prompt", "/reference wake "+args)
+		record := live.fixture.wait(func(r map[string]any) bool {
+			return r["type"] == "extension_ui_request" && r["method"] == "notify" && strings.Contains(fmt.Sprint(r["message"]), `"wakeProbe":"`+key+`"`)
+		})
+		var outcome map[string]any
+		if err := json.Unmarshal([]byte(record["message"].(string)), &outcome); err != nil {
+			t.Fatal(err)
+		}
+		return outcome
+	}
+	return live, probe
+}
+
+func receiptOf(t *testing.T, outcome map[string]any) map[string]any {
+	t.Helper()
+	receipt, ok := outcome["receipt"].(map[string]any)
+	if !ok {
+		t.Fatalf("publication failed: %+v", outcome)
+	}
+	return receipt
+}
+
+func TestLiveFrameWakeStartsATurnOnlyWhenAskedAndOnlyOnce(t *testing.T) {
+	live, probe := wakeFixture(t, "")
+	if receipt := receiptOf(t, probe("k1 true")); receipt["wake"] != "woken" {
+		t.Fatalf("an idle session must report woken: %+v", receipt)
+	}
+	waitForRequest(t, live, "ALERT-BODY-k1")
+	turns := len(live.requests())
+
+	// A quiet frame never starts a turn; the next prompt carries it exactly once.
+	if receipt := receiptOf(t, probe("k2 false")); receipt["wake"] != nil {
+		t.Fatalf("a frame that did not ask for a wake reports none: %+v", receipt)
+	}
+	time.Sleep(1500 * time.Millisecond)
+	if got := len(live.requests()); got != turns {
+		t.Fatalf("wake=false started a turn: %d provider requests, want %d", got, turns)
+	}
+	live.fixture.send("next", "prompt", "continue")
+	live.fixture.wait(func(r map[string]any) bool { return r["type"] == "agent_end" })
+	requests := live.requests()
+	if last := requests[len(requests)-1]; strings.Count(last, "ALERT-BODY-k2") != 1 || strings.Count(last, "ALERT-BODY-k1") != 1 {
+		t.Fatalf("each frame must reach the model exactly once: k1=%d k2=%d", strings.Count(last, "ALERT-BODY-k1"), strings.Count(last, "ALERT-BODY-k2"))
+	}
+
+	// A repeated publication neither delivers again nor starts another turn.
+	turns = len(live.requests())
+	duplicate := receiptOf(t, probe("k1 true"))
+	if duplicate["duplicate"] != true || duplicate["wake"] != nil {
+		t.Fatalf("a duplicate must be marked and must not wake: %+v", duplicate)
+	}
+	time.Sleep(1500 * time.Millisecond)
+	if got := len(live.requests()); got != turns {
+		t.Fatalf("a duplicate publication started a turn: %d requests, want %d", got, turns)
+	}
+	live.fixture.send("after-duplicate", "prompt", "and again")
+	live.fixture.wait(func(r map[string]any) bool { return r["type"] == "agent_end" })
+	requests = live.requests()
+	if last := requests[len(requests)-1]; strings.Count(last, "ALERT-BODY-k1") != 1 {
+		t.Fatalf("a duplicate publication reached the model %d times", strings.Count(last, "ALERT-BODY-k1"))
+	}
+	if outcome := probe("k3 true nextPrompt"); outcome["code"] != "invalidRequest" {
+		t.Fatalf("wake with a held delivery must be invalid: %+v", outcome)
+	}
+}
+
+func TestLiveFrameWakeBudgetDeliversWithoutATurn(t *testing.T) {
+	live, probe := wakeFixture(t, "[frames]\nwake-budget = 0\n")
+	if receipt := receiptOf(t, probe("b1 true")); receipt["wake"] != "suppressed" {
+		t.Fatalf("an exhausted budget must report suppressed: %+v", receipt)
+	}
+	time.Sleep(1500 * time.Millisecond)
+	if got := len(live.requests()); got != 0 {
+		t.Fatalf("a suppressed wake started %d turns", got)
+	}
+	live.fixture.send("next", "prompt", "continue")
+	live.fixture.wait(func(r map[string]any) bool { return r["type"] == "agent_end" })
+	requests := live.requests()
+	if strings.Count(requests[len(requests)-1], "ALERT-BODY-b1") != 1 {
+		t.Fatal("a suppressed frame is still delivered, once, with the next prompt")
+	}
+}
+
+func TestLiveProducerWithoutAllowWakeCannotWake(t *testing.T) {
+	live, _ := wakeFixture(t, "")
+	live.fixture.send("frames", "prompt", "/reference frames")
+	record := live.fixture.wait(func(r map[string]any) bool {
+		return r["type"] == "extension_ui_request" && r["method"] == "notify" && strings.Contains(fmt.Sprint(r["message"]), `"frames":"probed"`)
+	})
+	if !strings.Contains(fmt.Sprint(record["message"]), `"wakeWithoutAllow":"permissionDenied"`) {
+		t.Fatalf("a producer that did not register allowWake must be refused: %v", record["message"])
+	}
+	if got := len(live.requests()); got != 0 {
+		t.Fatalf("a refused wake started %d turns", got)
 	}
 }

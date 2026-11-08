@@ -22,6 +22,9 @@ func testLedger(s *Session) *Ledger {
 	return s.Ledger(Context{SessionID: "ignored", ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-1", Epoch: "epoch-1"})
 }
 
+// repeated is the receipt a repeated publication of the same frame returns.
+func repeated(r Receipt) Receipt { r.Duplicate = true; return r }
+
 func testPublish(key string) Publish {
 	return Publish{EventKey: key, Source: "build-tools.build", Kind: "notice", Body: "build complete"}
 }
@@ -58,8 +61,8 @@ func TestAdmissionDedupAndSnapshotReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	duplicate, err := l.Admit(p)
-	if err != nil || duplicate != first {
-		t.Fatalf("duplicate receipt = %#v, %v; want %#v", duplicate, err, first)
+	if err != nil || duplicate != repeated(first) || first.Duplicate {
+		t.Fatalf("duplicate receipt = %#v, %v; want %#v", duplicate, err, repeated(first))
 	}
 	changed := p
 	changed.Body = "different body"
@@ -87,8 +90,8 @@ func TestAdmissionDedupAndSnapshotReplay(t *testing.T) {
 		t.Fatal("snapshot changed across restore")
 	}
 	again, err := restored.Admit(p)
-	if err != nil || again != first {
-		t.Fatalf("restored duplicate = %#v, %v; want %#v", again, err, first)
+	if err != nil || again != repeated(first) {
+		t.Fatalf("restored duplicate = %#v, %v; want %#v", again, err, repeated(first))
 	}
 	if _, err := restored.Admit(changed); !errors.Is(err, ErrConflict) {
 		t.Fatalf("restored changed duplicate error = %v", err)
@@ -112,7 +115,7 @@ func TestValidatePublishAndOwnership(t *testing.T) {
 			t.Fatalf("kind %q rejected: %v", kind, err)
 		}
 	}
-	for _, delivery := range []string{"nextBoundary", "nextPrompt", "beforePrompt", "followUp"} {
+	for _, delivery := range []string{"nextBoundary", "nextPrompt", "beforePrompt"} {
 		valid := p
 		valid.Delivery = delivery
 		if _, err := ValidatePublish(valid); err != nil {
@@ -125,6 +128,8 @@ func TestValidatePublishAndOwnership(t *testing.T) {
 		"malformed source": func(p *Publish) { p.Source = "build..test" },
 		"unknown kind":     func(p *Publish) { p.Kind = "urgent" },
 		"unknown delivery": func(p *Publish) { p.Delivery = "immediately" },
+		"retired followUp": func(p *Publish) { p.Delivery = "followUp" },
+		"wake on held":     func(p *Publish) { p.Delivery, p.Wake = "nextPrompt", true },
 		"unknown trust":    func(p *Publish) { p.DataTrust = "self-authorized" },
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -306,7 +311,7 @@ func TestCoalescingAtPendingCapacity(t *testing.T) {
 	if _, err := l.Admit(newer); err != nil {
 		t.Fatalf("coalescing at capacity: %v", err)
 	}
-	if receipt, err := l.Admit(first); err != nil || receipt != firstReceipt {
+	if receipt, err := l.Admit(first); err != nil || receipt != repeated(firstReceipt) {
 		t.Fatalf("superseded duplicate = %#v, %v", receipt, err)
 	}
 	if records := snapshotRecords(t, s); len(records) != 257 || records[0].State != "superseded" || records[256].State != "pending" {
@@ -468,7 +473,7 @@ func TestExpiryOwnershipAndTimestampReplay(t *testing.T) {
 	if !reflect.DeepEqual(before, replayed.Snapshot()) {
 		t.Fatal("timestamp snapshot changed across restore")
 	}
-	if r, err := testLedger(replayed).Admit(p); err != nil || r != first {
+	if r, err := testLedger(replayed).Admit(p); err != nil || r != repeated(first) {
 		t.Fatalf("expiry duplicate after restore = %#v, %v", r, err)
 	}
 }
@@ -512,11 +517,37 @@ func TestRetryDeduplicatesAfterTheBranchLeafAdvances(t *testing.T) {
 	}
 	advanced := s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-2", Epoch: "epoch-1", Ancestors: map[string]bool{"": true, "leaf-1": true, "leaf-2": true}})
 	again, err := advanced.Admit(testPublish("a"))
-	if err != nil || again != receipt {
+	if err != nil || again != repeated(receipt) {
 		t.Fatalf("retry on the same branch = %+v, %v; want %+v", again, err, receipt)
 	}
 	sibling := s.Ledger(Context{ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-3", Epoch: "epoch-1", Ancestors: map[string]bool{"": true, "leaf-3": true}})
 	if _, err := sibling.Admit(testPublish("a")); !errors.Is(err, ErrConflict) {
 		t.Fatalf("same event key on a sibling branch = %v, want ErrConflict", err)
+	}
+}
+
+func TestWakeIsPartOfThePublicationIdentity(t *testing.T) {
+	s := testSession()
+	l := testLedger(s)
+	p := testPublish("job-1")
+	p.Wake = true
+	first, err := l.Admit(p)
+	if err != nil || first.Duplicate {
+		t.Fatalf("first = %#v, %v", first, err)
+	}
+	if again, err := l.Admit(p); err != nil || !again.Duplicate || again.FrameID != first.FrameID {
+		t.Fatalf("identical wake publication = %#v, %v", again, err)
+	}
+	quiet := p
+	quiet.Wake = false
+	if _, err := l.Admit(quiet); !errors.Is(err, ErrConflict) {
+		t.Fatalf("same key with a different wake = %v, want conflict", err)
+	}
+	restored := testSession()
+	if err := restored.Restore(s.Snapshot()); err != nil {
+		t.Fatal(err)
+	}
+	if again, err := testLedger(restored).Admit(p); err != nil || !again.Duplicate {
+		t.Fatalf("wake lost across restore: %#v, %v", again, err)
 	}
 }

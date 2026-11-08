@@ -14,6 +14,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
+	"github.com/furbyhaxx/pig-workbench/internal/messaging"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 )
 
@@ -33,6 +34,8 @@ type contextFrameState struct {
 	// steered holds frames already sent as a boundary steer but not yet confirmed in context,
 	// so concurrent tool calls cannot send the same pending frame twice.
 	steered map[string]bool
+	// wakes bounds how often each external producer may start a turn.
+	wakes *messaging.Limiter
 }
 
 func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) {
@@ -79,7 +82,7 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 	if err := ledger.Restore(records); err != nil {
 		return nil, err
 	}
-	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView)}, nil
+	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView), wakes: messaging.NewLimiter()}, nil
 }
 
 type contextFact struct {

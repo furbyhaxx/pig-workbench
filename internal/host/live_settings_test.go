@@ -45,6 +45,11 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"ask-timeout", []string{"ask.remote.timeout-ms"}, TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer},
 		{"endpoint", []string{"sessions.enabled", "sessions.discoverable"}, TestLiveSessionEndpointSettingsAtStartup},
 		{"messaging", []string{"sessions.inbound", "sessions.rate-limit", "sessions.wake", "sessions.wake-budget"}, TestSessionMessageSettingsAffectDelivery},
+		{"job-wake", []string{"jobs.wake-on-completion"}, func(t *testing.T) {
+			t.Run("on", TestLivePromotedJobWakesTheModelOnceWhenItEnds)
+			t.Run("off", TestLiveJobCompletionStaysQuietWhenWakeIsDisabled)
+		}},
+		{"frame-wake", []string{"frames.wake-budget"}, TestLiveFrameWakeBudgetDeliversWithoutATurn},
 		{"hops", []string{"sessions.max-hops"}, TestLiveMessageBeyondMaxHopsIsQueuedWithoutWaking},
 		{"secrets", []string{"secrets.enabled"}, TestSecretsBoundaryHonoursTheEnabledSetting},
 		{"secrets-grants", []string{"secrets.redact-owners"}, TestSecretsRedactIsGrantedPerOwnerAndNeverEchoesInputOnFailure},

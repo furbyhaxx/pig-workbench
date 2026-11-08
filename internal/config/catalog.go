@@ -93,6 +93,7 @@ func Catalog() []Definition {
 		choice("instructions.updates.self-edits", "notice", AllowProject, "notice", "diff", "silent"),
 		boolean("instructions.agents-md-reminder", true, AllowProject),
 		boolean("instructions.backlog.validate-pointers", true, AllowProject),
+		integer("frames.wake-budget", 10, 0, 1000, DenyProject),
 		choice("frames.role", "auto", DenyProject, "auto", "user", "developer", "system"),
 		choice("frames.display.style", "rail", AllowProject, "row", "rail", "card"),
 		choice("frames.display.default-visibility", "shown", AllowProject, "shown", "collapsed", "hidden"),
@@ -102,7 +103,7 @@ func Catalog() []Definition {
 		integer("jobs.max-finished", 20, 0, 10000, DenyProject),
 		integer("jobs.log-bytes", 10485760, 1024, 1<<40, DenyProject),
 		integer("jobs.session-log-bytes", 104857600, 1024, 1<<40, DenyProject),
-		boolean("jobs.wake-on-completion", false, DenyProject),
+		boolean("jobs.wake-on-completion", true, DenyProject),
 		boolean("jobs.raw-logs", false, DenyProject),
 		text("locations.worktree-parent", ".worktrees", AllowProject),
 		text("locations.ssh-host-write", "include", DenyProject),
@@ -198,6 +199,12 @@ func Catalog() []Definition {
 		case "jobs.timeout-seconds":
 			d.Application = "live"
 			d.Description = "Default bash hard deadline in seconds; zero disables it. A tool-call timeout overrides this value."
+		case "jobs.wake-on-completion":
+			d.Application = "live"
+			d.Description = "Start a turn when a background or promoted job finishes while the session is idle; a running session receives the notice at its next boundary."
+		case "frames.wake-budget":
+			d.Application = "live"
+			d.Description = "Maximum wakes per external frame producer per hour; over budget the frame is delivered without a turn. Zero disables external wake."
 		case "ask.remote.timeout-ms":
 			d.Application = "live"
 			d.Description = "Timeout for native ask dialogs, including resumed pending asks."

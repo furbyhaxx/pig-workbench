@@ -305,14 +305,70 @@ func TestLiveSessionEndTerminatesJobs(t *testing.T) {
 	f.exitErr = nil
 }
 
-// TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice covers SPEC-0008 §5
-// promotion and §7 completion: the same job ID survives the promotion, and its
-// end reaches the model once, on the next prompt, without waking it.
-func TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice(t *testing.T) {
+// TestLivePromotedJobWakesTheModelOnceWhenItEnds covers SPEC-0008 §5 promotion and §7
+// completion: the same job ID survives the promotion, and its end starts a turn on the idle
+// session that shows the model the notice exactly once.
+func TestLivePromotedJobWakesTheModelOnceWhenItEnds(t *testing.T) {
+	recorder, fixture, id, requestsAfterFirst := promotedJob(t, "")
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		recorder.mu.Lock()
+		woke := len(recorder.bodies) > requestsAfterFirst
+		recorder.mu.Unlock()
+		if woke {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != requestsAfterFirst+1 {
+		t.Fatalf("completion must start exactly one turn: %d requests after %d", len(recorder.bodies), requestsAfterFirst)
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Count(last, "Background job "+id+" finished") != 1 || !strings.Contains(last, "job://"+id+"/log") {
+		t.Fatalf("completion notice missing or duplicated in the woken turn: %s", last)
+	}
+}
+
+// TestLiveJobCompletionStaysQuietWhenWakeIsDisabled keeps jobs.wake-on-completion = false: the
+// notice waits for the next prompt and still reaches the model once.
+func TestLiveJobCompletionStaysQuietWhenWakeIsDisabled(t *testing.T) {
+	recorder, fixture, id, requestsAfterFirst := promotedJob(t, "[jobs]\nwake-on-completion = false\n")
+	time.Sleep(1500 * time.Millisecond)
+	recorder.mu.Lock()
+	if len(recorder.bodies) != requestsAfterFirst {
+		recorder.mu.Unlock()
+		t.Fatal("completion woke the model although jobs.wake-on-completion is false")
+	}
+	recorder.mu.Unlock()
+	fixture.send("second", "prompt", "Anything new?")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Count(last, "Background job "+id+" finished") != 1 {
+		t.Fatalf("completion notice missing or duplicated on the next prompt: %s", last)
+	}
+}
+
+// promotedJob runs a command that is promoted to a background job, waits until the user was told
+// it finished, and returns the recorder, the session, the job ID and the request count before the end.
+func promotedJob(t *testing.T, settings string) (*requestRecorder, *rpcFixture, string, int) {
+	t.Helper()
 	root := t.TempDir()
+	if settings != "" {
+		if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte(settings), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	recorder := &requestRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": "sleep 1; echo promoted-done", "yield_seconds": 0.2}}}}
 	server := recorder.serve(t)
-	defer server.Close()
+	t.Cleanup(server.Close)
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
 	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "bash,jobs")
 	fixture.send("first", "prompt", "Start the slow command.")
@@ -328,18 +384,5 @@ func TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice(t *testing.T) {
 	fixture.wait(func(event map[string]any) bool {
 		return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), "Background job "+match[1]+" finished")
 	})
-	recorder.mu.Lock()
-	if len(recorder.bodies) != requestsAfterFirst {
-		recorder.mu.Unlock()
-		t.Fatal("completion woke the model")
-	}
-	recorder.mu.Unlock()
-	fixture.send("second", "prompt", "Anything new?")
-	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
-	recorder.mu.Lock()
-	defer recorder.mu.Unlock()
-	last := recorder.bodies[len(recorder.bodies)-1]
-	if strings.Count(last, "Background job "+match[1]+" finished") != 1 || !strings.Contains(last, "job://"+match[1]+"/log") {
-		t.Fatalf("completion notice missing or duplicated on the next prompt: %s", last)
-	}
+	return recorder, fixture, match[1], requestsAfterFirst
 }

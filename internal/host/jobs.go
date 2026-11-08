@@ -146,10 +146,10 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	return s.jobResult(id, 0)
 }
 
-// watchJobCompletion queues one notice for the next prompt when a job that
-// outlived its tool call ends. It never wakes the model and carries no output,
-// so the secrets boundary stays on the read path; a job killed on request is
-// already known to the model.
+// watchJobCompletion sends one notice when a job that outlived its tool call
+// ends, waking an idle model unless jobs.wake-on-completion is off. The notice
+// carries no output, so the secrets boundary stays on the read path; a job
+// killed on request is already known to the model.
 func (a *app) watchJobCompletion(s *session, id string) {
 	_ = s.supervisor.Start(func(lifetime context.Context) {
 		if _, err := s.jobs.Wait(lifetime, id); err != nil {
@@ -170,10 +170,14 @@ func (a *app) watchJobCompletion(s *session, id string) {
 			label += fmt.Sprintf(" (exit %d)", state.Exit.Code)
 		}
 		body := fmt.Sprintf("Background job %s finished: %s\nCommand: %s\nRead job://%s/log or use the jobs tool for its output.", id, label, noticeText(metadata.Command, 200), id)
-		_, _, failure := a.admitFrame(s.host, s, "workbench", "data", true, frames.Publish{EventKey: "job/" + id + "/exit", Kind: "notice", Source: "workbench.jobs", Title: "Job " + id + " finished", Body: body, SubjectKey: "job://" + id, Resource: "job://" + id, Delivery: "nextPrompt", DataTrust: "trusted"})
-		if failure == nil {
-			s.host.Notify(noticeText("Background job "+id+" finished: "+label, 0), "info")
+		wake := s.settingBool("jobs.wake-on-completion", true)
+		receipt, frame, failure := a.admitFrame(s.host, s, "workbench", "data", true, frames.Publish{EventKey: "job/" + id + "/exit", Kind: "notice", Source: "workbench.jobs", Title: "Job " + id + " finished", Body: body, SubjectKey: "job://" + id, Resource: "job://" + id, Delivery: "nextBoundary", Wake: wake, DataTrust: "trusted"})
+		if failure != nil || receipt.Duplicate {
+			return
 		}
+		// A failed send leaves the frame pending for the next boundary hook.
+		_, _ = a.deliverFrame(s.host, s, frame, wake)
+		s.host.Notify(noticeText("Background job "+id+" finished: "+label, 0), "info")
 	})
 }
 

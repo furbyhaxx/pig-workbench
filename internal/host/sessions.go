@@ -413,18 +413,12 @@ func (e *sessionEndpoint) deliver(env messaging.Envelope, trusted bool, state st
 		host.Notify(noticeText("Message from "+peerLabel(env.From)+" is queued for the next turn.", 0), "info")
 		return messaging.Queued, nil
 	}
-	encoded, err := frames.EncodeEnvelope(frame)
-	if err != nil {
-		return "", err
-	}
-	options := sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}
 	if wake {
 		e.mu.Lock()
 		e.origin = &turnOrigin{conversation: env.ConversationID, hop: env.Hop, peer: env.From.SessionID}
 		e.mu.Unlock()
-		options = sdk.SendMessageOptions{DeliverAs: "followUp", TriggerTurn: sdk.Bool(true)}
 	}
-	if err := host.SendMessage("pig-workbench.context", encoded, true, options); err != nil {
+	if err := e.app.sendFrame(host, e.s, frame, wake); err != nil {
 		return "", err
 	}
 	if wake {

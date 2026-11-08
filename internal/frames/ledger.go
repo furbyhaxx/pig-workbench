@@ -20,6 +20,7 @@ type storedRecord struct {
 	Frame          Frame      `json:"frame"`
 	DataTrust      string     `json:"dataTrust"`
 	CoalesceKey    string     `json:"coalesceKey"`
+	Wake           bool       `json:"wake,omitempty"`
 	ExpiresAt      *time.Time `json:"expiresAt,omitempty"`
 	State          string     `json:"state"`
 	Receipt        Receipt    `json:"receipt"`
@@ -124,7 +125,9 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 		if !samePublish(existing.publish(), p) || !l.sameBranch(existing.Frame.BranchLeaf) || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
 			return Receipt{}, ErrConflict
 		}
-		return existing.Receipt, nil
+		duplicate := existing.Receipt
+		duplicate.Duplicate = true
+		return duplicate, nil
 	}
 
 	var previous *storedRecord
@@ -158,6 +161,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 		Frame:          frame,
 		DataTrust:      p.DataTrust,
 		CoalesceKey:    p.CoalesceKey,
+		Wake:           p.Wake,
 		ExpiresAt:      p.ExpiresAt,
 		State:          statePending,
 		Receipt:        receipt,
@@ -292,7 +296,7 @@ func (r *storedRecord) publish() Publish {
 	return Publish{
 		EventKey: f.EventKey, Kind: f.Kind, Source: f.Source, Body: f.Body,
 		Title: f.Title, Summary: f.Summary, SubjectKey: f.SubjectKey, Resource: f.Resource,
-		Delivery: f.Delivery, DataTrust: r.DataTrust, CoalesceKey: r.CoalesceKey, ExpiresAt: r.ExpiresAt,
+		Delivery: f.Delivery, Wake: r.Wake, DataTrust: r.DataTrust, CoalesceKey: r.CoalesceKey, ExpiresAt: r.ExpiresAt,
 	}
 }
 

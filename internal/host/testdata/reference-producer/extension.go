@@ -281,6 +281,12 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 			descriptor map[string]any
 		}{"resourceProvider", "mutations", map[string]any{"label": "Mutation fixture", "summary": "Revision-checked test resources", "schemes": []string{"mut"}, "capabilities": []string{"stat", "read", "list", "write", "mkdir", "remove", "copy", "move"}, "selectorMode": "lines", "backing": "virtual", "scope": "session", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": true}, "mutations": map[string]any{"revisionChecked": true, "retentionMs": 86400000, "durable": false}, "limits": map[string]any{}}})
 	}
+	if os.Getenv("WORKBENCH_WAKE_FIXTURE") == "1" {
+		contributions = append(contributions, struct {
+			kind, key  string
+			descriptor map[string]any
+		}{"frameProducer", "reference.alerts", map[string]any{"label": "Alerts", "kinds": []string{"warning", "notice"}, "allowWake": true}})
+	}
 	if root := os.Getenv("WORKBENCH_REFERENCE_DOCS"); root != "" {
 		contributions = append(contributions, struct {
 			kind, key  string
@@ -533,6 +539,28 @@ func Extension() *sdk.Extension {
 			ctx.Notify(`{"ownershipProbe":"accepted"}`, "info")
 			return nil
 		}
+		if fields := strings.Fields(args); len(fields) >= 3 && fields[0] == "wake" {
+			// wake <eventKey> <true|false> [delivery]: publish one alert and report the receipt or error code.
+			params := map[string]any{"eventKey": fields[1], "kind": "warning", "source": "reference.alerts", "body": "ALERT-BODY-" + fields[1], "wake": fields[2] == "true"}
+			if len(fields) > 3 {
+				params["delivery"] = fields[3]
+			}
+			var receipt map[string]any
+			err := active.Call(ctx, binding, "frames.publish", params, &receipt, &api.CallOptions{RegistrationID: registered["frameProducer:reference.alerts"].RegistrationID})
+			var failure *api.Error
+			outcome := map[string]any{"wakeProbe": fields[1]}
+			switch {
+			case errors.As(err, &failure):
+				outcome["code"] = failure.Code
+			case err != nil:
+				outcome["transport"] = err.Error()
+			default:
+				outcome["receipt"] = receipt
+			}
+			encoded, _ := json.Marshal(outcome)
+			ctx.Notify(string(encoded), "info")
+			return nil
+		}
 		if strings.TrimSpace(args) == "frames" {
 			return probeFrames(ctx, active, binding, registered["frameProducer"].RegistrationID)
 		}
@@ -601,7 +629,7 @@ func probeFrames(ctx sdk.Context, active *api.Client, binding api.Discovery, reg
 	for key, value := range base {
 		followUp[key] = value
 	}
-	followUp["eventKey"], followUp["delivery"] = "probe-2", "followUp"
+	followUp["eventKey"], followUp["delivery"], followUp["wake"] = "probe-2", "nextBoundary", true
 	_, followUpCode := publish(followUp)
 	undeclared := map[string]any{}
 	for key, value := range base {
@@ -626,7 +654,7 @@ func probeFrames(ctx sdk.Context, active *api.Client, binding api.Discovery, reg
 	if errors.As(againErr, &againFailure) {
 		againCode = againFailure.Code
 	}
-	encoded, _ := json.Marshal(map[string]any{"frames": "probed", "duplicateSameFrame": first != nil && again != nil && first["frameId"] == again["frameId"], "changedDuplicate": changedCode, "followUp": followUpCode, "undeclaredKind": undeclaredCode, "foreignSource": foreignCode, "statusState": status["state"], "statusErr": statusErr == nil, "cancelState": cancelled["state"], "cancelErr": cancelErr == nil, "cancelAgain": againCode})
+	encoded, _ := json.Marshal(map[string]any{"frames": "probed", "duplicateSameFrame": first != nil && again != nil && first["frameId"] == again["frameId"], "changedDuplicate": changedCode, "wakeWithoutAllow": followUpCode, "undeclaredKind": undeclaredCode, "foreignSource": foreignCode, "statusState": status["state"], "statusErr": statusErr == nil, "cancelState": cancelled["state"], "cancelErr": cancelErr == nil, "cancelAgain": againCode})
 	ctx.Notify(string(encoded), "info")
 	return nil
 }

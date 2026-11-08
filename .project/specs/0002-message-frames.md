@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-08T22:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; ledger, delivery and trust semantics frozen"]
+    - revision: 9
+      reason: "User directive 08.11.2026: frames must be able to wake an idle model, as an explicit flag"
+      changes: ["Added publish field wake (default false), valid with nextBoundary only", "Removed the delivery value followUp: wake replaces it", "allowWake plus a per-producer hourly budget gate external wakes; Workbench's own sources wake by user setting", "Receipt reports wake outcome and duplicate publications", "Migration: a producer that sent delivery followUp now sends delivery nextBoundary with wake true; it was always denied before, so no working producer changes"]
 
 ---
 
@@ -54,7 +57,7 @@ Register kind `frameProducer`:
 | kinds | Allowed subset: instruction, reminder, warning, error, notice, info, message (`message` is reserved for Workbench's own `workbench.sessions` source, SPEC-0011) |
 | defaultVisibility | shown, collapsed or hidden; user override wins |
 | requestedAuthority | data or instruction; host/user policy grants actual authority |
-| allowWake | Request permission to schedule follow-up, default false |
+| allowWake | Declares that the producer may publish with `wake: true`, default false. Declaration is the permission; the hourly budget (`frames.wake-budget`) bounds it. |
 | contextFields | Optional typed field claims on Workbench context sources; initially `session.model.knowledge_cutoff` only (SPEC-0014 §5.1) |
 
 External sources default to data authority. Requesting instruction authority is not self-authorization. Trusted project data and arbitrary command output are not inherently harness instructions. Producer prefixes cannot impersonate Workbench internal sources. Declared `contextFields` are a separate, typed data contribution consumed by Workbench's producer (SPEC-0014 §5.1); they do not grant permission to publish with an internal source name.
@@ -80,7 +83,8 @@ Required: `eventKey,kind,source,body`. Optional fields:
 | resource | Canonical resource URI concerned |
 | subjectKey | Stable semantic entity under source, e.g. build/412 |
 | scope | session, or explicit branch binding; default current branch |
-| delivery | nextBoundary (default), nextPrompt, beforePrompt, followUp |
+| delivery | nextBoundary (default), nextPrompt, beforePrompt |
+| wake | Boolean, default false. `true` asks Workbench to start a model turn for this frame when the session is idle. Valid only with `nextBoundary`: a frame held for the next prompt cannot also start a turn now. |
 | coalesceKey | Only pending replaceable notices; same source/subject/scope |
 | dataTrust | trusted or untrusted; actual trust is policy-constrained |
 | expiresAt | Optional pending-notice expiry; never silently expires instruction changes |
@@ -95,7 +99,7 @@ EventKey deduplicates within (session, producer key, eventKey). Same key/same pa
 | nextBoundary | `SendMessage(customType, body, display, {DeliverAs: "steer", TriggerTurn: false})` | Lands after the current tool batch, before the next assistant call; persisted as `role: custom` | Persisted immediately; seen with the next prompt; no turn |
 | nextPrompt | Workbench-held queue, returned as `{"message": {customType, content, display}}` from the next `before_agent_start` | Same as idle | Lands directly after the next user prompt and is persisted (P30). A `steer` sent from that hook would land *before* the prompt instead |
 | beforePrompt | Workbench-held queue, sent as `SendMessage(steer)` from the next `before_agent_start` | Same as idle | Lands directly before the next user prompt and is persisted (P30); used by context frames (SPEC-0014 §5) |
-| followUp | `SendMessage(..., {DeliverAs: "followUp", TriggerTurn: true})` | After the run | Starts a turn |
+| nextBoundary + `wake: true` | Idle: `SendMessage(..., {DeliverAs: "followUp", TriggerTurn: true})`. Running: as nextBoundary | Lands at the next boundary; the running turn already consumes it | Starts a turn |
 
 Workbench does not use host `nextTurn`: its in-memory queue survives tree navigation and is delivered on the new branch (P20), which violates the branch guard below. Workbench always sets `TriggerTurn` explicitly and validates `DeliverAs` itself; the host accepts unknown values silently (P19). Custom messages reach the model as user-role content; stored history keeps `role: custom` and `customType` for replay.
 
@@ -109,7 +113,7 @@ Body is plain text, maximum 32 KiB per frame by default inside the 64 KiB contro
 {"v":1,"id":"publish-1","sessionId":"s-1","generation":"g-1","to":{"owner":"build-tools","instance":"i-1"},"ok":true,"result":{"frameId":"f-12","sequence":12,"state":"pending","delivery":"nextBoundary","effectiveAuthority":"data"}}
 ```
 
-Ordinary publish is a fact-delivery request, not permission to start an inference turn. followUp requires granted policy; denied wake fails permissionDenied unless caller explicitly retries with nextPrompt. No silent escalation.
+Ordinary publish (`wake` absent or false) is a fact-delivery request: it never starts a turn. `wake: true` is honored when the session is idle; a running session already receives the frame at its next boundary, so no second turn starts. A producer without `allowWake` fails `permissionDenied` (outcome `notApplied`) and may retry with `wake: false`. A producer over its hourly `frames.wake-budget` is not refused: the frame is delivered as an ordinary `nextBoundary` frame and the receipt says `wake: "suppressed"`. The receipt's `wake` is `woken` (turn started), `steered` (session was running) or `suppressed`; it is absent when `wake` was not requested. A duplicate publication returns the stored receipt with `duplicate: true` and performs no delivery and no wake. Workbench's own sources wake by user policy, not by `allowWake`: finished background jobs wake the model when `jobs.wake-on-completion` is true (default). Waking is never an escalation of authority: a woken frame keeps its data authority and trust.
 
 # 4. Stored frame and delivery ledger
 
@@ -178,7 +182,11 @@ Wireframes and action/state behavior: [SKETCH-0002](../sketches/extension-apis/R
 | Producer loads before/after Workbench | Discovers and registers without order dependence |
 | Duplicate publish / changed duplicate | Existing receipt / conflict, never two deliveries |
 | Publish error then retry | No acknowledged-but-lost frame |
-| Idle ordinary frame / followUp denied | Waits for prompt / explicit permission error |
+| Idle ordinary frame / wake without `allowWake` | Waits for prompt / explicit permission error |
+| Idle frame with `wake: true` | A turn starts and the model sees the frame once |
+| Duplicate publication with `wake: true` | `duplicate: true`, no second delivery, no second turn |
+| `wake: true` with nextPrompt or beforePrompt | `invalidRequest` |
+| Wake over budget | Delivered without a turn, `wake: "suppressed"` |
 | Branch switch during pending publication | No delivery to wrong branch |
 | Observer misses delivery event | frames.status reconciles state |
 | Compaction after diff | Current baseline reconstructed, not orphan diff |

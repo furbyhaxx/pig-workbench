@@ -5,9 +5,9 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "approved"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-08T22:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -53,6 +53,9 @@ document:
     - revision: 14
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; Workbench.toml and Secrets.toml layering, trust and storage frozen"]
+    - revision: 15
+      reason: "User directive 08.11.2026: finished jobs wake the model; frames can wake"
+      changes: ["jobs.wake-on-completion default is true", "Added frames.wake-budget (10 per producer-hour, user/runtime only; zero disables external wake)"]
 
 ---
 
@@ -132,7 +135,8 @@ All defaults below are proposals subject to design review and measurements, not 
 | frames.display.style/default-visibility | rail / shown | user/project/runtime presentation only |
 | jobs.timeout-seconds/yield-after-ms/termination-grace-ms | 120 / 0 / 2000 | user/runtime; timeout is foreground default, explicit background has no implicit deadline |
 | jobs.max-finished/log-bytes/session-log-bytes | 20 / 10485760 / 104857600 | user/runtime; rotation/gaps explicit |
-| jobs.wake-on-completion/raw-logs | false / false | user/runtime only |
+| jobs.wake-on-completion/raw-logs | true / false | user/runtime only |
+| frames.wake-budget | 10 per producer-hour | user/runtime only; zero disables external frame wake (SPEC-0002 §3) |
 | locations.worktree-parent | .worktrees | user/project/runtime within authorized repo |
 | locations.ssh-host-write | include | user/runtime only |
 | ask.auto-submit/confirm-dismiss-when-dirty/present-single-as-multi | false / true / false | user/project/runtime display behavior |

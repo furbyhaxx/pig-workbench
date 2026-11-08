@@ -106,7 +106,7 @@ func TestMarkDeliveredSurvivesRestoreWithoutRedelivery(t *testing.T) {
 	}
 	duplicate := testPublish("a")
 	duplicate.Delivery = "nextPrompt"
-	if r, err := testLedger(replayed).Admit(duplicate); err != nil || r != first {
+	if r, err := testLedger(replayed).Admit(duplicate); err != nil || r != repeated(first) {
 		t.Fatalf("restored duplicate = %#v, %v; want %#v", r, err, first)
 	}
 	if records := snapshotRecords(t, replayed); records[0].State != "delivered" {
@@ -194,7 +194,7 @@ func TestExpiryAndCancelReleaseCapacityWithoutLosingDedup(t *testing.T) {
 	if err := s.MarkDelivered(scope, []string{first.FrameID}); !errors.Is(err, ErrInvalidTransition) {
 		t.Fatalf("delivery of expired frame = %v", err)
 	}
-	if r, err := l.Admit(p); err != nil || r != first {
+	if r, err := l.Admit(p); err != nil || r != repeated(first) {
 		t.Fatalf("expired duplicate = %#v, %v; want %#v", r, err, first)
 	}
 	if _, err := l.Admit(testPublish("after-expiry")); err != nil {

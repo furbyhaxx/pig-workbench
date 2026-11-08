@@ -101,15 +101,17 @@ type Frame struct {
 
 // Publish describes one producer's requested frame.
 type Publish struct {
-	EventKey    string     `json:"eventKey"`
-	Kind        string     `json:"kind"`
-	Source      string     `json:"source"`
-	Body        string     `json:"body"`
-	Title       string     `json:"title"`
-	Summary     string     `json:"summary"`
-	SubjectKey  string     `json:"subjectKey"`
-	Resource    string     `json:"resource"`
-	Delivery    string     `json:"delivery"`
+	EventKey   string `json:"eventKey"`
+	Kind       string `json:"kind"`
+	Source     string `json:"source"`
+	Body       string `json:"body"`
+	Title      string `json:"title"`
+	Summary    string `json:"summary"`
+	SubjectKey string `json:"subjectKey"`
+	Resource   string `json:"resource"`
+	Delivery   string `json:"delivery"`
+	// Wake asks the host to start a turn for an idle session; only nextBoundary can wake.
+	Wake        bool       `json:"wake,omitempty"`
 	DataTrust   string     `json:"dataTrust"`
 	CoalesceKey string     `json:"coalesceKey"`
 	ExpiresAt   *time.Time `json:"expiresAt,omitempty"`
@@ -123,6 +125,10 @@ type Receipt struct {
 	Delivery           string `json:"delivery"`
 	EffectiveAuthority string `json:"effectiveAuthority"`
 	Durable            bool   `json:"durable"`
+	// Wake reports the wake outcome (woken, steered or suppressed); empty when no wake was requested.
+	Wake string `json:"wake,omitempty"`
+	// Duplicate marks an answer to a repeated publication; nothing was delivered again.
+	Duplicate bool `json:"duplicate,omitempty"`
 }
 
 // ValidatePublish checks and normalizes a publication without applying ownership policy.
@@ -148,6 +154,9 @@ func ValidatePublish(p Publish) (Publish, error) {
 	}
 	if !validDelivery(p.Delivery) {
 		return Publish{}, fmt.Errorf("%w: unsupported delivery", ErrInvalidPublish)
+	}
+	if p.Wake && p.Delivery != "nextBoundary" {
+		return Publish{}, fmt.Errorf("%w: wake requires nextBoundary delivery", ErrInvalidPublish)
 	}
 	if p.DataTrust == "" {
 		p.DataTrust = "untrusted"
@@ -176,7 +185,7 @@ func jsonTime(t time.Time) time.Time {
 
 func validDelivery(delivery string) bool {
 	switch delivery {
-	case "nextBoundary", "nextPrompt", "beforePrompt", "followUp":
+	case "nextBoundary", "nextPrompt", "beforePrompt":
 		return true
 	}
 	return false

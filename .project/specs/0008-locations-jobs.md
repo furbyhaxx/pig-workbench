@@ -5,9 +5,9 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-08T22:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User approved the remaining five specifications on 07.11.2026"
       changes: ["Approved the locations and jobs contract for Slice 1; implementation and acceptance remain separately tracked"]
+    - revision: 9
+      reason: "User directive 08.11.2026: a finished background job must wake the model"
+      changes: ["Completion frames publish with wake true by default; jobs.wake-on-completion = false keeps the notice for the next prompt", "Migration: the earlier default of no automatic turn is reversed; set the setting to false to keep it"]
 ---
 
 # 1. Scope and references
@@ -164,7 +167,7 @@ Log storage is private session-owned state. Default per-job 10 MiB retained outp
 
 Logs keep raw output, including secret values a command prints; output read back through the jobs tool or `job://` passes the SPEC-0013 boundary like any tool result. Terminal controls are sanitized for display without interpreting them as UI commands.
 
-Completion emits one frame keyed by job ID/terminal revision. Per-policy follow-up wake may be requested; default no automatic new paid turn. UI viewing does not consume completion notification state. Output progress is coalesced, not one frame per line.
+Completion emits one frame keyed by job ID/terminal revision. The frame is published with `wake` (SPEC-0002 §3): an idle session starts a turn, a running one receives it at the next boundary. `jobs.wake-on-completion` (default true) turns the wake off; the notice is then delivered with the next prompt. A job killed on request emits no frame. UI viewing does not consume completion notification state. Output progress is coalesced, not one frame per line.
 
 Reload/shutdown default: terminate owned jobs and record final/interrupted state. Resume shows retained jobs/logs but never relaunches commands or controls old PIDs. Surviving-job adoption requires a separately proven broker capability and explicit policy, not ordinary metadata replay. Process lifetime is session-wide; branch navigation only changes visibility/provenance, not execution.
 
