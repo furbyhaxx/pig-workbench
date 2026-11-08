@@ -261,3 +261,17 @@ Verified against code in the continuation; two bullets were not met as written a
 - Declared provider mutations are wired without new permission prompts under SPEC-0004 revision 8. Provider hashline editing remains unavailable; the full ownership-row evidence mapping and slice exit remain open. Redirects implement a static-word form, not general shell redirection.
 - Live-provider A/B and the end-to-end inference transcript require fresh authorization for spend. The evidence above uses a scripted local provider, not live inference.
 - `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.
+
+## SPEC-0008 §8 local rows (audit)
+
+| Row | Result | Evidence |
+|---|---|---|
+| Local explicit vs relative location, concurrent cd/read/edit, branch restore | PASS | `TestLiveReadLocationAndCodemode`, `TestMutationLeaseAndTransitionTimeout`, `TestRestoringEarlierFactKeepsRevisionMonotonic`, concurrent `/cd` project binding test |
+| Foreground/background/promotion, cancel-after-transfer | PASS after fix | Promotion and completion were untested and completion notices did not exist; `TestLivePromotedJobKeepsItsIDAndQueuesOneCompletionNotice` (fails without the change) |
+| Noisy streams, giant lines, quota/rotation, cursor gaps | PASS | `internal/jobs` log tests (`TestLogSegmentRotation`, `TestLogTailGapAndPaging`, `TestSlowOutputLargerThanPipe`) |
+| Descendant kill, parent SIGKILL, reload/shutdown | PASS | `TestKillProcessGroup`, `TestLiveCrashReclaimsOrphanedJob`, `TestLiveSessionEndTerminatesJobs` |
+| Notification not consumed by inspection | PASS | the notice is a frame delivered on the next prompt; viewing `job://` does not touch it (same test) |
+| Stale PID cannot control a reused process | PASS | `TestUnverifiedIdentityNeverSignals`, `TestSweepKeepsAnotherLiveSession` |
+| PTY keys, remote/SSH, worktrees | Slice 2 (W3) | not claimed |
+
+Not implemented from SPEC-0008 §6: `jobs wait until=output`, a `signal` argument on `kill`, `stream` selection and `failedToStart`/`stopping` as distinct states; the state label set is running, exited, cancelled, timedOut.
