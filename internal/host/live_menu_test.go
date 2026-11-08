@@ -483,3 +483,33 @@ func TestLiveTrustPanelAddsAndRemovesARulePersistently(t *testing.T) {
 	}
 	s.waitFor("No trust rules", 10*time.Second)
 }
+
+func TestLiveSessionsPanelMessagesALivePeerAndTogglesPolicy(t *testing.T) {
+	s := startTUI(t, t.TempDir())
+	runtime := os.Getenv("XDG_RUNTIME_DIR")
+	receiver := startLiveSession(t, runtime, nil)
+	waitForRecords(t, runtime, 2)
+	s.openHub()
+	s.keys("Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Enter")
+	list := s.waitFor("Workbench › Sessions", 10*time.Second)
+	if !strings.Contains(list, "m message") {
+		t.Fatalf("the sessions panel does not offer its actions:\n%s", list)
+	}
+	s.waitFor("idle", 15*time.Second)
+	s.capture("sessions-panel")
+	s.keys("t")
+	s.waitFor("trust:", 10*time.Second)
+	s.waitFor("trusted", 10*time.Second)
+	s.keys("t")
+	s.waitFor("untrust:", 10*time.Second)
+	s.keys("b")
+	s.waitFor("blocked", 10*time.Second)
+	s.keys("b")
+	s.waitFor("unblock:", 10*time.Second)
+	s.keys("m")
+	s.waitFor("Message to", 10*time.Second)
+	s.typeSlowly("PANEL-MSG")
+	s.keys("Enter")
+	s.waitFor("accepted by", 15*time.Second)
+	waitForRequest(t, receiver, "PANEL-MSG")
+}
