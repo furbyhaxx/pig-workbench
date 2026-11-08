@@ -114,7 +114,18 @@ func (a *app) trackCall(_ sdk.Context, data map[string]any) (any, error) {
 		clear(s.runningCalls)
 	}
 	s.runningCalls[id] = name
+	if len(s.callRoots) >= 512 {
+		clear(s.callRoots)
+	}
+	s.callRoots[id] = s.location.Current().Cwd
 	return nil, nil
+}
+
+// callRoot is the working root a call resolved against; absent for calls from before this runtime.
+func (s *session) callRoot(id string) string {
+	s.viewsMu.Lock()
+	defer s.viewsMu.Unlock()
+	return s.callRoots[id]
 }
 
 func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {

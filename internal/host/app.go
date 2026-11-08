@@ -45,6 +45,7 @@ type session struct {
 	viewsMu             sync.Mutex
 	pendingViews        map[string][]pendingView
 	runningCalls        map[string]string
+	callRoots           map[string]string
 	guideInjected       map[string]string
 	jobRegistry         *jobs.Registry
 	jobOwner            *jobs.OwnerHandle
@@ -206,6 +207,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		snapshots:     snapshots,
 		pendingViews:  make(map[string][]pendingView),
 		runningCalls:  make(map[string]string),
+		callRoots:     make(map[string]string),
 		guideInjected: make(map[string]string),
 		id:            id,
 		generation:    generation,
