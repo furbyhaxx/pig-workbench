@@ -30,6 +30,9 @@ type contextFrameState struct {
 	staged    map[string]stagedView
 	scope     frames.DeliveryScope
 	nextEvent uint64
+	// steered holds frames already sent as a boundary steer but not yet confirmed in context,
+	// so concurrent tool calls cannot send the same pending frame twice.
+	steered map[string]bool
 }
 
 func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) {
@@ -250,8 +253,12 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		}
 	}
 	var withdrawals []string
+	explicitTargets, _ := data["workbenchInstructionTargets"].([]string)
+	// A tool call without its own file targets (codemode, bash) only adds cwd-derived scope; it must not
+	// withdraw what an explicit target selected, or a nested call would lose its own instructions.
+	keepTouched := data["workbenchToolContext"] == true && len(explicitTargets) == 0
 	for key := range state.last {
-		if strings.HasPrefix(key, "instructions.") && !currentInstructionKeys[key] {
+		if strings.HasPrefix(key, "instructions.") && !currentInstructionKeys[key] && !keepTouched {
 			withdrawals = append(withdrawals, key)
 		}
 	}
@@ -315,6 +322,21 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			return nil, err
 		}
 		pending = append(pending, prompt...)
+	}
+	if delivery == "beforePrompt" {
+		state.steered = nil
+	} else {
+		if state.steered == nil {
+			state.steered = make(map[string]bool)
+		}
+		fresh := pending[:0:0]
+		for _, frame := range pending {
+			if !state.steered[frame.FrameID] {
+				state.steered[frame.FrameID] = true
+				fresh = append(fresh, frame)
+			}
+		}
+		pending = fresh
 	}
 	result := map[string]any{}
 	if data["workbenchToolContext"] == true {

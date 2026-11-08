@@ -625,3 +625,71 @@ func TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule(t *testing.T) {
 		t.Fatal("an allow rule must let the nested repository's instructions load")
 	}
 }
+
+func instructionTree(t *testing.T, root string, rules map[string]string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for dir, rule := range rules {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, dir, "AGENTS.md"), []byte(rule+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, dir, "x.txt"), []byte("x\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestLiveCodemodeParallelReadsDeliverTheUnionOfInstructions(t *testing.T) {
+	root := t.TempDir()
+	instructionTree(t, root, map[string]string{"a": "UNION-RULE-A applies.", "b": "UNION-RULE-B applies."})
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"codemode", map[string]any{"code": "const r = await Promise.all([tools.read({path:'a/x.txt'}), tools.read({path:'b/x.txt'})]); text(String(r.length));"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,codemode")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	for _, marker := range []string{"UNION-RULE-A", "UNION-RULE-B"} {
+		if got := strings.Count(last, marker); got != 1 {
+			t.Errorf("%s reached the model %d times, want exactly once", marker, got)
+		}
+	}
+}
+
+func TestLiveCodemodeCannotHideAMutationTargetFromTheInstructionBarrier(t *testing.T) {
+	root := t.TempDir()
+	instructionTree(t, root, map[string]string{"c": "HIDDEN-TARGET-RULE applies."})
+	write := "try { text(await tools.write({path:'c/new.txt', content:'made\\n'})); } catch (e) { text('REFUSED: ' + e.message); }"
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"codemode", map[string]any{"code": write}},
+		{"codemode", map[string]any{"code": write}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "write,codemode")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) < 2 || !strings.Contains(results[0], "instructionContextChanged") {
+		t.Fatalf("the nested write must be blocked with instructionContextChanged: %q", results)
+	}
+	if strings.Contains(results[1], "instructionContextChanged") {
+		t.Fatalf("the retry must pass once the instructions were delivered: %q", results[1])
+	}
+	if data, err := os.ReadFile(filepath.Join(root, "c", "new.txt")); err != nil || string(data) != "made\n" {
+		t.Fatalf("the retried write did not land: %v %q", err, data)
+	}
+}
