@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "approved"
-  revision: 10
+  revision: 11
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-08T19:32:26+01:00"
+  updated_at: "2026-11-08T22:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -41,7 +41,9 @@ document:
     - revision: 10
       reason: "Client cancellation needed a channel a busy request handler cannot block"
       changes: ["Added the workbench:v1:cancel channel for explicit cancel envelopes; cancel on workbench:v1:request is still accepted", "Client sends cancel for every non-discover call that ends without a reply and keeps a correlated reply that arrived before an emit error"]
-
+    - revision: 11
+      reason: "Implement the provider-progress channel the protocol already named"
+      changes: ["Added ProviderProgress, DecodeProgress and ProviderRequest.ReportProgress", "Workbench keeps the newest correlated note per request and shows it in /workbench resources"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -188,6 +190,7 @@ Public SDK wrappers must return typed errors, expose capability absence, documen
 | `Client.Call(ctx, endpoint, method, params, result, *CallOptions) error` | One synchronous, never-retried call; `*TransportError` carries the outcome. |
 | `Client.Register/Unregister` | Contribution admission and withdrawal with a `Receipt`. |
 | `Client.Serve(ext, ProviderHandler) (stop func(), error)` | Answers `resource.execute` and `fetch` requests addressed to this client. |
+| `ProviderRequest.ReportProgress(ctx, seq, message, completed, total)` | Advisory `provider-progress` note for one in-flight request; newest `seq` wins, bounded to 200 characters, never answered. |
 | `Client.Close()` | Unsubscribes once; does not preempt an Emit already running elsewhere. |
 | Typed payloads | `Discovery`, `Limits`, `Receipt`, `ResourceRequest/Result`, `TextPage`, `ResourceEntry`, `Selector`, `LineRange`, `FetchRequest/Result`, `ProviderRequest`, `Error`. |
 

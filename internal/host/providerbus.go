@@ -31,8 +31,11 @@ const maxProviderInFlight = 8
 const providerDrainBound = 5 * time.Second
 
 type providerPending struct {
-	to      api.Identity
-	replies []api.Reply
+	to             api.Identity
+	registrationID string
+	replies        []api.Reply
+	// progress is the newest accepted note; older ones are overwritten, so state per request stays one value.
+	progress *api.ProviderProgress
 }
 
 // providerBus is Workbench's synchronous caller for registered contributions.
@@ -186,6 +189,46 @@ func (b *providerBus) onReply(_ sdk.Context, value any) error {
 	return nil
 }
 
+// onProgress records the newest note for the request it names. It only copies into the pending slot and
+// returns: it never emits, never waits and never calls the provider, so it cannot re-enter a running handler.
+func (b *providerBus) onProgress(_ sdk.Context, value any) error {
+	note, err := api.DecodeProgress(value)
+	if err != nil {
+		return nil
+	}
+	if note.To != b.identity || note.SessionID != b.sessionID || note.Generation != b.generation {
+		return nil
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	pending := b.pending[note.RequestID]
+	if pending == nil || pending.to != note.From {
+		return nil
+	}
+	if pending.progress != nil && note.Seq <= pending.progress.Seq {
+		return nil
+	}
+	pending.progress = &note
+	return nil
+}
+
+// activity reports the operations running against one registration and the newest progress note among them.
+func (b *providerBus) activity(registrationID string) (running int, latest *api.ProviderProgress) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, pending := range b.pending {
+		if pending.registrationID != registrationID {
+			continue
+		}
+		running++
+		if pending.progress != nil && (latest == nil || pending.progress.Seq > latest.Seq) {
+			note := *pending.progress
+			latest = &note
+		}
+	}
+	return running, latest
+}
+
 // call emits one provider request and decodes the single reply into result.
 func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID, method string, params, result any, budget time.Duration) error {
 	if err := ctx.Err(); err != nil {
@@ -226,7 +269,7 @@ func (b *providerBus) call(ctx context.Context, to api.Identity, registrationID,
 	if bound, ok := ctx.Value(hostRequestKey{}).(sdk.Context); ok {
 		emitter = bound
 	}
-	pending := &providerPending{to: to}
+	pending := &providerPending{to: to, registrationID: registrationID}
 	b.mu.Lock()
 	b.pending[request.ID] = pending
 	b.mu.Unlock()
@@ -283,4 +326,24 @@ func (b *providerBus) cancelRemote(to api.Identity, requestID string) {
 	}
 	params, _ := json.Marshal(map[string]string{"requestId": requestID})
 	_ = b.cancelEvents.Emit(api.ProviderCancelChannel, api.ProviderRequest{Version: 1, ID: hex.EncodeToString(token[:]), SessionID: b.sessionID, Generation: b.generation, From: b.identity, To: to, Method: "cancel", Params: params})
+}
+
+// activityText describes running operations for an inspector line; it is empty while the provider is idle.
+func (b *providerBus) activityText(registrationID string) string {
+	running, latest := b.activity(registrationID)
+	if running == 0 {
+		return ""
+	}
+	text := fmt.Sprintf("  [running %d", running)
+	if latest != nil {
+		if latest.Message != "" {
+			text += ": " + noticeText(latest.Message, api.MaxProgressMessage)
+		}
+		if latest.Total > 0 {
+			text += fmt.Sprintf(" (%d/%d)", latest.Completed, latest.Total)
+		} else if latest.Completed > 0 {
+			text += fmt.Sprintf(" (%d)", latest.Completed)
+		}
+	}
+	return text + "]"
 }

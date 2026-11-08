@@ -2,6 +2,7 @@ package host
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -138,5 +139,52 @@ func TestWithdrawGivesUpAfterTheBoundAndReportsIt(t *testing.T) {
 	}
 	if bus.withdraw("reg", 30*time.Millisecond) {
 		t.Fatal("a hung operation was reported as drained")
+	}
+}
+
+func TestProviderProgressIsBoundedCorrelatedAndNewestWins(t *testing.T) {
+	bus := newProviderBus("session", "generation", nil)
+	owner := api.Identity{Owner: "build", Instance: "i-1"}
+	other := api.Identity{Owner: "other", Instance: "i-9"}
+	bus.pending["req-1"] = &providerPending{to: owner, registrationID: "reg-1"}
+	bus.pending["req-2"] = &providerPending{to: other, registrationID: "reg-2"}
+	note := func(request string, from api.Identity, seq int, message string) map[string]any {
+		return map[string]any{"v": 1, "sessionId": "session", "generation": "generation", "from": from, "to": bus.identity, "requestId": request, "seq": seq, "message": message, "completed": seq, "total": 10}
+	}
+	deliver := func(value any) {
+		t.Helper()
+		if err := bus.onProgress(sdk.Context{}, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	deliver(note("req-1", owner, 2, "second"))
+	deliver(note("req-1", owner, 1, "stale"))
+	if got := bus.pending["req-1"].progress; got == nil || got.Message != "second" {
+		t.Fatalf("an older note replaced a newer one: %+v", got)
+	}
+	deliver(note("req-1", other, 3, "spoofed"))
+	deliver(note("req-gone", owner, 4, "late"))
+	deliver(note("req-1", owner, 3, "bad\x1b[31m"))
+	deliver(map[string]any{"v": 1, "seq": 9})
+	if got := bus.pending["req-1"].progress; got.Message != "second" {
+		t.Fatalf("invalid or foreign progress updated retained state: %+v", got)
+	}
+	if bus.pending["req-2"].progress != nil {
+		t.Fatal("progress leaked into another request")
+	}
+	deliver(note("req-1", owner, 4, strings.Repeat("x", api.MaxProgressMessage+1)))
+	if got := bus.pending["req-1"].progress; got.Seq != 2 {
+		t.Fatalf("oversized message accepted: %+v", got)
+	}
+	running, latest := bus.activity("reg-1")
+	if running != 1 || latest == nil || latest.Message != "second" {
+		t.Fatalf("activity = %d %+v", running, latest)
+	}
+	if text := bus.activityText("reg-1"); !strings.Contains(text, "second") || !strings.Contains(text, "2/10") {
+		t.Fatalf("activity text = %q", text)
+	}
+	if bus.activityText("reg-unknown") != "" {
+		t.Fatal("idle registration reported activity")
 	}
 }

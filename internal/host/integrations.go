@@ -108,7 +108,7 @@ func (s *session) resourcesText(scheme string) (string, bool) {
 			continue
 		}
 		for _, name := range descriptor.Schemes {
-			contributed[name] = fmt.Sprintf("contributed by %s  [%s]  %s", registration.Owner, strings.Join(descriptor.Capabilities, ","), noticeText(descriptor.Summary, 120))
+			contributed[name] = fmt.Sprintf("contributed by %s  [%s]  %s%s", registration.Owner, strings.Join(descriptor.Capabilities, ","), noticeText(descriptor.Summary, 120), s.bus.activityText(registration.RegistrationID))
 		}
 	}
 	var out strings.Builder

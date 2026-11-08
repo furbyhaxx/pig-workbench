@@ -337,3 +337,29 @@ func TestLiveUnregisterStopsAndDrainsARunningProviderRead(t *testing.T) {
 	}
 	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
 }
+
+func TestLiveProviderProgressShowsInTheResourcesInspectorWhileRunning(t *testing.T) {
+	fixture, gate := startSlowProviderRead(t, nil)
+	waitForFile(t, gate+".entered", 10*time.Second, "provider entry")
+	if _, err := os.Stat(gate + ".progress-error"); err == nil {
+		t.Fatal("provider could not send progress")
+	}
+	fixture.send("inspect", "prompt", "/workbench resources kb")
+	notice := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), "kb://")
+	})
+	message := fmt.Sprint(notice["message"])
+	if !strings.Contains(message, "running 1: scanning index (3/10)") {
+		t.Fatalf("inspector did not show live progress: %s", message)
+	}
+	fixture.sendRaw("abort", "abort", nil)
+	waitForFile(t, gate+".stopped", 8*time.Second, "cooperative stop")
+	fixture.wait(func(e map[string]any) bool { return e["type"] == "agent_end" })
+	fixture.send("after", "prompt", "/workbench resources kb")
+	idle := fixture.wait(func(e map[string]any) bool {
+		return e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), "kb://") && !strings.Contains(fmt.Sprint(e["message"]), "scanning")
+	})
+	if strings.Contains(fmt.Sprint(idle["message"]), "running") {
+		t.Fatalf("finished operation still reported as running: %v", idle["message"])
+	}
+}

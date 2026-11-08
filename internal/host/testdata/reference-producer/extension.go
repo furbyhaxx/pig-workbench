@@ -1,7 +1,6 @@
 package fixture
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -196,7 +195,7 @@ func fetch(request api.FetchRequest) (any, *api.Error) {
 	}
 }
 
-func handle(_ sdk.Context, request api.ProviderRequest) (any, *api.Error) {
+func handle(hostCtx sdk.Context, request api.ProviderRequest) (any, *api.Error) {
 	switch request.Method {
 	case "resource.execute":
 		var params api.ResourceRequest
@@ -204,7 +203,7 @@ func handle(_ sdk.Context, request api.ProviderRequest) (any, *api.Error) {
 			return nil, &api.Error{Code: "invalidRequest", Message: "bad resource request"}
 		}
 		if gate := os.Getenv("WORKBENCH_REFERENCE_CANCEL_PROBE"); gate != "" && params.URI == "kb://slow/probe" && params.Operation == "read" {
-			return awaitStop(gate, request.Context())
+			return awaitStop(gate, hostCtx, request)
 		}
 		return execute(params)
 	case "fetch":
@@ -633,7 +632,11 @@ func probeFrames(ctx sdk.Context, active *api.Client, binding api.Discovery, reg
 }
 
 // awaitStop blocks like a long query and records why a cooperative handler was told to stop.
-func awaitStop(gate string, ctx context.Context) (any, *api.Error) {
+func awaitStop(gate string, hostCtx sdk.Context, request api.ProviderRequest) (any, *api.Error) {
+	ctx := request.Context()
+	if err := request.ReportProgress(hostCtx, 1, "scanning index", 3, 10); err != nil {
+		_ = os.WriteFile(gate+".progress-error", []byte(err.Error()), 0600)
+	}
 	_ = os.WriteFile(gate+".entered", []byte("ready"), 0600)
 	select {
 	case <-ctx.Done():
