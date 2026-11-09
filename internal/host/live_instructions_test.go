@@ -769,3 +769,84 @@ func TestLiveNestedInstructionsSurviveTheNextPrompt(t *testing.T) {
 		t.Fatalf("the write did not land: %v %q", err, data)
 	}
 }
+
+// TestLiveEqualBytesInUserAndProjectRootsAreNotMerged covers SPEC-0007 §10: identical text in a
+// user root and a project root stays two frames, because sameness is never inferred from bytes.
+func TestLiveEqualBytesInUserAndProjectRootsAreNotMerged(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	const rule = "Identical rule text that appears twice.\n"
+	if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{filepath.Join(root, "agent", "AGENTS.md"), filepath.Join(root, "AGENTS.md")} {
+		if err := os.WriteFile(path, []byte(rule), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "AGENTS.md"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("script", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	body := strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`).Replace(recorder.bodies[0])
+	if got := strings.Count(body, `src="instructions.steering"`); got != 2 {
+		t.Fatalf("identical bytes in two roots produced %d steering frames, want 2:\n%s", got, body)
+	}
+	if got := strings.Count(body, "Identical rule text that appears twice."); got != 2 {
+		t.Fatalf("rule text delivered %d times, want 2", got)
+	}
+}
+
+// TestLiveCdIntoANestedTreeDeliversItsInstructionsWithoutRepeatingTheRoot covers a location change
+// between instruction deliveries: the new nearest file arrives once, the root view is not resent.
+func TestLiveCdIntoANestedTreeDeliversItsInstructionsWithoutRepeatingTheRoot(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "sub"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{"AGENTS.md": "ROOT-RULE-MARKER\n", "a.txt": "a\n", filepath.Join("sub", "AGENTS.md"): "SUB-RULE-MARKER\n", filepath.Join("sub", "x.txt"): "x\n"}
+	for name, text := range files {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": "a.txt"}},
+		{"cd", map[string]any{"path": "sub"}},
+		{"read", map[string]any{"path": "x.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,cd")
+	fixture.send("script", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 4 {
+		t.Fatalf("got %d requests, want 4", len(recorder.bodies))
+	}
+	last := recorder.bodies[3]
+	if !strings.Contains(last, "SUB-RULE-MARKER") {
+		t.Fatalf("nearest instructions of the new location never arrived")
+	}
+	if strings.Contains(recorder.bodies[1], "SUB-RULE-MARKER") {
+		t.Fatalf("nested instructions arrived before the location changed")
+	}
+	if got := strings.Count(last, "ROOT-RULE-MARKER"); got != 1 {
+		t.Fatalf("root rule appears %d times after the location change, want 1", got)
+	}
+	if got := strings.Count(last, "SUB-RULE-MARKER"); got != 1 {
+		t.Fatalf("nested rule appears %d times, want 1", got)
+	}
+}
