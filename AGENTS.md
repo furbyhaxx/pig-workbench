@@ -3,7 +3,8 @@
 Go factory extension for PiG: enhanced builtin tools, working locations, harness frames, questionnaires and shell jobs. Exclude subagents, agent definitions and task/todo tracking.
 
 ## Layout
-- `extension.go` — `Extension()` factory, package `workbench`. Registration and wiring only; feature logic goes in `internal/<feature>/`.
+- `extensions/pig-workbench/extension.go` — `Extension()` factory, package `workbench`, its own module (requires the root module via `go.work`). Registration and wiring only; feature logic goes in `internal/<feature>/`.
+- `package.json` + `go.work` — PiG Package manifest (`pi.extensions`), so `pig install git:https://github.com/furbyhaxx/pig-workbench` works. Do not move the factory back to the root.
 - `internal/` — feature packages; each gets its own AGENTS.md when created. `internal/host/` owns SDK adapters and composition.
 - `docs/` — human-facing product documentation; settings changes cross-update `docs/configuration.md`.
 - `api/` — public v1 protocol types; keep wire changes aligned with `.project/specs/0001-extension-services.md` and consumer fixtures.
@@ -11,12 +12,12 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 - `.tmp/` — generated modfile for direct `go` commands; git-ignored.
 
 ## Commands
-- Gate: `just check` (gofmt, vet, test, `pig install . --validate-only --json`). Concurrency changes: `just race`.
+- Gate: `just check` (gofmt, vet, test, PiG build of `./extensions/pig-workbench`, `pig package validate .`). Concurrency changes: `just race`.
 - Don't run bare `go build`/`go test`; the SDK resolves only through the staged copy. Use the Justfile recipes or `-modfile=.tmp/go.mod` after `just _modfile`.
-- Load live: `pig -e .`; isolated: `pig --no-session -ne -e .`.
+- Load live: `pig -e ./extensions/pig-workbench`; isolated: `pig --no-session -ne -e ./extensions/pig-workbench`. Install: `pig install git:https://github.com/furbyhaxx/pig-workbench`.
 
 ## Identity
-- Extension name `pig-workbench` = directory name = `Name` in `extension.go`; registration fails on mismatch.
+- Extension name `pig-workbench` = directory `extensions/pig-workbench` = `Name` in its `extension.go` = package.json member; registration fails on mismatch.
 - Command family is `/workbench`, never `/pig-workbench`. Companion top-level commands (`/tools`, `/remote`, `/cd`, `/answer`, `/tldr`, …) call the same handlers as their `/workbench` subcommand.
 - Tools keep builtin names (`read`, `edit`, `write`, `grep`, `find`, `ls`, `bash`) plus `cd`, `jobs`, `ask_user`. One `jobs` tool; never `jobs_*` siblings.
 

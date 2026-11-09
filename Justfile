@@ -1,5 +1,8 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+# The root go.work only serves PiG's package build; the checks use the staged modfile instead.
+export GOWORK := "off"
+
 tmp := justfile_directory() + "/.tmp"
 
 # Probe modules in .project are not part of the product build.
@@ -50,8 +53,12 @@ windows: _modfile
 		(cd "$dir" && WINEDEBUG=-all WINEPREFIX="{{tmp}}/wineprefix" wine "{{tmp}}/wintest/$n.exe" >/dev/null) || { echo "FAIL under wine: $n"; exit 1; }; \
 	done
 
-validate:
-	pig install . --validate-only --json
+validate: build
+	pig package validate . --json
+
+# Build and load the installable extension through PiG, as an install would.
+build:
+	pig --no-session --offline -ne -e ./extensions/pig-workbench --list-models synthetic > /dev/null
 
 # Verify the COMMITTED tree builds and passes in a throwaway worktree.
 # Guards against committing code that imports still-untracked files.

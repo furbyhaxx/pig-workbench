@@ -6,11 +6,17 @@ A [PiG](https://github.com/MichaelKinsy/PiG) extension for coding tools, resourc
 
 ## Get started
 
-Install Go, [PiG](https://github.com/MichaelKinsy/PiG) and `just`, then from this repository:
+Install it into PiG as a Package:
+
+```sh
+pig install git:https://github.com/furbyhaxx/pig-workbench
+```
+
+To develop, install Go, [PiG](https://github.com/MichaelKinsy/PiG) and `just`, then from this repository:
 
 ```sh
 just check   # format check, vet, tests and PiG validation
-pig -e .     # load the extension in a session
+pig -e ./extensions/pig-workbench   # load the extension in a session
 ```
 
 In the TUI, `/workbench` opens a menu of every Workbench view; typing narrows it, Enter opens one and Esc returns to the menu. `/workbench settings` opens an editable settings panel. In RPC and print mode the same commands print plain text. Use `/workbench show` for a text overview, `/tools` to inspect tool schemas and `/workbench settings catalog` to see which settings are applied. See [tools](docs/tools.md), [configuration](docs/configuration.md), [projects](docs/projects.md) (with a fully commented `Project.toml`) and [extension services](docs/extension-services.md) for contracts and examples.

@@ -1,0 +1,10 @@
+{
+  "name": "pig-workbench",
+  "version": "0.1.0",
+  "description": "PiG extension: enhanced builtin tools, working locations, harness frames, questionnaires and shell jobs",
+  "repository": "github:furbyhaxx/pig-workbench",
+  "keywords": ["pig-package"],
+  "pi": {
+    "extensions": ["extensions/pig-workbench"]
+  }
+}
