@@ -37,6 +37,19 @@ live-eval pattern="TestLiveEval": _modfile
 	mkdir -p "{{justfile_directory()}}/.tmp/live-eval"
 	DEEPSEEK_API_KEY="$(pig auth print-api-key --provider deepseek)" LIVE_EVAL_OUT="${LIVE_EVAL_OUT:-{{justfile_directory()}}/.tmp/live-eval}" go test -tags='integration liveeval' -modfile="{{tmp}}/go.mod" ./internal/host -run '{{pattern}}' -count=1 -v -timeout 30m
 
+# Cross-vet for windows/amd64 and, when wine is installed, run the test binaries of the packages
+# that are expected to pass there. This is not a Windows release gate (SPEC-0008: Windows is not a supported platform yet).
+windows: _modfile
+	GOOS=windows GOARCH=amd64 go vet -modfile="{{tmp}}/go.mod" ./...
+	GOOS=windows GOARCH=amd64 go vet -tags=integration -modfile="{{tmp}}/go.mod" ./...
+	command -v wine >/dev/null || { echo "wine not installed: compile-only"; exit 0; }
+	mkdir -p "{{tmp}}/wintest"
+	for n in api contribution frames hashline htmlread jobs lifecycle location pathdisplay presentation project prompt skills ask; do \
+		dir=internal/$n; test -d "$dir" || dir=$n; \
+		GOOS=windows GOARCH=amd64 go test -c -modfile="{{tmp}}/go.mod" -o "{{tmp}}/wintest/$n.exe" "./$dir"; \
+		(cd "$dir" && WINEDEBUG=-all WINEPREFIX="{{tmp}}/wineprefix" wine "{{tmp}}/wintest/$n.exe" >/dev/null) || { echo "FAIL under wine: $n"; exit 1; }; \
+	done
+
 validate:
 	pig install . --validate-only --json
 

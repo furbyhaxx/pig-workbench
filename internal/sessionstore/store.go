@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"syscall"
 )
 
 var (
@@ -63,18 +62,6 @@ type Result struct {
 // JournalPath names the journal of one bucket inside the target's project directory.
 func JournalPath(bucket, target string) string {
 	return filepath.Join(filepath.Dir(target), "storage-"+filepath.Base(bucket)+".journal.json")
-}
-
-func device(path string) (uint64, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0, err
-	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok {
-		return 0, errors.New("filesystem identity is unavailable on this platform")
-	}
-	return uint64(stat.Dev), nil
 }
 
 func writeJournal(path string, j journal) error {
