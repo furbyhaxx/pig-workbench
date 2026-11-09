@@ -5,7 +5,7 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "approved"
-  revision: 9
+  revision: 10
   created_at: "2026-11-03T10:00:00+01:00"
   updated_at: "2026-11-09T16:00:00+01:00"
   created_by: "orchestrator"
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "Creation and joining were specified but had no interface"
       changes: ["§3.3.1 defines the create/join operations, the commands, the TUI panel and the once-per-repository offer; recognition reads the pig.projectId marker before matching"]
+    - revision: 10
+      reason: "User report 09.11.2026: joining the project a checkout already declares looped on a raw file error"
+      changes: ["§3.3.1: joining a project the checkout's Project.toml already declares writes nothing and succeeds; joining another project over an existing Project.toml is refused naming the declared project, for file and marker modes", "The panel keeps the typed value after a failed submit and shows the whole error", "Migration: none"]
 
 ---
 
@@ -113,6 +116,7 @@ This answers "which project am I in?" whenever a session starts or `cd` moves:
 
 - **Create** at the current repository with a slug (lowercase kebab, unique in the registry), optional name and description: writes `.project/Project.toml` with a generated `prj-` id (never replacing an existing file) and registers the checkout.
 - **Join** a registered project, **by file** (writes `Project.toml` with the project's id and this repository's component slug) or **by marker** (only `git config --local pig.projectId`, no file). Recognition reads the marker before it matches by root commit, remote or location.
+- A checkout whose `Project.toml` already declares the project is a member: joining it writes nothing and says so. One that declares a *different* project is refused with that project named, because a found `Project.toml` takes precedence over the marker and is never replaced.
 - **Interface:** `/workbench projects list|create|join|example` in every mode, and in the TUI a panel for the same operations. A directory in `global` that is a git repository gets one notice per repository (a claim file under the XDG state directory), never an automatic creation.
 - A `Project.toml` found during recognition is copied into the registry and the checkout recorded once; a slug owned by another project is refused.
 

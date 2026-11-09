@@ -25,12 +25,15 @@ func (s *session) joinProject(ctx context.Context, ref string, mode project.Join
 	if err != nil {
 		return "", err
 	}
-	joined, err := s.projects.Join(ctx, s.location.Current().Cwd, entry.Project.ID, mode, component)
+	joined, changed, err := s.projects.Join(ctx, s.location.Current().Cwd, entry.Project.ID, mode, component)
 	if err != nil {
 		return "", err
 	}
 	how := "wrote .project/Project.toml"
-	if mode == project.JoinMarker {
+	switch {
+	case !changed:
+		how = "this checkout already declares it in its Project.toml, so nothing was written"
+	case mode == project.JoinMarker:
 		how = "recorded the local git marker pig.projectId (nothing committed, no file written)"
 	}
 	return fmt.Sprintf("Joined project %s (%s): %s.", joined.Project.Slug, joined.Project.ID, how), nil

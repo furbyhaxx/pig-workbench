@@ -63,7 +63,13 @@ func fitLine(text string, width int) string {
 func panelFrame(title string, body kit.Node, status, hint string, width int) *kit.Container {
 	children := []kit.Node{kit.NewDynamicBorder("borderAccent"), kit.NewText(fitLine(title, width), 1, 0), body}
 	if status != "" {
-		children = append(children, kit.NewText(fitLine(status, width), 1, 0))
+		lines := wrapLines(status, width)
+		if len(lines) > 4 {
+			lines = append(lines[:3], fitLine(lines[3]+" …", width))
+		}
+		for _, line := range lines {
+			children = append(children, kit.NewText(fitLine(line, width), 1, 0))
+		}
 	}
 	children = append(children, kit.NewText(fitLine(hint, width), 1, 0), kit.NewDynamicBorder("borderAccent"))
 	return kit.NewContainer(children...)

@@ -133,43 +133,62 @@ func (r *Registry) CreateProject(ctx context.Context, dir, slug, name, descripti
 // Join makes the repository containing dir a component of the registered project id. JoinFile writes a Project.toml
 // that lists the project's other components; JoinMarker records only the git marker and needs a git repository.
 // componentSlug names this repository for JoinFile; empty derives it from the directory name.
-func (r *Registry) Join(ctx context.Context, dir, id string, mode JoinMode, componentSlug string) (Entry, error) {
+// A checkout whose Project.toml already declares the project is registered without writing (changed is false); one
+// that declares another project is refused, because a Project.toml wins over the marker and is never replaced.
+func (r *Registry) Join(ctx context.Context, dir, id string, mode JoinMode, componentSlug string) (entry Entry, changed bool, err error) {
 	existing, err := r.entry(id)
 	if err != nil {
-		return Entry{}, err
+		return Entry{}, false, err
 	}
 	root, err := repositoryTop(ctx, dir)
 	if err != nil {
-		return Entry{}, err
+		return Entry{}, false, err
+	}
+	repository, err := gitRoot(ctx, root)
+	if err != nil {
+		return Entry{}, false, err
+	}
+	declared, declaredRoot, hasFile, err := findProjectFile(ctx, root, repository)
+	if err != nil {
+		return Entry{}, false, err
+	}
+	if hasFile && declared.ID != id {
+		return Entry{}, false, fmt.Errorf("%s already declares project %s (%s) in its Project.toml, which takes precedence and is never replaced; edit that file by hand to change projects", declaredRoot, declared.Slug, declared.ID)
 	}
 	project := existing.Project
-	switch mode {
-	case JoinMarker:
-		if top, err := gitRoot(ctx, root); err != nil {
-			return Entry{}, err
-		} else if top == "" {
-			return Entry{}, errors.New("the marker lives in git config and this directory is not in a git repository; join by file instead")
+	switch {
+	case hasFile:
+		// Already a member through its file: nothing to write, only the registration below.
+	case mode == JoinMarker:
+		if repository == "" {
+			return Entry{}, false, errors.New("the marker lives in git config and this directory is not in a git repository; join by file instead")
 		}
 		if output, err := gitCommand(ctx, root, "config", "--local", markerKey, id).CombinedOutput(); err != nil {
-			return Entry{}, fmt.Errorf("record the %s marker: %w: %s", markerKey, err, strings.TrimSpace(string(output)))
+			return Entry{}, false, fmt.Errorf("record the %s marker: %w: %s", markerKey, err, strings.TrimSpace(string(output)))
 		}
-	case JoinFile:
+		changed = true
+	case mode == JoinFile:
 		if componentSlug == "" {
 			componentSlug = SlugFromName(filepath.Base(root))
 		}
 		if project, err = joinedDocument(existing.Project, componentSlug); err != nil {
-			return Entry{}, err
+			return Entry{}, false, err
 		}
 		if _, err := Write(root, project); err != nil {
-			return Entry{}, err
+			return Entry{}, false, err
 		}
+		changed = true
 	default:
-		return Entry{}, fmt.Errorf("unknown join mode %q", mode)
+		return Entry{}, false, fmt.Errorf("unknown join mode %q", mode)
+	}
+	if hasFile {
+		project, root = declared, declaredRoot
 	}
 	if err := r.Register(project, locationAt(root)); err != nil {
-		return Entry{}, err
+		return Entry{}, false, err
 	}
-	return r.entry(id)
+	entry, err = r.entry(id)
+	return entry, changed, err
 }
 
 func (r *Registry) entry(id string) (Entry, error) {

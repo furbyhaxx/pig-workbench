@@ -93,7 +93,7 @@ func TestJoinByMarkerRecognisesRepositoryWithoutAnyFile(t *testing.T) {
 	if detection, _ := registry.Detect(context.Background(), foreign); detection.ProjectID != "global" {
 		t.Fatalf("unrelated repository not global: %+v", detection)
 	}
-	if _, err := registry.Join(context.Background(), foreign, entry.Project.ID, JoinMarker, ""); err != nil {
+	if _, _, err := registry.Join(context.Background(), foreign, entry.Project.ID, JoinMarker, ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(foreign, ".project")); !os.IsNotExist(err) {
@@ -104,10 +104,10 @@ func TestJoinByMarkerRecognisesRepositoryWithoutAnyFile(t *testing.T) {
 		t.Fatalf("marker not honoured: %+v %v", detection, err)
 	}
 	plain := t.TempDir()
-	if _, err := registry.Join(context.Background(), plain, entry.Project.ID, JoinMarker, ""); err == nil {
+	if _, _, err := registry.Join(context.Background(), plain, entry.Project.ID, JoinMarker, ""); err == nil {
 		t.Fatal("marker join accepted outside git")
 	}
-	if _, err := registry.Join(context.Background(), foreign, "prj-unknown", JoinMarker, ""); err == nil {
+	if _, _, err := registry.Join(context.Background(), foreign, "prj-unknown", JoinMarker, ""); err == nil {
 		t.Fatal("joined an unregistered project")
 	}
 }
@@ -126,7 +126,7 @@ func TestJoinByFileListsTheOtherComponents(t *testing.T) {
 	}
 	second := filepath.Join(t.TempDir(), "Second Repo")
 	newTestRepository(t, second)
-	joined, err := registry.Join(context.Background(), second, entry.Project.ID, JoinFile, "")
+	joined, _, err := registry.Join(context.Background(), second, entry.Project.ID, JoinFile, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,5 +187,45 @@ func TestObserveRegistersAProjectFileOnceAndRefreshesIt(t *testing.T) {
 	}
 	if err := registry.Observe(context.Background(), other); err == nil {
 		t.Fatal("a slug owned by another project was registered")
+	}
+}
+
+func TestJoinAProjectAlreadyDeclaredHereIsIdempotentAndAnotherOneIsRefusedPlainly(t *testing.T) {
+	requireTestGit(t)
+	registry, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := filepath.Join(t.TempDir(), "repo")
+	newTestRepository(t, repo)
+	created, err := registry.CreateProject(context.Background(), repo, "home", "Home", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(filepath.Join(repo, ".project", "Project.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, mode := range []JoinMode{JoinFile, JoinMarker} {
+		entry, changed, err := registry.Join(context.Background(), repo, created.Project.ID, mode, "home")
+		if err != nil || changed || entry.Project.ID != created.Project.ID {
+			t.Fatalf("joining the project this checkout already declares (%s) = %+v, %v", mode, entry, err)
+		}
+	}
+	after, _ := os.ReadFile(filepath.Join(repo, ".project", "Project.toml"))
+	if string(before) != string(after) {
+		t.Fatal("an idempotent join rewrote the Project.toml")
+	}
+	foreign := filepath.Join(t.TempDir(), "foreign")
+	newTestRepository(t, foreign)
+	second, err := registry.CreateProject(context.Background(), foreign, "second", "Second", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, mode := range []JoinMode{JoinFile, JoinMarker} {
+		_, _, err := registry.Join(context.Background(), repo, second.Project.ID, mode, "x")
+		if err == nil || !strings.Contains(err.Error(), "already declares project home") || strings.Contains(err.Error(), "link") {
+			t.Fatalf("joining a different project over an existing Project.toml (%s) = %v", mode, err)
+		}
 	}
 }

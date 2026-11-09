@@ -706,6 +706,81 @@ func TestLiveProjectsPanelJoinsARegisteredProjectByMarker(t *testing.T) {
 	}
 }
 
+// Joining the project this checkout already declares (just created here) completes instead of looping on a raw file error.
+func TestLiveProjectsPanelJoinOfTheProjectDeclaredHereCompletes(t *testing.T) {
+	root := t.TempDir()
+	gitInit(t, root)
+	s := startTUI(t, root)
+	s.openHub()
+	s.typeSlowly("projects")
+	s.keys("Enter")
+	s.waitFor("+ New project here", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("Slug (lowercase, kebab) (1/3)", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("Name (optional) (2/3)", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("Description (optional) (3/3)", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("Created project", 15*time.Second)
+	before, err := os.ReadFile(filepath.Join(root, ".project", "Project.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.keys("Down", "Enter")
+	s.waitFor("Join by file", 10*time.Second)
+	s.keys("Enter")
+	done := s.waitFor("already declares it", 15*time.Second)
+	if strings.Contains(done, "Component slug") || strings.Contains(done, "file exists") {
+		t.Fatalf("the flow must complete without a form or a raw error:\n%s", done)
+	}
+	s.capture("projects-join-declared-here")
+	after, _ := os.ReadFile(filepath.Join(root, ".project", "Project.toml"))
+	if string(before) != string(after) {
+		t.Fatal("the join rewrote the Project.toml")
+	}
+}
+
+// Joining another project over an existing Project.toml explains itself in full, keeps the typed value and lets the user leave.
+func TestLiveProjectsPanelJoinOverAnotherProjectFileIsRefusedReadably(t *testing.T) {
+	root := t.TempDir()
+	other := filepath.Join(t.TempDir(), "elsewhere")
+	gitInit(t, root)
+	gitInit(t, other)
+	registry, err := project.Open(filepath.Join(root, "agent"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := registry.CreateProject(t.Context(), root, "home-base", "Home", ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := registry.CreateProject(t.Context(), other, "zz-other", "Other", ""); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	s.openHub()
+	s.typeSlowly("projects")
+	s.keys("Enter")
+	s.waitFor("zz-other", 10*time.Second)
+	s.keys("Down", "Down", "Enter")
+	s.waitFor("Join by file", 10*time.Second)
+	s.keys("Enter")
+	s.waitFor("Component slug of this repository (1/1)", 10*time.Second)
+	s.keys("Enter")
+	refused := s.waitFor("never replaced", 15*time.Second)
+	if !strings.Contains(refused, "home-base") || strings.Contains(refused, "link ") {
+		t.Fatalf("the refusal must name the declared project and no raw error:\n%s", refused)
+	}
+	if !strings.Contains(refused, "Component slug of this repository (1/1)") || !strings.Contains(refused, filepath.Base(root)) {
+		t.Fatalf("the form must stay with the typed value:\n%s", refused)
+	}
+	s.capture("projects-join-refused")
+	s.keys("Escape")
+	s.waitFor("Join by local marker", 10*time.Second)
+	s.keys("Escape")
+	s.waitFor("+ New project here", 10*time.Second)
+}
+
 // A repository in no project is offered a project once; a second session in it stays quiet and nothing is created.
 func TestLiveRepositoryInNoProjectIsOfferedAProjectOnce(t *testing.T) {
 	root := t.TempDir()

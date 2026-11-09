@@ -20,6 +20,7 @@ type projectsView struct {
 	rows             []projectRow
 	defaultSlug      string
 	defaultComponent string
+	hereID           string
 }
 
 // projectsPanel creates a project at the current location or joins it to a registered one.
@@ -120,7 +121,9 @@ func (p *projectsPanel) submit(value string) {
 	message, err := p.finish(p.values)
 	p.loaded = false
 	if err != nil {
+		// Keep what the user typed so a typo is corrected, not retyped.
 		p.message = noticeText(err.Error(), 0)
+		p.defaults = p.values
 		p.values, p.step, p.input = nil, 0, p.defaults[0]
 		return
 	}
@@ -175,6 +178,13 @@ func (p *projectsPanel) HandleViewEvent(event kit.Event) (sdk.RemoteComponentRes
 			}
 			target := p.target
 			view := p.current()
+			if target.id == view.hereID {
+				message, err := p.join(target.slug, project.JoinFile, "")
+				p.loaded = false
+				p.mode, p.target, p.selected = "list", projectRow{}, 0
+				p.message = noticeText(firstText(message, err), 0)
+				break
+			}
 			p.startForm([]string{"Component slug of this repository"}, []string{view.defaultComponent}, func(values []string) (string, error) {
 				return p.join(target.slug, project.JoinFile, values[0])
 			})
@@ -237,6 +247,7 @@ func (a *app) projectsPanel(ctx sdk.Context) error {
 				v.status = "Recognition failed: " + noticeText(err.Error(), 0)
 			} else {
 				v.status = fmt.Sprintf("Here: %s (%s), recognised by %s", detected.Slug, detected.ProjectID, detected.How)
+				v.hereID = detected.ProjectID
 			}
 			entries, _ := s.projects.Peek(work)
 			for _, entry := range entries {
