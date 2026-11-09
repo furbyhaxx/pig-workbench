@@ -171,6 +171,10 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		if err != nil {
 			return "", err
 		}
+		if detected.How == "project-file" {
+			// Keep the registry copy and locations current (SPEC-0012 §3.4); recognition already succeeded without it.
+			_ = projects.Observe(work, cwd)
+		}
 		return detected.Root, nil
 	})
 	if err != nil {

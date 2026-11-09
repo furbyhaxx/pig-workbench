@@ -199,3 +199,40 @@ func readMarker(ctx context.Context, repository string) (string, error) {
 	output, err := gitOutput(ctx, repository, "config", "--local", "--get", markerKey)
 	return strings.TrimSpace(output), err
 }
+
+// Observe records or refreshes the registry copy of the Project.toml found for dir and registers its checkout
+// (SPEC-0012 §3.4). It writes nothing when the registry already matches, and refuses a slug another project owns.
+func (r *Registry) Observe(ctx context.Context, dir string) error {
+	root, err := repositoryTop(ctx, dir)
+	if err != nil {
+		return err
+	}
+	repository, err := gitRoot(ctx, root)
+	if err != nil {
+		return err
+	}
+	found, projectRoot, ok, err := findProjectFile(ctx, root, repository)
+	if err != nil || !ok {
+		return err
+	}
+	entries, _, err := r.scanContext(ctx)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.Project.ID != found.ID {
+			if entry.Project.Slug == found.Slug {
+				return fmt.Errorf("the slug %q of %s is already used by project %s", found.Slug, projectRoot, entry.Project.ID)
+			}
+			continue
+		}
+		if render(entry.Project) == render(found) {
+			for _, location := range entry.Locations {
+				if location.Host == "local" && location.Path == projectRoot {
+					return nil
+				}
+			}
+		}
+	}
+	return r.Register(found, locationAt(projectRoot))
+}

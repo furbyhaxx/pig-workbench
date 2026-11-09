@@ -142,3 +142,50 @@ func TestJoinByFileListsTheOtherComponents(t *testing.T) {
 		t.Fatalf("both checkouts must be registered, got %+v", joined.Locations)
 	}
 }
+
+func TestObserveRegistersAProjectFileOnceAndRefreshesIt(t *testing.T) {
+	requireTestGit(t)
+	registry, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := filepath.Join(t.TempDir(), "repo")
+	newTestRepository(t, repo)
+	if _, err := Create(repo, "prj-observed1", "observed"); err != nil {
+		t.Fatal(err)
+	}
+	if err := registry.Observe(context.Background(), repo); err != nil {
+		t.Fatal(err)
+	}
+	entry, err := registry.entry("prj-observed1")
+	if err != nil || len(entry.Locations) != 1 {
+		t.Fatalf("not registered: %+v %v", entry, err)
+	}
+	seen := entry.Locations[0].LastSeen
+	if err := registry.Observe(context.Background(), repo); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := registry.entry("prj-observed1"); !again.Locations[0].LastSeen.Equal(seen) {
+		t.Fatal("an unchanged project was written again")
+	}
+	document := filepath.Join(repo, ".project", "Project.toml")
+	text, _ := os.ReadFile(document)
+	text = []byte(strings.Replace(string(text), "slug = \"observed\"\n", "slug = \"observed\"\nname = \"Late name\"\n", 1))
+	if err := os.WriteFile(document, text, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := registry.Observe(context.Background(), repo); err != nil {
+		t.Fatal(err)
+	}
+	if refreshed, _ := registry.entry("prj-observed1"); refreshed.Project.Name != "Late name" {
+		t.Fatalf("registry copy not refreshed: %+v", refreshed.Project)
+	}
+	other := filepath.Join(t.TempDir(), "other")
+	newTestRepository(t, other)
+	if _, err := Create(other, "prj-thief0001", "observed"); err != nil {
+		t.Fatal(err)
+	}
+	if err := registry.Observe(context.Background(), other); err == nil {
+		t.Fatal("a slug owned by another project was registered")
+	}
+}
