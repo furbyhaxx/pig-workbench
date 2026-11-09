@@ -471,6 +471,10 @@ func Extension() *sdk.Extension {
 		if strings.TrimSpace(args) == "reload" {
 			return ctx.Reload()
 		}
+		if target, ok := strings.CutPrefix(strings.TrimSpace(args), "navigate "); ok {
+			_, err := ctx.NavigateTree(strings.TrimSpace(target), map[string]any{"summarize": true})
+			return err
+		}
 		mu.Lock()
 		unregistered := client == nil || currentEndpoint.Generation == ""
 		mu.Unlock()

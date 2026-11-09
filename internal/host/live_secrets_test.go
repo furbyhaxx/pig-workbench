@@ -420,3 +420,52 @@ func TestLiveCompactionRequestCarriesThePlaceholderNotTheSecret(t *testing.T) {
 		t.Fatalf("the compaction request did not carry the read's content, so the test proved nothing:\n%.1500s", request)
 	}
 }
+
+// TestLiveBranchSummaryRequestCarriesThePlaceholderNotTheSecret navigates the session tree with
+// summarization. PiG's branch summary omits tool results, so the secret enters through a user
+// message and the request must carry only its placeholder.
+func TestLiveBranchSummaryRequestCarriesThePlaceholderNotTheSecret(t *testing.T) {
+	root := t.TempDir()
+	token := "ghp_" + strings.Repeat("Bs9wD2", 5)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("deploy key "+token+"\nsecond line\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "notes.txt"}}}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read")
+	for i, prompt := range []string{"read the notes", "the deploy key is " + token, "once more"} {
+		fixture.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	}
+	fixture.sendRaw("forks", "get_fork_messages", nil)
+	listed := fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == "forks" })
+	messages, _ := listed["data"].(map[string]any)["messages"].([]any)
+	if len(messages) < 2 {
+		t.Fatalf("need user entries to leave a branch: %+v", listed)
+	}
+	target, _ := messages[0].(map[string]any)["entryId"].(string)
+	recorder.mu.Lock()
+	before := len(recorder.bodies)
+	recorder.mu.Unlock()
+	fixture.send("nav", "prompt", "/reference navigate "+target)
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == "nav" })
+	deadline := time.Now().Add(20 * time.Second)
+	var request string
+	for time.Now().Before(deadline) && request == "" {
+		recorder.mu.Lock()
+		for _, body := range recorder.bodies[before:] {
+			if strings.Contains(body, "red-sec-") {
+				request = body
+				break
+			}
+		}
+		recorder.mu.Unlock()
+		time.Sleep(100 * time.Millisecond)
+	}
+	if request == "" {
+		t.Fatal("the branch summarization request carried no placeholder, so the test proved nothing")
+	}
+	neverCarries(t, recorder, token)
+}
