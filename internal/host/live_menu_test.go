@@ -87,6 +87,9 @@ func (s *tuiSession) tmux(args ...string) string {
 
 func (s *tuiSession) screen() string { return s.tmux("capture-pane", "-p", "-t", "wb") }
 
+// history captures the whole scrollback, for notices a long reply has pushed off the visible pane.
+func (s *tuiSession) history() string { return s.tmux("capture-pane", "-p", "-S", "-", "-t", "wb") }
+
 func (s *tuiSession) keys(keys ...string) {
 	s.t.Helper()
 	for _, key := range keys {
@@ -552,16 +555,20 @@ func TestLiveSubmittedPromptIsSentDespiteAVaultRecordFromAnotherKey(t *testing.T
 		t.Fatal(err)
 	}
 	s := startTUI(t, root)
+	// The notice is a toast that the next render replaces within a poll interval, so the byte stream is recorded instead.
+	stream := filepath.Join(root, "pane.log")
+	s.tmux("pipe-pane", "-t", "wb", "cat >> "+stream)
 	prompt := "hello after the vault was polluted"
 	s.typeSlowly(prompt)
 	s.tmux("send-keys", "-t", "wb", "Enter")
 	var screen string
-	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(30 * time.Millisecond) {
-		if screen = s.screen(); strings.Contains(screen, "cannot be decrypted") {
-			break
-		}
+	reported := false
+	for deadline := time.Now().Add(10 * time.Second); !reported && time.Now().Before(deadline); time.Sleep(30 * time.Millisecond) {
+		data, _ := os.ReadFile(stream)
+		reported = strings.Contains(string(data), "cannot be decrypted")
 	}
-	if !strings.Contains(screen, "cannot be decrypted") {
+	screen = s.screen()
+	if !reported {
 		t.Fatalf("the ignored record was not reported:\n%s", screen)
 	}
 	if strings.Contains(screen, "back in the editor") || strings.Contains(screen, "withheld") {
