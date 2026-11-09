@@ -90,7 +90,7 @@ func TestLiveHostFilesAreDeliveredOnceAboveUserSteeringAndUpdateAsADiff(t *testi
 	}
 }
 
-func TestLiveHostFilesWritableByOthersAreRefusedWithANotice(t *testing.T) {
+func TestLiveWorldWritableHostFilesAreRefusedWithANotice(t *testing.T) {
 	root, systemDir := hostFilesFixture(t, 0o666)
 	recorder := &requestRecorder{}
 	server := recorder.serve(t)
@@ -107,7 +107,7 @@ func TestLiveHostFilesWritableByOthersAreRefusedWithANotice(t *testing.T) {
 	defer recorder.mu.Unlock()
 	body := recorder.bodies[0]
 	if strings.Contains(body, "SYSTEM-RULE-MARKER") || strings.Contains(body, "HOST-FACT-MARKER") {
-		t.Fatalf("a file writable by others must not reach the model")
+		t.Fatalf("a world-writable file must not reach the model")
 	}
 	if !strings.Contains(body, "Host file not loaded") || !strings.Contains(body, "USER-RULE-MARKER") {
 		t.Fatalf("the refusal must be visible and the other instructions unaffected")

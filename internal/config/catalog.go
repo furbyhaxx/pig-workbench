@@ -195,7 +195,7 @@ func Catalog() []Definition {
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."
 		case "instructions.system-dir":
 			d.Application = "live"
-			d.Description = "Directory holding the host-level AGENTS.md (steering above the user's) and HOST.md (always-on host facts); empty disables both. Files writable by others are refused."
+			d.Description = "Directory holding the host-level AGENTS.md (steering above the user's) and HOST.md (always-on host facts); empty disables both. World-writable files are refused; group-writable ones load."
 		case "instructions.backlog.validate-pointers":
 			d.Application = "live"
 			d.Description = "Validate BACKLOG pointer targets against the project root before instruction delivery."

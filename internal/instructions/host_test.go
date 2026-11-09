@@ -82,7 +82,7 @@ func TestLocalHostRefusesFilesAnotherUserCouldWrite(t *testing.T) {
 	if err != nil || len(set.Files) != 0 {
 		t.Fatalf("a world-writable host file must not be delivered: %+v, %v", set, err)
 	}
-	if len(set.Reasons) != 1 || set.Reasons[0].Status != "refused" || !strings.Contains(set.Reasons[0].Detail, "writable by group or others") {
+	if len(set.Reasons) != 1 || set.Reasons[0].Status != "refused" || !strings.Contains(set.Reasons[0].Detail, "writable by any user") {
 		t.Fatalf("reasons = %+v", set.Reasons)
 	}
 	open := hostDir(t, map[string]string{"HOST.md": "facts\n"}, 0o644)
@@ -92,6 +92,22 @@ func TestLocalHostRefusesFilesAnotherUserCouldWrite(t *testing.T) {
 	set, err = ResolveHost(t.Context(), LocalHost(open))
 	if err != nil || len(set.Files) != 0 || len(set.Reasons) != 1 || !strings.Contains(set.Reasons[0].Detail, "directory") {
 		t.Fatalf("a world-writable directory must refuse its files: %+v, %v", set, err)
+	}
+}
+
+func TestLocalHostAcceptsGroupWritableFilesAndDirectories(t *testing.T) {
+	dir := hostDir(t, map[string]string{"AGENTS.md": "rules\n", "HOST.md": "facts\n"}, 0o664)
+	if err := os.Chmod(dir, 0o775); err != nil {
+		t.Fatal(err)
+	}
+	set, err := ResolveHost(t.Context(), LocalHost(dir))
+	if err != nil || len(set.Files) != 2 {
+		t.Fatalf("group-writable host files must load: %+v, %v", set, err)
+	}
+	for _, reason := range set.Reasons {
+		if reason.Status == "refused" {
+			t.Fatalf("unexpected refusal: %+v", reason)
+		}
 	}
 }
 
@@ -136,7 +152,7 @@ func TestResolveHostLocalFilesNeverLeakIntoARemoteView(t *testing.T) {
 }
 
 func TestResolveHostRefusedRemoteFileIsNotReplacedByAnotherHost(t *testing.T) {
-	remote := fakeHost{authority: "ssh://build1", refused: map[string]string{"AGENTS.md": "file is writable by group or others"}}
+	remote := fakeHost{authority: "ssh://build1", refused: map[string]string{"AGENTS.md": "file is writable by any user"}}
 	local := fakeHost{authority: "local", files: map[string]string{"AGENTS.md": "local rules\n"}}
 	set, err := ResolveHost(t.Context(), remote, local)
 	if err != nil {

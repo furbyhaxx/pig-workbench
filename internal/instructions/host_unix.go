@@ -16,8 +16,8 @@ func untrustedWriter(info os.FileInfo) string {
 	if stat.Uid != 0 && int(stat.Uid) != os.Getuid() {
 		return "is owned by neither root nor the current user"
 	}
-	if info.Mode().Perm()&0o022 != 0 && !(info.IsDir() && info.Mode()&os.ModeSticky != 0) {
-		return "is writable by group or others"
+	if info.Mode().Perm()&0o002 != 0 && !(info.IsDir() && info.Mode()&os.ModeSticky != 0) {
+		return "is writable by any user"
 	}
 	return ""
 }
