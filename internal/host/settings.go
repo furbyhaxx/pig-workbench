@@ -29,7 +29,8 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 		for _, scheme := range s.router.Schemes() {
 			live = append(live, "resources "+scheme)
 		}
-		if entries, _ := s.projects.List(); entries != nil {
+		if s.projects != nil {
+			entries, _ := s.projects.Peek(context.Background())
 			for _, entry := range entries {
 				live = append(live, "projects join "+entry.Project.Slug, "projects join "+entry.Project.Slug+" file", "projects join "+entry.Project.Slug+" marker")
 			}

@@ -132,6 +132,12 @@ func (r *Registry) List() ([]Entry, error) {
 	return entries, errors.Join(problems...)
 }
 
+// Peek returns the valid entries with the read-only scan that detection uses: no lock and no index rewrite.
+func (r *Registry) Peek(ctx context.Context) ([]Entry, error) {
+	entries, _, err := r.scanContext(ctx)
+	return entries, err
+}
+
 // Lookup finds one project without being affected by other invalid records.
 func (r *Registry) Lookup(id string) (Entry, bool, error) {
 	if !idPattern.MatchString(id) {
