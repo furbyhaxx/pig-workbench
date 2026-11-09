@@ -574,3 +574,34 @@ func TestLiveSubmittedPromptIsSentDespiteAVaultRecordFromAnotherKey(t *testing.T
 		t.Fatalf("the prompt never reached the model:\n%s", screen)
 	}
 }
+
+func TestLiveWideSecretKeyIsNarrowedAndThePromptIsSent(t *testing.T) {
+	root := t.TempDir()
+	agent := filepath.Join(root, "agent")
+	if err := os.MkdirAll(agent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(agent, "secret.key")
+	if _, err := secrets.CreateKey(keyPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(keyPath, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	s.typeSlowly("prompt with a world-readable key")
+	s.tmux("send-keys", "-t", "wb", "Enter")
+	// The one-time notice is covered by a unit test; the response floods the screen too fast to catch it reliably.
+	var screen string
+	for deadline := time.Now().Add(20 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+		if screen = s.screen(); !strings.Contains(screen, "0.0%/32k") {
+			break
+		}
+	}
+	if strings.Contains(screen, "back in the editor") || strings.Contains(screen, "0.0%/32k") {
+		t.Fatalf("the prompt was not sent:\n%s", screen)
+	}
+	if info, err := os.Stat(keyPath); err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("key mode after the run: %v %v", info, err)
+	}
+}
