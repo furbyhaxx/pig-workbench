@@ -3,6 +3,8 @@ package host
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -11,6 +13,7 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 )
 
 const (
@@ -207,6 +210,40 @@ func (a *activityLine) close(ctx sdk.Context) {
 	close(a.stop)
 	<-a.done
 	_ = ctx.SetWidgetRenderer(activityKey, nil)
+}
+
+const defaultActivityShortcut = "alt+w"
+
+var shortcutSyntax = regexp.MustCompile(`^[a-z0-9]+(\+[a-z0-9]+)*$`)
+
+// activityShortcutKey reads activity.shortcut from the user layer. PiG registers shortcuts while the
+// extension loads, before a session's settings exist, so the key is fixed per load and a change applies
+// on the next /reload. The setting is user/runtime-only; the project layer is never consulted.
+func activityShortcutKey() (key, note string) {
+	agent, err := sdk.AgentDir()
+	if err != nil {
+		return defaultActivityShortcut, "default: " + err.Error()
+	}
+	manager, err := config.New(config.Paths{User: filepath.Join(agent, "Workbench.toml"), Project: filepath.Join(agent, "no-project", "Workbench.toml")}, nil)
+	if err == nil {
+		err = manager.Load(context.Background(), false)
+	}
+	if err != nil {
+		return defaultActivityShortcut, "default; Workbench.toml is unreadable"
+	}
+	snapshot, err := manager.Current()
+	if err != nil {
+		return defaultActivityShortcut, "default; Workbench.toml is unreadable"
+	}
+	entry, ok := snapshot.Get("activity.shortcut")
+	value, _ := entry.Value.(string)
+	if !ok || value == "" {
+		return defaultActivityShortcut, ""
+	}
+	if !shortcutSyntax.MatchString(value) {
+		return defaultActivityShortcut, fmt.Sprintf("default; %q is not a key such as alt+w or ctrl+shift+s", value)
+	}
+	return value, ""
 }
 
 // activityShortcut runs the inspector of the first non-zero item. Only Workbench's own commands run;

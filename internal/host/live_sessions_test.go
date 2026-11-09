@@ -749,3 +749,62 @@ func TestLiveARealSessionReplacementRefusesTheOldAddress(t *testing.T) {
 	}
 	waitForRequest(t, receiver, "HOP-PROBE")
 }
+
+func TestLiveActivityShortcutSettingBindsTheConfiguredKey(t *testing.T) {
+	for _, tc := range []struct {
+		name, setting, press, idle string
+	}{
+		{"configured", "alt+j", "M-j", "M-w"},
+		{"invalid-keeps-default", "Alt W", "M-w", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runtime := shortRuntime(t)
+			t.Setenv("XDG_RUNTIME_DIR", runtime)
+			root := t.TempDir()
+			recorder := &requestRecorder{}
+			server := recorder.serve(t)
+			defer server.Close()
+			agent := filepath.Join(root, "agent")
+			writeFixtureProvider(t, agent, server.URL)
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[activity]\nshortcut = '"+tc.setting+"'\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			socket := filepath.Join(runtime, "tmux.sock")
+			tmux := func(args ...string) string {
+				t.Helper()
+				cmd := exec.Command("tmux", append([]string{"-S", socket}, args...)...)
+				cmd.Env = append(os.Environ(), "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("tmux %v: %v: %s", args, err, out)
+				}
+				return string(out)
+			}
+			tmux("new-session", "-d", "-s", "workbench", "-x", "100", "-y", "24", "-c", root, "pig", "--offline", "--no-session", "-e", repoRoot(t), "--model", "workbench-fixture/mock", "--tools", "read")
+			stopTUI(t, socket, "workbench")
+			waitFor := func(text string, within time.Duration) (string, bool) {
+				capture := ""
+				for deadline := time.Now().Add(within); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+					capture = tmux("capture-pane", "-p", "-t", "workbench")
+					if strings.Contains(capture, text) {
+						return capture, true
+					}
+				}
+				return capture, false
+			}
+			if capture, ok := waitFor("────────", 15*time.Second); !ok {
+				t.Fatalf("editor did not start:\n%s", capture)
+			}
+			if tc.idle != "" {
+				tmux("send-keys", "-t", "workbench", tc.idle)
+				if capture, ok := waitFor("Workbench activity", 2*time.Second); ok {
+					t.Fatalf("the default key still opened the inspector after it was rebound:\n%s", capture)
+				}
+			}
+			tmux("send-keys", "-t", "workbench", tc.press)
+			if capture, ok := waitFor("Workbench activity: idle", 8*time.Second); !ok {
+				t.Fatalf("%s did not open the inspector:\n%s", tc.press, capture)
+			}
+		})
+	}
+}

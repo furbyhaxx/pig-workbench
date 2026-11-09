@@ -20,7 +20,9 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 	for _, name := range []string{"cd", "wb:cd"} {
 		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
 	}
-	ext.Shortcut("alt+w", "Show what Workbench is doing and how to inspect it.", a.activityShortcut)
+	key, note := activityShortcutKey()
+	a.shortcutKey, a.shortcutNote = key, note
+	ext.Shortcut(key, "Show what Workbench is doing and how to inspect it.", a.activityShortcut)
 	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", Handler: a.toolsCommand})
 	ext.RegisterCommand("wb:jobs", sdk.CommandOptions{Description: "Inspect or control Workbench jobs.", Handler: a.jobsCommand})
 }
@@ -35,6 +37,10 @@ func (a *app) show(ctx sdk.Context) error {
 	text := fmt.Sprintf("Workbench\nActivity: %s\nSession: %s\nGeneration: %s\nLocation: %s\nLocation revision: %d\nConfig revision: %d", activitySummary(s.activityItems()), s.id, s.generation, info.Cwd, info.Revision, settings.Revision)
 	if settings.Stale {
 		text += "\nConfiguration error: " + settings.Error
+	}
+	text += "\nActivity shortcut: " + a.shortcutKey
+	if a.shortcutNote != "" {
+		text += " (" + a.shortcutNote + ")"
 	}
 	a.present(ctx, "Workbench › Status", text)
 	return nil

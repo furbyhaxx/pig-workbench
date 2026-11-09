@@ -94,6 +94,8 @@ type app struct {
 	session     *session
 	initErr     error
 	syntax      *syntax.Service
+	// shortcutKey is the activity shortcut registered at load; it changes only on the next load.
+	shortcutKey, shortcutNote string
 }
 
 type requestContext struct{ sdk.Context }

@@ -41,7 +41,7 @@ max-lines = 400
 
 The catalog identifies the other live consumers, including edit policy, instruction delivery, the default job timeout, ask dialog timeout, session messaging policy, secret protection, prompt delivery, the skills command budget and activity placement. Inspect each description for its scope and timing: for example, activity placement and session endpoint enablement are captured at session start, so publishing a new snapshot does not immediately re-register them. Prompt takeover also requires `instructions.enabled`. `prompt.delivery = "auto"` (the default) resolves to `force` on stock PiG, so `builtin/workbench` replaces PiG's system prompt; `prompt.enabled = false` keeps PiG's. `sections` needs the fork host and leaves PiG's prompt in place on stock PiG.
 
-Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `prompt.template` is displayed but rendering always uses `builtin/workbench`, and `activity.shortcut` is not applied: `alt+w` is registered statically before settings load. Complex instruction classes and producer-specific settings are not implemented.
+Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `prompt.template` is displayed but rendering always uses `builtin/workbench`, and `activity.shortcut` is read from the user layer at load because PiG registers shortcuts before a session's settings exist: set it in `Workbench.toml` and `/reload`; an invalid key keeps `alt+w` and `/workbench show` says so. Complex instruction classes and producer-specific settings are not implemented.
 
 ## Presentation display namespaces
 

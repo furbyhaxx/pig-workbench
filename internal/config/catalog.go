@@ -254,7 +254,8 @@ func Catalog() []Definition {
 			d.Application = "live"
 			d.Description = "Target byte budget for the /workbench skills listing and the frame listing; zero disables the ladder. It does not change PiG's prompt skill listing."
 		case "activity.shortcut":
-			d.Description = "Not applied: alt+w is registered statically before settings load."
+			d.Application = "live"
+			d.Description = "Key that shows the activity line's inspector (for example alt+w or ctrl+shift+s). PiG registers shortcuts while the extension loads, so the user-layer value is read at load and a change applies after /reload; runtime and project values are not consulted."
 		case "read.max-lines":
 			d.Application = "live"
 			d.Description = "Maximum complete read-result lines, including framing; 5–2000."

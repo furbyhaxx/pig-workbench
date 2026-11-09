@@ -56,6 +56,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"trust", []string{"trust.rules"}, TestLiveNestedRepositoryInstructionsLoadOnlyAfterATrustRule},
 		{"storage", []string{"projects.session-storage"}, TestLiveSessionStorageCanBeDisabled},
 		{"activity", []string{"activity.enabled", "activity.placement"}, TestLiveActivitySettingsControlWidget},
+		{"activity-shortcut", []string{"activity.shortcut"}, TestLiveActivityShortcutSettingBindsTheConfiguredKey},
 		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
 		{"fetch-backends", []string{"fetch.disabled-backends"}, TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader},
 		{"skills-frame", []string{"skills.listing"}, TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt},

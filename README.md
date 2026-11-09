@@ -41,7 +41,7 @@ In the TUI, `/workbench` opens a menu of every Workbench view; typing narrows it
 **Deferred depth:**
 
 - Broadcast, coordinator and by-project agent/session trees belong to Slice 2. The rich questionnaire panel is later UI work.
-- Activity-item click needs a fork host change. `activity.shortcut` is not applied: `alt+w` is registered statically.
+- Activity-item click needs a fork host change. `activity.shortcut` (default `alt+w`) is read from the user layer when the extension loads, so a change applies after `/reload`; runtime and project values are not consulted. `/workbench show` names the active key.
 - Additional resource formats, SSH locations, PTY jobs, extended recovery and other depth are listed in the [Slice 2 plan](.project/plans/0003-slice-2-feature-complete.md).
 
 ## Development
