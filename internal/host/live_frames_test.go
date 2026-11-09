@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -86,6 +87,15 @@ func TestLiveResumeDoesNotResendDeliveredContextFrames(t *testing.T) {
 		if got := strings.Count(requests[1], source); got != 1 {
 			t.Errorf("%s appears %d times after resume, want 1", source, got)
 		}
+	}
+	nonces := make(map[string]bool)
+	for _, request := range requests {
+		for _, match := range regexp.MustCompile(`n=\\"([0-9A-F]{8})\\"`).FindAllStringSubmatch(request, -1) {
+			nonces[match[1]] = true
+		}
+	}
+	if len(nonces) != 1 {
+		t.Errorf("frames carry %d distinct nonces across a resume, want one per session: %v", len(nonces), nonces)
 	}
 }
 

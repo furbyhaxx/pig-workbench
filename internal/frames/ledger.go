@@ -2,6 +2,7 @@ package frames
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -44,6 +45,7 @@ type coalesceKey struct {
 type Session struct {
 	mu        sync.Mutex
 	sessionID string
+	nonce     string
 	clock     func() time.Time
 	sequence  int64
 	records   []*storedRecord
@@ -62,13 +64,50 @@ type Ledger struct {
 
 // NewSession creates an empty, non-durable session shared by all its producers.
 func NewSession(sessionID string) *Session {
+	var token [4]byte
+	if _, err := rand.Read(token[:]); err != nil {
+		panic("frames: no randomness for the session nonce: " + err.Error())
+	}
 	return &Session{
 		sessionID: sessionID,
+		nonce:     strings.ToUpper(hex.EncodeToString(token[:])),
 		clock:     time.Now,
 		events:    make(map[eventKey]*storedRecord),
 		pending:   make(map[coalesceKey]*storedRecord),
 		byID:      make(map[string]*storedRecord),
 	}
+}
+
+// Nonce returns the provenance cue every frame admitted by this session carries.
+func (s *Session) Nonce() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.nonce
+}
+
+// SetNonce replaces the nonce of frames admitted from now on, so the host can keep one nonce for a
+// whole session lineage. Frames already admitted or restored keep the nonce they were stored with.
+func (s *Session) SetNonce(nonce string) error {
+	if !ValidNonce(nonce) {
+		return fmt.Errorf("%w: nonce must be eight uppercase hexadecimal digits", ErrInvalidContext)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.nonce = nonce
+	return nil
+}
+
+// ValidNonce reports whether nonce has the stored form: eight uppercase hexadecimal digits.
+func ValidNonce(nonce string) bool {
+	if len(nonce) != 8 {
+		return false
+	}
+	for _, r := range nonce {
+		if !(r >= '0' && r <= '9' || r >= 'A' && r <= 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 // Ledger binds a producer and branch to the session, overriding ctx.SessionID.
@@ -152,7 +191,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	if _, err := created.MarshalJSON(); err != nil {
 		return Receipt{}, ErrInvalidClock
 	}
-	frame := makeFrame(l.context, p, s.sequence+1, created)
+	frame := makeFrame(l.context, p, s.sequence+1, created, s.nonce)
 	receipt := makeReceipt(frame)
 	record := &storedRecord{
 		Trusted: l.context.Trusted, Authority: l.context.Authority,
@@ -230,7 +269,7 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 		if err != nil || !samePublish(normalized, p) || !validContext(ctx) || !ownsSource(ctx, p.Source) {
 			return fmt.Errorf("%w: record %d has an invalid publication", ErrInvalidSnapshot, i)
 		}
-		if record.Frame != makeFrame(ctx, p, record.Frame.Sequence, record.Frame.CreatedAt) || record.Receipt != makeReceipt(record.Frame) {
+		if !ValidNonce(record.Frame.Nonce) || record.Frame != makeFrame(ctx, p, record.Frame.Sequence, record.Frame.CreatedAt, record.Frame.Nonce) || record.Receipt != makeReceipt(record.Frame) {
 			return fmt.Errorf("%w: record %d has inconsistent provenance", ErrInvalidSnapshot, i)
 		}
 		event := eventKey{producer: ctx.ProducerPrefix, event: p.EventKey}
@@ -316,7 +355,7 @@ func coalesceFor(ctx Context, p Publish) (coalesceKey, bool) {
 		p.CoalesceKey != "" && (p.Kind == "info" || p.Kind == "notice")
 }
 
-func makeFrame(ctx Context, p Publish, sequence int64, created time.Time) Frame {
+func makeFrame(ctx Context, p Publish, sequence int64, created time.Time, nonce string) Frame {
 	identity, err := json.Marshal(struct {
 		Context  Context `json:"context"`
 		Sequence int64   `json:"sequence"`
@@ -340,7 +379,7 @@ func makeFrame(ctx Context, p Publish, sequence int64, created time.Time) Frame 
 		Title: p.Title, Summary: p.Summary, SubjectKey: p.SubjectKey, Resource: p.Resource,
 		Delivery: p.Delivery, Trust: trust, Authority: authority, EventKey: p.EventKey,
 		ContentDigest: "sha256:" + hex.EncodeToString(bodyDigest[:]), CreatedAt: created,
-		Nonce: strings.ToUpper(hex.EncodeToString(idDigest[16:20])), BranchLeaf: ctx.BranchLeaf, Epoch: ctx.Epoch,
+		Nonce: nonce, BranchLeaf: ctx.BranchLeaf, Epoch: ctx.Epoch,
 	}
 }
 

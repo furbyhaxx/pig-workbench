@@ -54,12 +54,16 @@ func (c *contextFrameState) retainedFor(location uint64, epoch string) []string 
 	return slices.Clone(c.retained)
 }
 
+// frameNonceEntry persists the frame nonce shared by a session, its forks and its branches.
+const frameNonceEntry = "pig-workbench.nonce"
+
 func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) {
 	entries, err := ctx.GetEntries()
 	if err != nil {
 		return nil, err
 	}
 	latest := make(map[string]json.RawMessage)
+	lineageNonce := ""
 	for _, raw := range entries {
 		var entry struct {
 			Type       string          `json:"type"`
@@ -68,6 +72,15 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 		}
 		if err := json.Unmarshal(raw, &entry); err != nil {
 			return nil, err
+		}
+		if entry.Type == "custom" && entry.CustomType == frameNonceEntry && lineageNonce == "" {
+			var stored struct {
+				Nonce string `json:"nonce"`
+			}
+			if json.Unmarshal(entry.Data, &stored) == nil && frames.ValidNonce(stored.Nonce) {
+				lineageNonce = stored.Nonce
+			}
+			continue
 		}
 		if entry.Type != "custom" || entry.CustomType != "pig-workbench.frame" {
 			continue
@@ -96,6 +109,15 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 	})
 	ledger := frames.NewSession(id)
 	if err := ledger.Restore(records); err != nil {
+		return nil, err
+	}
+	// Forks and tree branches copy session entries, so one persisted nonce marks the whole lineage.
+	if lineageNonce == "" {
+		lineageNonce = ledger.Nonce()
+		if err := ctx.AppendEntry(frameNonceEntry, map[string]any{"schemaVersion": 1, "nonce": lineageNonce}); err != nil {
+			return nil, err
+		}
+	} else if err := ledger.SetNonce(lineageNonce); err != nil {
 		return nil, err
 	}
 	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView), wakes: messaging.NewLimiter()}, nil

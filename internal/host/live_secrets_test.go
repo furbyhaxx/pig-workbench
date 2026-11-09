@@ -469,3 +469,40 @@ func TestLiveBranchSummaryRequestCarriesThePlaceholderNotTheSecret(t *testing.T)
 	}
 	neverCarries(t, recorder, token)
 }
+
+// TestLiveForkKeepsTheSessionFrameNonce forks a session and asserts every frame the model receives,
+// before and after the fork, carries the same nonce (SPEC-0002 §6).
+func TestLiveForkKeepsTheSessionFrameNonce(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	for i, prompt := range []string{"one", "two", "three"} {
+		fixture.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	}
+	fixture.sendRaw("forks", "get_fork_messages", nil)
+	listed := fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == "forks" })
+	messages, _ := listed["data"].(map[string]any)["messages"].([]any)
+	if len(messages) < 2 {
+		t.Fatalf("need user entries to fork at: %+v", listed)
+	}
+	target, _ := messages[1].(map[string]any)["entryId"].(string)
+	fixture.sendRaw("fork", "fork", map[string]any{"entryId": target})
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == "fork" })
+	fixture.send("after", "prompt", "four")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	nonces := make(map[string]int)
+	recorder.mu.Lock()
+	for _, body := range recorder.bodies {
+		for _, match := range regexp.MustCompile(`n=\\"([0-9A-F]{8})\\"`).FindAllStringSubmatch(body, -1) {
+			nonces[match[1]]++
+		}
+	}
+	recorder.mu.Unlock()
+	if len(nonces) != 1 {
+		t.Fatalf("frames carry %d distinct nonces across a fork, want one: %v", len(nonces), nonces)
+	}
+}

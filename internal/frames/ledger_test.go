@@ -551,3 +551,50 @@ func TestWakeIsPartOfThePublicationIdentity(t *testing.T) {
 		t.Fatalf("wake lost across restore: %#v, %v", again, err)
 	}
 }
+
+func TestOneNonceMarksEveryFrameOfASession(t *testing.T) {
+	s := testSession()
+	if err := s.SetNonce("0A1B2C3D"); err != nil {
+		t.Fatal(err)
+	}
+	for _, ledger := range []*Ledger{
+		testLedger(s),
+		s.Ledger(Context{SessionID: "ignored", ProducerPrefix: "build-tools.build", BranchLeaf: "leaf-2", Epoch: "epoch-2"}),
+		s.Ledger(Context{SessionID: "ignored", ProducerPrefix: "other.tool", BranchLeaf: "leaf-1", Epoch: "epoch-1"}),
+	} {
+		source := "build-tools.build"
+		if strings.HasPrefix(ledger.context.ProducerPrefix, "other") {
+			source = "other.tool"
+		}
+		for i := range 2 {
+			if _, err := ledger.Admit(Publish{EventKey: fmt.Sprintf("%s-%s-%d", ledger.context.BranchLeaf, source, i), Source: source, Kind: "notice", Body: fmt.Sprintf("body %d", i)}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	records := snapshotRecords(t, s)
+	if len(records) != 6 {
+		t.Fatalf("got %d records, want 6", len(records))
+	}
+	for _, record := range records {
+		if record.Frame.Nonce != "0A1B2C3D" {
+			t.Fatalf("frame %d carries nonce %q, want the session nonce", record.Frame.Sequence, record.Frame.Nonce)
+		}
+	}
+	other := NewSession("session-1")
+	if err := other.Restore(s.Snapshot()); err != nil {
+		t.Fatalf("restore with a different session nonce: %v", err)
+	}
+	for _, bad := range []string{"", "abc", "0a1b2c3d", "0A1B2C3G", "0A1B2C3D0"} {
+		if err := other.SetNonce(bad); err == nil {
+			t.Fatalf("nonce %q accepted", bad)
+		}
+	}
+}
+
+func TestNewSessionHasItsOwnNonce(t *testing.T) {
+	a, b := NewSession("one"), NewSession("two")
+	if a.Nonce() == "" || a.Nonce() == b.Nonce() {
+		t.Fatalf("nonces %q and %q must be set and distinct", a.Nonce(), b.Nonce())
+	}
+}

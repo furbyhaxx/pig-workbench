@@ -5,9 +5,9 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "approved"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-08T22:05:00+01:00"
+  updated_at: "2026-11-09T15:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "User directive 08.11.2026: frames must be able to wake an idle model, as an explicit flag"
       changes: ["Added publish field wake (default false), valid with nextBoundary only", "Removed the delivery value followUp: wake replaces it", "allowWake plus a per-producer hourly budget gate external wakes; Workbench's own sources wake by user setting", "Receipt reports wake outcome and duplicate publications", "Migration: a producer that sent delivery followUp now sends delivery nextBoundary with wake true; it was always denied before, so no working producer changes"]
+    - revision: 10
+      reason: "User report 09.11.2026: the nonce changed with every frame; it must be stable inside a session, its forks and branches"
+      changes: ["Nonce is one 8-digit uppercase hexadecimal value per session lineage, persisted as the custom entry pig-workbench.nonce and shared by every frame of every producer and branch", "Forks and tree branches copy entries, so they inherit it", "Migration: records stored before this revision keep the per-frame nonce they were written with and still restore; frames admitted after upgrade use the lineage nonce"]
 
 ---
 
@@ -163,7 +166,7 @@ Build exited with code 1. Inspect build://412/log for compiler diagnostics.
 </system-warning>
 ```
 
-Escape attributes and matching closing delimiters in body. Persist nonce/createdAt, never regenerate timestamps on replay. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
+Escape attributes and matching closing delimiters in body. Persist nonce/createdAt, never regenerate timestamps on replay. The nonce is one value per session lineage (session, forks and branches), shared by all frames and producers, persisted as the custom entry `pig-workbench.nonce`; it is never derived per frame. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
 
 Default external projection is framed data via the host-supported custom-message route. Native system/developer projection requires a verified capability and granted instruction authority; unsupported providers retain explicit envelope semantics without invented role support. Never change stored history roles to fit one provider. Preserve provider message-order constraints, including trailing assistant/tool sequences. Prompt wording must not tell the model that external data has higher authority than the user's instructions.
 
