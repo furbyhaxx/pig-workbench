@@ -425,3 +425,42 @@ func TestLiveJobsToolWaitsForOutputAndSendsASignal(t *testing.T) {
 		t.Fatalf("stderr view must show only the handler's line: %q", results[3])
 	}
 }
+
+// TestLiveWaitedPromotedJobQueuesNoCompletionNotice covers SPEC-0008 §7: a job whose exit the
+// model already received through jobs wait is not announced again, and does not wake the model.
+func TestLiveWaitedPromotedJobQueuesNoCompletionNotice(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{calls: []scriptedCall{{"bash", map[string]any{"command": "sleep 1; echo waited-done", "yield_seconds": 0.2}}}}
+	recorder.next = func(index int) *scriptedCall {
+		if index != 1 {
+			return nil
+		}
+		recorder.mu.Lock()
+		current := recorder.bodies[index]
+		recorder.mu.Unlock()
+		match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(current)
+		if match == nil {
+			return nil
+		}
+		return &scriptedCall{"jobs", map[string]any{"action": "wait", "id": match[1], "timeout_seconds": 20}}
+	}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "bash,jobs")
+	fixture.send("first", "prompt", "Start the slow command and wait for it.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	time.Sleep(1500 * time.Millisecond)
+	fixture.send("second", "prompt", "Anything new?")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if !strings.Contains(strings.Join(recorder.bodies, "\n"), "waited-done") {
+		t.Fatalf("the wait never returned the job output: %d requests", len(recorder.bodies))
+	}
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, "Background job") {
+			t.Fatalf("request %d announces a job whose exit the model already received: %s", i, body)
+		}
+	}
+}

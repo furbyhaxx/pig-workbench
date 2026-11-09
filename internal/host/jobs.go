@@ -21,6 +21,10 @@ type jobMetadata struct {
 	LocationRevision uint64
 	Started          time.Time
 	TimedOut         bool
+	// Waiters counts jobs-wait calls in flight; Observed records that a tool result
+	// already showed the model the job's terminal state.
+	Waiters  int
+	Observed bool
 }
 type jobMetadataStore struct {
 	mu     sync.Mutex
@@ -160,10 +164,13 @@ func (a *app) watchJobCompletion(s *session, id string) {
 		if err != nil {
 			return
 		}
+		if !s.settleJobObservers(lifetime, id) {
+			return
+		}
 		s.jobMeta.mu.Lock()
 		metadata := s.jobMeta.values[id]
 		s.jobMeta.mu.Unlock()
-		if state.Cancelled && !metadata.TimedOut {
+		if state.Cancelled && !metadata.TimedOut || metadata.Observed {
 			return
 		}
 		label := jobLabel(state, metadata)
@@ -180,6 +187,36 @@ func (a *app) watchJobCompletion(s *session, id string) {
 		_, _ = a.deliverFrame(s.host, s, frame, wake)
 		s.host.Notify(noticeText("Background job "+id+" finished: "+label, 0), "info")
 	})
+}
+
+// adjustJobWaiters tracks jobs-wait calls in flight so the completion watcher does not
+// announce an exit that call is about to report.
+func (s *session) adjustJobWaiters(id string, delta int) {
+	s.jobMeta.mu.Lock()
+	defer s.jobMeta.mu.Unlock()
+	if metadata, ok := s.jobMeta.values[id]; ok {
+		metadata.Waiters += delta
+		s.jobMeta.values[id] = metadata
+	}
+}
+
+// settleJobObservers waits until no jobs-wait call is in flight for the job, so a tool
+// result that reports the exit has been recorded before the watcher decides. It returns
+// false when the session ended first.
+func (s *session) settleJobObservers(ctx context.Context, id string) bool {
+	for {
+		s.jobMeta.mu.Lock()
+		waiting := s.jobMeta.values[id].Waiters > 0
+		s.jobMeta.mu.Unlock()
+		if !waiting {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
 }
 
 // forgetJobRecord drops a finished job's registry record; a job that outlives
@@ -291,6 +328,8 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 			wait, cancel = context.WithTimeout(work, time.Duration(input.Timeout*float64(time.Second)))
 		}
 		defer cancel()
+		s.adjustJobWaiters(input.ID, 1)
+		defer s.adjustJobWaiters(input.ID, -1)
 		var waitErr error
 		if input.Until == "output" {
 			waitErr = s.waitOutput(wait, input.ID, stream, input.Cursor)
@@ -396,6 +435,11 @@ func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.To
 	}
 	s.jobMeta.mu.Lock()
 	metadata := s.jobMeta.values[id]
+	if _, ok := s.jobMeta.values[id]; ok && !state.Running {
+		observed := metadata
+		observed.Observed = true
+		s.jobMeta.values[id] = observed
+	}
 	s.jobMeta.mu.Unlock()
 	label := jobLabel(state, metadata)
 	content := fmt.Sprintf("Job %s: %s\n%s", id, label, output)
