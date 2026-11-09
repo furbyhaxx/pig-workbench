@@ -86,6 +86,7 @@ func Catalog() []Definition {
 		integer("read.query.timeout-ms", 30000, 1, 300000, ReduceProject),
 		integer("read.loop-hint-after", 3, 1, 10000, AllowProject),
 		boolean("instructions.enabled", true, DenyProject),
+		text("instructions.system-dir", "/etc/agents", DenyProject),
 		choice("instructions.boundary", "project", DenyProject, "project", "filesystem"),
 		integer("instructions.watch.debounce-ms", 100, 1, 60000, DenyProject),
 		choice("instructions.watch.remote", "auto", DenyProject, "auto", "native", "off"),
@@ -192,6 +193,9 @@ func Catalog() []Definition {
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."
+		case "instructions.system-dir":
+			d.Application = "live"
+			d.Description = "Directory holding the host-level AGENTS.md (steering above the user's) and HOST.md (always-on host facts); empty disables both. Files writable by others are refused."
 		case "instructions.backlog.validate-pointers":
 			d.Application = "live"
 			d.Description = "Validate BACKLOG pointer targets against the project root before instruction delivery."

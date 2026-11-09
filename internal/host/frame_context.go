@@ -226,6 +226,20 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 			targets = append(targets, current.Cwd)
 		}
 		seen := make(map[string]bool)
+		if dir, ok := configuration.Get("instructions.system-dir"); ok {
+			agentDir, err := sdk.AgentDir()
+			if err != nil {
+				return nil, err
+			}
+			system, err := hostFacts(ctx, agentDir, dir.Value.(string))
+			if err != nil {
+				return nil, err
+			}
+			for _, fact := range system {
+				seen[fact.source+"/"+fact.resource] = true
+				facts = append(facts, fact)
+			}
+		}
 		for _, target := range targets {
 			selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })
 			if err != nil {

@@ -92,6 +92,27 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 	return facts, privateRoot, nil
 }
 
+// hostFacts delivers the host-level AGENTS.md and HOST.md (SPEC-0007 §3.1); they apply regardless of the touched path or project trust.
+func hostFacts(ctx sdk.Context, agent, dir string) ([]contextFact, error) {
+	if dir == "" {
+		return nil, nil
+	}
+	set, err := instructions.ResolveHost(requestContext{ctx}, instructions.LocalHost(dir))
+	if err != nil {
+		return nil, err
+	}
+	var facts []contextFact
+	for _, file := range set.Files {
+		facts = append(facts, selectedFact(agent, "", file))
+	}
+	for _, reason := range set.Reasons {
+		if reason.Status == "refused" {
+			facts = append(facts, contextFact{source: "instructions.host", resource: reason.Path, kind: "notice", authority: "data", value: "Host file not loaded: " + reason.DisplayPath + " (" + reason.Detail + ")"})
+		}
+	}
+	return facts, nil
+}
+
 // nearestExistingDir returns the closest existing ancestor, because a directory that is about to be created inherits its ancestors' instructions.
 func nearestExistingDir(path string) string {
 	for {

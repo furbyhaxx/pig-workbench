@@ -5,7 +5,7 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "approved"
-  revision: 7
+  revision: 8
   created_at: "2026-11-02T16:17:52+01:00"
   updated_at: "2026-11-07T08:00:56+01:00"
   created_by: "coding-assistant"
@@ -32,6 +32,9 @@ document:
     - revision: 7
       reason: "User approved the remaining five specifications on 07.11.2026"
       changes: ["Approved the ambient-context contract for Slice 1; implementation and acceptance remain separately tracked"]
+    - revision: 8
+      reason: "User decision 09.11.2026: host-level HOST.md and AGENTS.md under /etc/agents"
+      changes: ["§3.1 defines the host steering file (/etc/agents/AGENTS.md, one level above the user's) and the always-on host facts file (/etc/agents/HOST.md), their trust, delivery, remote override and settings", "Migration: none; absent files change nothing"]
 ---
 
 # 1. Purpose and inputs
@@ -122,6 +125,20 @@ A location supplies authority/host, cwd and project/worktree root. A touched fil
 - root: filesystem root, explicitly enabled by user, independently per local/remote authority.
 
 Global user steering and authorized host notes are separate broad scopes. Includes outside the boundary need explicit authorized roots; no glob escape via .., symlinks or host alias.
+
+## 3.1 Host files: `/etc/agents/AGENTS.md` and `/etc/agents/HOST.md`
+
+Each machine may describe itself in `/etc/agents/` (directory configurable by `instructions.system-dir`, empty disables). Both files are optional; an absent file is silent.
+
+| File | Role | Meaning |
+|---|---|---|
+| `AGENTS.md` | instruction, trust `system` | Steering for every session on this host. It sits one level above the user's `AGENTS.md`: delivered first, user then project steering follow, and a more specific level may say more but this file's text is never dropped. |
+| `HOST.md` | context (data), trust `system` | Static host facts: setup, installed tooling, paths, conventions, quirks. Always on; never an instruction and never withdrawn. |
+
+- **Delivery:** through the normal instruction frames (`instructions.steering` and `instructions.host`), at the first prompt of a session and again on a branch, compaction or change (as a diff), with the same caps (200 lines, 16 KiB), digest and dedup rules as other views. They do not depend on touched paths or project trust: a host file applies to an untrusted project too.
+- **Safety:** the files are read through a regular-file, nonblocking open. A file, or its directory, writable by group or others, or owned by neither root nor the current user, is refused with a visible reason and never delivered. Symlinks are followed only to regular files.
+- **Remote authorities:** the files belong to the host of the active location's authority. When the session works on a remote host, that host's `HOST.md` and `AGENTS.md` are read from the same path on that host and **replace, per file name**, the copy from another host; a file the remote host lacks keeps the other host's copy, shown with its own host in the path so the model knows which machine it describes. Only a remote host's own files can replace another host's. A remote copy is never merged into a local one. Reading remote files needs the SSH backend (PLAN-0003 W3); until it exists, Workbench loads the local host's files only and the resolution is exercised through a reader seam.
+- **Changing authority:** moving between hosts withdraws the replaced copy with the usual "no longer applies" notice.
 
 Selection for the chain `/repo → /repo/a → /repo/a/b`:
 | Available copies | ancestors | root+nearest | nearest | root |
