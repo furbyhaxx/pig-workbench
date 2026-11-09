@@ -5,7 +5,7 @@ document:
   title: "Slice 2: full depth, every feature usable by agents"
   description: "Depth on the Slice 1 foundation: format adapters, remaining schemes, SSH, worktrees, PTY, donor-parity heuristics, project conventions, remaining instruction, interaction and messaging flows, with plain UI"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T13:53:58+01:00"
   updated_at: "2026-11-03T15:05:00+01:00"
   created_by: "coding-assistant"
@@ -23,6 +23,9 @@ document:
     - revision: 4
       reason: "User moved model-aware prompt evaluation to Slice 3"
       changes: ["Model-family adapters (SPEC-0014 §6.3) moved from W5 to PLAN-0004 C6"]
+    - revision: 5
+      reason: "User decision 09.11.2026: host-level /etc/agents files, per remote host"
+      changes: ["W3 supplies a remote HostReader so each SSH authority's /etc/agents/AGENTS.md and HOST.md replace the local copies per file name (SPEC-0007 §3.1)"]
 ---
 
 # 1. Outcome
@@ -65,7 +68,7 @@ On the approved backends: JSON/JSONL queries and pagination, SQLite read plus ro
 
 ## W3. Remote and worktrees (SPEC-0008 §3–§4, SPEC-0012 §4.3–§4.5, WB-12)
 
-SSH backend for the location, resource and job abstractions; `ssh://`; remote edits with snapshot validation; `/remote` host management preserving SSH config; worktrees with shared artifact tree and links; `/workbench projects artifacts-storage`; PTY backend and key controls; remote jobs; G8.20 refusal under an `ssh://` cwd.
+SSH backend for the location, resource and job abstractions; `ssh://`; remote edits with snapshot validation; `/remote` host management preserving SSH config; worktrees with shared artifact tree and links; `/workbench projects artifacts-storage`; PTY backend and key controls; remote jobs; G8.20 refusal under an `ssh://` cwd; a remote `instructions.HostReader` so the active SSH host's `/etc/agents/AGENTS.md` and `HOST.md` replace the local copies (`instructions.ResolveHost` already resolves per file name; SPEC-0007 §3.1).
 
 **Exit:** SPEC-0008 §8 rows; local and SSH integration tests for quoted paths, auth failure, disconnect, changed remote files, cancellation, descendants, adoption races, reload and crash; no unverified remote-kill guarantee.
 
