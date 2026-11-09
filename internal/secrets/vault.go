@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -257,26 +258,37 @@ func (v *Vault) Value(placeholder string) ([]byte, error) {
 }
 
 // Values decrypts active records, returning successful values and ErrDecrypt if any fail.
-// Callers enforcing a redaction boundary must withhold output on any error.
+// Callers that need every record to be readable must treat any error as fatal.
 func (v *Vault) Values() (map[string][]byte, error) {
+	values, unreadable, err := v.ReadableValues()
+	if err == nil && len(unreadable) > 0 {
+		err = &ErrDecrypt{}
+	}
+	return values, err
+}
+
+// ReadableValues decrypts every active record it can and lists the placeholders it could not.
+// An unreadable record (foreign key, corruption) is not an error: its value is unknowable here,
+// so it cannot be matched or redacted, and the record itself is left in the vault untouched.
+func (v *Vault) ReadableValues() (values map[string][]byte, unreadable []string, err error) {
 	records, err := v.Load()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	values := make(map[string][]byte, len(records))
-	var decryptErr error
+	values = make(map[string][]byte, len(records))
 	for placeholder, record := range records {
 		if record.Deleted {
 			continue
 		}
 		value, err := v.decrypt(record)
 		if err != nil {
-			decryptErr = err
+			unreadable = append(unreadable, placeholder)
 			continue
 		}
 		values[placeholder] = value
 	}
-	return values, decryptErr
+	sort.Strings(unreadable)
+	return values, unreadable, nil
 }
 
 func containsVaultValue(record Record, value []byte) bool {

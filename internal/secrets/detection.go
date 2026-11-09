@@ -31,8 +31,10 @@ type vaultCache struct {
 	mu      sync.Mutex
 	version string
 	known   map[string]string
-	memo    map[[sha256.Size]byte]memoEntry
-	bytes   int
+	// unreadable lists vault placeholders the current key cannot decrypt.
+	unreadable []string
+	memo       map[[sha256.Size]byte]memoEntry
+	bytes      int
 }
 
 // minSecretLength is the shortest value ever treated as a secret (SPEC-0013 §2).
@@ -376,14 +378,25 @@ func (d *Detector) Substitute(text string) (string, error) {
 	return result.String(), nil
 }
 
+// Unreadable lists vault placeholders the current key could not decrypt at the last vault read.
+// They are ignored for detection because their values are unknowable; the records stay in the vault.
+func (d *Detector) Unreadable() []string {
+	d.cache.mu.Lock()
+	defer d.cache.mu.Unlock()
+	return append([]string(nil), d.cache.unreadable...)
+}
+
 // knownValues decrypts the current vault contents and drops empty and excluded
 // values. The 8-character minimum filters detection, never an existing record:
 // explicitly registered short values must still be redacted.
 func (d *Detector) knownValues() (map[string]string, error) {
-	values, err := d.vault.Values()
+	values, unreadable, err := d.vault.ReadableValues()
 	if err != nil {
 		return nil, err
 	}
+	d.cache.mu.Lock()
+	d.cache.unreadable = unreadable
+	d.cache.mu.Unlock()
 	known := make(map[string]string, len(values))
 	for placeholder, value := range values {
 		if len(value) == 0 || d.excludedValue(string(value)) {

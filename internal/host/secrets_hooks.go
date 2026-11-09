@@ -55,6 +55,8 @@ func (a *app) redactInput(ctx sdk.Context, data map[string]any) (any, error) {
 		s.secrets.withhold(ctx, cause)
 		ctx.SetEditorText(text)
 		ctx.Notify("Your prompt was not sent and is back in the editor; nothing was lost.", "warning")
+	} else if notice := s.secrets.UnreadableNotice(); notice != "" {
+		ctx.Notify(notice, "warning")
 	}
 	return verdict, nil
 }

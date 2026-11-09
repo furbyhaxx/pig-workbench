@@ -1,6 +1,7 @@
 package host
 
 import (
+	"bytes"
 	"encoding/json"
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
@@ -438,5 +439,35 @@ func TestInputVerdictRefusesOnBoundaryFailureWithoutLosingTheCause(t *testing.T)
 	verdict, cause := b.inputVerdict("please review this")
 	if cause == nil || verdict.(map[string]any)["action"] != "handled" {
 		t.Fatalf("verdict = %v, cause = %v", verdict, cause)
+	}
+}
+
+func TestForeignKeyVaultRecordNeitherWithholdsNorRepeatsItsNotice(t *testing.T) {
+	b, agent := testBoundary(t)
+	path, err := secrets.VaultPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := secrets.OpenVault(path, bytes.Repeat([]byte{7}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreign, err := secrets.NewDetector(bytes.Repeat([]byte{7}, 32), other, secrets.DetectionPolicy{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := foreign.Learn([]byte("written-by-another-agent-dir"), "token", "env"); err != nil {
+		t.Fatal(err)
+	}
+	_ = agent
+	verdict, cause := b.inputVerdict("a normal prompt")
+	if cause != nil || verdict != nil {
+		t.Fatalf("a normal prompt must pass untouched: %v, %v", verdict, cause)
+	}
+	if b.UnreadableNotice() == "" {
+		t.Fatal("the ignored record was not reported")
+	}
+	if b.UnreadableNotice() != "" {
+		t.Fatal("the notice repeated for an unchanged set")
 	}
 }

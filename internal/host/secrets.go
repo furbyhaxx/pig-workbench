@@ -2,10 +2,12 @@ package host
 
 import (
 	"errors"
+	"fmt"
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
@@ -30,6 +32,7 @@ type secretsBoundary struct {
 	names    nameMatcher
 	learned  string
 	noticed  string
+	degraded string
 	gaps     []string
 }
 
@@ -179,4 +182,24 @@ func newHostSecretsBoundary(ctx sdk.Context, settings *config.Manager, agentDir 
 	boundary := newSecretsBoundary(settings, agentDir, project, trusted, func() string { return locations.Current().Cwd })
 	boundary.auth = hostAuthInventory(ctx)
 	return boundary
+}
+
+// UnreadableNotice reports once per distinct set that vault records could not be decrypted with the
+// current key. They are ignored, never fatal; the empty string means nothing new to say.
+func (b *secretsBoundary) UnreadableNotice() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.detector == nil {
+		return ""
+	}
+	unreadable := b.detector.Unreadable()
+	key := strings.Join(unreadable, ",")
+	if key == b.degraded {
+		return ""
+	}
+	b.degraded = key
+	if len(unreadable) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d secret vault record(s) cannot be decrypted with this key (another agent directory or a replaced secret.key wrote them) and are ignored; they are left in the vault untouched and your secrets are re-learned under the current key.", len(unreadable))
 }

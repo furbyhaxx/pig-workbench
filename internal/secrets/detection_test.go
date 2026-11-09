@@ -378,10 +378,35 @@ func TestDetectorFailsClosedOnVaultFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	appendVaultTestBytes(t, corruptPath, append(line, '\n'))
-	var decrypt *ErrDecrypt
 	got, err := corrupt.Redact("nothing to see")
-	if !errors.As(err, &decrypt) || got != "" {
-		t.Fatalf("undecryptable record returned %q, err %v", got, err)
+	if err != nil || got != "nothing to see" {
+		t.Fatalf("an undecryptable record must not make the boundary unavailable: %q, err %v", got, err)
+	}
+	if len(corrupt.Unreadable()) != 1 {
+		t.Fatalf("unreadable record was not reported: %v", corrupt.Unreadable())
+	}
+	known := []byte("still-readable-secret-value")
+	if err := corrupt.Learn(known, "token", "user"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := corrupt.Redact("x " + string(known)); err != nil || strings.Contains(got, string(known)) {
+		t.Fatalf("readable secret leaked next to an unreadable record: %q, err %v", got, err)
+	}
+}
+
+func TestDetectorIgnoresRecordsEncryptedWithAForeignKey(t *testing.T) {
+	path := testVaultPath(t)
+	foreign, _ := newTestDetector(t, bytes.Repeat([]byte{41}, 32), path, DetectionPolicy{})
+	if err := foreign.Learn([]byte("secret-written-by-another-agent-dir"), "token", "env"); err != nil {
+		t.Fatal(err)
+	}
+	master := bytes.Repeat([]byte{42}, 32)
+	own, _ := newTestDetector(t, master, path, DetectionPolicy{})
+	if got, err := own.Redact("hello"); err != nil || got != "hello" {
+		t.Fatalf("foreign-key record made the boundary fail: %q, err %v", got, err)
+	}
+	if len(own.Unreadable()) != 1 {
+		t.Fatalf("foreign record not reported: %v", own.Unreadable())
 	}
 }
 

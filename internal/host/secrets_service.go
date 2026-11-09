@@ -72,7 +72,7 @@ func (b *secretsBoundary) injectedEnvironment(projectID string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	values, err := vault.Values()
+	values, _, err := vault.ReadableValues()
 	if err != nil {
 		return nil, err
 	}

@@ -5,12 +5,16 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "approved"
-  revision: 7
+  revision: 8
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-08T14:23:19+01:00"
+  updated_at: "2026-11-09T12:20:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 8
+      reason: "A vault record the current key cannot decrypt made every request and prompt fail, and the refused prompt was lost"
+      changes: ["Undecryptable records are ignored and reported once, not fatal: their value is unknowable, so withholding protected nothing", "A refused prompt returns to the editor with a notice instead of vanishing", "Placeholder-hash mismatch of a readable record stays fatal (tampering)"]
+      migration: "No data migration; unreadable records stay in the vault untouched."
     - revision: 7
       reason: "Protect retained tool metadata, not only model-bound content"
       changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
@@ -56,7 +60,7 @@ Detection policy is `Secrets.toml` version 2 with nukii's schema (`version`, `[e
 - `$XDG_DATA_HOME/pig-workbench/secrets/vault.jsonl`, directory 0700, file 0600, append-only records under an advisory file lock; all sessions of the user share it and reload on fingerprint change.
 - Record: `{v, placeholder, ciphertext, nonce, kind, source: detected|env|env-file|auth|user, scope: global|project, projectId?, name?, env?, description?, created, deleted?}`. Values are insert-if-absent per placeholder; metadata changes and soft deletes are new records (last wins); ciphertext never changes.
 - Encryption: AES-256-GCM (Q3) with a random 96-bit nonce per record and the placeholder as AAD. Records are written once per value, far below the 2^32 random-nonce limit per key.
-- A torn last line is ignored with a diagnostic; an unreadable vault or key makes the boundary fail closed (§4.4).
+- A torn last line is ignored with a diagnostic; an unreadable vault file or key makes the boundary fail closed (§4.4). A single record the current key cannot decrypt (written under another agent directory's key, or after the key file was replaced) is ignored and reported once; it stays in the vault untouched and its value is re-learned under the current key.
 
 # 4. The LLM boundary
 
@@ -95,7 +99,7 @@ PiG stores the rendered system message, including `project_context`, in the sess
 
 - **Fail closed:** if the key or vault cannot be loaded, or a redaction pass errors:
   - `before_provider_request` calls `ctx.Abort()` and returns an error, which withholds the request (probe: the turn ends `Request aborted`, nothing reaches the provider). Returning an error alone is not enough: PiG then sends the original payload. Workbench shows a notice naming the cause and `/workbench secrets`.
-  - `tool_result` replaces content with a withheld-output error and clears details and structured content atomically, so partially protected output never enters the session. `input` refuses the prompt with the same notice.
+  - `tool_result` replaces content with a withheld-output error and clears details and structured content atomically, so partially protected output never enters the session. `input` does not send the prompt with the same notice, and returns the typed text to the editor so nothing the user wrote is lost.
   - Recovery needs no restart: the next request after the key and vault load again goes through.
 - `secrets.enabled = false` turns the whole feature off explicitly; then nothing is redacted and the activity line shows `secrets off`.
 
