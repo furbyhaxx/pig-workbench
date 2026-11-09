@@ -10,10 +10,8 @@ import (
 	"strings"
 )
 
-func gitOutput(ctx context.Context, dir string, args ...string) (string, error) {
-	if err := ctx.Err(); err != nil {
-		return "", err
-	}
+// gitCommand builds a git invocation with optional writes, tracing and inherited repository overrides suppressed.
+func gitCommand(ctx context.Context, dir string, args ...string) *exec.Cmd {
 	command := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
 	for _, variable := range os.Environ() {
 		key, _, _ := strings.Cut(variable, "=")
@@ -31,7 +29,14 @@ func gitOutput(ctx context.Context, dir string, args ...string) (string, error) 
 		command.Env = append(command.Env, variable)
 	}
 	command.Env = append(command.Env, "GIT_OPTIONAL_LOCKS=0", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE2=0", "GIT_TRACE2_EVENT=0", "GIT_TRACE2_PERF=0")
-	output, err := command.Output()
+	return command
+}
+
+func gitOutput(ctx context.Context, dir string, args ...string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	output, err := gitCommand(ctx, dir, args...).Output()
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return "", ctxErr
 	}

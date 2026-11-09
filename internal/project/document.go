@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/BurntSushi/toml"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
@@ -237,37 +240,68 @@ func Load(dir string) (project Project, found bool, err error) {
 	return project, true, err
 }
 
-const projectTemplate = `# Project identity shared by all component repositories.
-version = 1
-id = %q
-slug = %q
+// render writes a validated project as a commented Project.toml.
+func render(project Project) string {
+	var b strings.Builder
+	b.WriteString("# Project identity shared by all component repositories.\nversion = 1\n")
+	fmt.Fprintf(&b, "id = %q\nslug = %q\n", project.ID, project.Slug)
+	if project.Name != "" {
+		fmt.Fprintf(&b, "name = %q\n", project.Name)
+	}
+	if project.Description != "" {
+		fmt.Fprintf(&b, "description = %q\n", project.Description)
+	}
+	b.WriteString("\n# This repository's role in the project.\n[component]\n")
+	writeComponent(&b, project.Component)
+	for _, component := range project.Components {
+		b.WriteString("\n# Another repository of the project.\n[[components]]\n")
+		writeComponent(&b, component)
+	}
+	links := make([]string, len(project.Worktrees.Links))
+	for i, link := range project.Worktrees.Links {
+		links[i] = fmt.Sprintf("%q", link)
+	}
+	fmt.Fprintf(&b, "\n[worktrees]\nlinks = [%s]\nshare_project_tree = %t\n", strings.Join(links, ", "), project.Worktrees.ShareProjectTree)
+	fmt.Fprintf(&b, "\n[artifacts]\nstorage = %q # tree or branch\n", project.Artifacts.Storage)
+	fmt.Fprintf(&b, "\n[conventions]\nartifacts = %t\nagents_md = %t\n", project.Conventions.Artifacts, project.Conventions.AgentsMD)
+	return b.String()
+}
 
-# This repository's role in the project.
-[component]
-slug = %q
-primary = true
+func writeComponent(b *strings.Builder, component Component) {
+	fmt.Fprintf(b, "slug = %q\n", component.Slug)
+	if component.DefaultRemote != "" {
+		fmt.Fprintf(b, "default_remote = %q\n", component.DefaultRemote)
+	}
+	if component.DefaultBranch != "" {
+		fmt.Fprintf(b, "default_branch = %q\n", component.DefaultBranch)
+	}
+	if component.Primary {
+		b.WriteString("primary = true\n")
+	}
+}
 
-[worktrees]
-links = []
-share_project_tree = true
-
-[artifacts]
-storage = "tree" # tree or branch
-
-[conventions]
-artifacts = true
-agents_md = true
-`
-
-// Create writes a new project document without replacing an existing path.
+// Create writes a new single-repository project document without replacing an existing path.
 func Create(dir, id, slug string) (Project, error) {
+	return Write(dir, Project{
+		ID: id, Slug: slug, Component: Component{Slug: slug, Primary: true},
+		Worktrees: Worktrees{ShareProjectTree: true}, Artifacts: Artifacts{Storage: "tree"},
+		Conventions: Conventions{Artifacts: true, AgentsMD: true},
+	})
+}
+
+// Write validates project and publishes it as dir/.project/Project.toml without replacing an existing path.
+func Write(dir string, project Project) (Project, error) {
 	path := filepath.Join(dir, ".project", "Project.toml")
-	seed := Project{ID: id, Slug: slug, Component: Component{Slug: slug, Primary: true}, Artifacts: Artifacts{Storage: "tree"}}
-	if err := validate(path, seed); err != nil {
+	if err := validate(path, project); err != nil {
 		return Project{}, err
 	}
-	contents := fmt.Sprintf(projectTemplate, id, slug, slug)
-	project, err := parseDocument(path, contents)
+	for _, text := range []string{project.Name, project.Description} {
+		if !utf8.ValidString(text) || strings.ContainsFunc(text, unicode.IsControl) {
+			return Project{}, &Error{Path: path, Key: "name", Reason: "text must be valid UTF-8 without control characters"}
+		}
+	}
+	contents := render(project)
+	parsed, err := parseDocument(path, contents)
 	if err != nil {
 		return Project{}, err
 	}
@@ -293,5 +327,5 @@ func Create(dir, id, slug string) (Project, error) {
 	if err := os.Link(file.Name(), path); err != nil {
 		return Project{}, fmt.Errorf("create project document %s: %w", path, err)
 	}
-	return project, nil
+	return parsed, nil
 }

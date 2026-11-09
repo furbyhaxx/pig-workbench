@@ -64,6 +64,17 @@ func (r *Registry) Detect(ctx context.Context, dir string) (Detection, error) {
 	if err := ctx.Err(); err != nil {
 		return Detection{}, err
 	}
+	if repoRoot != "" {
+		id, err := readMarker(ctx, repoRoot)
+		if err != nil {
+			return Detection{}, err
+		}
+		for _, entry := range entries {
+			if id != "" && entry.Project.ID == id {
+				return detected(ctx, entry.Project, "marker", entry.RegistryDir, repoRoot)
+			}
+		}
+	}
 	if err := errors.Join(problems...); err != nil {
 		return Detection{}, err
 	}
