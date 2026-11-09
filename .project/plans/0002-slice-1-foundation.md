@@ -5,12 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 62
+  revision: 63
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-09T12:30:00+01:00"
+  updated_at: "2026-11-09T17:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 63
+      reason: "Defects reported in live use and pig-web R9/R10, fixed after revision 62"
+      changes: ["An unreadable vault record no longer blocks requests and a refused prompt returns to the editor (SPEC-0013 rev 8); an over-permissive owned secret.key is narrowed to 0600 (rev 9)", "pig-web R9 (project on every location surface, SPEC-0001 rev 12) and R10 (provider search dispatch, SPEC-0004 rev 10)", "Instruction churn on foreign-path touches fixed, one frame nonce per session lineage, session.model carries the knowledge cutoff and staleness guidance, call-row and snapshot-error defects fixed", "Project creation and joining: /workbench projects list|create|join|example, an interactive panel and a once-per-repository offer (SPEC-0012 rev 9), plus a commented Project.toml example"]
     - revision: 62
       reason: "Close the in-repo gaps named after revision 61"
       changes: ["activity.shortcut applied and tested in a real TUI", "Module fixed to build on Windows; `just windows` cross-vets and runs 14 packages under wine", "Fused Piglet Binary blocker re-reproduced on PiG 0.7.0", "Read no longer allocates a line prefix per line past the page; the memory test now compares file sizes", "Live pins, capped BACKLOG diff and compaction runs; larger A/B; prompt.delivery auto serves builtin/workbench on stock PiG"]

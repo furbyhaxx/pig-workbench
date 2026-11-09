@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 61
+  revision: 62
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-09T12:30:00+01:00"
+  updated_at: "2026-11-09T17:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 62
+      reason: "Record fixes for defects reported in live use after revision 61"
+      changes: ["Vault, key-permission, instruction churn, nonce, model cutoff, renderer and project creation work with their evidence"]
     - revision: 61
       reason: "Record the in-repo closures after the review follow-up"
       changes: ["activity.shortcut live", "Windows build fixed and measured under wine", "Fused blocker reproduced again", "Read allocation defect fixed"]
@@ -354,3 +357,18 @@ Defects the live runs found, each fixed with a regression test that failed first
 - **Untested refusal.** A malformed `expectedRevision` was refused with a helpful message but no test; `TestLiveWriteRevisionAndLs` now covers it and uses a well-formed wrong revision for the stale case.
 
 Still not evaluated with a live model: pins, the capped-BACKLOG diff, compaction with instructions, and a bash-capable injection against frame data (only `read` was available in that scenario).
+
+## Defects reported in live use (09.11.2026)
+
+Each was reproduced or covered by a test that failed before the fix.
+
+| Report | Fix | Evidence |
+|---|---|---|
+| A submitted prompt vanished with "Secrets boundary unavailable" | An undecryptable vault record is ignored with one notice; any other boundary failure returns the prompt to the editor; a user-owned `secret.key` with a wide mode is narrowed to `0600` (SPEC-0013 rev 8, 9) | `TestLiveSubmittedPromptSurvivesAnUnavailableSecretsBoundary`, `TestLiveSubmittedPromptIsSentDespiteAVaultRecordFromAnotherKey`, `TestLiveWideSecretKeyIsNarrowedAndThePromptIsSent` |
+| Root AGENTS.md withdrawn and re-delivered when a path outside the project was touched | The active scope is the union of cwd, touched and pinned scopes (SPEC-0007); a boundary notice is withdrawn on return | two live regression tests in `live_scripted_test.go` |
+| Frame nonce changed with every frame | One nonce per session lineage, persisted and inherited by forks and branches | commit 7924152 |
+| `session.model` lacked the knowledge cutoff and the stale-data instruction | Attributed cutoff from a models.dev snapshot, a `models.knowledge-cutoffs` setting and always-present guidance | `internal/modelknowledge`, `model_frame_test.go` |
+| `read ...` rows and the "no retained snapshot" edit failure | Call rows render path and selector; the error names the recovery | live and unit regression tests |
+| No commented `Project.toml`, no way to create or select a project | `docs/projects.md` embeds the parsed example; `/workbench projects` panel and commands; one offer per repository | `TestLiveProjectsPanelCreatesAProjectAndTheFrameNamesIt`, `TestLiveProjectsPanelJoinsARegisteredProjectByMarker`, `TestLiveRepositoryInNoProjectIsOfferedAProjectOnce`, captures in `evidence/projects-panel-tui/` |
+
+Gates at this point: `just check`, `just race` and `just integration` pass. The offer has no setting to switch it off, and it is not shown in print mode.
