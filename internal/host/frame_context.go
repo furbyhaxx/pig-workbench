@@ -206,6 +206,11 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 				targets = append(targets, s.contextFrames.retainedFor(current.Revision, epoch)...)
 			}
 		}
+		// The cwd-derived scope stays active beside any tool target (SPEC-0007 §4): touching a path in
+		// another repository must not withdraw this project's root instructions.
+		if data["workbenchToolContext"] == true && !slices.Contains(targets, current.Cwd) {
+			targets = append(targets, current.Cwd)
+		}
 		seen := make(map[string]bool)
 		for _, target := range targets {
 			selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })

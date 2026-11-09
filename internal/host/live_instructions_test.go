@@ -850,3 +850,65 @@ func TestLiveCdIntoANestedTreeDeliversItsInstructionsWithoutRepeatingTheRoot(t *
 		t.Fatalf("nested rule appears %d times, want 1", got)
 	}
 }
+
+// Reading a file in another repository, or in a nested worktree below the project, must neither
+// withdraw this project's root rule nor make it arrive twice: the cwd-derived scope stays active
+// beside any tool target (SPEC-0007 §4).
+func TestLiveTouchingAnotherRepositoryKeepsTheRootRuleActive(t *testing.T) {
+	for name, foreignOf := range map[string]func(root string) string{
+		"sibling repository": func(string) string { return t.TempDir() },
+		"nested worktree":    func(root string) string { return filepath.Join(root, ".worktrees", "feat") },
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			foreign := foreignOf(root)
+			for path, text := range map[string]string{
+				filepath.Join(root, ".git", "HEAD"):    "ref: refs/heads/main\n",
+				filepath.Join(root, "AGENTS.md"):       "ROOT-RULE-MARKER applies everywhere.\n",
+				filepath.Join(root, "a.txt"):           "a\n",
+				filepath.Join(foreign, ".git", "HEAD"): "ref: refs/heads/main\n",
+				filepath.Join(foreign, "f.txt"):        "f\n",
+			} {
+				if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			scripted := map[int]scriptedCall{
+				0: {"read", map[string]any{"path": filepath.Join(foreign, "f.txt")}},
+				1: {"read", map[string]any{"path": "a.txt"}},
+				2: {"write", map[string]any{"path": "b.txt", "content": "b\n"}},
+				3: {"read", map[string]any{"path": filepath.Join(foreign, "f.txt")}},
+			}
+			recorder := &requestRecorder{next: func(index int) *scriptedCall {
+				if call, ok := scripted[index]; ok {
+					return &call
+				}
+				return nil
+			}}
+			server := recorder.serve(t)
+			defer server.Close()
+			writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+			fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+			fixture.send("go", "prompt", "Go.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			last := recorder.bodies[len(recorder.bodies)-1]
+			if strings.Contains(last, "no longer applies to the active tool target: "+filepath.Join(root, "AGENTS.md")) {
+				t.Fatal("touching another repository withdrew the project's root rule")
+			}
+			if strings.Contains(last, "instructionContextChanged") {
+				t.Fatal("the write in the project was blocked by redelivery")
+			}
+			if got := strings.Count(last, "ROOT-RULE-MARKER"); got != 1 {
+				t.Fatalf("the root rule reached the model %d times, want exactly once", got)
+			}
+			if data, err := os.ReadFile(filepath.Join(root, "b.txt")); err != nil || string(data) != "b\n" {
+				t.Fatalf("the write did not land: %v %q", err, data)
+			}
+		})
+	}
+}
