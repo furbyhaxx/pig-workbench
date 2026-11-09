@@ -185,7 +185,13 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	a.syncEditText(ctx, editMode)
 	for _, fact := range facts {
 		if fact.source == "session.capabilities" {
-			fact.value.(map[string]any)["editMode"] = editMode
+			capabilities := fact.value.(map[string]any)
+			capabilities["editMode"] = editMode
+			if s.settingString("skills.listing", "prompt") == "frame" {
+				if listed, _, err := s.listedSkills(); err == nil && len(listed) > 0 {
+					capabilities["skills"] = listed
+				}
+			}
 		}
 	}
 	enabled, _ := configuration.Get("instructions.enabled")

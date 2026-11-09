@@ -1103,3 +1103,34 @@ func TestLiveAutoLoadSkillIsDeliveredOnceAndStaysDeclinedAfterUnload(t *testing.
 		t.Fatalf("skill delivered %d times across repeated touches and an unload; want exactly once", got)
 	}
 }
+
+// TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt covers skills.listing: with frame the
+// Workbench prompt has no <skills> section and the listing rides the capabilities frame.
+func TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt(t *testing.T) {
+	setup := func(t *testing.T) string {
+		root := t.TempDir()
+		dir := filepath.Join(root, ".agents", "skills", "alpha")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: alpha\ndescription: routing text\n---\nbody\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return root
+	}
+	read := func([]string) scriptedCall {
+		return scriptedCall{tool: "read", args: map[string]any{"path": "skill://alpha"}}
+	}
+	run := func(listing string) string {
+		_, requests := runScriptedRequests(t, setup(t), "read", "[prompt]\ndelivery = 'force'\n[skills]\nlisting = '"+listing+"'\n", nil, read)
+		return strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`).Replace(requests[0])
+	}
+	prompt := run("prompt")
+	if !strings.Contains(prompt, "<skills>") || strings.Contains(prompt, `"location": "skill://alpha"`) {
+		t.Fatalf("prompt listing must keep <skills> and leave the frame without a listing:\n%s", prompt)
+	}
+	frame := run("frame")
+	if strings.Contains(frame, "<skills>") || !strings.Contains(frame, `"location": "skill://alpha"`) || !strings.Contains(frame, "routing text") {
+		t.Fatalf("frame listing must drop <skills> and carry the skill in session.capabilities:\n%s", frame)
+	}
+}

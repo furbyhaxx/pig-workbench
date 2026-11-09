@@ -247,9 +247,12 @@ func Catalog() []Definition {
 			d.Description = "Only force replaces PiG's prompt; auto and sections retain PiG; the live A/B was too small to change the default."
 		case "prompt.template":
 			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
+		case "skills.listing":
+			d.Application = "live"
+			d.Description = "prompt keeps PiG's <skills> section in the Workbench system prompt; frame leaves it out and delivers the budgeted skill:// listing in the session.capabilities frame. The system prompt is only Workbench's when prompt delivery takes it over."
 		case "skills.listing-budget":
 			d.Application = "live"
-			d.Description = "Target byte budget for the /workbench skills listing; zero disables the ladder. It does not change PiG's prompt skill listing."
+			d.Description = "Target byte budget for the /workbench skills listing and the frame listing; zero disables the ladder. It does not change PiG's prompt skill listing."
 		case "activity.shortcut":
 			d.Description = "Not applied: alt+w is registered statically before settings load."
 		case "read.max-lines":

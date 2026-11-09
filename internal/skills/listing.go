@@ -7,9 +7,9 @@ import (
 
 // Listed is one prompt line after the budget ladder.
 type Listed struct {
-	Name        string
-	Description string
-	Location    string
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Location    string `json:"location"`
 }
 
 // List applies the listing ladder: bundled descriptions go first, then other

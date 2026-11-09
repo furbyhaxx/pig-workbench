@@ -58,6 +58,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"activity", []string{"activity.enabled", "activity.placement"}, TestLiveActivitySettingsControlWidget},
 		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
 		{"fetch-backends", []string{"fetch.disabled-backends"}, TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader},
+		{"skills-frame", []string{"skills.listing"}, TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt},
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
 	}
 	var covered, live []string

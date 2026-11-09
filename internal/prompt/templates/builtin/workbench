@@ -53,7 +53,7 @@ Registered documentation is read at docs://.
 {% endfor %}
 </project_context>
 {% endblock %}
-{% block skills %}
+{% block skills %}{% if skills.listing != "frame" %}
 <skills>
 {% if skills.items or host.skills %}
 Use the read tool to load a skill's file when the task matches its description.
@@ -75,7 +75,7 @@ Use the read tool to load a skill's file when the task matches its description.
 </available_skills>
 {% endif %}
 </skills>
-{% endblock %}
+{% endif %}{% endblock %}
 {% block cwd %}
 <cwd>
 {{ project_root }}

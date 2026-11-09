@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -277,6 +278,26 @@ func restoreSkills(ctx sdk.Context, state *skillState) {
 		state.mu.Unlock()
 		return
 	}
+}
+
+// listedSkills returns the visible skills after the skills.listing-budget ladder, plus the loaded set.
+func (s *session) listedSkills() ([]skills.Listed, map[string]bool, error) {
+	catalog, err := s.skills.catalog()
+	if err != nil {
+		return nil, nil, err
+	}
+	s.skills.mu.Lock()
+	loaded := maps.Clone(s.skills.loaded)
+	s.skills.mu.Unlock()
+	budget := 4096
+	if configuration, err := s.settings.Current(); err == nil {
+		if entry, ok := configuration.Get("skills.listing-budget"); ok {
+			if value, ok := entry.Value.(int64); ok {
+				budget = int(value)
+			}
+		}
+	}
+	return skills.List(skills.Visible(catalog, s.location.Current().Cwd, loaded), budget), loaded, nil
 }
 
 func (s *session) deliverAutoSkills(ctx sdk.Context) {

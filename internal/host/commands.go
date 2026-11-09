@@ -9,7 +9,6 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/internal/prompt"
-	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
 
 func (a *app) registerCommands(ext *sdk.Extension) {
@@ -210,24 +209,12 @@ func (a *app) skillsCommand(ctx sdk.Context) error {
 	if err != nil {
 		return err
 	}
-	catalog, err := s.skills.catalog()
+	listed, loaded, err := s.listedSkills()
 	if err != nil {
 		return err
 	}
-	s.skills.mu.Lock()
-	loaded := s.skills.loaded
-	s.skills.mu.Unlock()
-	visible := skills.Visible(catalog, s.location.Current().Cwd, loaded)
-	budget := 4096
-	if configuration, err := s.settings.Current(); err == nil {
-		if entry, ok := configuration.Get("skills.listing-budget"); ok {
-			if value, ok := entry.Value.(int64); ok {
-				budget = int(value)
-			}
-		}
-	}
 	var b strings.Builder
-	for _, item := range skills.List(visible, budget) {
+	for _, item := range listed {
 		state := "available"
 		if loaded[item.Name] {
 			state = "loaded"

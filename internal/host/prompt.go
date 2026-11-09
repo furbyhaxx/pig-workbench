@@ -176,6 +176,9 @@ func promptData(s *session, options sdk.SystemPromptOptions) prompt.Data {
 		if entry, ok := configuration.Get("edit.mode"); ok {
 			data.Workbench.Edit.Mode, _ = entry.Value.(string)
 		}
+		if entry, ok := configuration.Get("skills.listing"); ok {
+			data.Skills.Listing, _ = entry.Value.(string)
+		}
 		if entry, ok := configuration.Get("secrets.enabled"); ok {
 			data.Workbench.Secrets.Enabled, _ = entry.Value.(bool)
 		}

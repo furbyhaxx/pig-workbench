@@ -85,3 +85,24 @@ func TestBuiltinWorkbenchCarriesHostInputs(t *testing.T) {
 		t.Errorf("replace mode rule is wrong:\n%s", rendered.Text)
 	}
 }
+
+func TestBuiltinWorkbenchLeavesTheSkillsSectionOutForFrameListing(t *testing.T) {
+	loader, err := NewFileSystemLoader(FileSystemOptions{Builtin: BuiltinFS()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	engine, err := New(Options{Loader: loader})
+	if err != nil {
+		t.Fatal(err)
+	}
+	host := Host{Skills: []HostSkill{{Name: "alpha", Description: "d", FilePath: "/s/alpha/SKILL.md"}}}
+	for listing, want := range map[string]bool{"prompt": true, "": true, "frame": false} {
+		rendered, err := engine.Render(context.Background(), "builtin/workbench", Data{ProjectRoot: "/work", Host: host, Skills: SkillCatalog{Listing: listing}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.Contains(rendered.Text, "<skills>") || strings.Contains(rendered.Text, "/s/alpha/SKILL.md"); got != want {
+			t.Errorf("listing %q: skills section present=%v, want %v", listing, got, want)
+		}
+	}
+}
