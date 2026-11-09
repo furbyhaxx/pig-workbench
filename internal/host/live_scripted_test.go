@@ -71,8 +71,15 @@ func runScriptedConfig(t *testing.T, root, tools, config string, steps ...script
 // runScriptedWith also co-loads the named testdata extensions.
 func runScriptedWith(t *testing.T, root, tools, config string, fixtures []string, steps ...scriptStep) []string {
 	t.Helper()
+	results, _ := runScriptedRequests(t, root, tools, config, fixtures, steps...)
+	return results
+}
+
+// runScriptedRequests is runScriptedWith that also returns each provider request's messages as JSON.
+func runScriptedRequests(t *testing.T, root, tools, config string, fixtures []string, steps ...scriptStep) ([]string, []string) {
+	t.Helper()
 	var mu sync.Mutex
-	var latest []string
+	var latest, requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Messages []map[string]any `json:"messages"`
@@ -87,8 +94,10 @@ func runScriptedWith(t *testing.T, root, tools, config string, fixtures []string
 				results = append(results, toolMessageText(message))
 			}
 		}
+		encoded, _ := json.Marshal(request.Messages)
 		mu.Lock()
 		latest = results
+		requests = append(requests, string(encoded))
 		mu.Unlock()
 		w.Header().Set("Content-Type", "text/event-stream")
 		send := func(delta any, reason any) {
@@ -122,7 +131,7 @@ func runScriptedWith(t *testing.T, root, tools, config string, fixtures []string
 	if len(latest) != len(steps) {
 		t.Fatalf("script ran %d of %d steps; results: %q", len(latest), len(steps), latest)
 	}
-	return latest
+	return latest, requests
 }
 
 func readFile(t *testing.T, path string) string {
@@ -1061,5 +1070,36 @@ func TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader(t *testing.T) {
 	off := runScriptedWith(t, t.TempDir(), "read", "[fetch]\ndisabled-backends = ['reference-producer/web']\n", []string{"reference-producer"}, read)
 	if strings.Contains(off[0], marker) {
 		t.Fatalf("disabled backend still served the URL: %s", off[0])
+	}
+}
+
+// TestLiveAutoLoadSkillIsDeliveredOnceAndStaysDeclinedAfterUnload covers SPEC-0014 §8 auto_load.
+func TestLiveAutoLoadSkillIsDeliveredOnceAndStaysDeclinedAfterUnload(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, ".agents", "skills", "alpha")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	skill := "---\nname: alpha\ndescription: sql helper\nauto_load:\n  touched: [\"*.sql\"]\n---\nAUTO-SKILL-BODY\n"
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(skill), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.sql"), []byte("select 1;\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	readSQL := func([]string) scriptedCall { return scriptedCall{tool: "read", args: map[string]any{"path": "a.sql"}} }
+	unload := func([]string) scriptedCall {
+		return scriptedCall{tool: "write", args: map[string]any{"path": "skill://alpha/ctl", "content": "unload"}}
+	}
+	_, requests := runScriptedRequests(t, root, "read,write", "", nil, readSQL, readSQL, unload, readSQL)
+	const marker = "skill alpha auto-loaded"
+	if strings.Contains(requests[0], marker) {
+		t.Fatal("skill was delivered before any file was touched")
+	}
+	if !strings.Contains(requests[1], marker) || !strings.Contains(requests[1], "AUTO-SKILL-BODY") {
+		t.Fatalf("touching a matching file did not deliver the skill:\n%s", requests[1])
+	}
+	if got := strings.Count(requests[len(requests)-1], marker); got != 1 {
+		t.Fatalf("skill delivered %d times across repeated touches and an unload; want exactly once", got)
 	}
 }
