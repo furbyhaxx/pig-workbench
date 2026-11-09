@@ -113,3 +113,42 @@ func TestLiveHostFilesWritableByOthersAreRefusedWithANotice(t *testing.T) {
 		t.Fatalf("the refusal must be visible and the other instructions unaffected")
 	}
 }
+
+func TestLiveHostFilesSurviveCompactionExactlyOnce(t *testing.T) {
+	root, systemDir := hostFilesFixture(t, 0o644)
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	agent := filepath.Join(root, "agent")
+	writeFixtureProvider(t, agent, server.URL)
+	if err := os.WriteFile(filepath.Join(agent, "settings.json"), []byte(`{"compaction":{"enabled":true,"keepRecentTokens":1}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	settings := fmt.Sprintf("[instructions]\nsystem-dir = %q\n", systemDir)
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	for i, prompt := range []string{"first", "second"} {
+		f.send(fmt.Sprintf("p%d", i), "prompt", prompt)
+		f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	}
+	f.sendRaw("compact", "compact", nil)
+	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "compact" })
+	recorder.mu.Lock()
+	before := len(recorder.bodies)
+	recorder.mu.Unlock()
+	f.send("p2", "prompt", "third")
+	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) <= before {
+		t.Fatal("no provider request after compaction")
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	for _, marker := range []string{"SYSTEM-RULE-MARKER", "HOST-FACT-MARKER"} {
+		if got := strings.Count(last, marker); got != 1 {
+			t.Fatalf("%s appears %d times after compaction, want exactly 1", marker, got)
+		}
+	}
+}
