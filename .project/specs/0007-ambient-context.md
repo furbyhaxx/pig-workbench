@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "approved"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-09T21:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -38,6 +38,9 @@ document:
     - revision: 9
       reason: "User decision 09.11.2026: group-writable host files must load"
       changes: ["§3.1 refuses only world-writable files and directories (sticky directories exempt) and foreign owners; group-writable is accepted", "Migration: files previously refused as group-writable now load"]
+    - revision: 10
+      reason: "Linked worktrees below the checkout were refused as untrusted nested repositories"
+      changes: ["A linked worktree created from a checkout inside the project is part of that project, not a boundary; the claim is verified by the main checkout's back-link", "Identical bytes in a worktree deduplicate against the already selected file; a differing worktree file applies"]
 ---
 
 # 1. Purpose and inputs
@@ -121,7 +124,7 @@ Project classes can add bounded context within the trusted project; they cannot 
 
 # 3. Roots, boundaries and targets
 
-A location supplies authority/host, cwd and project/worktree root. A touched file uses its containing directory; a directory target uses itself. Resolve symlinks/canonical identity for containment and retain display path separately. Nested repository/worktree boundaries stop inheritance from an enclosing checkout by default; explicitly configured global/host steering remains additive.
+A location supplies authority/host, cwd and project/worktree root. A touched file uses its containing directory; a directory target uses itself. Resolve symlinks/canonical identity for containment and retain display path separately. Nested repository boundaries stop inheritance from an enclosing checkout by default; a **linked worktree** of a checkout inside the project (`.git` file `gitdir: <main>/.git/worktrees/<name>`, confirmed by `<main>/.git/worktrees/<name>/gitdir` pointing back at it) is part of the project, needs no trust rule, applies its own files and drops a file whose bytes, class, role and trust equal one already selected; explicitly configured global/host steering remains additive.
 
 - project: current repository/worktree root, or captured origin if no repository exists.
 - home: ascend only to the resolved authority's home if target lies below it; otherwise project.

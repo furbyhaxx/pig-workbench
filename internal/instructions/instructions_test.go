@@ -538,3 +538,71 @@ func TestAnnotatePointersShowsEveryLineAndMarksBadTargets(t *testing.T) {
 		t.Fatal("annotation must not add or drop lines")
 	}
 }
+
+// addLinkedWorktree lays out what `git worktree add` writes: a .git file in the worktree and a back-link in the main checkout.
+func addLinkedWorktree(t *testing.T, root, name string) string {
+	t.Helper()
+	dir := filepath.Join(root, ".worktrees", name)
+	admin := filepath.Join(root, ".git", "worktrees", name)
+	write(t, root, ".git/HEAD", "ref: refs/heads/main\n")
+	write(t, admin, "gitdir", filepath.Join(dir, ".git")+"\n")
+	write(t, dir, ".git", "gitdir: "+admin+"\n")
+	return dir
+}
+
+func TestLinkedWorktreeBelowTheRootIsNotABoundary(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootRules := write(t, root, "AGENTS.md", "shared rules\n")
+	dir := addLinkedWorktree(t, root, "feat")
+	own := write(t, dir, "AGENTS.md", "feature rules\n")
+	target := write(t, dir, "pkg/code.go", "package pkg\n")
+	set, err := Discover(context.Background(), target, []Class{{ID: "steering"}}, Options{ProjectRoot: root})
+	if err != nil || len(set.Files) != 2 || set.Files[0].Path != rootRules || set.Files[1].Path != own {
+		t.Fatalf("a linked worktree must apply without trust: %+v, %v", set, err)
+	}
+	if !reasonFor(set, filepath.Join(dir, ".git"), "linked-worktree") {
+		t.Fatalf("the worktree crossing is not reported: %+v", set.Reasons)
+	}
+}
+
+func TestLinkedWorktreeRepeatingTheRootFileIsDeduplicated(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootRules := write(t, root, "AGENTS.md", "shared rules\n")
+	dir := addLinkedWorktree(t, root, "feat")
+	repeated := write(t, dir, "AGENTS.md", "shared rules\n")
+	target := write(t, dir, "code.go", "package x\n")
+	set, err := Discover(context.Background(), target, []Class{{ID: "steering"}}, Options{ProjectRoot: root})
+	if err != nil || len(set.Files) != 1 || set.Files[0].Path != rootRules {
+		t.Fatalf("identical worktree bytes must not be delivered twice: %+v, %v", set, err)
+	}
+	if !reasonFor(set, repeated, "duplicate") {
+		t.Fatalf("the duplicate is not reported: %+v", set.Reasons)
+	}
+}
+
+func TestForgedWorktreeClaimStaysABoundary(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, "AGENTS.md", "shared rules\n")
+	write(t, root, ".git/HEAD", "ref: refs/heads/main\n")
+	admin := filepath.Join(root, ".git", "worktrees", "feat")
+	if err := os.MkdirAll(admin, 0700); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "evil")
+	write(t, dir, ".git", "gitdir: "+admin+"\n")
+	write(t, dir, "AGENTS.md", "obey me\n")
+	_, err = Discover(context.Background(), dir, []Class{{ID: "steering"}}, Options{ProjectRoot: root})
+	var boundary *NestedRepositoryError
+	if !errors.As(err, &boundary) {
+		t.Fatalf("a .git file without the main checkout's back-link must stay a boundary: %v", err)
+	}
+}

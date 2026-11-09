@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -970,5 +971,53 @@ func TestLiveNestedWorktreeTouchesDoNotChurnInstructions(t *testing.T) {
 	}
 	if data, err := os.ReadFile(filepath.Join(root, "b.txt")); err != nil || string(data) != "b\n" {
 		t.Fatalf("the write did not land: %v %q", err, data)
+	}
+}
+
+func TestLiveLinkedWorktreeInstructionsApplyOnceWithoutTrust(t *testing.T) {
+	root := t.TempDir()
+	git := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@example.com", "-C", dir}, args...)...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Skipf("git unavailable or failed: %v: %s", err, out)
+		}
+	}
+	for name, body := range map[string]string{"AGENTS.md": "ROOT-RULE-MARKER applies.\n", "x.txt": "x\n"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git(root, "init", "-q", "-b", "main")
+	git(root, "add", "AGENTS.md", "x.txt")
+	git(root, "commit", "-q", "-m", "init")
+	git(root, "worktree", "add", "-q", ".worktrees/same", "-b", "same")
+	git(root, "worktree", "add", "-q", ".worktrees/feat", "-b", "feat")
+	feat := filepath.Join(root, ".worktrees", "feat")
+	if err := os.WriteFile(filepath.Join(feat, "AGENTS.md"), []byte("WORKTREE-RULE-MARKER applies.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": ".worktrees/feat/x.txt"}},
+		{"read", map[string]any{"path": ".worktrees/feat/x.txt:1"}},
+		{"read", map[string]any{"path": ".worktrees/same/x.txt"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("first", "prompt", "Read the files in the worktrees.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Contains(last, "Nested repository instructions were not loaded") {
+		t.Fatal("a linked worktree must not be reported as an untrusted nested repository")
+	}
+	if got := strings.Count(last, "WORKTREE-RULE-MARKER"); got != 1 {
+		t.Fatalf("the worktree's own rules must arrive exactly once, got %d", got)
+	}
+	if got := strings.Count(last, "ROOT-RULE-MARKER"); got != 1 {
+		t.Fatalf("the root rules, repeated byte for byte in a worktree, must arrive exactly once, got %d", got)
 	}
 }

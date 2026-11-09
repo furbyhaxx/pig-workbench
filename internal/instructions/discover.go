@@ -41,6 +41,7 @@ type discovery struct {
 	sources   []source
 	seen      map[string]int
 	reasons   []Reason
+	worktrees []string
 }
 
 // Discover selects local ambient files for root within the project and user roots.
@@ -259,12 +260,79 @@ func (d *discovery) checkNested(ctx context.Context, project scope, dirs []strin
 		if !info.IsDir() && !info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 {
 			continue
 		}
+		if linkedWorktree(project, dirs[i]) {
+			d.worktrees = append(d.worktrees, dirs[i])
+			d.reasons = append(d.reasons, Reason{Path: path, DisplayPath: filepath.ToSlash(rel), Status: "linked-worktree", Detail: "a linked worktree of this checkout is part of the project"})
+			continue
+		}
 		if !allow {
 			return &NestedRepositoryError{Dir: dirs[i], ProjectRoot: project.root}
 		}
 		d.reasons = append(d.reasons, Reason{Path: path, DisplayPath: filepath.ToSlash(rel), Status: "crossed-nested-repository", Detail: "caller explicitly allowed crossing this boundary"})
 	}
 	return nil
+}
+
+// linkedWorktree reports whether dir is a worktree that `git worktree add` created from a checkout
+// inside the project. The claim in dir/.git must be confirmed by the main checkout's back-link, so a
+// foreign repository cannot pose as a worktree.
+func linkedWorktree(project scope, dir string) bool {
+	line, ok := firstLine(project, filepath.Join(dir, ".git"))
+	admin, found := strings.CutPrefix(line, "gitdir:")
+	if !ok || !found {
+		return false
+	}
+	admin = strings.TrimSpace(admin)
+	if !filepath.IsAbs(admin) {
+		admin = filepath.Join(dir, admin)
+	}
+	admin = filepath.Clean(admin)
+	gitDir := filepath.Dir(filepath.Dir(admin))
+	if filepath.Base(filepath.Dir(admin)) != "worktrees" || filepath.Base(gitDir) != ".git" {
+		return false
+	}
+	main := filepath.Dir(gitDir)
+	if main == dir || !contains(project.root, main) || !contains(main, dir) {
+		return false
+	}
+	back, ok := firstLine(project, filepath.Join(admin, "gitdir"))
+	if !ok {
+		return false
+	}
+	resolved, err := filepath.EvalSymlinks(back)
+	return err == nil && resolved == filepath.Join(dir, ".git")
+}
+
+// firstLine reads the first line of a small regular file inside the project root.
+func firstLine(project scope, path string) (string, bool) {
+	rel, err := filepath.Rel(project.root, path)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	info, err := project.fs.Lstat(rel)
+	if err != nil || !info.Mode().IsRegular() || info.Size() > 4096 {
+		return "", false
+	}
+	file, err := project.fs.OpenFile(rel, os.O_RDONLY|nonblockFlag(), 0)
+	if err != nil {
+		return "", false
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, 4096))
+	if err != nil {
+		return "", false
+	}
+	line, _, _ := strings.Cut(string(data), "\n")
+	return strings.TrimSpace(line), true
+}
+
+func (d *discovery) inWorktree(path string) bool {
+	for _, dir := range d.worktrees {
+		if contains(dir, path) {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) error {
@@ -455,6 +523,16 @@ func (d *discovery) selectCandidate(ctx context.Context, scope scope, class Clas
 	}
 	sum := sha256.Sum256(data)
 	file := Selected{Class: class.ID, Path: candidate.canonical, DisplayPath: candidate.display, Role: class.Role, Trust: scope.trust, Digest: hex.EncodeToString(sum[:])}
+	if d.inWorktree(candidate.canonical) {
+		for _, earlier := range d.sources {
+			if earlier.file.Digest == file.Digest && earlier.file.Class == file.Class && earlier.file.Role == file.Role && earlier.file.Trust == file.Trust {
+				d.remaining += len(data)
+				reason.Status, reason.Detail = "duplicate", "identical bytes to "+earlier.file.Path+" delivered for the checkout"
+				d.reasons = append(d.reasons, reason)
+				return nil
+			}
+		}
+	}
 	d.seen[candidate.canonical] = len(d.sources)
 	d.sources = append(d.sources, source{file: file, class: class, data: data, complete: complete})
 	d.reasons = append(d.reasons, reason)
