@@ -912,3 +912,63 @@ func TestLiveTouchingAnotherRepositoryKeepsTheRootRuleActive(t *testing.T) {
 		})
 	}
 }
+
+// A nested git worktree under the project is a repository boundary: reading it must not withdraw
+// the root rule, and its boundary notice must neither repeat nor be withdrawn when work moves away.
+func TestLiveNestedWorktreeTouchesDoNotChurnInstructions(t *testing.T) {
+	root := t.TempDir()
+	for path, text := range map[string]string{
+		filepath.Join(root, ".git", "HEAD"):                    "ref: refs/heads/main\n",
+		filepath.Join(root, "AGENTS.md"):                       "ROOT-RULE-MARKER applies everywhere.\n",
+		filepath.Join(root, "a.txt"):                           "a\n",
+		filepath.Join(root, ".worktrees", "feat", ".git"):      "gitdir: " + filepath.Join(root, ".git", "worktrees", "feat") + "\n",
+		filepath.Join(root, ".worktrees", "feat", "AGENTS.md"): "WORKTREE-RULE-MARKER.\n",
+		filepath.Join(root, ".worktrees", "feat", "w.txt"):     "w\n",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	worktree := filepath.Join(".worktrees", "feat", "w.txt")
+	scripted := map[int]scriptedCall{
+		0: {"read", map[string]any{"path": worktree}},
+		1: {"read", map[string]any{"path": "a.txt"}},
+		2: {"read", map[string]any{"path": worktree}},
+		3: {"write", map[string]any{"path": "b.txt", "content": "b\n"}},
+	}
+	recorder := &requestRecorder{next: func(index int) *scriptedCall {
+		if call, ok := scripted[index]; ok {
+			return &call
+		}
+		return nil
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+	fixture.send("go", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if strings.Contains(last, "no longer applies") {
+		t.Fatal("moving between the project and a nested worktree withdrew an instruction source")
+	}
+	if strings.Contains(last, "instructionContextChanged") {
+		t.Fatal("a write was blocked by redelivery")
+	}
+	for _, marker := range []string{"ROOT-RULE-MARKER", "Nested repository instructions were not loaded"} {
+		if got := strings.Count(last, marker); got > 1 {
+			t.Fatalf("%q reached the model %d times, want at most once", marker, got)
+		}
+	}
+	if !strings.Contains(last, "ROOT-RULE-MARKER") {
+		t.Fatal("the root rule is missing")
+	}
+	if data, err := os.ReadFile(filepath.Join(root, "b.txt")); err != nil || string(data) != "b\n" {
+		t.Fatalf("the write did not land: %v %q", err, data)
+	}
+}

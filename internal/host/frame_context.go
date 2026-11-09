@@ -295,7 +295,8 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	// withdraw what an explicit target selected, or a nested call would lose its own instructions.
 	keepTouched := data["workbenchToolContext"] == true && len(explicitTargets) == 0
 	for key := range state.last {
-		if strings.HasPrefix(key, "instructions.") && !currentInstructionKeys[key] && !keepTouched {
+		// A boundary notice reports a refusal, not an applicable source, so it is never withdrawn.
+		if strings.HasPrefix(key, "instructions.") && !strings.HasPrefix(key, "instructions.boundary/") && !currentInstructionKeys[key] && !keepTouched {
 			withdrawals = append(withdrawals, key)
 		}
 	}
