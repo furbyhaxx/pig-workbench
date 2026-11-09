@@ -4,6 +4,8 @@ package host
 
 import (
 	"fmt"
+
+	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -530,5 +532,45 @@ func TestLiveSubmittedPromptSurvivesAnUnavailableSecretsBoundary(t *testing.T) {
 	screen := s.waitFor("back in the editor", 10*time.Second)
 	if strings.Count(screen, prompt) != 1 {
 		t.Fatalf("the prompt must be back in the editor exactly once:\n%s", screen)
+	}
+}
+
+func TestLiveSubmittedPromptIsSentDespiteAVaultRecordFromAnotherKey(t *testing.T) {
+	root := t.TempDir()
+	vaultPath := filepath.Join(root, "data", "pig-workbench", "secrets", "vault.jsonl")
+	foreignKey := make([]byte, 32)
+	foreignKey[0] = 9
+	vault, err := secrets.OpenVault(vaultPath, foreignKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreign, err := secrets.NewDetector(foreignKey, vault, secrets.DetectionPolicy{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := foreign.Learn([]byte("written-under-another-agent-dir"), "token", "env"); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	prompt := "hello after the vault was polluted"
+	s.typeSlowly(prompt)
+	s.tmux("send-keys", "-t", "wb", "Enter")
+	var screen string
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(30 * time.Millisecond) {
+		if screen = s.screen(); strings.Contains(screen, "cannot be decrypted") {
+			break
+		}
+	}
+	if !strings.Contains(screen, "cannot be decrypted") {
+		t.Fatalf("the ignored record was not reported:\n%s", screen)
+	}
+	if strings.Contains(screen, "back in the editor") || strings.Contains(screen, "withheld") {
+		t.Fatalf("the boundary still failed:\n%s", screen)
+	}
+	for deadline := time.Now().Add(15 * time.Second); strings.Contains(screen, "0.0%/32k") && time.Now().Before(deadline); time.Sleep(150 * time.Millisecond) {
+		screen = s.screen()
+	}
+	if strings.Contains(screen, "0.0%/32k") {
+		t.Fatalf("the prompt never reached the model:\n%s", screen)
 	}
 }
