@@ -71,7 +71,7 @@ func ValidDate(date string) bool {
 
 // Guidance is the fixed explanation a model gets next to its cutoff. It is deliberately independent
 // of today's date so the delivered frame stays stable between days.
-const Guidance = "Your training data stops at the cutoff (earlier than you may assume if it is unknown) and today's date is in session.date. " +
+const Guidance = "Your training data stops at the cutoff above (earlier than you may assume if none is stated); compare it with today's date in the date frame. " +
 	"Libraries, APIs, flags, model names, prices and events may have changed since, so remembered specifics are unverified. " +
 	"Before relying on version-sensitive facts, check evidence in this session: the installed code, lockfiles, docs:// pages, command --help or a web search if available. " +
 	"Prefer that evidence over memory, and say when you could not verify something."

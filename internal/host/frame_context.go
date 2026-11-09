@@ -16,6 +16,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
 	"github.com/furbyhaxx/pig-workbench/internal/messaging"
+	"github.com/furbyhaxx/pig-workbench/internal/modelknowledge"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 )
 
@@ -168,20 +169,15 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		root = detected.Root
 		projectID = detected.ProjectID
 	}
-	modelFacts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name, "reasoning": model.Reasoning}
-	if model.ContextWindow > 0 {
-		modelFacts["contextWindow"] = model.ContextWindow
+	configuration, err := s.settings.Current()
+	if err != nil {
+		return nil, err
 	}
-	if model.MaxOutputTokens > 0 {
-		modelFacts["maxOutputTokens"] = model.MaxOutputTokens
-	}
+	var contributedFields []contributedFields
 	if s.producers != nil {
-		for _, contributed := range s.producers.modelFields(modelBinding{Provider: model.Provider, ID: model.ID}) {
-			for name, value := range contributed.fields {
-				modelFacts[name] = value
-			}
-		}
+		contributedFields = s.producers.modelFields(modelBinding{Provider: model.Provider, ID: model.ID})
 	}
+	modelFacts := modelContextFacts(model, configuration, contributedFields)
 	facts := []contextFact{
 		{source: "session.date", value: map[string]any{"date": time.Now().Format("2006-01-02"), "timezone": time.Now().Format("MST -07:00")}},
 		{source: "session.environment", value: map[string]any{"os": runtime.GOOS, "architecture": runtime.GOARCH, "hostCwd": ctx.Cwd()}},
@@ -192,10 +188,6 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	}
 	if missing := missingContextSources(facts); len(missing) > 0 {
 		return nil, fmt.Errorf("before-prompt delivery is missing %s", strings.Join(missing, ", "))
-	}
-	configuration, err := s.settings.Current()
-	if err != nil {
-		return nil, err
 	}
 	s.editState.mu.Lock()
 	if data["workbenchToolContext"] != true || s.editState.mode == "" {
@@ -601,4 +593,39 @@ func instructionDiff(fact contextFact, previous, current string, context int) st
 		return ""
 	}
 	return body
+}
+
+// modelContextFacts builds the session.model data: core facts, the knowledge cutoff and its guidance.
+// The cutoff comes from the user's setting, else a contributed explicit value, else the bundled
+// models.dev snapshot; when none applies it is omitted, never guessed. Nothing here depends on today's
+// date, so the frame stays unchanged between days.
+func modelContextFacts(model *sdk.ModelInfo, configuration *config.Snapshot, contributed []contributedFields) map[string]any {
+	facts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name, "reasoning": model.Reasoning}
+	if model.ContextWindow > 0 {
+		facts["contextWindow"] = model.ContextWindow
+	}
+	if model.MaxOutputTokens > 0 {
+		facts["maxOutputTokens"] = model.MaxOutputTokens
+	}
+	if cutoff, ok := modelknowledge.Lookup(model.Provider, model.ID); ok {
+		facts["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source}
+	}
+	for _, fields := range contributed {
+		for name, value := range fields.fields {
+			facts[name] = value
+		}
+	}
+	if entry, ok := configuration.Get("models.knowledge-cutoffs"); ok {
+		if entries, ok := entry.Value.([]string); ok {
+			cutoff, found, err := modelknowledge.ParseSetting(entries, model.Provider, model.ID)
+			if err != nil {
+				// A typo in a setting must not block the user's prompt; the frame names the ignored entry.
+				facts["knowledge_cutoff_setting_error"] = "models.knowledge-cutoffs ignored: " + err.Error()
+			} else if found {
+				facts["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source}
+			}
+		}
+	}
+	facts["training_data_notice"] = modelknowledge.Guidance
+	return facts
 }

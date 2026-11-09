@@ -88,6 +88,12 @@ func TestLiveResumeDoesNotResendDeliveredContextFrames(t *testing.T) {
 			t.Errorf("%s appears %d times after resume, want 1", source, got)
 		}
 	}
+	if got := strings.Count(requests[0], "training_data_notice"); got != 1 {
+		t.Errorf("the model frame carries the stale-training-data guidance %d times, want once", got)
+	}
+	if got := strings.Count(requests[1], "training_data_notice"); got != 1 {
+		t.Errorf("the guidance appears %d times after resume, want once", got)
+	}
 	nonces := make(map[string]bool)
 	for _, request := range requests {
 		for _, match := range regexp.MustCompile(`n=\\"([0-9A-F]{8})\\"`).FindAllStringSubmatch(request, -1) {

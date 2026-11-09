@@ -5,9 +5,9 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-09T15:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; engine, delivery, context frames, conditionals and skills frozen"]
+    - revision: 9
+      reason: "User report 09.11.2026: session.model lacked the knowledge cutoff and any instruction about stale training data"
+      changes: ["session.model always carries training_data_notice: why the model's memory is stale and how to verify instead", "Workbench resolves knowledge_cutoff itself: setting models.knowledge-cutoffs, else a contributed explicit value, else a bundled models.dev snapshot (values attributed with the snapshot date); absent data is still omitted, never invented", "Workbench still does not fetch cutoff metadata at run time", "Migration: none; the frame gains two fields and is delivered once per session as before"]
 
 ---
 
@@ -229,7 +232,7 @@ The initial `fields` schema is:
 {"knowledge_cutoff":{"date":"2026-01-01","basis":"explicit","source":"models.dev"}}
 ```
 
-`date` must be a valid `YYYY-MM-DD` calendar date; `basis` is `explicit` or `estimated`; `source` is a nonempty plain-text attribution of at most 120 Unicode characters, without terminal sequences or control characters. An estimate is always labelled estimated; absent data is omitted, never invented by Workbench. Workbench does not fetch cutoff metadata in this service.
+`date` must be a valid `YYYY-MM-DD` calendar date; `basis` is `explicit` or `estimated`; `source` is a nonempty plain-text attribution of at most 120 Unicode characters, without terminal sequences or control characters. An estimate is always labelled estimated; absent data is omitted, never invented by Workbench. Workbench does not fetch cutoff metadata in this service. Since revision 9 it resolves the cutoff itself in this order: the user setting `models.knowledge-cutoffs` (`<model-id>=<YYYY-MM[-DD]>` entries, optional `provider/` prefix; a malformed entry is named in `knowledge_cutoff_setting_error` and ignored), a contributed explicit value, then the bundled models.dev snapshot (`scripts/gen_model_cutoffs.py`; the value's `source` names the snapshot date; a model id on which providers disagree has no snapshot value). The frame also carries `training_data_notice`, a fixed date-independent text explaining that remembered specifics may be stale and to verify version-sensitive facts against installed code, docs or the web.
 
 - Workbench renders the contribution as an attributed data line in the existing `session.model` frame, never as an instruction or a separate duplicate model frame. Ordering is stable by field name; producer authority does not elevate the contributed value.
 - A changed contribution follows the source's `on-change` policy and `beforePrompt` delivery; it does not rewrite served system-prompt bytes or wake an idle session. Compaction and branch boundaries include the current applicable contribution again.

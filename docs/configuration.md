@@ -35,6 +35,8 @@ max-lines = 400
 
 `jobs.wake-on-completion` (default `true`) lets a finished background job start a turn on an idle session, and `frames.wake-budget` (default 10 per producer and hour; zero disables it) bounds how often a frame producer registered with `allowWake` may do the same. Both are user/runtime settings.
 
+`models.knowledge-cutoffs` (user/runtime only) overrides the knowledge cutoff the `session.model` frame shows. Entries are `<model-id>=<YYYY-MM[-DD]>`, optionally `provider/<model-id>=…`, for example `["claude-sonnet-5-5=2026-06"]`. Without an entry Workbench uses a cutoff a registered extension contributed, then a bundled models.dev snapshot, and shows no cutoff when none is known. The frame always adds a short note that the model's training data is stale and should be verified. A malformed entry is named in the frame and ignored.
+
 `fetch.disabled-backends` (user/runtime; entries `owner/key` as shown by `/workbench integrations`) turns contributed fetch backends off for `read https://`; the builtin reader then serves those URLs and the producer's own tools keep working.
 
 `skills.listing` (`prompt`, the default, or `frame`) chooses where Workbench's own system prompt lists skills: with `frame` the `<skills>` section is left out and the budgeted `skill://` listing rides the `session.capabilities` frame instead, so a skill change does not rewrite the prompt. It matters only while `prompt.delivery` takes the prompt over.
