@@ -6,6 +6,7 @@ import (
 
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/api"
+	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 )
 
 func TestFetchBackendSelectionPrefersMostSpecificRule(t *testing.T) {
@@ -147,5 +148,29 @@ func TestFetchBackendSelectionSkipsDisabledBackends(t *testing.T) {
 	router.disabled = func(string, string) bool { return true }
 	if _, ok := router.selectBackend("https://docs.example.test/"); ok {
 		t.Fatal("a disabled backend was selected")
+	}
+}
+
+func TestUnregisteringAProducerWithdrawsItsContributedModelFields(t *testing.T) {
+	s := &session{producers: newProducerRegistry()}
+	descriptor := `{"label":"Research","kinds":["notice"],"contextFields":[{"source":"session.model","field":"knowledge_cutoff"}]}`
+	registration := contribution.Registration{RegistrationID: "reg-1", Owner: "web", Instance: "i", Key: "web.research", Descriptor: []byte(descriptor)}
+	cleanup, err := installFrameProducer(s, registration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bound := modelBinding{Provider: "p", ID: "m"}
+	s.producers.mu.Lock()
+	s.producers.fields["reg-1"] = contributedFields{owner: "web", registrationID: "reg-1", model: bound, fields: map[string]any{"knowledge_cutoff": "2025-06-01"}}
+	s.producers.mu.Unlock()
+	if got := s.producers.modelFields(bound); len(got) != 1 {
+		t.Fatalf("contributed field missing before unregister: %v", got)
+	}
+	cleanup()
+	if got := s.producers.modelFields(bound); len(got) != 0 {
+		t.Fatalf("unregistered producer still contributes model fields: %v", got)
+	}
+	if _, ok := s.producers.get("reg-1"); ok {
+		t.Fatal("unregistered producer is still registered")
 	}
 }
