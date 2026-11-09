@@ -2,6 +2,7 @@ package hashline
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -109,5 +110,23 @@ func TestStoreChoosesNewestVersionWithNormalizedTag(t *testing.T) {
 	}
 	if chosen.Revision != b.Revision {
 		t.Fatal("did not select newest exact-byte version")
+	}
+}
+
+func TestResolveNamesTheRetainedTagsWhenTheRequestedOneIsGone(t *testing.T) {
+	store, err := NewStore(StoreLimits{}, "epoch-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Resolve("file:///a", "ABCD"); err == nil || !strings.Contains(err.Error(), "read it before editing") {
+		t.Fatalf("an unread resource must say so, got %v", err)
+	}
+	snap, err := store.Retain("file:///a", []byte("one\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.Resolve("file:///a", "BEEF")
+	if err == nil || !strings.Contains(err.Error(), "BEEF") || !strings.Contains(err.Error(), snap.Tag) {
+		t.Fatalf("the error must name the requested and the retained tag, got %v", err)
 	}
 }

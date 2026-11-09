@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -149,7 +150,14 @@ func (s *Store) Resolve(uri, tag string) (Snapshot, error) {
 			return cloneSnapshot(entry.Snapshot), nil
 		}
 	}
-	return Snapshot{}, fmt.Errorf("no retained snapshot for this resource and tag; read %s again", uri)
+	if len(versions) == 0 {
+		return Snapshot{}, fmt.Errorf("no retained snapshot of %s; read it before editing with a tag", uri)
+	}
+	tags := make([]string, len(versions))
+	for i, entry := range versions {
+		tags[i] = entry.Tag
+	}
+	return Snapshot{}, fmt.Errorf("tag %s is not a retained version of %s (retained: %s); the file changed or the tag was mistyped, so read %s again and use its current tag", tag, uri, strings.Join(tags, ", "), uri)
 }
 
 // Latest returns the newest retained version of one canonical resource without changing its recency.
