@@ -60,6 +60,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
 		{"fetch-backends", []string{"fetch.disabled-backends"}, TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader},
 		{"skills-frame", []string{"skills.listing"}, TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt},
+		{"model-cutoffs", []string{"models.knowledge-cutoffs"}, TestModelFrameCutoffPrecedenceIsSettingThenContributedThenSnapshot},
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
 	}
 	var covered, live []string
