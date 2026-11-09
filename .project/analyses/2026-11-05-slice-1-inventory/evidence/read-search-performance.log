@@ -1,0 +1,7 @@
+    perf_test.go:52: 20000 files, no match: 5000 files scanned complete=false in 22ms
+    perf_test.go:56: 20000 files: grep 200 matches over 201 files complete=false in 1ms; find 200 paths in 1ms; 8 MiB allocated
+--- PASS: TestSearchOverALargeTreeStaysBoundedAndHonest (0.19s)
+ok  	github.com/furbyhaxx/pig-workbench/internal/search	0.195s
+    perf_test.go:49: 128 MiB file: first page 51075 bytes in 306ms, 36 MiB allocated in total
+--- PASS: TestReadOfAHugeFileStaysBounded (0.52s)
+ok  	github.com/furbyhaxx/pig-workbench/internal/resource	0.529s
