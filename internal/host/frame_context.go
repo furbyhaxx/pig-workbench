@@ -457,7 +457,11 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		}
 		blocks = append(blocks, encoded)
 	}
-	result["message"] = map[string]any{"customType": "pig-workbench.context", "content": strings.Join(blocks, "\n\n"), "display": true}
+	for _, block := range blocks {
+		if err := ctx.SendMessage("pig-workbench.context", block, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
+			return nil, err
+		}
+	}
 	return result, nil
 }
 

@@ -233,3 +233,72 @@ func TestLiveCompactionReplaysLoadedSkillsAsPointers(t *testing.T) {
 		t.Fatal("skill body was presented again after compaction")
 	}
 }
+
+// TestLiveContextFramesAreSeparateSessionEntries asserts every context frame
+// of the first prompt is its own session entry rather than one entry holding
+// several frames.
+func TestLiveContextFramesAreSeparateSessionEntries(t *testing.T) {
+	repo := repoRoot(t)
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	agent := filepath.Join(root, "agent")
+	for _, dir := range []string{work, agent} {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		send := func(delta any, finish any) {
+			data, _ := json.Marshal(map[string]any{"id": "fixture", "object": "chat.completion.chunk", "created": 0, "model": "mock", "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}})
+			fmt.Fprintf(w, "data: %s\n\n", data)
+		}
+		send(map[string]any{"role": "assistant", "content": "fixture finished"}, nil)
+		send(map[string]any{}, "stop")
+		fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+	writeFixtureProvider(t, agent, server.URL)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "pig", "--offline", "--session-dir", filepath.Join(root, "sessions"), "-e", repo, "--mode", "json", "--model", "workbench-fixture/mock", "--tools", "read", "first")
+	cmd.Dir = work
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "PIG_") && !strings.HasPrefix(value, "PI_") {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("live pig: %v\n%s", err, output)
+	}
+	files, _ := filepath.Glob(filepath.Join(root, "sessions", "*.jsonl"))
+	if len(files) != 1 {
+		t.Fatalf("got %d session files, want 1", len(files))
+	}
+	data, err := os.ReadFile(files[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	opening := regexp.MustCompile(`<system-(?:info|instruction|notice) src=`)
+	var entries []string
+	for _, line := range strings.Split(string(data), "\n") {
+		var entry struct {
+			CustomType string `json:"customType"`
+			Content    any    `json:"content"`
+		}
+		if json.Unmarshal([]byte(line), &entry) != nil || entry.CustomType != "pig-workbench.context" {
+			continue
+		}
+		encoded, _ := json.Marshal(entry.Content)
+		entries = append(entries, string(encoded))
+	}
+	if len(entries) < 5 {
+		t.Fatalf("got %d context entries, want one per context frame (at least 5)", len(entries))
+	}
+	for index, entry := range entries {
+		if count := len(opening.FindAllString(strings.ReplaceAll(entry, `\u003c`, "<"), -1)); count != 1 {
+			t.Errorf("context entry %d holds %d frames, want 1: %.200s", index, count, entry)
+		}
+	}
+}
