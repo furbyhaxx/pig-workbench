@@ -3,8 +3,10 @@
 package host
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -34,9 +36,8 @@ func TestLiveToolRowsShowTheirTargetsInTUI(t *testing.T) {
 	s.waitFor("done", 40*time.Second)
 	s.tmux("resize-window", "-t", "wb", "-x", "260", "-y", "200")
 	time.Sleep(time.Second)
-	s.capture("tool-rows")
 	history := s.history()
-	for _, want := range []string{"read Justfile", "read Justfile, Justfile:1-2", "edit Justfile", "cd .", "tag BEEF is not a retained version"} {
+	for _, want := range []string{"read · Justfile", "read · Justfile, Justfile:1-2", "edit · Justfile", "edit · failed", "cd · .", "write · new.txt", "write · succeeded", "ls · .", "find · *.txt", "grep · echo · Justfile", "grep · succeeded", "bash · echo from-bash", "bash · succeeded", "tag BEEF is not a retained version"} {
 		if !strings.Contains(history, want) {
 			t.Fatalf("the transcript lacks %q:\n%s", want, history)
 		}
@@ -44,6 +45,19 @@ func TestLiveToolRowsShowTheirTargetsInTUI(t *testing.T) {
 	for _, bad := range []string{"read ...", "edit ..."} {
 		if strings.Contains(history, bad) {
 			t.Fatalf("a call row has no target (%q):\n%s", bad, history)
+		}
+	}
+	if dir := os.Getenv("WORKBENCH_CAPTURE_DIR"); dir != "" {
+		target := filepath.Join(dir, "tool-rows")
+		if err := os.MkdirAll(target, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for _, width := range []int{140, 80, 57, 36} {
+			s.tmux("resize-window", "-t", "wb", "-x", strconv.Itoa(width), "-y", "200")
+			time.Sleep(time.Second)
+			if err := os.WriteFile(filepath.Join(target, fmt.Sprintf("w%d.txt", width)), []byte(s.history()), 0o644); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }

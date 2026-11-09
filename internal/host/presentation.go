@@ -160,6 +160,9 @@ func (c *presentationCatalog) list() []presentationRegistration {
 }
 
 func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderers) *sdk.ToolRenderers {
+	if own := ownToolRenderers(toolName); own != nil {
+		return own
+	}
 	s, err := a.current()
 	if err != nil {
 		return next()

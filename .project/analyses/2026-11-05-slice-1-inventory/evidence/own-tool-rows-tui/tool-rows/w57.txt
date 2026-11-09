@@ -1,0 +1,200 @@
+   "root":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "slug": "global"
+ }
+ </system-info>
+
+
+
+ [pig-workbench.context]
+
+ <system-info src="session.location" seq="4"
+ n="C9AD43ED" ts="2026-11-09T21:15:54.725728312+01:00"
+ trust="trusted" authority="data">
+ {
+   "authority": "local",
+   "cwd":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "displayCwd":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "projectRoot":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "origin":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "revision": 2,
+   "available": true
+ }
+ </system-info>
+
+
+
+ [pig-workbench.context]
+
+ <system-info src="session.model" seq="5" n="C9AD43ED"
+ ts="2026-11-09T21:15:54.725738121+01:00"
+ trust="trusted" authority="data">
+ {
+   "contextWindow": 32000,
+   "id": "mock",
+   "maxOutputTokens": 4000,
+   "name": "Workbench scripted fixture",
+   "provider": "workbench-fixture",
+   "reasoning": false,
+   "training_data_notice": "Your training data stops at
+ the cutoff above (earlier than you may assume if none
+ is stated; one labelled estimated is derived from the
+ model's release date and is approximate); compare it
+ with today's date in the date frame. Libraries, APIs,
+ flags, model names, prices and events may have changed
+ since, so remembered specifics are unverified. Before
+ relying on version-sensitive facts, check evidence in
+ this session: the installed code, lockfiles, docs://
+ pages, command --help or a web search if available.
+ Prefer that evidence over memory, and say when you
+ could not verify something."
+ }
+ </system-info>
+
+
+
+ [pig-workbench.context]
+
+ <system-info src="session.capabilities" seq="6"
+ n="C9AD43ED" ts="2026-11-09T21:15:54.725747886+01:00"
+ trust="trusted" authority="data">
+ {
+   "activeTools": [
+     "ask_user",
+     "bash",
+     "cd",
+     "edit",
+     "find",
+     "grep",
+     "jobs",
+     "ls",
+     "read",
+     "write"
+   ],
+   "editMode": "hashline",
+   "schemes": [
+     "agent",
+     "artifact",
+     "cfg",
+     "docs",
+     "file",
+     "http",
+     "https",
+     "job",
+     "local",
+     "out",
+     "session",
+     "skill"
+   ]
+ }
+ </system-info>
+
+
+
+ exercise the tools
+
+
+
+ read · Justfile
+ read · succeeded · lines 3 · time 1ms
+
+
+
+ read · Justfile, Justfile:1-2
+ read · succeeded · lines 8 · time 1ms
+
+
+
+ write · new.txt
+ write · succeeded · time 0ms
+ Wrote 2 bytes to file:///tmp/TestLiveToolRowsShowTheir…
+ Revision: 73cb3858a687a8494ca3323053016282f3dad39d42cf…
+
+
+
+ ls · .
+ ls · succeeded · lines 7 · time 0ms
+ dir  agent
+ dir  cache
+ dir  data
+ dir  docs
+ dir  state
+ file Justfile (18 bytes)
+ file new.txt (2 bytes)
+
+
+
+ find · *.txt
+ find · succeeded · lines 1 · time 1ms
+ /tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0…
+
+
+
+ cd · .
+ cd · succeeded · time 2ms
+ Working location: /tmp/TestLiveToolRowsShowTheirTarget…
+ Authority: local · revision 3
+ Relative tool paths resolve here; PiG session cwd is u…
+
+
+
+ edit · Justfile
+ edit · failed · time 0ms
+ tag BEEF is not a retained version of file:///tmp/Test…
+
+
+
+ [pig-workbench.context]
+
+ <system-info src="session.location" seq="7"
+ n="C9AD43ED" ts="2026-11-09T21:15:54.898146138+01:00"
+ trust="trusted" authority="data">
+ {
+   "authority": "local",
+   "cwd":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "displayCwd":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "projectRoot":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "origin":
+ "/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0
+ 01",
+   "revision": 3,
+   "available": true
+ }
+ </system-info>
+
+
+
+ grep · echo · Justfile
+ grep · succeeded · lines 1 · time 0ms
+ /tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/0…
+
+
+
+ bash · echo from-bash
+ bash · succeeded · lines 2 · time 2ms
+ Job 24fc7263d0ebfe9a0000000000000001: exited
+ from-bash
+
+
+ done
+
+─────────────────────────────────────────────────────────
+
+─────────────────────────────────────────────────────────
+/tmp/TestLiveToolRowsShowTheirTargetsInTUI3717149930/001
+18.5%/32k (auto)                                     mock

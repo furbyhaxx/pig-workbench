@@ -27,7 +27,7 @@ func (a *app) registerTools(ext *sdk.Extension) {
 			map[string]any{"maxProperties": 0},
 			map[string]any{"required": []string{"path"}, "maxProperties": 1},
 			map[string]any{"required": []string{"reset"}, "maxProperties": 1},
-		}}, Execute: a.cd, RenderCall: renderCdCall,
+		}}, Execute: a.cd,
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "read", Label: "read", Description: "Read text from local paths or registered scheme:// resources; relative paths use the Workbench location. Use path suffixes :N, :A-B, :A+C, :-N, comma ranges or :raw (for example src/main.go:20-40) when supported by the provider. Literal filenames win. Exactly one of path or paths (1–32) is required; explicit selector is for one path only. Output is bounded to 50 KiB/2000 lines across the batch; Details report actual source coverage and continuation. For local text, raw preserves source bytes; ordinary ranges include one preceding and three trailing lines.",
@@ -39,7 +39,7 @@ func (a *app) registerTools(ext *sdk.Extension) {
 		}, "oneOf": []any{
 			map[string]any{"required": []string{"path"}, "not": map[string]any{"required": []string{"paths"}}},
 			map[string]any{"required": []string{"paths"}, "not": map[string]any{"anyOf": []any{map[string]any{"required": []string{"path"}}, map[string]any{"required": []string{"selector"}}}}},
-		}}, Execute: a.read, RenderCall: renderReadCall,
+		}}, Execute: a.read,
 	})
 }
 
