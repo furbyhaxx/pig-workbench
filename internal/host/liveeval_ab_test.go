@@ -134,6 +134,9 @@ type abRun struct {
 func TestLiveEvalPromptAB(t *testing.T) {
 	requireLiveKey(t)
 	reps := 3
+	if v := os.Getenv("LIVE_REPS"); v != "" {
+		fmt.Sscan(v, &reps)
+	}
 	var runs []abRun
 	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "auto"}, {"workbench-prompt", "force"}} {
 		for _, task := range abTasks {
