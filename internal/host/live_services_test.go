@@ -45,6 +45,36 @@ func startRPCWithWorkbench(t *testing.T, root string, workbench bool, args ...st
 	return startRPCWithExtensions(t, root, workbench, []string{"service-client"}, args...)
 }
 
+// isolateHostFiles points the host-instruction directory at a nonexistent path unless the test sets
+// its own, so a developer machine's /etc/agents files never change frame counts.
+func isolateHostFiles(t *testing.T, agent string) {
+	t.Helper()
+	path := filepath.Join(agent, "Workbench.toml")
+	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+	text := string(data)
+	if strings.Contains(text, "system-dir") {
+		return
+	}
+	line := fmt.Sprintf("system-dir = %q\n", filepath.Join(agent, "no-host-files"))
+	if strings.HasPrefix(text, "[instructions]\n") {
+		text = "[instructions]\n" + line + strings.TrimPrefix(text, "[instructions]\n")
+	} else if i := strings.Index(text, "\n[instructions]\n"); i >= 0 {
+		i += len("\n[instructions]\n")
+		text = text[:i] + line + text[i:]
+	} else {
+		text += "\n[instructions]\n" + line
+	}
+	if err := os.MkdirAll(agent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // startRPCWithExtensions co-loads the named testdata fixtures beside Workbench.
 func startRPCWithExtensions(t *testing.T, root string, workbench bool, fixtures []string, args ...string) *rpcFixture {
 	t.Helper()
@@ -52,6 +82,7 @@ func startRPCWithExtensions(t *testing.T, root string, workbench bool, fixtures 
 	if err != nil {
 		t.Fatal(err)
 	}
+	isolateHostFiles(t, filepath.Join(root, "agent"))
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	options := []string{"--offline", "--session-dir", filepath.Join(root, "sessions")}
 	if workbench {

@@ -36,6 +36,7 @@ func startTUIScripted(t *testing.T, root string, calls []scriptedCall, fixtures 
 	runtime := shortRuntime(t)
 	t.Setenv("XDG_RUNTIME_DIR", runtime)
 	agent := filepath.Join(root, "agent")
+	isolateHostFiles(t, agent)
 	recorder := &requestRecorder{calls: calls}
 	server := recorder.serve(t)
 	t.Cleanup(server.Close)
@@ -762,7 +763,19 @@ func TestLiveProjectsPanelJoinOverAnotherProjectFileIsRefusedReadably(t *testing
 	s.typeSlowly("projects")
 	s.keys("Enter")
 	s.waitFor("zz-other", 10*time.Second)
-	s.keys("Down", "Down", "Enter")
+	// The panel lists projects in registry order, which follows the random ids; walk to the other project's row.
+	entries, err := registry.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, entry := range entries {
+		if entry.Project.Slug == "zz-other" {
+			for range i + 1 {
+				s.keys("Down")
+			}
+		}
+	}
+	s.keys("Enter")
 	s.waitFor("Join by file", 10*time.Second)
 	s.keys("Enter")
 	s.waitFor("Component slug of this repository (1/1)", 10*time.Second)

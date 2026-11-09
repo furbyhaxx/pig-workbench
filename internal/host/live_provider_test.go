@@ -45,6 +45,7 @@ func runPigJSON(t *testing.T, ctx context.Context, repo, root, dir string, args 
 // runPigJSONWith runs one JSON-mode prompt with exactly the listed extensions loaded.
 func runPigJSONWith(t *testing.T, ctx context.Context, extensions []string, root, dir string, args []string, prompt string) []byte {
 	t.Helper()
+	isolateHostFiles(t, filepath.Join(root, "agent"))
 	command := []string{"--offline", "--no-session"}
 	for _, extension := range extensions {
 		command = append(command, "-e", extension)
