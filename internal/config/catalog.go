@@ -144,6 +144,7 @@ func Catalog() []Definition {
 		boolean("guides.enabled", true, AllowProject),
 		integer("guides.max-bytes", 2048, 0, 65536, ReduceProject),
 		stringList("guides.disabled", []string{}, AllowProject),
+		stringList("fetch.disabled-backends", []string{}, DenyProject),
 		integer("docs.source-versions-kept", 3, 1, 100, DenyProject),
 		stringList("docs.source-paths", []string{"docs", "extensions/sdk", "cmd", "internal"}, DenyProject),
 		boolean("secrets.enabled", true, DenyProject),
@@ -202,6 +203,9 @@ func Catalog() []Definition {
 		case "jobs.wake-on-completion":
 			d.Application = "live"
 			d.Description = "Start a turn when a background or promoted job finishes while the session is idle; a running session receives the notice at its next boundary."
+		case "fetch.disabled-backends":
+			d.Application = "live"
+			d.Description = "Fetch backends (owner/key, as listed by /workbench integrations) that read https:// skips; the builtin reader serves those URLs. The backend's own tools keep working."
 		case "frames.wake-budget":
 			d.Application = "live"
 			d.Description = "Maximum wakes per external frame producer per hour; over budget the frame is delivered without a turn. Zero disables external wake."

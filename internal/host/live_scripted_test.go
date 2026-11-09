@@ -1046,3 +1046,20 @@ func TestLiveWriteNeverInstallsATruncatedReadCopy(t *testing.T) {
 		t.Fatalf("refusal does not name the complete-source requirement: %s", results[1])
 	}
 }
+
+// TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader covers fetch.disabled-backends:
+// the same read is served by the contributed backend unless the user disabled it.
+func TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader(t *testing.T) {
+	read := func(results []string) scriptedCall {
+		return scriptedCall{tool: "read", args: map[string]any{"path": "https://fixture.test/page"}}
+	}
+	const marker = "Delivered by the reference fetch backend"
+	on := runScriptedWith(t, t.TempDir(), "read", "", []string{"reference-producer"}, read)
+	if !strings.Contains(on[0], marker) {
+		t.Fatalf("backend did not serve the URL while enabled: %s", on[0])
+	}
+	off := runScriptedWith(t, t.TempDir(), "read", "[fetch]\ndisabled-backends = ['reference-producer/web']\n", []string{"reference-producer"}, read)
+	if strings.Contains(off[0], marker) {
+		t.Fatalf("disabled backend still served the URL: %s", off[0])
+	}
+}

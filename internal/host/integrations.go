@@ -55,6 +55,9 @@ func (s *session) integrationsText(owner string) (string, bool) {
 		if registration.Kind == contribution.KindToolPresentation && s.presentations.appliesAfterReload(registration.RegistrationID) {
 			out.WriteString("  appliesAfterReload")
 		}
+		if registration.Kind == contribution.KindFetchBackend && s.fetchBackendDisabled(registration.Owner, registration.Key) {
+			out.WriteString("  disabled")
+		}
 		if summary := descriptorSummary(registration); summary != "" {
 			fmt.Fprintf(&out, "  %s", noticeText(summary, 120))
 		}

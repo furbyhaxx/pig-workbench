@@ -35,6 +35,8 @@ max-lines = 400
 
 `jobs.wake-on-completion` (default `true`) lets a finished background job start a turn on an idle session, and `frames.wake-budget` (default 10 per producer and hour; zero disables it) bounds how often a frame producer registered with `allowWake` may do the same. Both are user/runtime settings.
 
+`fetch.disabled-backends` (user/runtime; entries `owner/key` as shown by `/workbench integrations`) turns contributed fetch backends off for `read https://`; the builtin reader then serves those URLs and the producer's own tools keep working.
+
 The catalog identifies the other live consumers, including edit policy, instruction delivery, the default job timeout, ask dialog timeout, session messaging policy, secret protection, prompt delivery, the skills command budget and activity placement. Inspect each description for its scope and timing: for example, activity placement and session endpoint enablement are captured at session start, so publishing a new snapshot does not immediately re-register them. Prompt takeover currently also requires `instructions.enabled`; `prompt.delivery = "auto"` retains PiG's prompt: the live A/B showed no regression for `force` but is too small to change the default.
 
 Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `prompt.template` is displayed but rendering always uses `builtin/workbench`, and `activity.shortcut` is not applied: `alt+w` is registered statically before settings load. Complex instruction classes and producer-specific settings are not implemented.

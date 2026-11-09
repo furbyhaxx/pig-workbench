@@ -130,6 +130,20 @@ func (s *session) settingBool(key string, fallback bool) bool {
 	return fallback
 }
 
+// fetchBackendDisabled reports whether the user turned off the named fetch backend.
+func (s *session) fetchBackendDisabled(owner, key string) bool {
+	configuration, err := s.settings.Current()
+	if err != nil {
+		return false
+	}
+	entry, ok := configuration.Get("fetch.disabled-backends")
+	if !ok {
+		return false
+	}
+	list, _ := entry.Value.([]string)
+	return slices.Contains(list, owner+"/"+key)
+}
+
 func (s *session) settingString(key, fallback string) string {
 	if configuration, err := s.settings.Current(); err == nil {
 		if entry, ok := configuration.Get(key); ok {

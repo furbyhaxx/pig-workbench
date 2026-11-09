@@ -122,6 +122,7 @@ type fetchRouter struct {
 	bus      *providerBus
 	router   func() *resource.Router
 	project  func(context.Context) *api.Project
+	disabled func(owner, key string) bool
 }
 
 func (f *fetchRouter) add(backend fetchBackend) {
@@ -176,6 +177,9 @@ func (f *fetchRouter) selectBackend(raw string) (fetchBackend, bool) {
 	defer f.mu.RUnlock()
 	best, bestScore, found := fetchBackend{}, -1, false
 	for _, backend := range f.backends {
+		if f.disabled != nil && f.disabled(backend.owner.Owner, backend.key) {
+			continue
+		}
 		for _, rule := range backend.descriptor.Match {
 			score := ruleSpecificity(rule, host, path)
 			if score > bestScore || score == bestScore && found && backend.order < best.order {

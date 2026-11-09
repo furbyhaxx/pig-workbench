@@ -136,3 +136,16 @@ func TestContributedFieldsApplyOnlyToTheirModel(t *testing.T) {
 		t.Fatalf("a model change must not inherit stale data: %v", got)
 	}
 }
+
+func TestFetchBackendSelectionSkipsDisabledBackends(t *testing.T) {
+	router := &fetchRouter{disabled: func(owner, key string) bool { return owner == "o" && key == "exact" }}
+	router.add(fetchBackend{key: "exact", owner: api.Identity{Owner: "o"}, descriptor: fetchDescriptor{Match: []fetchMatch{{Host: "docs.example.test"}}}})
+	router.add(fetchBackend{key: "any", owner: api.Identity{Owner: "o"}, descriptor: fetchDescriptor{Match: []fetchMatch{{Host: "*"}}}})
+	if got, ok := router.selectBackend("https://docs.example.test/"); !ok || got.key != "any" {
+		t.Fatalf("selected %q (%v); want the enabled catch-all", got.key, ok)
+	}
+	router.disabled = func(string, string) bool { return true }
+	if _, ok := router.selectBackend("https://docs.example.test/"); ok {
+		t.Fatal("a disabled backend was selected")
+	}
+}

@@ -247,6 +247,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		children:      newChildCalls(),
 	}
 	fetch.project = s.projectIdentity
+	fetch.disabled = s.fetchBackendDisabled
 	docs.guide = s.schemeGuide
 	if err := providers.RegisterBuiltin(docsProvider{catalog: docs, schemes: providers.Schemes}); err != nil {
 		return nil, a.fail(err)
