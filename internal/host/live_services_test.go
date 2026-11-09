@@ -133,6 +133,15 @@ func (f *rpcFixture) close() {
 	f.closeOnce.Do(func() {
 		defer f.cancel()
 		f.stdin.Close()
+		go func() {
+			for {
+				select {
+				case <-f.records:
+				case <-f.done:
+					return
+				}
+			}
+		}()
 		select {
 		case <-f.done:
 		case <-time.After(5 * time.Second):

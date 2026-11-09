@@ -132,7 +132,33 @@ type contextFact struct {
 	revision                  string
 }
 
+// contextFrames is the before_agent_start handler: each pending frame is its own session entry.
 func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
+	result, err := a.collectContextFrames(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	output, _ := result.(map[string]any)
+	return output, sendFrameBlocks(ctx, takeFrameBlocks(output))
+}
+
+// takeFrameBlocks removes and returns the encoded frames a collection selected.
+func takeFrameBlocks(result map[string]any) []string {
+	blocks, _ := result["workbenchFrameBlocks"].([]string)
+	delete(result, "workbenchFrameBlocks")
+	return blocks
+}
+
+func sendFrameBlocks(ctx sdk.Context, blocks []string) error {
+	for _, block := range blocks {
+		if err := ctx.SendMessage("pig-workbench.context", block, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 	s, _, release, err := a.admit(ctx)
 	if err != nil {
 		return nil, err
@@ -457,11 +483,7 @@ func (a *app) contextFrames(ctx sdk.Context, data map[string]any) (any, error) {
 		}
 		blocks = append(blocks, encoded)
 	}
-	for _, block := range blocks {
-		if err := ctx.SendMessage("pig-workbench.context", block, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
-			return nil, err
-		}
-	}
+	result["workbenchFrameBlocks"] = blocks
 	return result, nil
 }
 

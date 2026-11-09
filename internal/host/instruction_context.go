@@ -172,7 +172,7 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 	if len(targets) > 0 {
 		facts["workbenchInstructionTargets"] = targets
 	}
-	result, err := a.contextFrames(ctx, facts)
+	result, err := a.collectContextFrames(ctx, facts)
 	if err != nil {
 		return nil, err
 	}
@@ -180,12 +180,11 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 		tool, _ := data["toolName"].(string)
 		mutating := tool == "edit" || tool == "write" || tool == "bash" || tool == "jobs" && (input["action"] == "write" || input["action"] == "eof")
 		changed := false
-		if message, ok := output["message"].(map[string]any); ok {
-			text, _ := message["content"].(string)
-			if err := ctx.SendMessage("pig-workbench.context", text, true, sdk.SendMessageOptions{DeliverAs: "steer", TriggerTurn: sdk.Bool(false)}); err != nil {
+		if blocks := takeFrameBlocks(output); len(blocks) > 0 {
+			if err := sendFrameBlocks(ctx, blocks); err != nil {
 				return nil, err
 			}
-			changed = strings.Contains(text, `src="instructions.`)
+			changed = strings.Contains(strings.Join(blocks, "\n"), `src="instructions.`)
 		}
 		if mutating {
 			if incomplete, ok := output["workbenchIncompleteInstructions"].([]string); ok && len(incomplete) > 0 {

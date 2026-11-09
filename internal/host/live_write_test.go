@@ -132,7 +132,7 @@ func TestLiveSessionResources(t *testing.T) {
 			args map[string]any
 		}{
 			{"read", map[string]any{"path": "session://self/meta"}},
-			{"read", map[string]any{"path": "session://self/transcript:1-6"}},
+			{"read", map[string]any{"path": "session://self/transcript:1-120"}},
 			{"read", map[string]any{"path": "session://self/entries:1-2"}},
 		}
 		w.Header().Set("Content-Type", "text/event-stream")

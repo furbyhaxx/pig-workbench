@@ -334,7 +334,11 @@ func (p sessionProvider) render(ctx context.Context, session sdk.Context, name s
 				fmt.Fprintf(&out, "## tool %s\n\n%s\n\n", entry.ToolName, strings.TrimRight(entry.Content, "\n"))
 			default:
 				if entry.Content != "" {
-					fmt.Fprintf(&out, "## %s\n\n%s\n\n", entry.Role, strings.TrimRight(entry.Content, "\n"))
+					role := entry.Role
+					if role == "" {
+						role = "context"
+					}
+					fmt.Fprintf(&out, "## %s\n\n%s\n\n", role, strings.TrimRight(entry.Content, "\n"))
 				}
 			}
 		}
