@@ -126,7 +126,7 @@ func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, o
 		}
 		selected := rangeIndex < len(ranges) && line >= ranges[rangeIndex].Start
 		var prefix string
-		if selected && !target.Selection.Raw {
+		if selected && !exhausted && !target.Selection.Raw {
 			prefix = strconv.Itoa(line) + ":"
 		}
 		var kept []byte

@@ -801,8 +801,13 @@ func TestLiveActivityShortcutSettingBindsTheConfiguredKey(t *testing.T) {
 					t.Fatalf("the default key still opened the inspector after it was rebound:\n%s", capture)
 				}
 			}
-			tmux("send-keys", "-t", "workbench", tc.press)
-			if capture, ok := waitFor("Workbench activity: idle", 8*time.Second); !ok {
+			// The editor can draw before the extension's shortcut table is live, so a key sent in that gap is lost.
+			opened, capture := false, ""
+			for attempt := 0; attempt < 6 && !opened; attempt++ {
+				tmux("send-keys", "-t", "workbench", tc.press)
+				capture, opened = waitFor("Workbench activity: idle", 4*time.Second)
+			}
+			if !opened {
 				t.Fatalf("%s did not open the inspector:\n%s", tc.press, capture)
 			}
 		})
