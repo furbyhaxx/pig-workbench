@@ -50,7 +50,7 @@ func TestModelFrameCarriesTheCutoffAndAlwaysTheStalenessGuidance(t *testing.T) {
 	unknown := &sdk.ModelInfo{Provider: "x", ID: "no-such-model-9"}
 	facts = modelContextFacts(unknown, modelSettings(t, ""), nil)
 	if _, ok := facts["knowledge_cutoff"]; ok {
-		t.Fatalf("a cutoff was invented for an unknown model: %v", facts)
+		t.Fatalf("a cutoff was invented for a model with neither a cutoff nor a release date: %v", facts)
 	}
 	if facts["training_data_notice"] == nil {
 		t.Fatal("an unknown cutoff must still carry the guidance")
@@ -71,5 +71,20 @@ func TestModelFrameCutoffPrecedenceIsSettingThenContributedThenSnapshot(t *testi
 	facts = modelContextFacts(model, modelSettings(t, "[models]\nknowledge-cutoffs = [\"claude-sonnet-5-5=soon\"]\n"), nil)
 	if msg, _ := facts["knowledge_cutoff_setting_error"].(string); !strings.Contains(msg, "claude-sonnet-5-5=soon") || cutoffOf(t, facts)["date"] != "2026-06" {
 		t.Fatalf("a malformed entry must be named and must not block or replace the snapshot value: %v", facts)
+	}
+}
+
+func TestModelFrameFallsBackToAnEstimateFromTheReleaseDateOnlyWhenNothingElseApplies(t *testing.T) {
+	model := &sdk.ModelInfo{Provider: "z", ID: "glm-4.5-airx"}
+	facts := modelContextFacts(model, modelSettings(t, ""), nil)
+	if cutoff := cutoffOf(t, facts); cutoff["date"] != "2024-07-28" || cutoff["basis"] != "estimated" {
+		t.Fatalf("estimate = %v", cutoff)
+	}
+	contributed := []contributedFields{{owner: "web", fields: map[string]any{"knowledge_cutoff": map[string]any{"date": "2025-01-01", "basis": "explicit", "source": "web"}}}}
+	if cutoff := cutoffOf(t, modelContextFacts(model, modelSettings(t, ""), contributed)); cutoff["date"] != "2025-01-01" {
+		t.Fatalf("a contributed value must beat the estimate: %v", cutoff)
+	}
+	if cutoff := cutoffOf(t, modelContextFacts(model, modelSettings(t, "[models]\nknowledge-cutoffs = [\"glm-4.5-airx=2025-03\"]\n"), nil)); cutoff["date"] != "2025-03" || cutoff["basis"] != "explicit" {
+		t.Fatalf("a setting must beat the estimate: %v", cutoff)
 	}
 }

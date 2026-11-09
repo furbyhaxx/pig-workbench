@@ -253,7 +253,7 @@ func Catalog() []Definition {
 			d.Description = "prompt keeps PiG's <skills> section in the Workbench system prompt; frame leaves it out and delivers the budgeted skill:// listing in the session.capabilities frame. The system prompt is only Workbench's when prompt delivery takes it over."
 		case "models.knowledge-cutoffs":
 			d.Application = "live"
-			d.Description = "Knowledge cutoffs for the session.model frame, each `<model-id>=<YYYY-MM[-DD]>` with an optional `provider/` prefix; overrides contributed and bundled values. Captured when the frame is built."
+			d.Description = "Knowledge cutoffs for the session.model frame, each `<model-id>=<YYYY-MM[-DD]>` with an optional `provider/` prefix; overrides contributed, bundled and estimated values (an estimate is the release date minus one year). Captured when the frame is built."
 		case "skills.listing-budget":
 			d.Application = "live"
 			d.Description = "Target byte budget for the /workbench skills listing and the frame listing; zero disables the ladder. It does not change PiG's prompt skill listing."

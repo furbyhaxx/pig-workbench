@@ -597,7 +597,8 @@ func instructionDiff(fact contextFact, previous, current string, context int) st
 
 // modelContextFacts builds the session.model data: core facts, the knowledge cutoff and its guidance.
 // The cutoff comes from the user's setting, else a contributed explicit value, else the bundled
-// models.dev snapshot; when none applies it is omitted, never guessed. Nothing here depends on today's
+// models.dev snapshot, else an estimate labelled "estimated" (release date minus one year); when no
+// release date is known either it is omitted. Nothing here depends on today's
 // date, so the frame stays unchanged between days.
 func modelContextFacts(model *sdk.ModelInfo, configuration *config.Snapshot, contributed []contributedFields) map[string]any {
 	facts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name, "reasoning": model.Reasoning}
@@ -624,6 +625,11 @@ func modelContextFacts(model *sdk.ModelInfo, configuration *config.Snapshot, con
 			} else if found {
 				facts["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source}
 			}
+		}
+	}
+	if _, ok := facts["knowledge_cutoff"]; !ok {
+		if cutoff, ok := modelknowledge.Estimate(model.Provider, model.ID); ok {
+			facts["knowledge_cutoff"] = map[string]any{"date": cutoff.Date, "basis": cutoff.Basis, "source": cutoff.Source}
 		}
 	}
 	facts["training_data_notice"] = modelknowledge.Guidance
