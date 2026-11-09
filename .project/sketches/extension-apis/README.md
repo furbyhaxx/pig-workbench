@@ -5,9 +5,9 @@ document:
   title: "Extension integration, frames and shared renderer design"
   description: "Wireframes and interaction models for external contributions, message delivery, renderer states and resource providers"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-09T09:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "SPEC-0012 scheme names"
       changes: ["jobs:// → job://, skills:// → skill://, artifact:// continuation → out://"]
+    - revision: 3
+      reason: "Fix a dangling reference found by the artifact check"
+      changes: ["Used a placeholder id in the instruction-diff example"]
 ---
 
 # Design scope
@@ -153,8 +156,8 @@ Required states: pending; queued to host; delivered; superseded pending notice; 
 
 ```text
 ◆ BACKLOG.md · changed · view 7 → 8
-│ - B-0012 bug P2 — old pointer
-│ + B-0018 feature P2 — new pointer
+│ - B-nnnn bug P2 — old pointer
+│ + B-nnnn feature P2 — new pointer
 │ 25 items shown · 8 more → BACKLOG.md
 └ [expand] delivered view / source / provenance
 

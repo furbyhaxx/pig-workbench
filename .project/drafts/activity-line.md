@@ -5,9 +5,9 @@ document:
   title: "Activity line above the editor"
   description: "Proposal for a one-row live summary above the editor (state, agents, jobs, instructions, skills, contributions) that opens the matching Workbench inspector, adapted from the pi-workbench showcase"
   status: "archived"
-  revision: 2
+  revision: 3
   created_at: "2026-11-03T10:45:00+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-09T09:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -17,6 +17,9 @@ document:
     - revision: 2
       reason: "Approved with Q1–Q5 as recommended; superseded by SPEC-0009 rev 6 §9"
       changes: ["Archived with successor pointer"]
+    - revision: 3
+      reason: "Fix a dangling reference found by the artifact check"
+      changes: ["Marked the donor sketch path as a host path"]
 ---
 
 > **Archived.** Approved with the recommendations of §8; the user targets fullscreen mode only, so clicking is the primary path once the host gap of §7 is closed. Successor: [SPEC-0009](../specs/0009-interaction-commands.md) §9, settings in [SPEC-0010](../specs/0010-configuration-state-trust.md) §3, WB-23 in [PLAN-0001](../plans/0001-pig-workbench.md).
@@ -37,7 +40,7 @@ Nothing on screen says what the session has running or loaded: background jobs, 
 
 - Three dots: idle = first dot green, others dim; working = an accent dot bounces across the three.
 - `Ready`/`Working` bold; items separated by ` · `; each item clickable and opens its modal (`agents`, `jobs`, `instructions`, `skills`); the open one is highlighted.
-- Aligned to the editor's inner span; shares the bottom stack with an optional task/agent work widget (`.project/sketches/nugents-tui/specification.md` §7.1), which Workbench does not adopt (task tracking and subagents are out of scope).
+- Aligned to the editor's inner span; shares the bottom stack with an optional task/agent work widget (`host:/mnt/Projects/furbyhaxx/pi-workbench/.project/sketches/nugents-tui/specification.md` §7.1), which Workbench does not adopt (task tracking and subagents are out of scope).
 
 The showcase owns the whole screen. Workbench is an extension inside PiG's TUI, so the adaptation keeps the row and its behaviour and drops the screen ownership.
 

@@ -5,9 +5,9 @@ document:
   title: "Resume full Slice 1 implementation"
   description: "Exact checkpoint, unfinished integration, retained worktrees, failing check and next actions"
   status: "published"
-  revision: 3
+  revision: 4
   created_at: "2026-11-05T12:04:45+01:00"
-  updated_at: "2026-11-05T16:01:57+01:00"
+  updated_at: "2026-11-09T09:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -20,6 +20,9 @@ document:
     - revision: 3
       reason: "Resolved the reload blocker and restored real reload acceptance"
       changes: ["Corrected the initial upstream-blocker inference to a Workbench status-context defect", "Recorded two successive reloads with six unique registrations and repeated/full passing gates"]
+    - revision: 4
+      reason: "Fix a dangling reference found by the artifact check"
+      changes: ["Replaced a range that looked like a path with spec ids"]
 ---
 
 # Current continuation checkpoint (05.11.2026)
@@ -39,7 +42,7 @@ This section supersedes the historical checkpoint below where it differs. Reposi
 
 # Goal and authority
 
-Finish **all of Slice 1**, following `.project/plans/0001-pig-workbench.md` §9, `.project/plans/0002-slice-1-foundation.md` phases A–M and `.project/specs/0001`–`0014`. Isolated engines and green tests are not slice completion. The user repeatedly rejected stopping at intermediate commits and has authorized implementation and required live verification. This turn stops solely because the user explicitly requested this handover.
+Finish **all of Slice 1**, following `.project/plans/0001-pig-workbench.md` §9, `.project/plans/0002-slice-1-foundation.md` phases A–M and SPEC-0001 to SPEC-0014 in `.project/specs/`. Isolated engines and green tests are not slice completion. The user repeatedly rejected stopping at intermediate commits and has authorized implementation and required live verification. This turn stops solely because the user explicitly requested this handover.
 
 - Repository: `/mnt/Projects/furbyhaxx/pig-workbench`.
 - Integrating branch: `dev`.

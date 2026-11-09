@@ -5,9 +5,9 @@ document:
   title: "Projects, the project artifact tree, pseudo-filesystem URIs, agent addressing and the coordinator"
   description: "Proposal for a stable Project entity with .project/Project.toml, the builtin .project convention shared across worktrees, all schemes as browsable pseudo-filesystems, agent:// communication and an opt-in coordinator"
   status: "archived"
-  revision: 4
+  revision: 5
   created_at: "2026-11-03T08:25:00+01:00"
-  updated_at: "2026-11-03T10:00:00+01:00"
+  updated_at: "2026-11-09T09:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
@@ -34,6 +34,9 @@ document:
     - revision: 4
       reason: "Approved with Q1–Q3; superseded by SPEC-0012 and SPEC-0011 rev 2"
       changes: ["Archived with successor pointers", "pig-web line corrected per HO-pig-web-r6-r7 traps"]
+    - revision: 5
+      reason: "Fix a dangling reference found by the artifact check"
+      changes: ["Marked the agentd-ts spec path as a host path"]
 ---
 
 > **Archived.** Successors: [SPEC-0012](../specs/0012-projects-uri-namespace.md) (projects, conventions, URI namespace) and [SPEC-0011](../specs/0011-inter-session-messaging.md) rev 2 (agent://, coordinator). Decisions Q1–Q3 took the recommendations of §9.
@@ -73,7 +76,7 @@ Project = ULID + namespace + name + remote + trust. Sightings per host: path, gi
 ## 2.3 nugent and agentd
 
 - nugent `crates/nukular-nugent/src/config/projects.rs`: `projects.toml` (id, unique name, path, repo URL, default branch, description, preferred model/agent), comment-preserving edits, lookup by id/name/path/prefix.
-- agentd-ts `.project/specs/SPEC-0001-architecture-and-daemon.md` §4: Workspace > Project (repo root `file://`/`ssh://`, default branch, worktrees) > Session (parent, location, branch).
+- agentd-ts `host:/mnt/Projects/furbyhaxx/agentd-ts/.project/specs/SPEC-0001-architecture-and-daemon.md` §4: Workspace > Project (repo root `file://`/`ssh://`, default branch, worktrees) > Session (parent, location, branch).
 
 ## 2.4 PiG
 
