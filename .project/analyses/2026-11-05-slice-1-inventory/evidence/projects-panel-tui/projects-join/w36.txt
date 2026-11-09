@@ -1,0 +1,16 @@
+ one or join an existing project.
+
+ Warning: tmux extended-keys is
+ off. Modified Enter keys may not
+ work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+────────────────────────────────────
+ Workbench › Projects › join share…
+→ Join by file
+  Join by local marker
+ enter choose · escape/ctrl+c back
+────────────────────────────────────
+/tmp/TestLiveProjectsPanelJoinsAR...
+0.0%/32k (auto)                 mock

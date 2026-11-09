@@ -1,0 +1,16 @@
+[Extensions]
+  pig-workbench
+
+
+ This repository belongs to no project yet (working in global). Run /workbench projects to create one or join an existing project.
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Workbench › Projects › join shared-thing
+→ Join by file                    write .project/Project.toml; commit it to share
+  Join by local marker            git config only; no files written
+ enter choose · escape/ctrl+c back
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/tmp/TestLiveProjectsPanelJoinsARegisteredProjectByMarker3096975748/001 (dev)
+0.0%/32k (auto)                                                                                                                         mock

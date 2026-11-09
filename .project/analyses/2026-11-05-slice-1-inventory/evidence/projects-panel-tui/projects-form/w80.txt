@@ -1,0 +1,16 @@
+
+
+ This repository belongs to no project yet (working in global). Run /workbench
+ projects to create one or join an existing project.
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────
+ Workbench › Projects
+ Slug (lowercase, kebab) (1/3)
+> 001
+ enter next · escape/ctrl+c back
+────────────────────────────────────────────────────────────────────────────────
+/tmp/TestLiveProjectsPanelCreatesAProjectAndTheFrameNamesIt478744202/001 (dev)
+0.0%/32k (auto)                                                             mock

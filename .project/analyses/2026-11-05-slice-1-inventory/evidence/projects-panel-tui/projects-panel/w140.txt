@@ -1,0 +1,16 @@
+[Extensions]
+  pig-workbench
+
+
+ This repository belongs to no project yet (working in global). Run /workbench projects to create one or join an existing project.
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Workbench › Projects
+→ + New project here              create .project/Project.toml and register it
+ Here: global (global), recognised by global
+ enter select · escape/ctrl+c close
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/tmp/TestLiveProjectsPanelCreatesAProjectAndTheFrameNamesIt478744202/001 (dev)
+0.0%/32k (auto)                                                                                                                         mock
