@@ -1,0 +1,2 @@
+5 repetitions each on deepseek/deepseek-flash, 09.11.2026: 15 of 15 passed (pinned BACKLOG after cd, capped BACKLOG diff, compaction).
+In the compaction runs the write to pkg/sub after compaction was blocked once with instructionContextChanged in 5 of 5, then repeated.
