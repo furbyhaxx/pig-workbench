@@ -5,12 +5,15 @@ document:
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
   status: "approved"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-07T19:19:54+01:00"
+  updated_at: "2026-11-09T15:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 10
+      reason: "pig-web R10: a declared search capability was accepted but never called"
+      changes: ["Defined the search request and result (§5.1)", "grep and find dispatch to a provider that declares search; an unsupported answer falls back to the bounded walk and is reported", "Provider search results are validated against the searched root and bounded like local matches"]
     - revision: 9
       reason: "Implement safe contributed listing cursor bindings"
       changes: ["Bound opaque tool cursor handles to registration/descriptor/resource identity without exposing backend payloads","Forwarded known listing revisions for consistent continuation","Verified resource mismatch, snapshot changes, reload expiry and bounded retention"]
@@ -113,6 +116,21 @@ This example reaches EOF at line 21: the requested selection is complete, but ea
 Partial first lines caused by a huge line are marked incomplete; do not mark them fully seen. UTF-8 boundaries are preserved. Unknown totals stay absent. Batch output has one shared budget, deterministic input order and per-target errors; one failure does not discard successful reads. Search/find do not recursively enumerate an unbounded virtual catalog without provider support or explicit traversal bounds.
 
 Walking (SPEC-0012 §5.2): without provider `search`, `find` and `grep` walk with `list`+`read` under depth, entry, byte and time bounds and report incomplete results. They never follow `link` entries, skip `ctl` files and `noWalk` subtrees unless named directly, and treat `volatile` files as snapshots of the moment read. `immutable` files get no hashline anchors.
+
+## 5.1 Search operation
+
+A provider that declares `search` receives `grep` and `find` as `operation: "search"` instead of a `list`+`read` walk. The request carries `uri` (the searched root, canonical) and `search`:
+
+```json
+{"operation":"search","uri":"kb://articles/","limits":{"bytes":49152,"lines":1900},"search":{"mode":"content","patterns":["retry budget"],"literal":true,"ignoreCase":true,"glob":"*.md","exclude":["drafts"],"context":1,"maxMatches":200}}
+```
+
+- `mode` is `content` (grep) or `names` (find; `patterns` holds one glob, matched against names exactly as local `find`).
+- `literal:false` means the patterns are regular expressions in Go RE2 syntax. A provider that cannot serve a flag combination (for example regex against a full-text index) answers `unsupported`.
+- The result carries `matches[]`: `{uri, line?, column?, text?, revision?, kind?, size?, before?, after?}` and `complete`. Content matches have `uri`, `line` (1-based) and `text`; names matches have `uri` and optionally `kind` and `size`. `complete:false` means the provider knows its answer is partial; it must not be omitted when the provider hit its own limit.
+- Workbench validates every match: the canonical URI must be inside the searched root, line numbers are positive, counts stay within `maxMatches`, text is sanitized and long lines are windowed. A violation fails the call naming the provider; it does not fall back silently.
+- `unsupported` falls back to the bounded walk of §5. Any other error is returned. Details report `via: "provider"` or `via: "walk"`.
+- Matches from a provider search are not seen-state: a later `read` of the URI is still needed before an `edit`.
 
 # 6. Policy and mutation integrity
 

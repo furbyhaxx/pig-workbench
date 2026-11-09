@@ -45,6 +45,8 @@ type Result struct {
 	FilesScanned int      `json:"filesScanned"`
 	Complete     bool     `json:"complete"`
 	Skipped      []string `json:"skipped,omitempty"`
+	// Via is "provider" or "walk" for a provider root; empty for local searches.
+	Via string `json:"via,omitempty"`
 }
 
 // Limits bound one search.
@@ -236,9 +238,19 @@ func GrepProvider(ctx context.Context, provider resource.Provider, options Optio
 	if err != nil {
 		return Result{}, err
 	}
+	if native, ok := searcher(provider); ok && !options.Selection.Explicit {
+		result, err := grepSearcher(ctx, native, options, limits)
+		if err == nil {
+			result.Via = ViaProvider
+			return result, nil
+		}
+		if !errors.Is(err, resource.ErrUnsupported) {
+			return Result{}, err
+		}
+	}
 	work, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	result := Result{Complete: true}
+	result := Result{Complete: true, Via: ViaWalk}
 	remainingBytes, remainingLines, sourceBudget := 48<<10, 1900, int64(16<<20)
 	visit := func(entry resource.Entry, _ int) (resource.WalkAction, error) {
 		if entry.Name == ".git" || excluded(options.Root, entry.URI, options.Exclude) {
@@ -555,6 +567,8 @@ type FindResult struct {
 	Entries  []FindEntry `json:"entries"`
 	Complete bool        `json:"complete"`
 	Scanned  int         `json:"scanned"`
+	// Via is "provider" or "walk" for a provider root.
+	Via string `json:"via,omitempty"`
 }
 
 // FindProvider walks a provider root for names matching pattern.
@@ -568,7 +582,17 @@ func FindProvider(ctx context.Context, provider resource.Provider, root, pattern
 	if limit <= 0 {
 		limit = 200
 	}
-	result := FindResult{}
+	if native, ok := searcher(provider); ok {
+		result, err := findSearcher(ctx, native, root, pattern, exclude, limit)
+		if err == nil {
+			result.Via = ViaProvider
+			return result, nil
+		}
+		if !errors.Is(err, resource.ErrUnsupported) {
+			return FindResult{}, err
+		}
+	}
+	result := FindResult{Via: ViaWalk}
 	remaining := 48 << 10
 	walk, err := resource.Walk(ctx, provider, root, func(entry resource.Entry, _ int) (resource.WalkAction, error) {
 		if entry.Name == ".git" || excluded(root, entry.URI, exclude) {

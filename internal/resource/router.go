@@ -72,6 +72,53 @@ type Provider interface {
 	Read(ctx context.Context, request ReadRequest) (ReadResult, error)
 }
 
+// SearchRequest is one provider-side search (SPEC-0004 §5.1). Mode is "content" or "names".
+type SearchRequest struct {
+	Root       string
+	Mode       string
+	Patterns   []string
+	Literal    bool
+	IgnoreCase bool
+	Glob       string
+	Exclude    []string
+	Context    int
+	MaxMatches int
+	Budget     Budget
+}
+
+// HitLine is one context line around a content hit.
+type HitLine struct {
+	Line int
+	Text string
+}
+
+// SearchHit is one provider search result.
+type SearchHit struct {
+	URI      string
+	Line     int
+	Column   int
+	Text     string
+	Revision string
+	Dir      bool
+	Size     int64
+	Before   []HitLine
+	After    []HitLine
+}
+
+// SearchResult carries hits in the provider's order and its own completeness claim.
+type SearchResult struct {
+	Hits     []SearchHit
+	Complete bool
+}
+
+// Searcher is implemented by providers that can answer grep and find themselves.
+type Searcher interface {
+	// CanSearch reports whether the provider declares the search capability.
+	CanSearch() bool
+	// Search runs one query; ErrUnsupported means this query shape needs a walk.
+	Search(ctx context.Context, request SearchRequest) (SearchResult, error)
+}
+
 // ErrUnsupported reports an operation the provider does not advertise.
 var ErrUnsupported = errors.New("operation is unsupported for this resource scheme")
 

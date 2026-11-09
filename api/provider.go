@@ -97,6 +97,39 @@ type ResourceRequest struct {
 	Limits           PageLimits        `json:"limits"`
 	Project          *Project          `json:"project,omitempty"`
 	Mutation         *ResourceMutation `json:"mutation,omitempty"`
+	Search           *SearchQuery      `json:"search,omitempty"`
+}
+
+// SearchQuery is the `search` operation of a resource.execute request (SPEC-0004 §5.1).
+// Mode "content" is grep; mode "names" is find, with one glob in Patterns.
+type SearchQuery struct {
+	Mode       string   `json:"mode"`
+	Patterns   []string `json:"patterns"`
+	Literal    bool     `json:"literal"`
+	IgnoreCase bool     `json:"ignoreCase"`
+	Glob       string   `json:"glob,omitempty"`
+	Exclude    []string `json:"exclude,omitempty"`
+	Context    int      `json:"context,omitempty"`
+	MaxMatches int      `json:"maxMatches"`
+}
+
+// SearchContextLine is one source line around a content match.
+type SearchContextLine struct {
+	Line int    `json:"line"`
+	Text string `json:"text"`
+}
+
+// SearchMatch is one provider search hit; names-mode hits carry only URI, Kind and Size.
+type SearchMatch struct {
+	URI      string              `json:"uri"`
+	Line     int                 `json:"line,omitempty"`
+	Column   int                 `json:"column,omitempty"`
+	Text     string              `json:"text,omitempty"`
+	Revision string              `json:"revision,omitempty"`
+	Kind     string              `json:"kind,omitempty"`
+	Size     int64               `json:"size,omitempty"`
+	Before   []SearchContextLine `json:"before,omitempty"`
+	After    []SearchContextLine `json:"after,omitempty"`
 }
 
 // ResourceEntry is one typed listing row.
@@ -131,6 +164,7 @@ type ResourceResult struct {
 	NextCursor   string           `json:"nextCursor,omitempty"`
 	Complete     *bool            `json:"complete,omitempty"`
 	Receipt      *MutationReceipt `json:"receipt,omitempty"`
+	Matches      []SearchMatch    `json:"matches,omitempty"`
 }
 
 // ResourcesChangedParams tells Workbench that a registered resource provider's data changed.

@@ -1,6 +1,7 @@
 package host
 
 import (
+	"cmp"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -162,6 +163,74 @@ func (p *contributedProvider) List(ctx context.Context, uri, cursor string, limi
 		listing.Entries = append(listing.Entries, resource.Entry{Name: sanitizeProviderText(entry.Name), URI: entry.URI, Kind: kind, Size: entry.Size, Revision: entry.Revision, Target: entry.Target, NoWalk: entry.NoWalk})
 	}
 	return listing, nil
+}
+
+// CanSearch reports whether the registration declares the search capability.
+func (p *contributedProvider) CanSearch() bool { return p.descriptor.Has("search") }
+
+// Search forwards one grep or find query to the provider and validates its hits.
+func (p *contributedProvider) Search(ctx context.Context, request resource.SearchRequest) (resource.SearchResult, error) {
+	if !p.CanSearch() {
+		return resource.SearchResult{}, resource.ErrUnsupported
+	}
+	budget := request.Budget
+	if limit := p.descriptor.Limits.PageBytes; limit > 0 {
+		budget.Bytes = min(budget.Bytes, limit)
+	}
+	if limit := p.descriptor.Limits.PageLines; limit > 0 {
+		budget.Lines = min(budget.Lines, limit)
+	}
+	query := &api.SearchQuery{Mode: request.Mode, Patterns: request.Patterns, Literal: request.Literal, IgnoreCase: request.IgnoreCase, Glob: request.Glob, Exclude: request.Exclude, Context: request.Context, MaxMatches: request.MaxMatches}
+	result, err := p.execute(ctx, api.ResourceRequest{Operation: "search", RequestedURI: request.Root, URI: request.Root, Limits: api.PageLimits{Bytes: budget.Bytes, Lines: budget.Lines}, Search: query})
+	if err != nil {
+		return resource.SearchResult{}, err
+	}
+	return convertSearchResult(p.canonical, p.canonicalURI(request.Root), request.Mode, request.MaxMatches, result)
+}
+
+// convertSearchResult validates a provider's search answer against the searched root and mode.
+func convertSearchResult(scheme, root, mode string, maxMatches int, result api.ResourceResult) (resource.SearchResult, error) {
+	if len(result.Matches) > maxMatches {
+		return resource.SearchResult{}, fmt.Errorf("%s:// provider returned more matches than requested", scheme)
+	}
+	hits := make([]resource.SearchHit, 0, len(result.Matches))
+	for _, match := range result.Matches {
+		if !withinSearchRoot(root, match.URI) {
+			return resource.SearchResult{}, fmt.Errorf("%s:// provider returned a match outside the searched root", scheme)
+		}
+		hit := resource.SearchHit{URI: match.URI, Line: match.Line, Column: match.Column, Text: sanitizeProviderText(match.Text), Revision: match.Revision, Size: match.Size}
+		if mode == "content" {
+			if match.Line < 1 || match.Column < 0 {
+				return resource.SearchResult{}, fmt.Errorf("%s:// provider returned a match without a valid line", scheme)
+			}
+			for _, line := range match.Before {
+				hit.Before = append(hit.Before, resource.HitLine{Line: line.Line, Text: sanitizeProviderText(line.Text)})
+			}
+			for _, line := range match.After {
+				hit.After = append(hit.After, resource.HitLine{Line: line.Line, Text: sanitizeProviderText(line.Text)})
+			}
+		} else {
+			kind, err := entryKind(cmp.Or(match.Kind, string(resource.EntryFile)))
+			if err != nil {
+				return resource.SearchResult{}, err
+			}
+			hit.Dir = kind == resource.EntryDir
+		}
+		hits = append(hits, hit)
+	}
+	complete := result.Complete == nil || *result.Complete
+	return resource.SearchResult{Hits: hits, Complete: complete}, nil
+}
+
+// withinSearchRoot reports whether uri is the searched root or below it.
+func withinSearchRoot(root, uri string) bool {
+	if uri == root {
+		return true
+	}
+	if strings.HasSuffix(root, "/") {
+		return strings.HasPrefix(uri, root)
+	}
+	return strings.HasPrefix(uri, root+"/")
 }
 
 func (p *contributedProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

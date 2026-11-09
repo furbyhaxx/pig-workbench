@@ -656,3 +656,57 @@ func TestLiveProducerWithoutAllowWakeCannotWake(t *testing.T) {
 		t.Fatalf("a refused wake started %d turns", got)
 	}
 }
+
+// TestLiveGrepAndFindUseTheProviderSearch proves a provider that declares search answers grep and find
+// itself (pig-web R10): its relevance order survives, an unsupported regex falls back to the walk,
+// and a provider failure is not hidden.
+func TestLiveGrepAndFindUseTheProviderSearch(t *testing.T) {
+	root := t.TempDir()
+	requests := filepath.Join(root, "search-requests")
+	t.Setenv("WORKBENCH_SEARCH_FIXTURE", "1")
+	t.Setenv("WORKBENCH_SEARCH_FIXTURE_REQUESTS", requests)
+	results := runScriptedWith(t, root, "grep,find", "", []string{"reference-producer"},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "idx://articles/", "pattern": "retry budget", "literal": true, "ignoreCase": true, "glob": "*.md"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "idx://articles/", "pattern": "retry.*budget"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"find", map[string]any{"path": "idx://articles/", "pattern": "*.md"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"grep", map[string]any{"path": "idx://articles/retry.md:2", "pattern": "budget", "literal": true}}
+		},
+	)
+	if len(results) != 4 {
+		t.Fatalf("results = %v", results)
+	}
+	retry, errors := strings.Index(results[0], "idx://articles/retry.md:2:5: the retry budget"), strings.Index(results[0], "idx://articles/errors.md:2:1: retry budget mentioned")
+	if retry < 0 || errors < 0 || strings.Contains(results[0], "notes.txt") {
+		t.Fatalf("provider search results missing or glob not applied: %s", results[0])
+	}
+	if retry > errors {
+		t.Fatalf("provider relevance order was replaced by a walk's alphabetical order: %s", results[0])
+	}
+	if !strings.Contains(results[1], "idx://articles/errors.md:2:1: retry budget mentioned") {
+		t.Fatalf("an unsupported regex query must fall back to the walk: %s", results[1])
+	}
+	if !strings.Contains(results[2], "idx://articles/retry.md") || !strings.Contains(results[2], "idx://articles/errors.md") || strings.Contains(results[2], "notes.txt") {
+		t.Fatalf("names search: %s", results[2])
+	}
+	if !strings.Contains(results[3], "idx://articles/retry.md:2:") {
+		t.Fatalf("line-selected grep: %s", results[3])
+	}
+	log, err := os.ReadFile(requests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(log)
+	if !strings.Contains(got, "content idx://articles/ [retry budget]") || !strings.Contains(got, "names idx://articles/ [*.md]") {
+		t.Fatalf("provider never received the search operations:\n%s", got)
+	}
+	if strings.Contains(got, "retry.md:2") {
+		t.Fatalf("a line-selected grep must not be a provider search:\n%s", got)
+	}
+}

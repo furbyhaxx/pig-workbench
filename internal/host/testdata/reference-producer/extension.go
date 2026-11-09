@@ -77,6 +77,9 @@ func execute(request api.ResourceRequest) (any, *api.Error) {
 	if strings.HasPrefix(request.URI, "mut://") {
 		return executeMutation(request)
 	}
+	if strings.HasPrefix(request.URI, "idx://") {
+		return executeIndexed(request)
+	}
 	switch request.Operation {
 	case "stat":
 		if request.URI == "kb://sources/" || request.URI == "kb://sources" || request.URI == "kb://sources/nested/" || request.URI == "git://fixture/" || request.URI == "git://fixture" || request.URI == "kb://paged/" || request.URI == "kb://paged" || request.URI == "kb://paged/nested/" {
@@ -283,6 +286,12 @@ func register(ctx sdk.Context, ext *sdk.Extension) error {
 			kind, key  string
 			descriptor map[string]any
 		}{"resourceProvider", "mutations", map[string]any{"label": "Mutation fixture", "summary": "Revision-checked test resources", "schemes": []string{"mut"}, "capabilities": []string{"stat", "read", "list", "write", "mkdir", "remove", "copy", "move"}, "selectorMode": "lines", "backing": "virtual", "scope": "session", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": true}, "mutations": map[string]any{"revisionChecked": true, "retentionMs": 86400000, "durable": false}, "limits": map[string]any{}}})
+	}
+	if os.Getenv("WORKBENCH_SEARCH_FIXTURE") == "1" {
+		contributions = append(contributions, struct {
+			kind, key  string
+			descriptor map[string]any
+		}{"resourceProvider", "idx", map[string]any{"label": "Indexed articles", "summary": "Articles with a provider-side full-text index", "schemes": []string{"idx"}, "capabilities": []string{"stat", "read", "list", "search"}, "selectorMode": "lines", "backing": "virtual", "scope": "user", "contentKinds": []string{"text", "container"}, "snapshots": map[string]any{"stableRevision": true, "rangedRead": true, "compareAndSwap": false}, "limits": map[string]any{}}})
 	}
 	if os.Getenv("WORKBENCH_WAKE_FIXTURE") == "1" {
 		contributions = append(contributions, struct {

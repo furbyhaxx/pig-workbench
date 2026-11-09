@@ -263,3 +263,32 @@ func TestFirstTouchGuideIsInjectedOncePerRevision(t *testing.T) {
 		t.Fatal("re-registration did not re-inject the guide")
 	}
 }
+
+func TestProviderSearchResultsAreValidatedAgainstTheSearchedRoot(t *testing.T) {
+	incomplete := false
+	good := api.ResourceResult{CanonicalURI: "kb://articles/", Complete: &incomplete, Matches: []api.SearchMatch{{URI: "kb://articles/a.md", Line: 3, Text: "hit\x1b[31m"}}}
+	got, err := convertSearchResult("kb", "kb://articles/", "content", 5, good)
+	if err != nil || got.Complete || len(got.Hits) != 1 || strings.ContainsRune(got.Hits[0].Text, 0x1b) {
+		t.Fatalf("valid result: %+v %v", got, err)
+	}
+	cases := map[string]struct {
+		root, mode string
+		max        int
+		match      api.SearchMatch
+	}{
+		"outside root":     {"kb://articles/", "content", 5, api.SearchMatch{URI: "kb://sources/a.md", Line: 1}},
+		"sibling prefix":   {"kb://articles", "content", 5, api.SearchMatch{URI: "kb://articles-private/a.md", Line: 1}},
+		"foreign scheme":   {"kb://articles/", "content", 5, api.SearchMatch{URI: "file:///etc/passwd", Line: 1}},
+		"missing line":     {"kb://articles/", "content", 5, api.SearchMatch{URI: "kb://articles/a.md"}},
+		"unknown kind":     {"kb://articles/", "names", 5, api.SearchMatch{URI: "kb://articles/a.md", Kind: "socket"}},
+		"too many matches": {"kb://articles/", "content", 0, api.SearchMatch{URI: "kb://articles/a.md", Line: 1}},
+	}
+	for name, c := range cases {
+		if _, err := convertSearchResult("kb", c.root, c.mode, c.max, api.ResourceResult{Matches: []api.SearchMatch{c.match}}); err == nil {
+			t.Errorf("%s was accepted", name)
+		}
+	}
+	if got, err := convertSearchResult("kb", "kb://articles", "content", 5, api.ResourceResult{Matches: []api.SearchMatch{{URI: "kb://articles/a.md", Line: 1}}}); err != nil || !got.Complete {
+		t.Fatalf("root without trailing slash must contain its children and default to complete: %+v %v", got, err)
+	}
+}

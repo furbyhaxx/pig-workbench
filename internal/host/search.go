@@ -164,6 +164,9 @@ func (a *app) grep(ctx sdk.Context, params map[string]any) (any, error) {
 		_, _ = fmt.Fprintf(&body, "skipped %d unreadable, binary or oversized file(s)\n", len(result.Skipped))
 	}
 	details := map[string]any{"filesScanned": result.FilesScanned, "complete": result.Complete, "skipped": result.Skipped, "locationRevision": captured.Revision}
+	if result.Via != "" {
+		details["via"] = result.Via
+	}
 	if input.FilesOnly {
 		details["paths"] = paths
 	} else {
@@ -232,7 +235,7 @@ func (a *app) find(ctx sdk.Context, params map[string]any) (any, error) {
 	if !result.Complete {
 		body.WriteString("… truncated at the configured limit\n")
 	}
-	return sdk.ToolResult{Content: body.String(), Details: map[string]any{"entries": result.Entries, "scanned": result.Scanned, "complete": result.Complete, "locationRevision": captured.Revision}}, nil
+	return sdk.ToolResult{Content: body.String(), Details: map[string]any{"entries": result.Entries, "scanned": result.Scanned, "complete": result.Complete, "locationRevision": captured.Revision, "via": result.Via}}, nil
 }
 
 func plainLine(value string) string {
