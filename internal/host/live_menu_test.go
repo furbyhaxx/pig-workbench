@@ -5,6 +5,7 @@ package host
 import (
 	"fmt"
 
+	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"os"
 	"os/exec"
@@ -20,6 +21,8 @@ type tuiSession struct {
 	t      *testing.T
 	socket string
 	env    []string
+	// recorder holds the provider requests the mock model received.
+	recorder *requestRecorder
 }
 
 func startTUI(t *testing.T, root string, fixtures ...string) *tuiSession {
@@ -37,7 +40,7 @@ func startTUIScripted(t *testing.T, root string, calls []scriptedCall, fixtures 
 	server := recorder.serve(t)
 	t.Cleanup(server.Close)
 	writeFixtureProvider(t, agent, server.URL)
-	s := &tuiSession{t: t, socket: filepath.Join(runtime, "tmux.sock"), env: append(os.Environ(), "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))}
+	s := &tuiSession{t: t, recorder: recorder, socket: filepath.Join(runtime, "tmux.sock"), env: append(os.Environ(), "PIG_HOME="+root, "PIG_CODING_AGENT_DIR="+agent, "XDG_DATA_HOME="+filepath.Join(root, "data"), "XDG_STATE_HOME="+filepath.Join(root, "state"))}
 	command := []string{"new-session", "-d", "-s", "wb", "-x", "100", "-y", "32", "-c", root, "pig", "--offline", "--no-session", "-ne", "-e", repoRoot(t)}
 	for _, fixture := range fixtures {
 		command = append(command, "-e", filepath.Join(repoRoot(t), "internal/host/testdata", fixture))
@@ -610,5 +613,95 @@ func TestLiveWideSecretKeyIsNarrowedAndThePromptIsSent(t *testing.T) {
 	}
 	if info, err := os.Stat(keyPath); err != nil || info.Mode().Perm() != 0o600 {
 		t.Fatalf("key mode after the run: %v %v", info, err)
+	}
+}
+
+// The projects panel creates a project at the current repository: Project.toml, registry and the session.project frame.
+func TestLiveProjectsPanelCreatesAProjectAndTheFrameNamesIt(t *testing.T) {
+	root := t.TempDir()
+	gitInit(t, root)
+	slug := project.SlugFromName(filepath.Base(root))
+	s := startTUI(t, root)
+	s.openHub()
+	s.typeSlowly("projects")
+	s.keys("Enter")
+	panel := s.waitFor("+ New project here", 10*time.Second)
+	if !strings.Contains(panel, "Here: global") {
+		t.Fatalf("the panel must state the current recognition:\n%s", panel)
+	}
+	s.capture("projects-panel")
+	s.keys("Enter")
+	form := s.waitFor("Slug (lowercase, kebab) (1/3)", 10*time.Second)
+	if !strings.Contains(form, slug) {
+		t.Fatalf("the slug is not prefilled from the directory name:\n%s", form)
+	}
+	s.capture("projects-form")
+	s.keys("Enter")
+	s.waitFor("Name (optional) (2/3)", 10*time.Second)
+	s.typeSlowly("Panel Demo")
+	s.keys("Enter")
+	s.waitFor("Description (optional) (3/3)", 10*time.Second)
+	s.keys("Enter")
+	done := s.waitFor("Created project", 15*time.Second)
+	if !strings.Contains(done, slug) {
+		t.Fatalf("the list does not show the new project:\n%s", done)
+	}
+	loaded, found, err := project.Load(root)
+	if err != nil || !found || loaded.Slug != slug || loaded.Name != "Panel Demo" {
+		t.Fatalf("Project.toml wrong: %+v %v %v", loaded, found, err)
+	}
+	registry, err := os.ReadFile(filepath.Join(root, "agent", "projects", loaded.ID, "project.toml"))
+	if err != nil || !strings.Contains(string(registry), "Panel Demo") {
+		t.Fatalf("project not registered: %v\n%s", err, registry)
+	}
+	s.keys("Escape", "Escape")
+	s.typeSlowly("hello")
+	s.tmux("send-keys", "-t", "wb", "Enter")
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		s.recorder.mu.Lock()
+		bodies := strings.Join(s.recorder.bodies, "\n")
+		s.recorder.mu.Unlock()
+		if strings.Contains(bodies, loaded.ID) {
+			return
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	t.Fatalf("the session.project frame never named %s", loaded.ID)
+}
+
+// Selecting a registered project in the panel and joining by marker writes only git config and changes recognition.
+func TestLiveProjectsPanelJoinsARegisteredProjectByMarker(t *testing.T) {
+	root := t.TempDir()
+	other := filepath.Join(t.TempDir(), "elsewhere")
+	gitInit(t, root)
+	gitInit(t, other)
+	registry, err := project.Open(filepath.Join(root, "agent"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry, err := registry.CreateProject(t.Context(), other, "shared-thing", "Shared Thing", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	s.openHub()
+	s.typeSlowly("projects")
+	s.keys("Enter")
+	s.waitFor("shared-thing", 10*time.Second)
+	s.keys("Down", "Enter")
+	choice := s.waitFor("Join by local marker", 10*time.Second)
+	s.capture("projects-join")
+	if !strings.Contains(choice, "Join by file") {
+		t.Fatalf("both join modes must be offered:\n%s", choice)
+	}
+	s.keys("Down", "Enter")
+	s.waitFor("Joined", 15*time.Second)
+	out, err := exec.Command("git", "-C", root, "config", "--local", "pig.projectId").Output()
+	if err != nil || strings.TrimSpace(string(out)) != entry.Project.ID {
+		t.Fatalf("marker not written: %q %v", out, err)
+	}
+	if _, found, _ := project.Load(root); found {
+		t.Fatal("joining by marker must not write Project.toml")
 	}
 }

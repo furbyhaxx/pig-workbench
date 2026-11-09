@@ -104,6 +104,9 @@ func (a *app) adoptSessionStorage(ctx sdk.Context, s *session) {
 
 // projectsCommand implements /workbench projects.
 func (a *app) projectsCommand(ctx sdk.Context, args string) error {
+	if strings.TrimSpace(args) == "" && panelsAvailable(ctx) {
+		return a.projectsPanel(ctx)
+	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
 		return err
