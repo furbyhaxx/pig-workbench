@@ -5,12 +5,15 @@ document:
   title: "Slice 1 acceptance inventory"
   description: "PLAN-0001 Slice 1 ownership rows, observed representative tests and remaining acceptance gaps"
   status: "published"
-  revision: 60
+  revision: 61
   created_at: "2026-11-05T16:40:00+01:00"
-  updated_at: "2026-11-08T23:45:00+01:00"
+  updated_at: "2026-11-09T12:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 61
+      reason: "Record the in-repo closures after the review follow-up"
+      changes: ["activity.shortcut live", "Windows build fixed and measured under wine", "Fused blocker reproduced again", "Read allocation defect fixed"]
     - revision: 60
       reason: "User review: wake-capable frames, tuning, remaining local gaps and live frame and instruction evaluation"
       changes: ["Recorded the live wake, tool-tuning, frame and instruction results", "Recorded the fork deadlock and nested-instruction withdrawal fixes", "Corrected stale not-done statements for the panels and live evaluation"]
@@ -285,7 +288,7 @@ Verified against code in the continuation; two bullets were not met as written a
 - All fourteen specifications are approved; that approval does not close the remaining implementation or acceptance gaps.
 - Declared provider mutations are wired without new permission prompts under SPEC-0004 revision 8. Provider hashline editing remains unavailable; the full ownership-row evidence mapping and slice exit remain open. Redirects implement a static-word form, not general shell redirection.
 - Live evaluation ran on deepseek/deepseek-flash after the user authorized it: the prompt A/B, the tool-description suite, an end-to-end workflow, wake delivery, frames and instructions (see the review follow-up). The scripted-provider evidence above is still the proof for mechanics a live model does not exercise, such as compaction, pins and the capped-BACKLOG diff.
-- `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows messaging, session storage and registry are compile-level only.
+- `agent://by-project`, broadcast and coordinator are Slice 2. Activity-item click requires the fork host. Windows is not a supported platform: the module builds and vets for windows/amd64 (`just windows`), 14 packages pass under wine, and the resource, search, fileedit, endpoint, project-registry and secret-privacy paths fail or fail closed there.
 
 ## SPEC-0008 §8 local rows (audit)
 

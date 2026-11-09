@@ -5,12 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 61
+  revision: 62
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-08T23:45:00+01:00"
+  updated_at: "2026-11-09T12:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 62
+      reason: "Close the in-repo gaps named after revision 61"
+      changes: ["activity.shortcut applied and tested in a real TUI", "Module fixed to build on Windows; `just windows` cross-vets and runs 14 packages under wine", "Fused Piglet Binary blocker re-reproduced on PiG 0.7.0", "Read no longer allocates a line prefix per line past the page; the memory test now compares file sizes", "Live pins, capped BACKLOG diff and compaction runs; larger A/B; prompt.delivery auto serves builtin/workbench on stock PiG"]
     - revision: 61
       reason: "User review after the final report: job notices must wake, tuning and frame and instruction behavior needed live evidence, and local gaps needed closing"
       changes: ["Frames carry wake=true/false (SPEC-0002 rev 9); finished jobs wake the model", "Tuned tool, parameter and error text against observed DeepSeek failures", "Closed jobs wait/kill/stream, redaction memoization, interactive panels and a real session replacement test", "Live frame and instruction evaluation found and fixed a fork deadlock and per-prompt nested-instruction withdrawal"]
@@ -43,7 +46,7 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 - **Local acceptance reconciliation:** every PLAN-0001 §9 Slice 1 row was audited against its exact specification anchors; the inventory lists PASS, PARTIAL and Slice 2 results separately. The audit fixed real gaps, among them background-job completion notices, read repetition and supersession, retained-metadata redaction, provider cancel/drain and the interactive `/workbench` hub. Remaining PARTIAL rows: SPEC-0013 compaction/branch-summary request capture and per-tool substitution tests for edit, HTTP and codemode children; SPEC-0008 `jobs wait until=output`, `kill` signal argument and stream selection; fused Workbench in a Piglet Binary (a PiG merge limit).
 - **Unfinished Slice 1:** `grep` searches bounded provider-directory roots and explicit files with line selectors. Long matching lines use explicit bounded windows, and oversized context is reduced before dropping a matching line. `find` walks bounded paginated providers including confined `local://` scratch. Scratch reads and listings use root-confined descriptors. Scheme-command `rm`, `mv`, `cp` and `mkdir` now dispatch declared provider mutations without new permission prompts. Direct write and redirects share provider integrity checks; redirects accept one static word, not general shell redirection. Provider snapshot editing remains unadvertised. The shell parser recognizes static quoted/escaped URI paths, but cannot always identify dynamically constructed paths. Trusted project-private notes enter the frame and pin lifecycle; truncated instruction views block mutations until their current source is fully delivered, including tagged batch targets and move destinations. The task list retains the remaining behaviors and acceptance tests; none is moved to depth by this checkpoint.
 - **Evidence and approval gaps:** `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real two-session reply and hop limit with scripted inference. `TestLiveStoredSessionTitleRequiresConfirmation` exercises decline and acceptance through PiG RPC confirmation dialogs, not a visual TUI. `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi and preview answers in real PiG RPC dialogs with scripted inference. `TestActivityCountsFailedJobsAfterRealExit` verifies activity failure counts against real child processes. Windows messaging, session storage and registry have compile-level coverage only. The real-provider A/B and full agent transcript require user authorization for inference spend. The live A/B (round 3: 16 tasks x 5 repetitions per arm) passed 79/80 under each prompt with 0 tool errors against 4 and 23% fewer input tokens for builtin/workbench, so `prompt.delivery = auto` now resolves to force on stock PiG per SPEC-0014 §4; takeover still requires instructions enabled.
-- **Intentionally deferred:** activity-item click requires the fork host and `activity.shortcut` is not applied; broadcast, coordinator, by-project trees and rich questionnaire chrome belong to later slices. The reference-extension seam gate passed; the real pig-web co-load remains pig-web's gate, and no slice-exit commit exists yet.
+- **Intentionally deferred:** activity-item click requires the fork host and `activity.shortcut` is applied from the user layer at load (a change needs /reload); broadcast, coordinator, by-project trees and rich questionnaire chrome belong to later slices. The reference-extension seam gate passed; the real pig-web co-load remains pig-web's gate, and no slice-exit commit exists yet.
 
 # 2. What is in Slice 1 and what is depth
 
