@@ -5,9 +5,9 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "approved"
-  revision: 10
+  revision: 11
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-09T21:00:00+01:00"
+  updated_at: "2026-11-09T22:45:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -41,6 +41,9 @@ document:
     - revision: 10
       reason: "Linked worktrees below the checkout were refused as untrusted nested repositories"
       changes: ["A linked worktree created from a checkout inside the project is part of that project, not a boundary; the claim is verified by the main checkout's back-link", "Identical bytes in a worktree deduplicate against the already selected file; a differing worktree file applies"]
+    - revision: 11
+      reason: "User decision 09.11.2026: the 'no longer applies' notice is noise"
+      changes: ["A source that stops applying (out of scope, unpinned, deleted, host replaced) is withdrawn silently: no frame is sent and the delivered digest is kept, so the same bytes are not re-sent when it applies again", "Content that really leaves the context (compaction, branch change) is re-delivered through reconstruction as before", "Migration: the earlier explicit withdrawal notice is removed; a model may keep following the old text until the next delivery or compaction"]
 ---
 
 # 1. Purpose and inputs
@@ -116,7 +119,7 @@ Class fields:
 | max-items/max-lines/max-bytes | Positive view budgets; item format required for item counting |
 | allow-pin/pin-mode | Policy, not automatic permission; add or replace-nearest |
 | after-compaction | reinject or on-touch; root/global/pinned steering always rebuilt |
-| enabled | Disable class selection with explicit withdrawals |
+| enabled | Disable class selection; withdrawn sources are dropped silently (no notice frame) |
 
 Conventions (SPEC-0012 §4.2), each a user/runtime setting: when an agent creates a directory that holds a module, package or crate manifest and no `AGENTS.md`, a reminder frame names the `agents-md` skill (`instructions.agents-md-reminder`, default true). `BACKLOG.md` pointers are validated when the file is selected: a target that does not exist or whose `status` is not `"open"` is shown in the view, never silently dropped (`instructions.backlog.validate-pointers`, default true). Scheme guides (SPEC-0012 §5.5) reuse this first-touch and after-compaction machinery with `after-compaction = "on-touch"`.
 
@@ -144,7 +147,7 @@ Each machine may describe itself in `/etc/agents/` (directory configurable by `i
 - **Delivery:** through the normal instruction frames (`instructions.steering` and `instructions.host`), at the first prompt of a session and again on a branch, compaction or change (as a diff), with the same caps (200 lines, 16 KiB), digest and dedup rules as other views. They do not depend on touched paths or project trust: a host file applies to an untrusted project too.
 - **Safety:** the files are read through a regular-file, nonblocking open. A file, or its directory, writable by any user (world-writable; group-writable is accepted), or owned by neither root nor the current user, is refused with a visible reason and never delivered. Symlinks are followed only to regular files.
 - **Remote authorities:** the files belong to the host of the active location's authority. When the session works on a remote host, that host's `HOST.md` and `AGENTS.md` are read from the same path on that host and **replace, per file name**, the copy from another host; a file the remote host lacks keeps the other host's copy, shown with its own host in the path so the model knows which machine it describes. Only a remote host's own files can replace another host's. A remote copy is never merged into a local one. Reading remote files needs the SSH backend (PLAN-0003 W3); until it exists, Workbench loads the local host's files only and the resolution is exercised through a reader seam.
-- **Changing authority:** moving between hosts withdraws the replaced copy with the usual "no longer applies" notice.
+- **Changing authority:** moving between hosts silently drops the replaced copy; the other host's copy arrives as its own labelled delivery.
 
 Selection for the chain `/repo → /repo/a → /repo/a/b`:
 | Available copies | ancestors | root+nearest | nearest | root |
@@ -169,7 +172,7 @@ For root+nearest/nearest, retain the most recent **completed batch target set** 
 
 Sort delivery: global → host → broadest-to-nearest path depth → configured class order → canonical URI. Same bytes at equal trust may share one content delivery, but each applicability reason remains tracked.
 
-A cwd transition builds the full new selection before publishing it, then emits required withdrawals/additions/relocations in one ordered reconciliation. It cannot erase already delivered text; withdrawal explicitly tells the model that prior content no longer applies.
+A cwd transition builds the full new selection before publishing it, then emits the additions and relocations in one ordered reconciliation. It cannot erase already delivered text, and a source that no longer applies produces no frame (a notice for every scope change was noise); the delivered digest is kept so identical bytes are not re-sent when it applies again.
 
 # 5. Before-tool instruction barrier
 

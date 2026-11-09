@@ -357,12 +357,12 @@ func TestLivePinnedBacklogStaysDeliveredAndPoliciesHold(t *testing.T) {
 	if !strings.Contains(recorder.bodies[3], "PINNED-ITEM-MARKER") {
 		t.Fatal("the pinned backlog must reach the model at the next boundary even though the touched file is elsewhere")
 	}
-	if !strings.Contains(recorder.bodies[5], "no longer applies") {
-		t.Fatal("unpinning must withdraw the backlog explicitly")
+	if strings.Contains(recorder.bodies[5], "no longer applies") {
+		t.Fatal("unpinning must not send the model a withdrawal frame")
 	}
 }
 
-func TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn(t *testing.T) {
+func TestLiveNewSteeringIsAdmittedAndDeletedSteeringStaysSilent(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
 		t.Fatal(err)
@@ -394,8 +394,8 @@ func TestLiveNewSteeringIsAdmittedAndDeletedSteeringIsWithdrawn(t *testing.T) {
 	if !strings.Contains(recorder.bodies[3], "Instructions from: ") || !strings.Contains(recorder.bodies[3], "LATE-RULE-MARKER") {
 		t.Fatal("a steering file created mid-session must be admitted at the next tool boundary")
 	}
-	if !strings.Contains(recorder.bodies[5], "no longer applies") {
-		t.Fatal("a deleted steering file must be withdrawn explicitly")
+	if strings.Contains(recorder.bodies[5], "no longer applies") {
+		t.Fatal("a deleted steering file must not send the model a withdrawal frame")
 	}
 }
 

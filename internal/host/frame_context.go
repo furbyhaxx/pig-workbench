@@ -334,30 +334,9 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		state.staged = make(map[string]stagedView)
 	}
 	state.scope = scope
-	currentInstructionKeys := make(map[string]bool)
-	for _, fact := range facts {
-		if strings.HasPrefix(fact.source, "instructions.") {
-			currentInstructionKeys[fact.source+"/"+fact.resource] = true
-		}
-	}
-	var withdrawals []string
 	explicitTargets, _ := data["workbenchInstructionTargets"].([]string)
 	if len(explicitTargets) > 0 {
 		state.retained, state.retainedLocation, state.retainedEpoch = explicitTargets, current.Revision, epoch
-	}
-	// A tool call without its own file targets (codemode, bash) only adds cwd-derived scope; it must not
-	// withdraw what an explicit target selected, or a nested call would lose its own instructions.
-	keepTouched := data["workbenchToolContext"] == true && len(explicitTargets) == 0
-	for key := range state.last {
-		// A boundary notice reports a refusal, not an applicable source, so it is never withdrawn.
-		if strings.HasPrefix(key, "instructions.") && !strings.HasPrefix(key, "instructions.boundary/") && !currentInstructionKeys[key] && !keepTouched {
-			withdrawals = append(withdrawals, key)
-		}
-	}
-	sort.Strings(withdrawals)
-	for _, key := range withdrawals {
-		source, path, _ := strings.Cut(key, "/")
-		facts = append(facts, contextFact{source: source, resource: path, kind: "notice", authority: "data", value: "This instruction source no longer applies to the active tool target: " + path})
 	}
 	var admitted []string
 	for _, fact := range facts {
