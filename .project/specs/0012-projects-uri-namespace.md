@@ -5,9 +5,9 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-09T16:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
@@ -35,6 +35,9 @@ document:
     - revision: 8
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; project identity, storage adoption and the URI namespace frozen, with probe answers T1-T3 and the resumed-cwd result recorded"]
+    - revision: 9
+      reason: "Creation and joining were specified but had no interface"
+      changes: ["§3.3.1 defines the create/join operations, the commands, the TUI panel and the once-per-repository offer; recognition reads the pig.projectId marker before matching"]
 
 ---
 
@@ -105,6 +108,13 @@ This answers "which project am I in?" whenever a session starts or `cd` moves:
 1. **`Project.toml` found** in `.project/` at the repository top (or an ancestor for non-git directories): its `id` is the answer. This is the normal case.
 2. **No `Project.toml`**, for repositories you cannot or do not want to add files to (third-party clones, read-only checkouts, someone else's repo): Workbench matches the repository against projects it already knows, by root commit SHA (same history, any clone, any host), then normalized remote, then a recorded (host, path). A match is remembered in the repository's **local** git config (`pig.projectId`, never committed).
 3. **Nothing matched**: the directory belongs to the builtin `global` project. Workbench offers once to create a project (writes `Project.toml`, or only the local git marker when chosen). It never creates one silently.
+
+### 3.3.1 Creating and joining
+
+- **Create** at the current repository with a slug (lowercase kebab, unique in the registry), optional name and description: writes `.project/Project.toml` with a generated `prj-` id (never replacing an existing file) and registers the checkout.
+- **Join** a registered project, **by file** (writes `Project.toml` with the project's id and this repository's component slug) or **by marker** (only `git config --local pig.projectId`, no file). Recognition reads the marker before it matches by root commit, remote or location.
+- **Interface:** `/workbench projects list|create|join|example` in every mode, and in the TUI a panel for the same operations. A directory in `global` that is a git repository gets one notice per repository (a claim file under the XDG state directory), never an automatic creation.
+- A `Project.toml` found during recognition is copied into the registry and the checkout recorded once; a slug owned by another project is refused.
 
 Conflicts (two projects claim one directory, e.g. a fork sharing root commits) are shown, never resolved by guessing; the remote breaks most ties.
 

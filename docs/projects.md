@@ -73,3 +73,18 @@ For the current directory, in order:
 4. Otherwise the directory is in `global`. Workbench never creates a project silently.
 
 Matches that disagree are reported, not guessed.
+
+## Creating and joining a project
+
+In the TUI, `/workbench projects` opens a panel for the current repository: **New project here** asks for a slug (prefilled from the directory name), an optional name and an optional description, then writes `.project/Project.toml` (never replacing an existing one) and registers the checkout. Selecting a registered project offers two ways to join it: **by file** writes `.project/Project.toml` with the project's `id` and a component slug for this repository (commit it to share it), **by local marker** sets `git config --local pig.projectId` and writes no file. A repository that no project recognises is mentioned once, with a notice pointing at this panel; Workbench never creates a project on its own.
+
+The same operations work in RPC and print mode as plain commands; each takes effect for the session's next recognition without a restart:
+
+| Command | Effect |
+|---|---|
+| `/workbench projects list` | Registered projects and the one recognised here |
+| `/workbench projects create <slug> [name]` | Create a project at this repository |
+| `/workbench projects join <id\|slug> [file\|marker] [component]` | Join this repository to a registered project (`file` is the default) |
+| `/workbench projects example` | Print the commented `Project.toml` above |
+
+A `Project.toml` found while recognising a directory is copied into your registry and the checkout recorded once, so other checkouts and sessions match it. A slug already used by another registered project is refused.
