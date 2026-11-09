@@ -394,6 +394,24 @@ func (a *app) instructionRules(ctx sdk.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if dir := s.settingString("instructions.system-dir", "/etc/agents"); dir != "" {
+		host, hostErr := instructions.ResolveHost(requestContext{ctx}, instructions.LocalHost(dir))
+		lines = append(lines, "Host files (always on, "+dir+"):")
+		switch {
+		case hostErr != nil:
+			lines = append(lines, "  unavailable: "+hostErr.Error())
+		case len(host.Files) == 0 && len(host.Reasons) == 0:
+			lines = append(lines, "  none present")
+		}
+		for _, file := range host.Files {
+			lines = append(lines, "  "+file.Class+"  "+file.Path)
+		}
+		for _, reason := range host.Reasons {
+			if reason.Status == "refused" {
+				lines = append(lines, "  refused  "+reason.DisplayPath+": "+reason.Detail)
+			}
+		}
+	}
 	set, err := instructions.Discover(requestContext{ctx}, current.Cwd, nil, instructions.Options{ProjectRoot: current.ProjectRoot, UserRoots: []string{agent}, PrivateRoot: privateRoot, AllowNested: false})
 	if err != nil {
 		return strings.Join(lines, "\n") + "\nDiscovery for " + current.Cwd + " failed: " + err.Error(), nil

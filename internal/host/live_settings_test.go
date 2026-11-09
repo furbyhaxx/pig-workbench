@@ -40,6 +40,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"edit-mode", []string{"edit.mode"}, TestLiveEditModeRestrictsAcceptedSyntax},
 		{"edit-seen", []string{"edit.enforce-seen-lines"}, TestLiveEditSeenGuardCanBeDisabledByUser},
 		{"instructions", []string{"instructions.enabled", "instructions.backlog.validate-pointers"}, TestLiveInstructionSettingsControlFramesAndPointerValidation},
+		{"instructions-system-dir", []string{"instructions.system-dir"}, TestLiveHostFilesAreDeliveredOnceAboveUserSteeringAndUpdateAsADiff},
 		{"instruction-context", []string{"instructions.updates.context"}, TestInstructionUpdateContextSettingControlsDiff},
 		{"job-timeout", []string{"jobs.timeout-seconds"}, TestLiveConfiguredJobTimeoutApplies},
 		{"ask-timeout", []string{"ask.remote.timeout-ms"}, TestLiveAskDialogTimeoutReportsTimedOutNeverADefaultAnswer},
