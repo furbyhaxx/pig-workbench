@@ -288,3 +288,32 @@ func TestConcurrentCreateRefusesOverwrite(t *testing.T) {
 		t.Fatalf("unexpected temporary files: %v", entries)
 	}
 }
+
+func TestExampleDocumentParsesAndNamesEverySupportedKey(t *testing.T) {
+	project, err := parseDocument("example.toml", ExampleDocument)
+	if err != nil {
+		t.Fatalf("the published example must be a valid document: %v", err)
+	}
+	if project.Slug != "pig-extensions" || len(project.Components) != 1 || !project.Component.Primary {
+		t.Fatalf("the example parsed to something else than it documents: %+v", project)
+	}
+	for key := range documentKeys {
+		leaf := key
+		if i := strings.LastIndex(key, "."); i >= 0 {
+			leaf = key[i+1:]
+		}
+		if !strings.Contains(ExampleDocument, leaf) {
+			t.Errorf("the example never mentions the supported key %q", key)
+		}
+	}
+}
+
+func TestProjectDocumentationEmbedsTheExampleVerbatim(t *testing.T) {
+	docs, err := os.ReadFile(filepath.Join("..", "..", "docs", "projects.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(docs), ExampleDocument) {
+		t.Fatal("docs/projects.md does not contain internal/project/example.toml verbatim; copy the file into its toml block")
+	}
+}

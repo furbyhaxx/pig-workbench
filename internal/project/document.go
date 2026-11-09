@@ -2,6 +2,7 @@
 package project
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,11 @@ import (
 )
 
 const maxDocumentBytes = 1 << 20
+
+// ExampleDocument is a complete, commented Project.toml that every supported key appears in; docs/projects.md embeds it verbatim.
+//
+//go:embed example.toml
+var ExampleDocument string
 
 var (
 	idPattern      = regexp.MustCompile(`^prj-[a-z0-9]+$`)
