@@ -13,10 +13,10 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 )
 
-// promptOverride replaces PiG's prompt only for an explicit force delivery.
-// auto stays on PiG; the live A/B was too small to change the default.
+// promptOverride replaces PiG's prompt for force and, on stock PiG, for auto (SPEC-0014 §4).
+// sections needs the fork host and leaves PiG's prompt alone here.
 func promptOverride(enabled bool, delivery, rendered string) (string, bool) {
-	if !enabled || delivery != "force" || rendered == "" {
+	if !enabled || (delivery != "force" && delivery != "auto") || rendered == "" {
 		return "", false
 	}
 	return rendered, true

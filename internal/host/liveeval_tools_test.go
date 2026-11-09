@@ -229,7 +229,7 @@ func TestLiveEvalToolText(t *testing.T) {
 	}
 	only := os.Getenv("LIVE_TASKS")
 	var runs []toolRun
-	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "auto"}, {"workbench-prompt", "force"}} {
+	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "pig"}, {"workbench-prompt", "force"}} {
 		if v := os.Getenv("LIVE_ARM"); v != "" && v != arm.name {
 			continue
 		}

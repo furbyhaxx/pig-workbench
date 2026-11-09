@@ -129,7 +129,7 @@ type abRun struct {
 	Seconds    float64 `json:"seconds"`
 }
 
-// TestLiveEvalPromptAB runs the fixed tasks under PiG's own prompt (delivery=auto) and
+// TestLiveEvalPromptAB runs the fixed tasks under PiG's own prompt (prompt.enabled=false) and
 // builtin/workbench (delivery=force). Pass/fail is judged from disk, not from the model.
 func TestLiveEvalPromptAB(t *testing.T) {
 	requireLiveKey(t)
@@ -138,7 +138,7 @@ func TestLiveEvalPromptAB(t *testing.T) {
 		fmt.Sscan(v, &reps)
 	}
 	var runs []abRun
-	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "auto"}, {"workbench-prompt", "force"}} {
+	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "pig"}, {"workbench-prompt", "force"}} {
 		for _, task := range abTasks {
 			for rep := 1; rep <= reps; rep++ {
 				root := t.TempDir()
@@ -214,14 +214,18 @@ func summarizeAB(t *testing.T, runs []abRun) {
 
 // TestLiveEvalServedPrompts records the exact system prompt each arm serves, without spending tokens.
 func TestLiveEvalServedPrompts(t *testing.T) {
-	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "auto"}, {"workbench-prompt", "force"}} {
+	for _, arm := range []struct{ name, delivery string }{{"pig-prompt", "pig"}, {"workbench-prompt", "force"}} {
 		root := t.TempDir()
 		recorder := &requestRecorder{}
 		server := recorder.serve(t)
 		defer server.Close()
 		agent := filepath.Join(root, "agent")
 		writeFixtureProvider(t, agent, server.URL)
-		if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[prompt]\ndelivery = '"+arm.delivery+"'\n"), 0600); err != nil {
+		settings := "[prompt]\ndelivery = '" + arm.delivery + "'\n"
+		if arm.delivery == "pig" {
+			settings = "[prompt]\nenabled = false\n"
+		}
+		if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
 			t.Fatal(err)
 		}
 		f := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock")

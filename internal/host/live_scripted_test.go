@@ -160,7 +160,8 @@ func TestLivePromptSettingsControlTakeover(t *testing.T) {
 	}{
 		{"force", true, "force", true},
 		{"disabled", false, "force", false},
-		{"auto", true, "auto", false},
+		{"auto", true, "auto", true},
+		{"sections", true, "sections", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()

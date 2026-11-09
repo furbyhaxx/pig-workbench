@@ -8,13 +8,18 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 )
 
-func TestPromptOverrideStaysOffUnlessForced(t *testing.T) {
-	if _, ok := promptOverride(true, "auto", "rendered"); ok {
-		t.Fatal("auto replaced the host prompt")
+func TestPromptOverrideResolvesAutoToForceOnStockPiG(t *testing.T) {
+	for _, delivery := range []string{"auto", "force"} {
+		got, ok := promptOverride(true, delivery, "rendered")
+		if !ok || got != "rendered" {
+			t.Fatalf("%s = %q %v", delivery, got, ok)
+		}
 	}
-	got, ok := promptOverride(true, "force", "rendered")
-	if !ok || got != "rendered" {
-		t.Fatalf("force = %q %v", got, ok)
+	if _, ok := promptOverride(true, "sections", "rendered"); ok {
+		t.Fatal("sections replaced the host prompt without the fork host")
+	}
+	if _, ok := promptOverride(false, "auto", "rendered"); ok {
+		t.Fatal("a disabled prompt replaced the host prompt")
 	}
 }
 

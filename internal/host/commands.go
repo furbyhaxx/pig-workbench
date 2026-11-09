@@ -260,7 +260,7 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 	fmt.Fprintf(&b, "epoch: %s\n", promptEpoch(rendered))
 	b.WriteString("rendered builtin/workbench:\n")
 	b.WriteString(rendered)
-	b.WriteString("\ndelivery auto serves PiG's prompt; prompt.delivery=force replaces it with builtin/workbench\n")
+	b.WriteString("\ndelivery auto and force serve builtin/workbench; set prompt.enabled=false to keep PiG's prompt\n")
 	a.notify(ctx, b.String())
 	return nil
 }

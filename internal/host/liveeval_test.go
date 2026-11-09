@@ -56,6 +56,9 @@ func startEvalSession(t *testing.T, root, work string, delivery string, extra ..
 		t.Fatal(err)
 	}
 	settings := "[prompt]\ndelivery = '" + delivery + "'\n"
+	if delivery == "pig" {
+		settings = "[prompt]\nenabled = false\n"
+	}
 	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte(settings), 0600); err != nil {
 		t.Fatal(err)
 	}

@@ -241,10 +241,10 @@ func Catalog() []Definition {
 			d.Description = "Explicit trusted extension owners permitted to call secrets.redact."
 		case "prompt.enabled":
 			d.Application = "live"
-			d.Description = "Enable builtin prompt takeover when delivery is force and instructions are enabled; rendering failure retains PiG's prompt."
+			d.Description = "Serve builtin/workbench in place of PiG's prompt when delivery is auto or force and instructions are enabled; false or a rendering failure retains PiG's prompt."
 		case "prompt.delivery":
 			d.Application = "live"
-			d.Description = "Only force replaces PiG's prompt; auto and sections retain PiG; the live A/B was too small to change the default."
+			d.Description = "auto resolves to force on stock PiG and replaces PiG's prompt with builtin/workbench; sections needs the fork host and retains PiG's prompt here. Disable takeover with prompt.enabled = false."
 		case "prompt.template":
 			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
 		case "skills.listing":
