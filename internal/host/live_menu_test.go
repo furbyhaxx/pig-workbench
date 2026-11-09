@@ -513,3 +513,22 @@ func TestLiveSessionsPanelMessagesALivePeerAndTogglesPolicy(t *testing.T) {
 	s.waitFor("accepted by", 15*time.Second)
 	waitForRequest(t, receiver, "PANEL-MSG")
 }
+
+func TestLiveSubmittedPromptSurvivesAnUnavailableSecretsBoundary(t *testing.T) {
+	root := t.TempDir()
+	agent := filepath.Join(root, "agent")
+	if err := os.MkdirAll(agent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	prompt := "my carefully typed five minute prompt"
+	s.typeSlowly(prompt)
+	s.keys("Enter")
+	screen := s.waitFor("back in the editor", 10*time.Second)
+	if strings.Count(screen, prompt) != 1 {
+		t.Fatalf("the prompt must be back in the editor exactly once:\n%s", screen)
+	}
+}

@@ -429,3 +429,14 @@ func TestJobEnvironmentInjectsEnvBoundSecretsWithProjectScopeWinning(t *testing.
 		}
 	}
 }
+
+func TestInputVerdictRefusesOnBoundaryFailureWithoutLosingTheCause(t *testing.T) {
+	b, agent := testBoundary(t)
+	if err := os.WriteFile(filepath.Join(agent, "Secrets.toml"), []byte("[[patterns\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	verdict, cause := b.inputVerdict("please review this")
+	if cause == nil || verdict.(map[string]any)["action"] != "handled" {
+		t.Fatalf("verdict = %v, cause = %v", verdict, cause)
+	}
+}

@@ -27,8 +27,20 @@ func (b *secretsBoundary) withhold(ctx sdk.Context, err error) {
 	}
 }
 
-// redactInput replaces secrets in a typed, pasted or RPC prompt before it enters the session;
-// a boundary failure swallows the prompt instead of letting it through.
+// inputVerdict decides one prompt: a transform, pass-through, or a refusal that keeps the text for the editor.
+func (b *secretsBoundary) inputVerdict(text string) (verdict any, cause error) {
+	redacted, active, err := b.redactText(text)
+	if err != nil {
+		return map[string]any{"action": "handled"}, err
+	}
+	if !active || redacted == text {
+		return nil, nil
+	}
+	return map[string]any{"action": "transform", "text": redacted}, nil
+}
+
+// redactInput replaces secrets in a typed, pasted or RPC prompt before it enters the session.
+// A boundary failure keeps the prompt out of the model but never loses it: the text goes back to the editor.
 func (a *app) redactInput(ctx sdk.Context, data map[string]any) (any, error) {
 	text, _ := data["text"].(string)
 	if text == "" {
@@ -38,15 +50,13 @@ func (a *app) redactInput(ctx sdk.Context, data map[string]any) (any, error) {
 	if err != nil {
 		return nil, nil
 	}
-	redacted, active, err := s.secrets.redactText(text)
-	if err != nil {
-		s.secrets.withhold(ctx, err)
-		return map[string]any{"action": "handled"}, nil
+	verdict, cause := s.secrets.inputVerdict(text)
+	if cause != nil {
+		s.secrets.withhold(ctx, cause)
+		ctx.SetEditorText(text)
+		ctx.Notify("Your prompt was not sent and is back in the editor; nothing was lost.", "warning")
 	}
-	if !active || redacted == text {
-		return nil, nil
-	}
-	return map[string]any{"action": "transform", "text": redacted}, nil
+	return verdict, nil
 }
 
 // resultPatch protects retained result fields atomically; no partial redaction is published.
