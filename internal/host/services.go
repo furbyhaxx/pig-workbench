@@ -9,6 +9,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 )
 
 func (a *app) service(ctx sdk.Context, value any) error {
@@ -97,7 +98,8 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		}
 		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: capabilities, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
 		if slices.Contains(params.Capabilities, "location") {
-			result.Location = s.location.Current()
+			current := s.apiLocation(ctx, s.location.Current())
+			result.Location = &current
 		}
 		return result, nil
 	case "register":
@@ -155,7 +157,7 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 		if err := api.Decode(request.Params, &params); err != nil {
 			return nil, &api.Error{Code: "invalidRequest", Message: "location.get takes empty params"}
 		}
-		return s.location.Current(), nil
+		return s.apiLocation(ctx, s.location.Current()), nil
 	default:
 		return nil, &api.Error{Code: "unsupported", Message: "service method is not available: " + request.Method}
 	}
@@ -211,4 +213,13 @@ func protocolError(err error) *api.Error {
 	default:
 		return &api.Error{Code: "internal", Message: "Workbench service failed"}
 	}
+}
+
+// apiLocation adds the project identity to a location snapshot for the public protocol.
+func (s *session) apiLocation(ctx context.Context, snapshot location.Snapshot) api.Location {
+	return api.Location{Authority: snapshot.Authority, Cwd: snapshot.Cwd, DisplayCwd: snapshot.DisplayCwd, ProjectRoot: snapshot.ProjectRoot, Project: s.projectOf(ctx, snapshot), Origin: snapshot.Origin, Revision: snapshot.Revision, Available: snapshot.Available}
+}
+
+func (s *session) apiLocationChange(ctx context.Context, change location.Change) api.LocationChange {
+	return api.LocationChange{SchemaVersion: change.SchemaVersion, Previous: s.apiLocation(ctx, change.Previous), Current: s.apiLocation(ctx, change.Current), Reason: change.Reason}
 }

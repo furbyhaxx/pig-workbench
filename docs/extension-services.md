@@ -46,7 +46,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 
 | Capability | Methods | Contribution kind |
 |---|---|---|
-| `location` | `location.get` | — |
+| `location` | `location.get`; also `discover` with `location` and `location.changed` events. Each location carries `project {id, slug}` when the session is in a recognised project, and omits it in the builtin `global` project | — |
 | `presentation` | `register`, `unregister`, `describe`, `settings.get` | `toolPresentation` (SPEC-0003 §2) |
 | `resources` | Workbench → you: `resource.execute` (`stat`, `read`, `list`, declared mutations); you → Workbench: `resources.changed` | `resourceProvider` (SPEC-0004 §2) |
 | `fetch` | Workbench → you: `fetch` | `fetchBackend` (SPEC-0004 §11) |

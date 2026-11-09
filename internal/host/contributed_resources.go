@@ -12,6 +12,7 @@ import (
 
 	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
@@ -334,7 +335,11 @@ type projectIdentityCache struct {
 
 // projectIdentity returns the calling session's project; nil in the builtin global project.
 func (s *session) projectIdentity(ctx context.Context) *api.Project {
-	current := s.routingLocation(ctx)
+	return s.projectOf(ctx, s.routingLocation(ctx))
+}
+
+// projectOf returns the project of one location snapshot, cached per location revision.
+func (s *session) projectOf(ctx context.Context, current location.Snapshot) *api.Project {
 	s.projectMu.Lock()
 	defer s.projectMu.Unlock()
 	if s.projectCache.valid && s.projectCache.revision == current.Revision {

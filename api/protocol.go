@@ -98,15 +98,15 @@ type Limits struct {
 
 // Discovery is one live Workbench instance's version and capability declaration.
 type Discovery struct {
-	Major            int      `json:"major"`
-	Minor            int      `json:"minor"`
-	WorkbenchVersion string   `json:"workbenchVersion"`
-	Instance         string   `json:"instance"`
-	SessionID        string   `json:"sessionId"`
-	Generation       string   `json:"generation"`
-	Capabilities     []string `json:"capabilities"`
-	Limits           Limits   `json:"limits"`
-	Location         any      `json:"location,omitempty"`
+	Major            int       `json:"major"`
+	Minor            int       `json:"minor"`
+	WorkbenchVersion string    `json:"workbenchVersion"`
+	Instance         string    `json:"instance"`
+	SessionID        string    `json:"sessionId"`
+	Generation       string    `json:"generation"`
+	Capabilities     []string  `json:"capabilities"`
+	Limits           Limits    `json:"limits"`
+	Location         *Location `json:"location,omitempty"`
 }
 
 // DecodeReply validates one bounded reply without interpreting method-specific result data.

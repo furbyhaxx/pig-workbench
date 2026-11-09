@@ -31,14 +31,14 @@ func TestDiscoveryAndLocation(t *testing.T) {
 		t.Fatal(failure)
 	}
 	discovery := result.(api.Discovery)
-	if discovery.Generation != "generation" || discovery.SessionID != "session" || discovery.Location.(location.Snapshot).Cwd != manager.Current().Cwd {
+	if discovery.Generation != "generation" || discovery.SessionID != "session" || discovery.Location.Cwd != manager.Current().Cwd {
 		t.Fatalf("wrong binding: %+v", discovery)
 	}
 	if !slices.Equal(discovery.Capabilities, advertisedCapabilities) {
 		t.Fatalf("unwired capability advertised: %+v", discovery)
 	}
 	result, failure = a.dispatchService(context.Background(), sdk.Context{}, s, api.Request{Method: "location.get", Params: json.RawMessage(`{}`)})
-	if failure != nil || result.(location.Snapshot) != manager.Current() {
+	if failure != nil || result.(api.Location).Cwd != manager.Current().Cwd {
 		t.Fatalf("location service differs: %v %v", result, failure)
 	}
 	params, _ = json.Marshal(api.DiscoveryRequest{Majors: []int{1}, Capabilities: []string{"secrets"}})

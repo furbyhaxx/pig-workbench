@@ -5,9 +5,9 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "approved"
-  revision: 11
+  revision: 12
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-08T22:10:00+01:00"
+  updated_at: "2026-11-09T14:00:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
@@ -44,6 +44,9 @@ document:
     - revision: 11
       reason: "Implement the provider-progress channel the protocol already named"
       changes: ["Added ProviderProgress, DecodeProgress and ProviderRequest.ReportProgress", "Workbench keeps the newest correlated note per request and shows it in /workbench resources"]
+    - revision: 12
+      reason: "pig-web R9: the project identity the contract already promised was missing from the implemented location surfaces"
+      changes: ["Added api.Location and api.LocationChange; discover, location.get and both sides of location.changed carry project {id, slug}, absent in the builtin global project", "No per-project partitioning: the project is a fact, not a scope", "component stays absent until detection reports one"]
 ---
 
 # 1. Status, boundaries and terminology

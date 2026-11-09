@@ -73,7 +73,7 @@ func (a *app) cd(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	result := locationResult(change.Current)
-	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:location:%d", s.generation, change.Current.Revision), Type: "location.changed", Data: change}); err != nil {
+	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: fmt.Sprintf("%s:location:%d", s.generation, change.Current.Revision), Type: "location.changed", Data: s.apiLocationChange(work, change)}); err != nil {
 		result.Content += "\nLocation committed, but change notification failed; query location.get to reconcile."
 	}
 	return result, nil

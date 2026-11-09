@@ -236,6 +236,12 @@ func TestLiveServiceDiscoveryRPC(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(root, "next"), 0700); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.MkdirAll(filepath.Join(root, ".project"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".project", "Project.toml"), []byte(parentProjectDocument), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, "data: {\"id\":\"fixture\",\"object\":\"chat.completion.chunk\",\"created\":0,\"model\":\"mock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Fixture initialized.\"}}]}\n\ndata: {\"id\":\"fixture\",\"object\":\"chat.completion.chunk\",\"created\":0,\"model\":\"mock\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n")
@@ -254,6 +260,9 @@ func TestLiveServiceDiscoveryRPC(t *testing.T) {
 	location := second["location"].(map[string]any)
 	if location["cwd"] != filepath.Join(root, "next") {
 		t.Fatalf("service did not observe cd: %+v", location)
+	}
+	if got, ok := location["project"].(map[string]any); !ok || got["id"] != "prj-parent1" || got["slug"] != "parent" {
+		t.Fatalf("location.get lacks the project identity: %+v", location)
 	}
 	f.send("replace", "new_session", "")
 	f.wait(func(record map[string]any) bool { return record["type"] == "response" && record["id"] == "replace" })
