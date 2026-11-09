@@ -29,12 +29,17 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 		for _, scheme := range s.router.Schemes() {
 			live = append(live, "resources "+scheme)
 		}
+		if entries, _ := s.projects.List(); entries != nil {
+			for _, entry := range entries {
+				live = append(live, "projects join "+entry.Project.Slug, "projects join "+entry.Project.Slug+" file", "projects join "+entry.Project.Slug+" marker")
+			}
+		}
 	}
 	return completeWorkbench(prefix, live, catalog)
 }
 
 func completeWorkbench(prefix string, live []string, catalog []config.Definition) ([]sdk.AutocompleteItem, error) {
-	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "codemode", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings tools", "settings tools show", "settings tools set", "settings tools reset", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
+	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "codemode", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects list", "projects create", "projects join", "projects join file", "projects join marker", "projects example", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "settings", "settings tools", "settings tools show", "settings tools set", "settings tools reset", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
 	}

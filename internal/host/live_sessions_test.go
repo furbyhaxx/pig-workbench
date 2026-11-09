@@ -475,7 +475,7 @@ func TestLiveEveryCompletedCommandIsAcceptedByItsHandler(t *testing.T) {
 			continue
 		}
 		switch value {
-		case "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "trust add allow", "trust add deny", "trust rm", "instructions pin", "instructions unpin", "ask resume", "ask discard":
+		case "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "trust add allow", "trust add deny", "trust rm", "instructions pin", "instructions unpin", "ask resume", "ask discard", "projects create", "projects join", "projects join file", "projects join marker":
 			continue
 		}
 		commands = append(commands, value)

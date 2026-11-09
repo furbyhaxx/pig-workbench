@@ -102,7 +102,7 @@ func (a *app) adoptSessionStorage(ctx sdk.Context, s *session) {
 	}
 }
 
-// projectsCommand implements /workbench projects [unlink-storage].
+// projectsCommand implements /workbench projects.
 func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
@@ -110,6 +110,14 @@ func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 	}
 	defer release()
 	verb := strings.TrimSpace(args)
+	name, rest, _ := strings.Cut(verb, " ")
+	if text, handled, err := s.projectsManage(work, name, rest); handled {
+		if err != nil {
+			return err
+		}
+		a.notify(ctx, text)
+		return nil
+	}
 	detected, err := s.projects.Detect(work, s.location.Current().Cwd)
 	if err != nil {
 		return err
@@ -154,5 +162,5 @@ func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 		a.notify(ctx, text+" The running session keeps writing to its file; PiG lists it again after the next resume.")
 		return nil
 	}
-	return errors.New("usage: /workbench projects [status | unlink-storage]")
+	return errors.New("usage: /workbench projects [status | list | create <slug> [name] | join <id|slug> [file|marker] [component] | example | unlink-storage]")
 }

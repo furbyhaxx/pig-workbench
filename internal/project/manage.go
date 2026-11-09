@@ -105,6 +105,11 @@ func (r *Registry) CreateProject(ctx context.Context, dir, slug, name, descripti
 	if err != nil {
 		return Entry{}, err
 	}
+	if existing, found, err := Load(root); err != nil {
+		return Entry{}, err
+	} else if found {
+		return Entry{}, fmt.Errorf("%s already belongs to project %s (%s) through its Project.toml; create never replaces it", root, existing.Slug, existing.ID)
+	}
 	id, err := NewID()
 	if err != nil {
 		return Entry{}, err
