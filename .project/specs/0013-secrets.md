@@ -5,12 +5,16 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "approved"
-  revision: 8
+  revision: 9
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-09T12:20:00+01:00"
+  updated_at: "2026-11-09T13:10:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
+    - revision: 9
+      reason: "A secret.key with a wide mode refused every prompt although narrowing it is always safe"
+      changes: ["A user-owned key file wider than 0600 is narrowed to 0600 and reported once; malformed, foreign-owned or non-regular keys are still refused"]
+      migration: "None; the key bytes are never changed."
     - revision: 8
       reason: "A vault record the current key cannot decrypt made every request and prompt fail, and the refused prompt was lost"
       changes: ["Undecryptable records are ignored and reported once, not fatal: their value is unknowable, so withholding protected nothing", "A refused prompt returns to the editor with a notice instead of vanishing", "Placeholder-hash mismatch of a readable record stays fatal (tampering)"]
@@ -51,7 +55,7 @@ Detection policy is `Secrets.toml` version 2 with nukii's schema (`version`, `[e
 
 ## 3.2 Keys
 
-- **Master key:** 32 random bytes, file mode 0600, created on first start if missing. Path: `sdk.AgentDir()/secret.key` (normally `~/.pig/agent/secret.key`; Q1), not configurable. A key file with a wider mode is reported. Losing it makes the vault unreadable and changes every future placeholder.
+- **Master key:** 32 random bytes, file mode 0600, created on first start if missing. Path: `sdk.AgentDir()/secret.key` (normally `~/.pig/agent/secret.key`; Q1), not configurable. A key file with a wider mode is narrowed to 0600 when the user owns it (reported once); otherwise it is refused. Losing it makes the vault unreadable and changes every future placeholder.
 - **Derived keys** via HKDF-SHA256 (no salt): `info = "nukii red-sec hmac v1"` for the placeholder HMAC (nukii's string, so a copied key gives nukii's placeholders), `info = "pig-workbench secret value v1"` for value encryption.
 - Copying the key file to another host gives it the same placeholders and lets it decrypt a copied vault.
 

@@ -83,12 +83,9 @@ func (s questionSecrets) Store(name, scope, description, env string, value []byt
 	if err != nil {
 		return "", errors.New("secret storage directory unavailable")
 	}
-	master, err := secrets.LoadKey(filepath.Join(agent, "secret.key"))
+	master, _, err := secrets.LoadOrCreateKey(filepath.Join(agent, "secret.key"))
 	if err != nil {
-		master, err = secrets.CreateKey(filepath.Join(agent, "secret.key"))
-		if err != nil {
-			return "", errors.New("secret key unavailable; inspect key permissions and format")
-		}
+		return "", errors.New("secret key unavailable; inspect key permissions and format")
 	}
 	defer clear(master)
 	key, err := secrets.DeriveHMACKey(master)

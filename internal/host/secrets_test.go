@@ -471,3 +471,23 @@ func TestForeignKeyVaultRecordNeitherWithholdsNorRepeatsItsNotice(t *testing.T) 
 		t.Fatal("the notice repeated for an unchanged set")
 	}
 }
+
+func TestWideKeyFileIsNarrowedAndReportedOnce(t *testing.T) {
+	b, agent := testBoundary(t)
+	key := filepath.Join(agent, "secret.key")
+	if _, err := secrets.CreateKey(key); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(key, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if verdict, cause := b.inputVerdict("a normal prompt"); cause != nil || verdict != nil {
+		t.Fatalf("a wide key file stopped the prompt: %v, %v", verdict, cause)
+	}
+	if info, _ := os.Stat(key); info.Mode().Perm() != 0o600 {
+		t.Fatalf("key mode is %o", info.Mode().Perm())
+	}
+	if !strings.Contains(b.UnreadableNotice(), "narrowed to 0600") || b.UnreadableNotice() != "" {
+		t.Fatal("the repair must be reported exactly once")
+	}
+}

@@ -48,6 +48,22 @@ func LoadKey(path string) ([]byte, error) {
 	return key, nil
 }
 
+// LoadOrCreateKey returns the master key, creating it when absent. A key file the user owns whose
+// mode is wider than 0600 is narrowed to 0600 (repaired reports it): narrowing only removes other
+// users' access, so refusing would lock the user out for no gain. Other failures are returned unchanged.
+func LoadOrCreateKey(path string) (key []byte, repaired bool, err error) {
+	key, err = CreateKey(path)
+	var permission *KeyPermissionError
+	if !errors.As(err, &permission) {
+		return key, false, err
+	}
+	if narrowErr := narrowKeyMode(path); narrowErr != nil {
+		return nil, false, err
+	}
+	key, err = LoadKey(path)
+	return key, err == nil, err
+}
+
 // CreateKey creates a private master key or loads the existing key without replacing it.
 func CreateKey(path string) ([]byte, error) {
 	key, err := LoadKey(path)

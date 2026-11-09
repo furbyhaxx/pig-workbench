@@ -26,14 +26,15 @@ type secretsBoundary struct {
 	home        string
 	auth        authInventory
 
-	mu       sync.Mutex
-	detector *secrets.Detector
-	vault    *secrets.Vault
-	names    nameMatcher
-	learned  string
-	noticed  string
-	degraded string
-	gaps     []string
+	mu          sync.Mutex
+	detector    *secrets.Detector
+	vault       *secrets.Vault
+	names       nameMatcher
+	learned     string
+	noticed     string
+	degraded    string
+	keyRepaired string
+	gaps        []string
 }
 
 func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool, cwd func() string) *secretsBoundary {
@@ -131,16 +132,16 @@ func (b *secretsBoundary) Reload() {
 
 func (b *secretsBoundary) build() (*secrets.Detector, *secrets.Vault, nameMatcher, error) {
 	keyPath := filepath.Join(b.agentDir, "secret.key")
-	master, err := secrets.LoadKey(keyPath)
+	master, repaired, err := secrets.LoadOrCreateKey(keyPath)
 	if err != nil {
 		var permission *secrets.KeyPermissionError
 		if errors.As(err, &permission) {
 			return nil, nil, nameMatcher{}, err
 		}
-		master, err = secrets.CreateKey(keyPath)
-		if err != nil {
-			return nil, nil, nameMatcher{}, errors.New("secret key unavailable; inspect the key file and its permissions")
-		}
+		return nil, nil, nameMatcher{}, errors.New("secret key unavailable; inspect the key file and its permissions")
+	}
+	if repaired {
+		b.keyRepaired = keyPath
 	}
 	defer clear(master)
 	vaultPath, err := secrets.VaultPath()
@@ -184,22 +185,24 @@ func newHostSecretsBoundary(ctx sdk.Context, settings *config.Manager, agentDir 
 	return boundary
 }
 
-// UnreadableNotice reports once per distinct set that vault records could not be decrypted with the
-// current key. They are ignored, never fatal; the empty string means nothing new to say.
+// UnreadableNotice reports once what the boundary repaired or ignored on its own: a key file it
+// narrowed to 0600, and vault records the current key cannot decrypt. Empty means nothing new.
 func (b *secretsBoundary) UnreadableNotice() string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.detector == nil {
-		return ""
+	var parts []string
+	if path := b.keyRepaired; path != "" {
+		b.keyRepaired = ""
+		parts = append(parts, fmt.Sprintf("%s was readable by other users; its permissions were narrowed to 0600.", path))
 	}
-	unreadable := b.detector.Unreadable()
-	key := strings.Join(unreadable, ",")
-	if key == b.degraded {
-		return ""
+	if b.detector != nil {
+		unreadable := b.detector.Unreadable()
+		if key := strings.Join(unreadable, ","); key != b.degraded {
+			b.degraded = key
+			if len(unreadable) > 0 {
+				parts = append(parts, fmt.Sprintf("%d secret vault record(s) cannot be decrypted with this key (another agent directory or a replaced secret.key wrote them) and are ignored; they are left in the vault untouched and your secrets are re-learned under the current key.", len(unreadable)))
+			}
+		}
 	}
-	b.degraded = key
-	if len(unreadable) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("%d secret vault record(s) cannot be decrypted with this key (another agent directory or a replaced secret.key wrote them) and are ignored; they are left in the vault untouched and your secrets are re-learned under the current key.", len(unreadable))
+	return strings.Join(parts, " ")
 }

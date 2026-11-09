@@ -273,3 +273,34 @@ func TestRedactReplacesLargerSecretContainingPlaceholder(t *testing.T) {
 		t.Fatalf("overlapping placeholder secret = %q, want %q", got, partialPlaceholder)
 	}
 }
+
+func TestLoadOrCreateKeyNarrowsAWideKeyAndKeepsItsBytes(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secret.key")
+	original, err := CreateKey(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0644); err != nil {
+		t.Fatal(err)
+	}
+	key, repaired, err := LoadOrCreateKey(path)
+	if err != nil || !repaired || !bytes.Equal(key, original) {
+		t.Fatalf("repair = %v, err = %v, same key = %v", repaired, err, bytes.Equal(key, original))
+	}
+	if info, _ := os.Stat(path); info.Mode().Perm() != 0600 {
+		t.Fatalf("mode is %o", info.Mode().Perm())
+	}
+	if _, repaired, err := LoadOrCreateKey(path); err != nil || repaired {
+		t.Fatalf("an already private key was reported repaired: %v %v", repaired, err)
+	}
+}
+
+func TestLoadOrCreateKeyStillRefusesAMalformedWideKey(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secret.key")
+	if err := os.WriteFile(path, []byte("short"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := LoadOrCreateKey(path); err == nil {
+		t.Fatal("a malformed key was accepted")
+	}
+}
