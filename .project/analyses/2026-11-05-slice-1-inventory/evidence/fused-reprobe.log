@@ -1,0 +1,5 @@
+# Fused Workbench re-probe (2026-11-09T11:27:12+01:00, pig 0.7.0+1.5.0)
+git archive HEAD of this repo copied to wbcopy/; piglet.yaml: extensions [pig-workbench local origin], build.extensionRealization: fused
+pig piglet build piglet.yaml --format binary --out wb-pig --verbose
+result: [fused-wb] go: updates to go.mod needed; to update it: go mod tidy  (exit 1, no fallback)
+Unchanged: the builder writes the merged go.mod without the member's indirect requirements and without running go mod tidy.
