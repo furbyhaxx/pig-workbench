@@ -241,3 +241,15 @@ func (r *Registry) Observe(ctx context.Context, dir string) error {
 	}
 	return r.Register(found, locationAt(projectRoot))
 }
+
+// RepositoryRoot is the git top-level directory containing dir, or "" outside a repository.
+func RepositoryRoot(ctx context.Context, dir string) (string, error) {
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		return "", fmt.Errorf("resolve directory: %w", err)
+	}
+	if absolute, err = filepath.EvalSymlinks(absolute); err != nil {
+		return "", fmt.Errorf("resolve directory: %w", err)
+	}
+	return gitRoot(ctx, absolute)
+}

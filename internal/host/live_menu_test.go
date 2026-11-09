@@ -705,3 +705,25 @@ func TestLiveProjectsPanelJoinsARegisteredProjectByMarker(t *testing.T) {
 		t.Fatal("joining by marker must not write Project.toml")
 	}
 }
+
+// A repository in no project is offered a project once; a second session in it stays quiet and nothing is created.
+func TestLiveRepositoryInNoProjectIsOfferedAProjectOnce(t *testing.T) {
+	root := t.TempDir()
+	gitInit(t, root)
+	s := startTUI(t, root)
+	deadline := time.Now().Add(15 * time.Second)
+	for !strings.Contains(s.history(), "belongs to no project yet") {
+		if time.Now().After(deadline) {
+			t.Fatalf("no offer:\n%s", s.history())
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if _, found, _ := project.Load(root); found {
+		t.Fatal("the offer must never create a project")
+	}
+	second := startTUI(t, root)
+	time.Sleep(3 * time.Second)
+	if strings.Contains(second.history(), "belongs to no project yet") {
+		t.Fatal("the same repository was offered a second time")
+	}
+}
