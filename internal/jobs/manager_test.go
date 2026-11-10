@@ -656,6 +656,7 @@ func TestManagerRetentionConcurrentAccess(t *testing.T) {
 
 // TestManagerForegroundCommandsDoNotRetireBackgroundJobs pins the separate retention windows.
 func TestManagerForegroundCommandsDoNotRetireBackgroundJobs(t *testing.T) {
+	managerTestUnix(t)
 	manager := newTestManager(t, ManagerOptions{MaxFinished: 2, MaxForeground: 3})
 	background, err := manager.Start(context.Background(), Spec{Command: []string{"sh", "-c", "echo kept"}})
 	if err != nil {
@@ -696,6 +697,7 @@ func TestManagerForegroundCommandsDoNotRetireBackgroundJobs(t *testing.T) {
 
 // TestShortIDsExpandOnlyInTheirOwnManager pins the displayed form of a job ID.
 func TestShortIDsExpandOnlyInTheirOwnManager(t *testing.T) {
+	managerTestUnix(t)
 	first, err := NewManager(ManagerOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -723,6 +725,7 @@ func TestShortIDsExpandOnlyInTheirOwnManager(t *testing.T) {
 }
 
 func TestManagerRefusesAnOversizedStdinWriteWithoutSendingIt(t *testing.T) {
+	managerTestUnix(t)
 	manager, err := NewManager(ManagerOptions{})
 	if err != nil {
 		t.Fatal(err)
