@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestLiveHTTPReadUsesBuiltinStaticReader(t *testing.T) {
@@ -83,5 +84,39 @@ func TestLiveHTTPReadUsesBuiltinStaticReader(t *testing.T) {
 	raw, _ := json.Marshal(requests[2]["messages"])
 	if !strings.Contains(string(raw), "doctype") || !strings.Contains(string(raw), "page footer") {
 		t.Fatalf("raw HTTP result did not reach the model:\n%s", raw)
+	}
+}
+
+func TestLiveMultiReadFetchesWithTheConfiguredConcurrencyInInputOrder(t *testing.T) {
+	for _, workers := range []int{1, 3} {
+		t.Run(fmt.Sprint(workers), func(t *testing.T) {
+			var mu sync.Mutex
+			inFlight, peak := 0, 0
+			page := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				mu.Lock()
+				inFlight++
+				peak = max(peak, inFlight)
+				mu.Unlock()
+				time.Sleep(300 * time.Millisecond)
+				mu.Lock()
+				inFlight--
+				mu.Unlock()
+				w.Header().Set("Content-Type", "text/plain")
+				fmt.Fprintf(w, "body of %s\n", r.URL.Path)
+			}))
+			defer page.Close()
+			paths := []any{page.URL + "/one:raw", page.URL + "/two:raw", page.URL + "/three:raw"}
+			results := runScriptedConfig(t, t.TempDir(), "read", fmt.Sprintf("[read]\nconcurrency = %d\n", workers),
+				func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"paths": paths}} })
+			one, two, three := strings.Index(results[0], "body of /one"), strings.Index(results[0], "body of /two"), strings.Index(results[0], "body of /three")
+			if one < 0 || two < one || three < two {
+				t.Fatalf("results are not in input order:\n%s", results[0])
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			if peak != workers {
+				t.Fatalf("peak concurrent fetches = %d, want %d", peak, workers)
+			}
+		})
 	}
 }

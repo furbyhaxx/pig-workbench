@@ -150,23 +150,39 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	complete := true
 	failedCount := 0
 	var projection *readProjection
-	for _, target := range targets {
+	reserves := make([]int, len(targets))
+	pointers := make([]string, len(targets))
+	for i, target := range targets {
+		if provider, ok := s.contributedDescriptor(target.Scheme); ok {
+			pointers[i] = "Provider guide: read docs://workbench/schemes/" + provider.canonical
+			reserves[i] = len(pointers[i]) + 2
+		}
+	}
+	readTarget := func(ctx context.Context, i int, available resource.Budget) (resource.ReadResult, error) {
+		target := targets[i]
+		return s.router.Read(ctx, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, resource.Budget{Bytes: available.Bytes - readHintReserve - reserves[i], Lines: available.Lines})
+	}
+	whole := budget
+	ahead := startReadAhead(work, policy.Concurrency, len(targets), func(ctx context.Context, i int) (resource.ReadResult, error) {
+		return readTarget(ctx, i, whole)
+	})
+	defer ahead.stop()
+	for i, target := range targets {
 		if err := work.Err(); err != nil {
 			return nil, err
 		}
 		if budget.Bytes < 1024 || budget.Lines < 5 {
+			ahead.stop()
 			facts = append(facts, map[string]any{"requestedUri": target.Requested, "error": "budgetExhausted", "complete": false})
 			complete = false
 			continue
 		}
-		guidePointer := ""
-		guideReserve := 0
-		if provider, ok := s.contributedDescriptor(target.Scheme); ok {
-			guidePointer = "Provider guide: read docs://workbench/schemes/" + provider.canonical
-			guideReserve = len(guidePointer) + 2
+		guidePointer := pointers[i]
+		pageBudget := resource.Budget{Bytes: budget.Bytes - readHintReserve - reserves[i], Lines: budget.Lines}
+		page, err, early := ahead.take(work, i, pageBudget)
+		if !early {
+			page, err = readTarget(work, i, budget)
 		}
-		pageBudget := resource.Budget{Bytes: budget.Bytes - readHintReserve - guideReserve, Lines: budget.Lines}
-		page, err := s.router.Read(work, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, pageBudget)
 		if err == nil && target.Scheme != "file" {
 			// Non-local providers already applied their own budget.
 			page.Facts.RequestedURI = target.Requested

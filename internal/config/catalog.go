@@ -144,7 +144,8 @@ func Catalog() []Definition {
 			d.Application = "live"
 			d.Description = "Add a repetition hint after this many identical canonical/revision/view/selection reads; source remains present."
 		case "read.concurrency":
-			d.Description = "Validated but not applied; multi-read currently runs serially."
+			d.Application = "live"
+			d.Description = "How many targets of one multi-read are fetched at the same time; results keep input order and share one budget. 1 reads serially."
 		case "read.summarize.enabled":
 			d.Application = "live"
 			d.Description = "Enable declaration summaries for bare reads of large local code files."
