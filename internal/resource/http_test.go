@@ -138,8 +138,8 @@ func TestHTTPProviderLimitsDecodesAndRefusesUnsupportedContent(t *testing.T) {
 	}
 }
 
-func TestHTTPProviderRefusesCredentialsAndBareHosts(t *testing.T) {
-	for _, raw := range []string{"http://user:pass@example.com/", "http://example.com", "https://example.com/"} {
+func TestHTTPProviderRefusesCredentialsForeignSchemesAndUnnormalizedOrigins(t *testing.T) {
+	for _, raw := range []string{"http://user:pass@example.com/", "https://example.com/"} {
 		target, err := ParsePath("", raw, "")
 		if err != nil {
 			t.Fatal(err)
@@ -147,6 +147,10 @@ func TestHTTPProviderRefusesCredentialsAndBareHosts(t *testing.T) {
 		if _, err := (HTTPProvider{}).Read(context.Background(), ReadRequest{URI: target.URI, Requested: target.Requested, Selector: target.Selection, Budget: Budget{Bytes: 4096, Lines: 50}}); err == nil {
 			t.Fatalf("%q was accepted", raw)
 		}
+	}
+	// ParsePath normalizes an origin to "/"; a caller that bypasses it is still refused before any request.
+	if _, err := (HTTPProvider{}).Read(context.Background(), ReadRequest{URI: "http://example.com", Requested: "http://example.com", Budget: Budget{Bytes: 4096, Lines: 50}}); err == nil {
+		t.Fatal("an unnormalized origin was accepted")
 	}
 }
 
