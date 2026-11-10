@@ -69,7 +69,7 @@ func newGroupOwner() (*groupOwner, error) {
 }
 
 func (o *groupOwner) configure(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, PidFD: &o.fd}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, PidFD: &o.fd}
 }
 
 // bind verifies that the leader has an identity handle and that group signalling through it

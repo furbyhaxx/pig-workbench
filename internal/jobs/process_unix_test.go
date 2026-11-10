@@ -509,3 +509,15 @@ func TestCommandValidationAndShellArguments(t *testing.T) {
 		t.Fatalf("shell argument = %q", got)
 	}
 }
+
+// A job that kept the session's terminal could take its foreground (`set -m`, an interactive
+// shell) and get the host suspended on its next terminal access.
+func TestJobRunsInItsOwnSessionWithoutAControllingTerminal(t *testing.T) {
+	var output bytes.Buffer
+	p := startTestProcess(t, Spec{Command: []string{`ps -o sid= -p $$ | tr -d ' '; echo $$; (: </dev/tty) 2>/dev/null && echo tty; true`}, Shell: true, Output: &output})
+	waitTestProcess(t, p)
+	fields := strings.Fields(output.String())
+	if len(fields) != 2 || fields[0] != fields[1] {
+		t.Fatalf("want session id == own pid and no terminal, got %q", output.String())
+	}
+}

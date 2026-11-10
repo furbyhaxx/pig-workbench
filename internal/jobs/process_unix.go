@@ -27,7 +27,7 @@ type groupOwner struct {
 func newGroupOwner() (*groupOwner, error) { return &groupOwner{}, nil }
 
 func (o *groupOwner) configure(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 }
 
 func (o *groupOwner) bind(process *os.Process) error {

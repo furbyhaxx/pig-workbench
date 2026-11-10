@@ -173,6 +173,7 @@ func (a *app) userBash(ctx sdk.Context, _ map[string]any) (any, error) {
 		}
 		cmd := exec.CommandContext(signal, shell, "-c", real)
 		cmd.Dir = cwd
+		detachTerminal(cmd)
 		if len(options.Env) > 0 {
 			cmd.Env = os.Environ()
 			for name, value := range options.Env {
