@@ -224,14 +224,14 @@ func TestLiveSummaryRespectsReadBudget(t *testing.T) {
 	}
 }
 
-func TestLiveSchemeCommandRefusesQuotedComposition(t *testing.T) {
+func TestLiveSchemeWriteInsideAComposedCommandIsRefusedBeforeTheShellRuns(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "shell-ran")
 	results := runScripted(t, root, "bash", func([]string) scriptedCall {
-		return scriptedCall{"bash", map[string]any{"command": "touch " + marker + `; cat "job://example/output"`}}
+		return scriptedCall{"bash", map[string]any{"command": "touch " + marker + `; echo kill > "job://example/ctl"`}}
 	})
-	if len(results) != 1 || !strings.Contains(results[0], "shell composition") {
-		t.Fatalf("quoted scheme composition was not refused: %v", results)
+	if len(results) != 1 || !strings.Contains(results[0], "standalone") {
+		t.Fatalf("composed scheme write was not refused: %v", results)
 	}
 	if _, err := os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatalf("shell executed despite refusal: %v", err)
