@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
@@ -113,6 +115,8 @@ var builtinSnapshots = map[string]snapshotFill{
 			s.Summary = "some files did not change"
 		}
 	},
+	"bash": jobSnapshot,
+	"jobs": jobSnapshot,
 	"grep": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
 		setTarget(s, []string{stringArg(params, "path")})
 		countMetric(s, "matches", max(detailLen(details, "matches"), detailLen(details, "paths")))
@@ -177,4 +181,79 @@ func plural(count int, noun string) string {
 		return "1 " + noun
 	}
 	return strconv.Itoa(count) + " " + noun + "s"
+}
+
+const (
+	jobTailLines = 40
+	jobTailBytes = 4 << 10
+)
+
+// jobSnapshot fills a bash or jobs result from the typed job facts: state, exit code and the output tail.
+func jobSnapshot(s *presentation.Snapshot, params map[string]any, result sdk.ToolResult, details map[string]any) {
+	countMetric(s, "jobs", detailLen(details, "jobs"))
+	if waiting, _ := details["timedOutWait"].(bool); waiting {
+		outcome := presentation.OutcomeTimedOut
+		s.Outcome = &outcome
+		return
+	}
+	state, _ := details["state"].(string)
+	if state == "" {
+		return
+	}
+	switch state {
+	case "timedOut":
+		outcome := presentation.OutcomeTimedOut
+		s.Outcome = &outcome
+	case "cancelled":
+		outcome := presentation.OutcomeCancelled
+		s.Outcome = &outcome
+	case "unknown":
+		outcome := presentation.OutcomeUnknown
+		s.Outcome = &outcome
+	}
+	if state != "exited" {
+		s.Summary = state
+	}
+	if _, ok := details["exitCode"]; ok {
+		s.Metrics = append(s.Metrics, presentation.Metric{ID: "exitCode", Value: float64(detailInt(details, "exitCode")), Unit: presentation.UnitCount})
+	}
+	if truncated, _ := details["truncated"].(bool); truncated || detailInt(details, "gapFrom") > 0 {
+		complete := false
+		s.Complete = &complete
+	}
+	output := result.Content
+	if first, rest, ok := strings.Cut(output, "\n"); strings.HasPrefix(first, "Job ") {
+		output = rest
+		if !ok {
+			output = ""
+		}
+	}
+	countMetric(s, "lines", contentLines(output))
+	if tail := outputTail(output); tail != "" {
+		s.Blocks = append(s.Blocks, presentation.Block{Kind: presentation.BlockCode, Code: &presentation.CodeBlock{Text: tail}})
+	}
+}
+
+// outputTail keeps the last lines of command output, without control characters the decoder refuses.
+func outputTail(output string) string {
+	output = strings.TrimRight(strings.ToValidUTF8(output, "\uFFFD"), "\n")
+	if len(output) > jobTailBytes {
+		output = output[len(output)-jobTailBytes:]
+		for len(output) > 0 && !utf8.RuneStart(output[0]) {
+			output = output[1:]
+		}
+		if _, rest, ok := strings.Cut(output, "\n"); ok {
+			output = rest
+		}
+	}
+	lines := strings.Split(output, "\n")
+	if len(lines) > jobTailLines {
+		lines = lines[len(lines)-jobTailLines:]
+	}
+	return strings.Map(func(r rune) rune {
+		if r != '\n' && r != '\t' && unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, strings.Join(lines, "\n"))
 }

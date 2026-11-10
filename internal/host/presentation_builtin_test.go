@@ -1,6 +1,7 @@
 package host
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -120,5 +121,46 @@ func TestEditAndWriteSnapshotsCarryDiffBlocks(t *testing.T) {
 	replaced := writeDiffBlock("/w/new.txt", "r9", "r10", false).Diff
 	if replaced.Operation != presentation.DiffUpdate || replaced.Before.Revision != "r9" || replaced.After.Revision != "r10" {
 		t.Errorf("replacement block: %+v", replaced)
+	}
+}
+
+func TestBashAndJobsSnapshotsCarryTailExitAndOutcome(t *testing.T) {
+	code := 3
+	var long strings.Builder
+	for i := range 100 {
+		long.WriteString("line " + strconv.Itoa(i) + "\n")
+	}
+	failed := builtinSnapshotOf(t, "bash", map[string]any{"command": "make"}, sdk.ToolResult{Content: "Job ab12-1: exited (exit 3)\n" + long.String() + "\x1b[31mboom\x1b[0m\n", IsError: true, Details: jobPage{jobFacts: jobFacts{ID: "ab12-1", Command: "make", State: "exited", ExitCode: &code}, Truncated: true}})
+	exit, hasExit := snapshotMetric(failed, "exitCode")
+	lines, _ := snapshotMetric(failed, "lines")
+	if *failed.Outcome != presentation.OutcomeFailed || !hasExit || exit != 3 || lines != 101 || failed.Complete == nil || *failed.Complete || failed.Summary != "" {
+		t.Errorf("failed bash snapshot: %+v", failed)
+	}
+	if len(failed.Blocks) != 1 || failed.Blocks[0].Kind != presentation.BlockCode {
+		t.Fatalf("bash blocks: %+v", failed.Blocks)
+	}
+	tail := failed.Blocks[0].Code.Text
+	if strings.Count(tail, "\n") != jobTailLines-1 || !strings.HasSuffix(tail, "[31mboom[0m") || strings.Contains(tail, "Job ab12") || strings.Contains(tail, "line 10\n") {
+		t.Errorf("tail is not the last %d lines without escapes: %q", jobTailLines, tail)
+	}
+
+	zero := 0
+	clean := builtinSnapshotOf(t, "bash", map[string]any{"command": "true"}, sdk.ToolResult{Content: "(no output)", Details: jobPage{jobFacts: jobFacts{State: "exited", ExitCode: &zero}}})
+	if exit, ok := snapshotMetric(clean, "exitCode"); !ok || exit != 0 || *clean.Outcome != presentation.OutcomeSucceeded {
+		t.Errorf("clean bash snapshot: %+v", clean)
+	}
+	for state, want := range map[string]presentation.Outcome{"timedOut": presentation.OutcomeTimedOut, "cancelled": presentation.OutcomeCancelled, "unknown": presentation.OutcomeUnknown, "running": presentation.OutcomeSucceeded} {
+		snapshot := builtinSnapshotOf(t, "jobs", map[string]any{"action": "status"}, sdk.ToolResult{Content: "Job ab12-1: " + state + "\n", Details: jobPage{jobFacts: jobFacts{State: state, Running: state == "running"}}})
+		if *snapshot.Outcome != want || snapshot.Summary != state || len(snapshot.Blocks) != 0 {
+			t.Errorf("%s: %+v", state, snapshot)
+		}
+	}
+	list := builtinSnapshotOf(t, "jobs", map[string]any{"action": "list"}, sdk.ToolResult{Content: "{}", Details: jobList{Jobs: []jobFacts{{ID: "a"}, {ID: "b"}}}})
+	if count, _ := snapshotMetric(list, "jobs"); count != 2 || len(list.Blocks) != 0 {
+		t.Errorf("list snapshot: %+v", list)
+	}
+	wait := builtinSnapshotOf(t, "jobs", map[string]any{"action": "wait"}, sdk.ToolResult{Content: "Wait timed out", Details: map[string]any{"timedOutWait": true}})
+	if *wait.Outcome != presentation.OutcomeTimedOut {
+		t.Errorf("wait snapshot: %+v", wait)
 	}
 }
