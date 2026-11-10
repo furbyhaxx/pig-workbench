@@ -1470,3 +1470,55 @@ func TestLiveUserLevelSkillIsListedAndLoadsThroughTheSkillScheme(t *testing.T) {
 		t.Fatalf("a skill with disable-model-invocation loaded:\n%s", results[2])
 	}
 }
+
+// TestLiveSkillAvailabilityChangesArriveAsDiffFrames: once the listing is delivered, a skill whose when
+// condition starts or stops holding is announced alone; the listing is never sent again and an unchanged
+// catalog sends nothing.
+func TestLiveSkillAvailabilityChangesArriveAsDiffFrames(t *testing.T) {
+	root := t.TempDir()
+	for name, front := range map[string]string{"alpha": "", "rusty": "when:\n  files: [\"Cargo.toml\"]\n"} {
+		dir := filepath.Join(root, "agent", "skills", name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\ndescription: about "+name+"\n"+front+"---\nbody\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	manifest := filepath.Join(root, "Cargo.toml")
+	_, requests := runScriptedRequests(t, root, "write,bash,ls", "", nil,
+		func([]string) scriptedCall {
+			return scriptedCall{tool: "write", args: map[string]any{"path": manifest, "content": "[package]\n"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{tool: "bash", args: map[string]any{"command": "rm " + manifest}}
+		},
+		func([]string) scriptedCall { return scriptedCall{tool: "ls", args: map[string]any{"path": root}} },
+		func([]string) scriptedCall { return scriptedCall{tool: "ls", args: map[string]any{"path": root}} },
+	)
+	// Frames are collected when a tool call starts, so a change made by one call is announced with the next.
+	if len(requests) != 5 {
+		t.Fatalf("requests = %d, want 5", len(requests))
+	}
+	plain := func(index int) string {
+		return strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`, `\n`, "\n").Replace(requests[index])
+	}
+	frames := func(index int) int { return strings.Count(plain(index), `src="session.skills"`) }
+	if first := plain(0); frames(0) != 1 || !strings.Contains(first, "- skill://alpha: about alpha") || strings.Contains(first, "skill://rusty") {
+		t.Fatalf("the first listing must name alpha only:\n%s", first)
+	}
+	appeared := plain(2)
+	if frames(1) != 1 || frames(2) != 2 || !strings.Contains(appeared, skillsChangeIntro+"\n"+skillsNowHeading+"\n- skill://rusty: about rusty\n</system-") {
+		t.Fatalf("a met condition must send one frame naming only rusty:\n%s", appeared)
+	}
+	if strings.Count(appeared, "skill://alpha") != 1 {
+		t.Fatalf("the unchanged skill was listed again:\n%s", appeared)
+	}
+	withdrawn := plain(3)
+	if frames(3) != 3 || !strings.Contains(withdrawn, skillsChangeIntro+"\n"+skillsGoneHeading+"\n- skill://rusty\n</system-") {
+		t.Fatalf("an unmet condition must name rusty as no longer available:\n%s", withdrawn)
+	}
+	if frames(4) != 3 {
+		t.Fatalf("an unchanged catalog sent another skills frame:\n%s", plain(4))
+	}
+}
