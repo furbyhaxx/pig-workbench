@@ -90,9 +90,6 @@ func (p jobProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	if err != nil {
 		return resource.Listing{}, err
 	}
-	if limit <= 0 || limit > 200 {
-		limit = 200
-	}
 	var names []string
 	base := "job://"
 	kind := resource.EntryDir
@@ -109,27 +106,15 @@ func (p jobProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	default:
 		return resource.Listing{}, errors.New("job:// lists only the catalog and one job")
 	}
-	start := 0
-	for i, name := range names {
-		if name == cursor {
-			start = i
-			break
-		}
-	}
-	end := min(start+limit, len(names))
-	entries := make([]resource.Entry, 0, end-start)
-	for _, name := range names[start:end] {
+	entries := make([]resource.Entry, 0, len(names))
+	for _, name := range names {
 		entryKind := kind
 		if name == "ctl" {
 			entryKind = resource.EntryControl
 		}
 		entries = append(entries, resource.Entry{Name: name, URI: base + name, Kind: entryKind})
 	}
-	listing := resource.Listing{Entries: entries, Complete: end == len(names)}
-	if !listing.Complete {
-		listing.NextCursor = names[end]
-	}
-	return listing, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 func (p jobProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

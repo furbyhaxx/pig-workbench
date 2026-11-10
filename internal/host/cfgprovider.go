@@ -83,11 +83,11 @@ func (p cfgProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	}
 	if len(parts) == 2 && parts[0] == "workbench" && parts[1] == "integrations" && p.integrations != nil {
 		owners, _, _ := p.integrations("")
-		listing := resource.Listing{Complete: true}
+		var entries []resource.Entry
 		for _, owner := range owners {
-			listing.Entries = append(listing.Entries, resource.Entry{Name: owner, URI: "cfg://workbench/integrations/" + owner, Kind: resource.EntryFile})
+			entries = append(entries, resource.Entry{Name: owner, URI: "cfg://workbench/integrations/" + owner, Kind: resource.EntryFile})
 		}
-		return listing, nil
+		return pageEntries(entries, cursor, limit)
 	}
 	if len(parts) != 0 {
 		return resource.Listing{}, resource.ErrUnsupported
@@ -102,27 +102,11 @@ func (p cfgProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	listing := resource.Listing{Complete: true}
-	limit = max(1, limit)
-	start := 0
-	if cursor != "" {
-		start = len(names)
-		for index, name := range names {
-			if name == cursor {
-				start = index + 1
-				break
-			}
-		}
+	entries := make([]resource.Entry, 0, len(names))
+	for _, name := range names {
+		entries = append(entries, resource.Entry{Name: name, URI: "cfg://" + name, Kind: resource.EntryDir})
 	}
-	for _, name := range names[start:] {
-		if len(listing.Entries) >= limit {
-			listing.Complete = false
-			listing.NextCursor = listing.Entries[len(listing.Entries)-1].Name
-			break
-		}
-		listing.Entries = append(listing.Entries, resource.Entry{Name: name, URI: "cfg://" + name, Kind: resource.EntryDir})
-	}
-	return listing, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 func (p cfgProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

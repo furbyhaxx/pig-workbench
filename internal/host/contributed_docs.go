@@ -367,27 +367,7 @@ func (p docsProvider) List(ctx context.Context, uri, cursor string, limit int) (
 		}
 		return entries[i].Name < entries[j].Name
 	})
-	start := 0
-	if cursor != "" {
-		start = len(entries)
-		for i, entry := range entries {
-			if entry.Name == cursor {
-				start = i + 1
-				break
-			}
-		}
-	}
-	listing := resource.Listing{Complete: true}
-	limit = max(1, limit)
-	for _, entry := range entries[start:] {
-		if len(listing.Entries) >= limit {
-			listing.Complete = false
-			listing.NextCursor = listing.Entries[len(listing.Entries)-1].Name
-			break
-		}
-		listing.Entries = append(listing.Entries, entry)
-	}
-	return listing, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 const docsMaxFileBytes = 4 << 20

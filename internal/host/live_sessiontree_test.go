@@ -141,3 +141,57 @@ func TestLiveSessionSelfFramesAreListedAndRead(t *testing.T) {
 		}
 	}
 }
+
+func TestLiveSessionListingsPageFiftyStoredSessions(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := startInRoot(t, root, nil)
+	first.send("a", "prompt", "remember this")
+	first.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	first.close()
+	id := storedSessionID(t, root)
+	files, _ := filepath.Glob(filepath.Join(root, "sessions", "*", "*.jsonl"))
+	if len(files) == 0 {
+		files, _ = filepath.Glob(filepath.Join(root, "sessions", "*.jsonl"))
+	}
+	content, err := os.ReadFile(files[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := []string{id}
+	for i := 1; i < 50; i++ {
+		clone := fmt.Sprintf("%s%04x", id[:len(id)-4], i)
+		if clone == id {
+			continue
+		}
+		ids = append(ids, clone)
+		name := strings.ReplaceAll(filepath.Base(files[0]), id, clone)
+		if name == filepath.Base(files[0]) {
+			name = clone + ".jsonl"
+		}
+		if err := os.WriteFile(filepath.Join(filepath.Dir(files[0]), name), []byte(strings.ReplaceAll(string(content), id, clone)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	second, recorder := startInRoot(t, root, []scriptedCall{
+		{"ls", map[string]any{"path": "session://"}},
+		{"ls", map[string]any{"path": "session://by-id/"}},
+	})
+	second.send("b", "prompt", "list them")
+	second.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 2 {
+		t.Fatalf("want two listings: %v", results)
+	}
+	for index, result := range results {
+		for _, want := range ids {
+			if !strings.Contains(result, want) {
+				t.Fatalf("listing %d lacks session %s: %.600s", index, want, result)
+			}
+		}
+	}
+}

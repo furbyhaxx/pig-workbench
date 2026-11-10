@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -219,7 +220,7 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		for _, info := range stored {
 			entries = append(entries, resource.Entry{Name: info.ID, URI: "session://" + info.ID + "/", Kind: resource.EntryDir, Detail: sessionDetail(info)})
 		}
-		return resource.Listing{Complete: true, Entries: entries}, nil
+		return pageEntries(entries, cursor, limit)
 	case t.byID && t.id == "":
 		all, err := sdk.SessionManagerListAll(host, customSessionDir(host), nil)
 		if err != nil {
@@ -229,7 +230,7 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		for _, info := range dedupeByID(all) {
 			entries = append(entries, resource.Entry{Name: info.ID, URI: "session://by-id/" + info.ID, Kind: resource.EntryLink, Target: "session://" + info.ID + "/", Detail: sessionDetail(info)})
 		}
-		return resource.Listing{Complete: true, Entries: entries}, nil
+		return pageEntries(entries, cursor, limit)
 	}
 	if t.depth == 2 && t.file == "frames" {
 		records, err := p.frameRecords(host, t.id)
@@ -240,14 +241,14 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		for _, record := range records {
 			entries = append(entries, resource.Entry{Name: record.Frame.FrameID, URI: "session://self/frames/" + record.Frame.FrameID, Kind: resource.EntryFile, Detail: frameReceiptLine(record)})
 		}
-		return pageEntries(entries, cursor, limit), nil
+		return pageEntries(entries, cursor, limit)
 	}
 	if t.depth == 2 && t.file == "instructions" {
 		entries, err := p.instructionEntries(host, t.id)
 		if err != nil {
 			return resource.Listing{}, err
 		}
-		return pageEntries(entries, cursor, limit), nil
+		return pageEntries(entries, cursor, limit)
 	}
 	if t.depth != 1 {
 		return resource.Listing{}, resource.ErrNotFound
@@ -266,7 +267,7 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		entries = append(entries, resource.Entry{Name: "frames", URI: base + "frames/", Kind: resource.EntryDir}, resource.Entry{Name: "instructions", URI: base + "instructions/", Kind: resource.EntryDir})
 	}
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
-	return resource.Listing{Complete: true, Entries: entries}, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 func (p sessionProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {
@@ -491,15 +492,16 @@ func (p sessionProvider) renderFrames(host sdk.Context, t sessionTarget) ([]byte
 }
 
 // pageEntries returns one listing page of at most limit entries starting at the entry named cursor.
-func pageEntries(entries []resource.Entry, cursor string, limit int) resource.Listing {
+// A cursor whose entry is gone is stale: answering from the start would repeat entries.
+func pageEntries(entries []resource.Entry, cursor string, limit int) (resource.Listing, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 200
 	}
 	start := 0
-	for i, entry := range entries {
-		if cursor != "" && entry.Name == cursor {
-			start = i
-			break
+	if cursor != "" {
+		start = slices.IndexFunc(entries, func(entry resource.Entry) bool { return entry.Name == cursor })
+		if start < 0 {
+			return resource.Listing{}, errors.New("staleRevision: listing changed or cursor entry disappeared; restart listing")
 		}
 	}
 	end := min(start+limit, len(entries))
@@ -507,7 +509,7 @@ func pageEntries(entries []resource.Entry, cursor string, limit int) resource.Li
 	if !listing.Complete {
 		listing.NextCursor = entries[end].Name
 	}
-	return listing
+	return listing, nil
 }
 
 // instructionEntries lists the instruction files this session delivered to the model, each linking to

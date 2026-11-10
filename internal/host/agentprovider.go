@@ -88,7 +88,7 @@ func (p agentProvider) List(ctx context.Context, uri, cursor string, limit int) 
 		for _, name := range []string{"inbox", "messages", "status"} {
 			entries = append(entries, resource.Entry{Name: name, URI: "agent://" + parts[0] + "/" + name, Kind: resource.EntryFile})
 		}
-		return resource.Listing{Complete: true, Entries: entries}, nil
+		return pageEntries(entries, cursor, limit)
 	}
 	records, err := e.peers(ctx)
 	if err != nil {
@@ -106,7 +106,7 @@ func (p agentProvider) List(ctx context.Context, uri, cursor string, limit int) 
 		entries = append(entries, resource.Entry{Name: name, URI: "agent://" + name + "/", Kind: resource.EntryDir, Detail: fmt.Sprintf("%s  %s  %s  %s", record.SessionName, record.ProjectSlug, record.State, record.Cwd)})
 	}
 	sort.SliceStable(entries[1:], func(i, j int) bool { return entries[1+i].Name < entries[1+j].Name })
-	return resource.Listing{Complete: true, Entries: entries}, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 func (p agentProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

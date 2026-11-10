@@ -103,11 +103,12 @@ func (p skillProvider) List(ctx context.Context, uri, cursor string, limit int) 
 	} else {
 		return resource.Listing{}, errors.New("skill:// lists the catalog or skill://loaded")
 	}
+	slices.Sort(names)
 	entries := make([]resource.Entry, 0, len(names))
 	for _, name := range names {
 		entries = append(entries, resource.Entry{Name: name, URI: "skill://" + name, Kind: resource.EntryFile})
 	}
-	return resource.Listing{Entries: entries, Complete: true}, nil
+	return pageEntries(entries, cursor, limit)
 }
 
 func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {
