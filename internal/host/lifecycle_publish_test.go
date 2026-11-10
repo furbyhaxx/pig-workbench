@@ -36,3 +36,16 @@ func TestPublishedSessionAlreadyHasItsEndpointAndActivity(t *testing.T) {
 		readers.Wait()
 	}
 }
+
+func TestCleanupStackRunsNewestFirstAndOnlyOnce(t *testing.T) {
+	var order []int
+	var stack cleanupStack
+	for i := range 3 {
+		stack.push(func() { order = append(order, i) })
+	}
+	stack.run()
+	stack.run()
+	if len(order) != 3 || order[0] != 2 || order[2] != 0 {
+		t.Fatalf("cleanup order %v, want [2 1 0] once", order)
+	}
+}

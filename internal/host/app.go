@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -156,17 +157,23 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	if _, err := a.shutdown(ctx, nil); err != nil {
 		return nil, err
 	}
+	// Everything start acquires is released again when a later step fails.
+	var acquired cleanupStack
+	fail := func(err error) (any, error) {
+		acquired.run()
+		return nil, a.fail(err)
+	}
 	id, err := ctx.GetSessionID()
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	agentDirectory, err := sdk.AgentDir()
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	projects, err := project.Open(agentDirectory)
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	manager, err := location.New(requestContext{ctx}, ctx.Cwd(), func(work context.Context, cwd string) (string, error) {
 		detected, err := projects.Detect(work, cwd)
@@ -180,20 +187,20 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		return detected.Root, nil
 	})
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	var token [16]byte
 	if _, err := rand.Read(token[:]); err != nil {
-		return nil, a.fail(fmt.Errorf("create session generation: %w", err))
+		return fail(fmt.Errorf("create session generation: %w", err))
 	}
 	generation := hex.EncodeToString(token[:])
 	contributions, err := contribution.New(generation, contribution.Options{Validator: validateContributionDescriptor})
 	if err != nil {
-		return nil, a.fail(fmt.Errorf("create contribution registry: %w", err))
+		return fail(fmt.Errorf("create contribution registry: %w", err))
 	}
 	settings, err := loadSettings(ctx)
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	host := ctx
 	hostContext := func() (sdk.Context, bool) { return host, true }
@@ -203,7 +210,13 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	var current *session
 	providers, scratch, err := buildRouter(ctx, settings, manager, fetch, func() (*session, bool) { return current, current != nil })
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
+	}
+	if scratch != "" {
+		acquired.push(func() {
+			_ = os.RemoveAll(materializedRoot(scratch))
+			_ = os.RemoveAll(scratch)
+		})
 	}
 	fetch.router = func() *resource.Router { return providers }
 	docsCache := ""
@@ -213,16 +226,16 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	docs := &docsCatalog{sets: make(map[string]*docsSet), cache: docsCache}
 	snapshots, err := hashline.NewStore(hashline.StoreLimits{}, generation)
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	jobManager, err := jobs.NewManager(jobs.ManagerOptions{})
 	if err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
+	acquired.push(func() { _ = jobManager.Close() })
 	contextState, err := restoreFrameLedger(ctx, id)
 	if err != nil {
-		_ = jobManager.Close()
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	s := &session{
 		editState:     editState{mode: "", registers: make(map[string]hashline.Register), noops: make(map[string]int)},
@@ -254,43 +267,34 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		producers:     newProducerRegistry(),
 		children:      newChildCalls(),
 	}
+	acquired.push(s.supervisor.Stop)
 	fetch.project = s.projectIdentity
 	fetch.disabled = s.fetchBackendDisabled
 	docs.guide = s.guideFor
 	if err := providers.RegisterBuiltin(docsProvider{catalog: docs, schemes: providers.Schemes}); err != nil {
-		return nil, a.fail(err)
+		return fail(err)
 	}
 	if err := restoreLocation(ctx, manager); err != nil {
-		s.supervisor.Stop()
-		return nil, a.fail(err)
+		return fail(err)
 	}
-	unsubscribe, err := ctx.Events().On(api.RequestChannel, a.service)
-	if err != nil {
-		s.supervisor.Stop()
-		return nil, a.fail(fmt.Errorf("subscribe Workbench services: %w", err))
+	var subscriptions cleanupStack
+	acquired.push(subscriptions.run)
+	for _, channel := range []struct {
+		name, label string
+		handler     func(sdk.Context, any) error
+	}{
+		{api.RequestChannel, "services", a.service},
+		{api.ProviderReplyChannel, "provider replies", bus.onReply},
+		{api.CancelChannel, "cancellation", a.cancelRequest},
+		{api.ProviderProgressChannel, "provider progress", bus.onProgress},
+	} {
+		unsubscribe, err := ctx.Events().On(channel.name, channel.handler)
+		if err != nil {
+			return fail(fmt.Errorf("subscribe Workbench %s: %w", channel.label, err))
+		}
+		subscriptions.push(unsubscribe)
 	}
-	unsubscribeReplies, err := ctx.Events().On(api.ProviderReplyChannel, bus.onReply)
-	if err != nil {
-		unsubscribe()
-		s.supervisor.Stop()
-		return nil, a.fail(fmt.Errorf("subscribe Workbench provider replies: %w", err))
-	}
-	unsubscribeCancel, err := ctx.Events().On(api.CancelChannel, a.cancelRequest)
-	if err != nil {
-		unsubscribe()
-		unsubscribeReplies()
-		s.supervisor.Stop()
-		return nil, a.fail(fmt.Errorf("subscribe Workbench cancellation: %w", err))
-	}
-	unsubscribeProgress, err := ctx.Events().On(api.ProviderProgressChannel, bus.onProgress)
-	if err != nil {
-		unsubscribe()
-		unsubscribeReplies()
-		unsubscribeCancel()
-		s.supervisor.Stop()
-		return nil, a.fail(fmt.Errorf("subscribe Workbench provider progress: %w", err))
-	}
-	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies(); unsubscribeCancel(); unsubscribeProgress() }
+	s.unsubscribe = subscriptions.run
 	s.retainScratch(ctx)
 	// A reload or a crash skips shutdown cleanup, and the host delivers no
 	// session_shutdown to a reloaded runtime, so the next start of this session
@@ -349,6 +353,19 @@ func (a *app) publish(s *session, wire func()) {
 	a.session = s
 	a.initErr = nil
 	a.mu.Unlock()
+}
+
+// cleanupStack releases what was acquired, newest first, at most once.
+type cleanupStack struct{ steps []func() }
+
+func (c *cleanupStack) push(step func()) { c.steps = append(c.steps, step) }
+
+func (c *cleanupStack) run() {
+	steps := c.steps
+	c.steps = nil
+	for _, step := range slices.Backward(steps) {
+		step()
+	}
 }
 
 func (a *app) fail(err error) error { a.mu.Lock(); a.initErr = err; a.mu.Unlock(); return err }
