@@ -1195,3 +1195,27 @@ func TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt(t *testing.T) {
 		t.Fatalf("frame listing must drop <skills> and carry the skill in session.capabilities:\n%s", frame)
 	}
 }
+
+func TestLiveSkillListingPagesFiftySkills(t *testing.T) {
+	root := t.TempDir()
+	var want []string
+	for i := 0; i < 50; i++ {
+		name := fmt.Sprintf("paged-skill-%02d", i)
+		want = append(want, name)
+		dir := filepath.Join(root, ".agents", "skills", name)
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\ndescription: skill "+name+"\n---\nbody\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results := runScripted(t, root, "ls", func([]string) scriptedCall {
+		return scriptedCall{"ls", map[string]any{"path": "skill://"}}
+	})
+	for _, name := range want {
+		if !strings.Contains(results[0], name) {
+			t.Fatalf("listing lacks %s: %.800s", name, results[0])
+		}
+	}
+}
