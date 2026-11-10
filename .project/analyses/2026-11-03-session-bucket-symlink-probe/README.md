@@ -12,7 +12,7 @@ document:
   updated_by: "orchestrator"
   changelog:
     - revision: 1
-      reason: "DRAFT-0002 option B and the shared artifact tree needed evidence before design"
+      reason: "Symlinked session buckets (SPEC-0012 §3.5) and the shared artifact tree needed evidence before design"
       changes: ["Ran both probes with a mock model and a scratch git repository"]
 ---
 

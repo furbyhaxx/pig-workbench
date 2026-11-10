@@ -18,7 +18,7 @@ document:
 
 # 1. Scope
 
-What Workbench provides for projects and for addressing everything it exposes. Source proposal with prior art (oh-my-pi, nukii, nugent, agentd): [DRAFT-0002](../drafts/projects-and-agent-communication.md). Live-session messaging and the coordinator: [SPEC-0011](0011-inter-session-messaging.md). Provider contract: [SPEC-0004](0004-resource-providers.md).
+What Workbench provides for projects and for addressing everything it exposes. Live-session messaging and the coordinator: [SPEC-0011](0011-inter-session-messaging.md). Provider contract: [SPEC-0004](0004-resource-providers.md).
 
 # 2. Host facts
 
@@ -162,7 +162,7 @@ Consequences to accept:
 - **`tree`** (default): `.project/` lives in the code tree. Worktrees share the main worktree's copy (§4.3). Spec and code changes can land in one commit or PR, as the `dot-project` rule "specs track reality" expects.
 - **`branch`**: `.project/` content lives on an orphan branch `artifacts` (no shared history with code), checked out by Workbench as worktree `<repo>/.worktrees/.artifacts`. `.project` in every code checkout, including the main one, is a symlink to it, excluded through the common `info/exclude`; no sparse checkout is needed because code branches do not track `.project/`. `artifact://` resolves to that worktree. Code history stays free of artifacts. Workbench adds a `Code-Commit: <sha>` trailer to artifact commits it makes, recording the main worktree's `HEAD`. Teammates fetch the branch like any other.
 
-Switching modes is an explicit migration command (`/workbench projects artifacts-storage <mode>`) that moves the files and commits on both sides; it never happens implicitly. A bare ref without a checkout (`refs/pig/artifacts`) was evaluated and rejected: humans cannot open the files, agents' file tools cannot reach them, and concurrent writes would need Workbench's own tree merging ([DRAFT-0002 rev 3 §4.5](../drafts/projects-and-agent-communication.md)).
+Switching modes is an explicit migration command (`/workbench projects artifacts-storage <mode>`) that moves the files and commits on both sides; it never happens implicitly. A bare ref without a checkout (`refs/pig/artifacts`) was evaluated and rejected: humans cannot open the files, agents' file tools cannot reach them, and concurrent writes would need Workbench's own tree merging.
 
 # 5. Pseudo-filesystem URIs
 

@@ -21,7 +21,7 @@ document:
 A consolidation, not a new probe run. Sources:
 
 - Analyses: [host integration probes](../2026-11-02-host-integration-probes/README.md) (P1–P30), [secrets probes](../2026-11-03-secrets-host-probes/README.md) (S1–S6), [system prompt probes](../2026-11-03-system-prompt-host-probes/README.md) (PR1–PR8), [session bucket symlink probe](../2026-11-03-session-bucket-symlink-probe/README.md), [donor parity audit](../2026-11-02-donor-parity-audit/README.md) §4–5.
-- Specs, plans, drafts and handoffs that record host limits: SPEC-0002/0003/0009/0011/0012/0013/0014, PLAN-0001 D3/D12/D13, PLAN-0004 C4, [activity line draft](../../drafts/activity-line.md) §7, [pig-web M0.4 inputs](../../handoff/pig-web-m0-4-inputs.md) M4.
+- Specs and plans that record host limits: SPEC-0002/0003/0009/0011/0012/0013/0014, PLAN-0001 D3/D12/D13, PLAN-0004 C4; pig-web's M0.4 input M4.
 - Sessions (one bucket, shared by `~/.pi` and `~/.pig`): design/probe session of 02.–03.11., research import, plan review, Slice 1 implementation, 81 subagent transcripts under `.workbench/agents/`, and 19 stray Pi-Bolt sessions. Excerpts and file names: [`evidence/sources.md`](evidence/sources.md).
 
 Host for all probes: `pig 0.5.3+1.4.0`, staged SDK `sdk-899c7964784a0050`. The installed build on 04.11.2026 (`0.5.3+1.4.0.74f46864`) stages the **same SDK hash**, and three API facts were rechecked against it today (no masked input, `viewEvent` overlay-only, dialog methods return `any`). Behavioural rows were not re-run.
