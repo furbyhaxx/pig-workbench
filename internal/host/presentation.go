@@ -191,24 +191,25 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			}
 			return renderPresentationCall(entry, args, rc, s.callRoot(rc.ToolCallID), width, display.shorten), nil
 		},
-		Result: func(_ sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
+		Result: func(ctx sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
+			paint := themePainter(ctx)
 			display, err := cache.get(s, entry)
 			if err != nil || !display.enabled {
-				return rawPresentationResult(entry.descriptor, result, width, render.IsError, "presentation disabled or unavailable; delegation appliesAfterReload"), nil
+				return paintStatus(rawPresentationResult(entry.descriptor, result, width, render.IsError, "presentation disabled or unavailable; delegation appliesAfterReload"), paint), nil
 			}
 			descriptor := entry.descriptor
 			descriptor.DefaultDisplay.Density, descriptor.DefaultDisplay.PreviewLines = display.density, display.preview
 			record := s.presentationView(entry, toolName, render.ToolCallID, result.Details, false)
 			if !record.valid {
-				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID)), nil
+				return paintStatus(renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID)), paint), nil
 			}
 			key := presentationLayoutKey{call: toolName + "\x00" + entry.owner + "\x00" + entry.key + "\x00" + render.ToolCallID, data: record.sequence, settings: display.revision, width: width, expanded: options.Expanded, partial: options.IsPartial, hostPartial: render.IsPartial, hostError: render.IsError}
 			if render.DurationMs != nil {
 				key.duration, key.durationKnown = *render.DurationMs, true
 			}
-			return layouts.render(key, func() []string {
+			return paintStatus(layouts.render(key, func() []string {
 				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID))
-			}), nil
+			}), paint), nil
 		},
 	}
 }

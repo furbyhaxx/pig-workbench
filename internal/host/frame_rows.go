@@ -21,6 +21,9 @@ var frameGlyphs = map[string]string{"instruction": "◆", "reminder": "↻", "wa
 // painter colours text with a theme token; tests use the identity.
 type painter func(token, text string) string
 
+// themePainter reads the painter of the live theme; unit tests replace it because a zero Context has no theme.
+var themePainter = func(ctx sdk.Context) painter { return ctx.UITheme().Fg }
+
 var frameTones = map[string]string{"instruction": "accent", "reminder": "dim", "warning": "warning", "error": "error", "notice": "success", "info": "mdLink", "message": "accent"}
 
 // frameRow is what one transcript row states about a frame or a plain Workbench message.
@@ -69,7 +72,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		case "shown":
 			row.open = true
 		}
-		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
+		return row.render(themePainter(ctx), options.Expanded, width), nil
 	})
 	ext.MessageRenderer("pig-workbench.ask", func(ctx sdk.Context, message map[string]any, options sdk.MessageRenderOptions, width int) ([]string, error) {
 		text, err := messageText(message)
@@ -79,7 +82,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		row := askRow(text)
 		row.pad = options.OutputPad
 		row.style, _ = a.rowDisplay("")
-		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
+		return row.render(themePainter(ctx), options.Expanded, width), nil
 	})
 }
 

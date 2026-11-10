@@ -14,6 +14,10 @@ import (
 
 var ownWidths = []int{36, 57, 80, 140}
 
+func init() {
+	themePainter = func(sdk.Context) painter { return func(_, text string) string { return text } }
+}
+
 // ownResult is what the host hands a renderer for a returned tool result: its text and the Details the tool attached.
 func ownResult(t *testing.T, tool string, args map[string]any, result sdk.ToolResult) sdk.ToolRenderResult {
 	t.Helper()
@@ -82,7 +86,7 @@ func TestOwnToolsShareOneRowGrammar(t *testing.T) {
 				t.Errorf("%s call at %d = %q, want prefix %q", c.tool, width, call, c.wantCall)
 			}
 			head := out[0]
-			if !strings.HasPrefix(head, c.tool+" · succeeded") {
+			if !strings.HasPrefix(head, "✓ "+c.tool+" · succeeded") {
 				t.Errorf("%s result header at %d = %q", c.tool, width, head)
 			}
 			if width == 140 && !strings.Contains(head, "time 1.25s") {
@@ -102,7 +106,7 @@ func TestOwnBashShowsTheTailAndFailureStatus(t *testing.T) {
 	failed := ownResult(t, "bash", map[string]any{"command": "make"}, sdk.ToolResult{Content: "Job ab12-1: exited (exit 2)\n" + text, IsError: true, Details: jobPage{jobFacts: jobFacts{State: "exited", ExitCode: &code}}})
 	_, out := renderOwn(t, "bash", map[string]any{"command": "make"}, failed, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{IsError: true}, 80)
 	joined := strings.Join(out, "\n")
-	if !strings.HasPrefix(out[0], "bash · failed · exit 2 · lines 30") || !strings.Contains(joined, "20 earlier lines") || !strings.HasSuffix(joined, "line 30") || strings.Contains(joined, "line 5\n") {
+	if !strings.HasPrefix(out[0], "✗ bash · failed · exit 2 · lines 30") || !strings.Contains(joined, "20 earlier lines") || !strings.HasSuffix(joined, "line 30") || strings.Contains(joined, "line 5\n") {
 		t.Fatalf("bash tail rendering:\n%s", joined)
 	}
 	_, expanded := renderOwn(t, "bash", map[string]any{"command": "make"}, failed, sdk.ToolRenderResultOptions{Expanded: true}, sdk.ToolRenderContext{IsError: true}, 80)
@@ -110,7 +114,7 @@ func TestOwnBashShowsTheTailAndFailureStatus(t *testing.T) {
 		t.Fatalf("expanded bash does not show the whole result:\n%s", joined)
 	}
 	_, out = renderOwn(t, "bash", map[string]any{"command": "make"}, ownText(text), sdk.ToolRenderResultOptions{IsPartial: true}, sdk.ToolRenderContext{}, 80)
-	if joined := strings.Join(out, "\n"); out[0] != "bash · running" || !strings.Contains(joined, "20 earlier lines") || !strings.HasSuffix(joined, "line 30") {
+	if joined := strings.Join(out, "\n"); out[0] != "● bash · running" || !strings.Contains(joined, "20 earlier lines") || !strings.HasSuffix(joined, "line 30") {
 		t.Fatalf("streaming bash:\n%s", joined)
 	}
 }
@@ -127,12 +131,12 @@ func TestOwnReadHidesContentUntilExpandedOrFailed(t *testing.T) {
 		t.Fatalf("expanded read = %q", expanded)
 	}
 	_, refused := renderOwn(t, "read", map[string]any{"path": "missing.go"}, ownText("no such file"), sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{IsError: true}, 80)
-	if len(refused) != 2 || refused[0] != "read · failed" || refused[1] != "no such file" {
+	if len(refused) != 2 || refused[0] != "✗ read · failed" || refused[1] != "no such file" {
 		t.Fatalf("a call the tool refused with an error = %q", refused)
 	}
 	failed := ownResult(t, "read", args, sdk.ToolResult{Content: "kb://x: provider failed", IsError: true})
 	_, out := renderOwn(t, "read", args, failed, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{IsError: true}, 80)
-	if len(out) != 2 || !strings.HasPrefix(out[0], "read · failed") || out[1] != "kb://x: provider failed" {
+	if len(out) != 2 || !strings.HasPrefix(out[0], "✗ read · failed") || out[1] != "kb://x: provider failed" {
 		t.Fatalf("failed read = %q", out)
 	}
 }
@@ -144,7 +148,7 @@ func TestOwnEditShowsItsDiff(t *testing.T) {
 	result := ownResult(t, "edit", map[string]any{"path": "a.go", "edits": []any{}}, sdk.ToolResult{Content: "Edit batch committed.\n", Details: details})
 	_, out := renderOwn(t, "edit", map[string]any{"path": "a.go"}, result, sdk.ToolRenderResultOptions{Expanded: true}, sdk.ToolRenderContext{}, 80)
 	joined := strings.Join(out, "\n")
-	if !strings.HasPrefix(out[0], "edit · succeeded · added 1 · removed 1") || !strings.Contains(joined, "-two") || !strings.Contains(joined, "+TWO") || strings.Contains(joined, "Edit batch committed") {
+	if !strings.HasPrefix(out[0], "✓ edit · succeeded · added 1 · removed 1") || !strings.Contains(joined, "-two") || !strings.Contains(joined, "+TWO") || strings.Contains(joined, "Edit batch committed") {
 		t.Fatalf("edit row:\n%s", joined)
 	}
 }
@@ -167,9 +171,9 @@ func TestOwnAskUserRowNamesTheOutcomeAndListsAnswers(t *testing.T) {
 		result ask.Result
 		want   []string
 	}{
-		"cancelled": {ask.Result{Cancelled: true}, []string{"ask_user · cancelled"}},
-		"timedOut":  {ask.Result{TimedOut: true, Reason: "deadline"}, []string{"ask_user · timedOut", "deadline"}},
-		"answered":  {ask.Result{Answers: map[string]ask.Answered{"db": {Values: []string{"postgres"}}, "port": {Custom: "5432"}}}, []string{"ask_user · succeeded · answers 2", "Database | postgres", "Port | 5432"}},
+		"cancelled": {ask.Result{Cancelled: true}, []string{"○ ask_user · cancelled"}},
+		"timedOut":  {ask.Result{TimedOut: true, Reason: "deadline"}, []string{"✗ ask_user · timedOut", "deadline"}},
+		"answered":  {ask.Result{Answers: map[string]ask.Answered{"db": {Values: []string{"postgres"}}, "port": {Custom: "5432"}}}, []string{"✓ ask_user · succeeded · answers 2", "Database | postgres", "Port | 5432"}},
 	} {
 		_, out := renderOwn(t, "ask_user", form, ownResult(t, "ask_user", form, sdk.ToolResult{Content: "{}", Details: tc.result}), sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}, 80)
 		joined := strings.Join(out, "\n")
@@ -177,6 +181,38 @@ func TestOwnAskUserRowNamesTheOutcomeAndListsAnswers(t *testing.T) {
 			if !strings.Contains(joined, want) {
 				t.Errorf("%s rendered\n%s\nwant %q", name, joined, want)
 			}
+		}
+	}
+}
+
+func TestRowStatusDiffersByGlyphAndTokenAndSurvivesWithoutColour(t *testing.T) {
+	plain := themePainter
+	themePainter = func(sdk.Context) painter {
+		return func(token, text string) string { return "<" + token + ">" + text + "</>" }
+	}
+	t.Cleanup(func() { themePainter = plain })
+	a := &app{session: presentationSession(t)}
+	renderers := a.resolveToolRenderer("read", func() *sdk.ToolRenderers { return nil })
+	args := map[string]any{"path": "a.go"}
+	head := func(result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext) string {
+		out, err := renderers.Result(sdk.Context{}, result, options, render, 80)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return out[0]
+	}
+	rows := map[string]string{
+		"<success>✓</> read · succeeded":              head(ownResult(t, "read", args, sdk.ToolResult{Content: "1:aa|x\n"}), sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}),
+		"<warning>▲</> read · succeeded · incomplete": head(ownResult(t, "read", args, sdk.ToolResult{Content: "1:aa|x\n", Details: map[string]any{"complete": false}}), sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{}),
+		"<error>✗</> read · failed":                   head(ownResult(t, "read", args, sdk.ToolResult{Content: "no", IsError: true}), sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{IsError: true}),
+		"<accent>●</> read · running":                 head(ownText("1:aa|x"), sdk.ToolRenderResultOptions{IsPartial: true}, sdk.ToolRenderContext{}),
+	}
+	for want, got := range rows {
+		if !strings.HasPrefix(got, want) {
+			t.Errorf("row %q, want prefix %q", got, want)
+		}
+		if word := strings.Fields(want)[3]; !strings.Contains(got, word) {
+			t.Errorf("row %q lost its status word %q, the only signal without colour", got, word)
 		}
 	}
 }

@@ -32,7 +32,7 @@ func rawPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRe
 	if hostIsError {
 		status = "failed (host)"
 	}
-	lines := []string{descriptor.Label + " · " + status}
+	lines := []string{statusGlyph(status, false) + descriptor.Label + " · " + status}
 	if diagnostic != "" {
 		lines = append(lines, diagnostic)
 	}
@@ -55,7 +55,7 @@ func builtinPendingResult(descriptor presentation.Descriptor, builtin *builtinPr
 	if options.Expanded {
 		preview = expandedBodyLines
 	}
-	parts := []string{descriptor.Label, status}
+	parts := []string{statusGlyph(status, false) + descriptor.Label, status}
 	if render.DurationMs != nil {
 		parts = append(parts, "time "+formatMetric(presentation.Metric{Value: float64(*render.DurationMs), Unit: presentation.UnitMilliseconds}))
 	}
@@ -209,12 +209,16 @@ func presentationHeader(descriptor presentation.Descriptor, snapshot presentatio
 		}
 	}
 	parts = append(parts, status)
+	qualified := false
 	if snapshot.Complete != nil && !*snapshot.Complete {
 		parts = append(parts, "incomplete")
+		qualified = true
 	}
 	if snapshot.Effects != nil && *snapshot.Effects == presentation.EffectsPartial {
 		parts = append(parts, "partial effects")
+		qualified = true
 	}
+	parts[0] = statusGlyph(status, qualified) + parts[0]
 	definitions := make(map[string]presentation.MetricDefinition, len(descriptor.MetricDefinitions))
 	for _, definition := range descriptor.MetricDefinitions {
 		definitions[definition.ID] = definition
@@ -230,6 +234,44 @@ func presentationHeader(descriptor presentation.Descriptor, snapshot presentatio
 		parts = append(parts, label+" "+formatMetric(metric))
 	}
 	return strings.Join(parts, " · ")
+}
+
+// statusMarks pairs each row status with its glyph and theme token; the status word stays on the row, so the glyph and its colour only reinforce it.
+var statusMarks = []struct{ glyph, token string }{{"✓", "success"}, {"▲", "warning"}, {"✗", "error"}, {"○", "muted"}, {"●", "accent"}}
+
+// statusGlyph returns the glyph and a space for a row status; qualified marks a success that is incomplete or left partial effects.
+func statusGlyph(status string, qualified bool) string {
+	switch status {
+	case "succeeded":
+		if qualified {
+			return "▲ "
+		}
+		return "✓ "
+	case "failed", "failed (host)", "timedOut", "denied":
+		return "✗ "
+	case "cancelled":
+		return "○ "
+	case "unknown":
+		return "▲ "
+	case "result":
+		return ""
+	}
+	return "● "
+}
+
+// paintStatus colours the leading status glyph of a fitted row; fitting strips terminal sequences, so colour goes on last.
+func paintStatus(lines []string, paint painter) []string {
+	if len(lines) == 0 {
+		return lines
+	}
+	for _, mark := range statusMarks {
+		if rest, ok := strings.CutPrefix(lines[0], mark.glyph+" "); ok {
+			painted := append([]string(nil), lines...)
+			painted[0] = paint(mark.token, mark.glyph) + " " + rest
+			return painted
+		}
+	}
+	return lines
 }
 
 func formatMetric(metric presentation.Metric) string {
