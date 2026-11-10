@@ -343,10 +343,18 @@ func (e *sessionEndpoint) infoLocked() messaging.Info {
 }
 
 // Message implements messaging.Handler: it applies policy, then delivers the message as a frame.
-func (e *sessionEndpoint) Message(env messaging.Envelope) messaging.Receipt {
+func (e *sessionEndpoint) Message(env messaging.Envelope) (receipt messaging.Receipt) {
 	reject := func(reason string) messaging.Receipt {
 		return messaging.Receipt{Status: messaging.Rejected, Reason: reason, MessageID: env.ID, ConversationID: env.ConversationID}
 	}
+	// The transport calls this from its own goroutine; a runtime replaced mid-message is busy, not a crash.
+	if detached(e.s.host, func() { receipt = e.message(env, reject) }) {
+		return reject(messaging.Busy)
+	}
+	return receipt
+}
+
+func (e *sessionEndpoint) message(env messaging.Envelope, reject func(string) messaging.Receipt) messaging.Receipt {
 	now := time.Now()
 	e.mu.Lock()
 	info := e.infoLocked()

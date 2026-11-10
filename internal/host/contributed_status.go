@@ -230,7 +230,7 @@ func (b *statusBoard) update(ctx sdk.Context, registrationID string, value statu
 
 func (b *statusBoard) flush(registrationID string) {
 	if ctx, ok := b.host(); ok {
-		b.flushWithContext(ctx, registrationID)
+		detached(ctx, func() { b.flushWithContext(ctx, registrationID) })
 	}
 }
 

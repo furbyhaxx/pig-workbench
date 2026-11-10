@@ -202,7 +202,9 @@ func (a *app) startActivity(ctx sdk.Context, s *session) {
 			case <-line.stop:
 				return
 			case <-ticker.C:
-				publish()
+				if detached(ctx, publish) {
+					return
+				}
 			}
 		}
 	}()

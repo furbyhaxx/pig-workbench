@@ -49,3 +49,18 @@ func TestCleanupStackRunsNewestFirstAndOnlyOnce(t *testing.T) {
 		t.Fatalf("cleanup order %v, want [2 1 0] once", order)
 	}
 }
+
+func TestDetachedWorkEndsQuietlyOnlyWhenItsContextIsStale(t *testing.T) {
+	if !detachedWhile(func() bool { return false }, func() { panic("stale context") }) {
+		t.Fatal("work that panicked on a stale context was not reported as ended")
+	}
+	if detachedWhile(func() bool { return true }, func() {}) {
+		t.Fatal("finished work was reported as stale")
+	}
+	defer func() {
+		if recover() == nil {
+			t.Fatal("a panic with a live context was swallowed")
+		}
+	}()
+	detachedWhile(func() bool { return true }, func() { panic("defect") })
+}
