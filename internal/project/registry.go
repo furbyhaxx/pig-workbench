@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // Location describes one observed checkout of a project.
@@ -78,7 +80,7 @@ func (r *Registry) Register(project Project, location Location) error {
 	if _, err := privateDirectory(dir); err != nil {
 		return err
 	}
-	if err := syncRegistryDirectory(r.dir); err != nil {
+	if err := fileio.SyncDirectory(r.dir); err != nil {
 		return fmt.Errorf("flush project registry directory: %w", err)
 	}
 	previous, err := r.readEntry(project.ID)

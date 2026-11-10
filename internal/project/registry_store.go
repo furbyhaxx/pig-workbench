@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 type registryDocument struct {
@@ -279,7 +280,7 @@ func writeRegistryFile(path string, data []byte) error {
 	if err := os.Rename(name, path); err != nil {
 		return fmt.Errorf("replace project registry file: %w", err)
 	}
-	if err := syncRegistryDirectory(filepath.Dir(path)); err != nil {
+	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
 		return fmt.Errorf("project registry file saved but directory durability is uncertain: %w", err)
 	}
 	return nil

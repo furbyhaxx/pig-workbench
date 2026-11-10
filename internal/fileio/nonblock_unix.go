@@ -4,7 +4,8 @@ package fileio
 
 import "syscall"
 
-func nonblockFlag() int { return syscall.O_NONBLOCK }
+// NonblockFlag keeps an open of a FIFO or device from blocking.
+func NonblockFlag() int { return syscall.O_NONBLOCK }
 
 // LockFlags prevents blocking or following a swapped lock-file symlink.
 func LockFlags() int {

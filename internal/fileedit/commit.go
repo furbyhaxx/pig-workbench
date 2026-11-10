@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // Errors classify preflight and commit failures for callers.
@@ -45,7 +47,7 @@ var (
 	renamePath = os.Rename
 	removePath = os.Remove
 	linkPath   = os.Link
-	syncDir    = syncDirectory
+	syncDir    = fileio.SyncDirectory
 )
 
 // Effect is one already-staged local change.

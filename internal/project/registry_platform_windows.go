@@ -12,5 +12,3 @@ func registryPlatformSupport() error {
 func checkRegistryPrivate(string, os.FileInfo, os.FileMode) error {
 	return registryPlatformSupport()
 }
-
-func syncRegistryDirectory(string) error { return registryPlatformSupport() }

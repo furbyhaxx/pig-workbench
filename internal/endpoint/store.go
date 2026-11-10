@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // Registry serializes registry operations through a directory-wide advisory lock.
@@ -204,7 +205,7 @@ func writeRecord(ctx context.Context, path string, data []byte) error {
 	if err := os.Rename(name, path); err != nil {
 		return fmt.Errorf("replace endpoint record: %w", err)
 	}
-	if err := syncDirectory(filepath.Dir(path)); err != nil {
+	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
 		return fmt.Errorf("endpoint record saved but directory durability is uncertain: %w", err)
 	}
 	return nil

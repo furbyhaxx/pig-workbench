@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/BurntSushi/toml"
+
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 

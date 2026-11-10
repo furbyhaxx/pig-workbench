@@ -1,6 +1,6 @@
 //go:build unix
 
-package config
+package fileio
 
 import (
 	"errors"
@@ -8,7 +8,8 @@ import (
 	"syscall"
 )
 
-func syncDirectory(path string) error {
+// SyncDirectory makes a rename or removal inside path durable; filesystems that cannot sync a directory succeed.
+func SyncDirectory(path string) error {
 	directory, err := os.Open(path)
 	if err != nil {
 		return err

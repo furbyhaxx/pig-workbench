@@ -9,5 +9,3 @@ func platformSupport() error {
 func checkPrivate(string, os.FileInfo, os.FileMode) error { return platformSupport() }
 
 func pidAlive(int) (bool, error) { return false, &PIDProbeUnsupportedError{} }
-
-func syncDirectory(string) error { return platformSupport() }

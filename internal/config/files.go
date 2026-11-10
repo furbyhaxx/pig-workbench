@@ -8,8 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 func resolveTarget(path string) (string, error) {
@@ -117,7 +118,7 @@ func atomicWrite(ctx context.Context, path string, data []byte) (bool, error) {
 	if err := os.Rename(name, path); err != nil {
 		return false, fmt.Errorf("replace settings: %w", err)
 	}
-	if err := syncDirectory(filepath.Dir(path)); err != nil {
+	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
 		return true, fmt.Errorf("settings saved but directory durability is uncertain: %w", err)
 	}
 	return true, nil

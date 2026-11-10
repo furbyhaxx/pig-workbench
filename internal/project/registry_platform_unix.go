@@ -3,7 +3,6 @@
 package project
 
 import (
-	"errors"
 	"os"
 	"syscall"
 )
@@ -20,17 +19,4 @@ func checkRegistryPrivate(path string, info os.FileInfo, allowed os.FileMode) er
 		return &Error{Path: path, Reason: "ownership cannot be verified for the current user"}
 	}
 	return nil
-}
-
-func syncRegistryDirectory(path string) error {
-	directory, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer directory.Close()
-	err = directory.Sync()
-	if errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP) {
-		return nil
-	}
-	return err
 }

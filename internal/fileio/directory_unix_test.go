@@ -21,7 +21,7 @@ func TestDirectoryAdmissionRejectsFIFOSubstitution(t *testing.T) {
 		if err := syscall.Mkfifo(name, 0600); err != nil {
 			return nil, err
 		}
-		return os.OpenFile(name, os.O_RDONLY|nonblockFlag(), 0)
+		return os.OpenFile(name, os.O_RDONLY|NonblockFlag(), 0)
 	}, true)
 	if opened != nil {
 		opened.Close()

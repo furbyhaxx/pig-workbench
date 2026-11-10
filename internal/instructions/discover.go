@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 const defaultMaxTotalBytes = 4 << 20
@@ -335,7 +337,7 @@ func firstLine(project scope, path string) (string, bool) {
 	if err != nil || !info.Mode().IsRegular() || info.Size() > 4096 {
 		return "", false
 	}
-	file, err := project.fs.OpenFile(rel, os.O_RDONLY|nonblockFlag(), 0)
+	file, err := project.fs.OpenFile(rel, os.O_RDONLY|fileio.NonblockFlag(), 0)
 	if err != nil {
 		return "", false
 	}
@@ -585,7 +587,7 @@ func readSource(ctx context.Context, scope scope, canonical string, limit int) (
 		return nil, false, err
 	}
 	// Rooted nonblocking opens prevent both symlink escapes and FIFO substitution.
-	file, err := scope.fs.OpenFile(rel, os.O_RDONLY|nonblockFlag(), 0)
+	file, err := scope.fs.OpenFile(rel, os.O_RDONLY|fileio.NonblockFlag(), 0)
 	if err != nil {
 		return nil, false, err
 	}

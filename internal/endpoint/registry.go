@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 func sameToken(a, b string) bool {
@@ -101,7 +103,7 @@ func (r *Registry) Unregister(ctx context.Context, sessionID, token string) erro
 		}
 		return fmt.Errorf("remove endpoint record: %w", err)
 	}
-	if err := syncDirectory(r.dir); err != nil {
+	if err := fileio.SyncDirectory(r.dir); err != nil {
 		return fmt.Errorf("endpoint record removed but directory durability is uncertain: %w", err)
 	}
 	return nil
@@ -222,7 +224,7 @@ func (r *Registry) PruneUnreachable(ctx context.Context, olderThan time.Duration
 		removed = append(removed, record.SessionID)
 	}
 	if len(removed) > 0 {
-		if syncErr := syncDirectory(r.dir); syncErr != nil {
+		if syncErr := fileio.SyncDirectory(r.dir); syncErr != nil {
 			err = errors.Join(err, fmt.Errorf("endpoint records removed but directory durability is uncertain: %w", syncErr))
 		}
 	}

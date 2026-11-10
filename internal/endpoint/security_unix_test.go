@@ -16,8 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 func TestPrivateModesAndPermissionProblems(t *testing.T) {

@@ -9,19 +9,6 @@ import (
 	"syscall"
 )
 
-func syncDirectory(path string) error {
-	directory, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer directory.Close()
-	err = directory.Sync()
-	if errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP) {
-		return nil
-	}
-	return err
-}
-
 func isCrossDevice(err error) bool {
 	return errors.Is(err, syscall.EXDEV)
 }

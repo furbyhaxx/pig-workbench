@@ -11,8 +11,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/gofrs/flock"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 // lockAll acquires one advisory lock per canonical identity in sorted order and

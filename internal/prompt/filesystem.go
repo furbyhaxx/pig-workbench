@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 const (
@@ -141,7 +143,7 @@ func (l *FileSystemLoader) openBuiltin(name string) (io.ReadCloser, error) {
 }
 
 func (l *FileSystemLoader) openRooted(root *os.Root, name string) (io.ReadCloser, error) {
-	file, err := root.OpenFile(name, os.O_RDONLY|nonblockFlag(), 0)
+	file, err := root.OpenFile(name, os.O_RDONLY|fileio.NonblockFlag(), 0)
 	if err != nil {
 		return nil, err
 	}
