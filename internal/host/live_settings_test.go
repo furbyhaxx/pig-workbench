@@ -63,6 +63,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"skills-frame", []string{"skills.listing"}, TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt},
 		{"model-cutoffs", []string{"models.knowledge-cutoffs"}, TestModelFrameCutoffPrecedenceIsSettingThenContributedThenSnapshot},
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
+		{"bash-routing", []string{"bash.route-to-tools"}, TestLiveBashLeavesSchemePathsToTheShellWhenRoutingIsOff},
 	}
 	var covered, live []string
 	for _, check := range checks {
