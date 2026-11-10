@@ -19,13 +19,7 @@ import (
 // goes through fitPresentationLines. The row is derived at render time from the call
 // arguments and the result text, so tool Details stay the model-facing contract.
 
-type bodyMode int
-
-const (
-	bodyHead bodyMode = iota
-	bodyTail
-	bodyNone
-)
+const bodyNone bodyMode = 2
 
 type ownToolStyle struct {
 	label string

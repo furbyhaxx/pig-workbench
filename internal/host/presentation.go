@@ -22,6 +22,8 @@ type presentationRegistration struct {
 	signature      [32]byte
 	enabled        bool
 	descriptor     presentation.Descriptor
+	// builtin is set for Workbench's own tools, which are seeded and never listed as contributions.
+	builtin *builtinPresentation
 }
 
 type presentationCatalog struct {
@@ -32,7 +34,11 @@ type presentationCatalog struct {
 }
 
 func newPresentationCatalog() *presentationCatalog {
-	return &presentationCatalog{byTool: make(map[string]presentationRegistration), byID: make(map[string]presentationRegistration), resolved: make(map[string]presentationRegistration)}
+	catalog := &presentationCatalog{byTool: make(map[string]presentationRegistration), byID: make(map[string]presentationRegistration), resolved: make(map[string]presentationRegistration)}
+	for tool := range builtinTools {
+		catalog.byTool[tool] = builtinRegistration(tool)
+	}
+	return catalog
 }
 
 func (c *presentationCatalog) add(registrationID, owner, key string, descriptor presentation.Descriptor) error {
