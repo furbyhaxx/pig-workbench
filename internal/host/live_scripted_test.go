@@ -1604,3 +1604,57 @@ func TestLiveHostSkillLoadsOnceAndUnloadSendsTheStopFrame(t *testing.T) {
 		t.Fatal("the stop frame was sent before the unload")
 	}
 }
+
+// TestLiveNestedSkillIsRevealedByItsParentAndWithdrawnWithIt covers SPEC-0014 §8.4 end to end: a
+// sub-skill cannot be loaded and is unlisted until its parent is loaded, is then announced alone as
+// available, loads, and unloading the parent unloads and withdraws it.
+func TestLiveNestedSkillIsRevealedByItsParentAndWithdrawnWithIt(t *testing.T) {
+	root := t.TempDir()
+	parent := filepath.Join(root, "agent", "skills", "outer")
+	for dir, name := range map[string]string{parent: "outer", filepath.Join(parent, "skills", "inner"): "inner"} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\ndescription: about "+name+"\n---\nBODY-OF-"+name+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	call := func(tool string, args map[string]any) func([]string) scriptedCall {
+		return func([]string) scriptedCall { return scriptedCall{tool: tool, args: args} }
+	}
+	inner := call("read", map[string]any{"path": "skill://inner"})
+	list := call("ls", map[string]any{"path": "skill://"})
+	results, requests := runScriptedRequests(t, root, "read,ls,write", "", nil,
+		inner,
+		call("read", map[string]any{"path": "skill://outer"}),
+		list,
+		inner,
+		call("write", map[string]any{"path": "skill://outer/ctl", "content": "unload"}),
+		call("ls", map[string]any{"path": "skill://loaded/"}),
+		list,
+	)
+	if len(results) != 7 {
+		t.Fatalf("results = %q", results)
+	}
+	clean := func(request string) string {
+		return strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`, `\n`, "\n").Replace(request)
+	}
+	if strings.Contains(results[0], "BODY-OF-inner") || strings.Contains(clean(requests[0]), "skill://inner") {
+		t.Fatalf("a sub-skill must be neither listed nor loadable before its parent:\n%s", results[0])
+	}
+	if !strings.Contains(results[1], "BODY-OF-outer") || !strings.Contains(results[2], "inner") || !strings.Contains(results[3], "BODY-OF-inner") {
+		t.Fatalf("loading the parent must reveal a loadable sub-skill:\n%s\n%s\n%s", results[1], results[2], results[3])
+	}
+	// Frames are collected when the next call starts, so the reveal rides with the request after it.
+	revealed := clean(requests[3])
+	if !strings.Contains(revealed, "Available now:\n- skill://inner: about inner") || strings.Count(revealed, "skill://outer: about outer") != 1 {
+		t.Fatalf("the reveal must be one diff naming only the sub-skill:\n%s", revealed)
+	}
+	if strings.Contains(results[5], "inner") || strings.Contains(results[5], "outer") || strings.Contains(results[6], "inner") {
+		t.Fatalf("unloading the parent must unload and hide the sub-skill:\n%s\n%s", results[5], results[6])
+	}
+	last := clean(requests[len(requests)-1])
+	if !strings.Contains(last, "Skills unloaded; stop applying them: outer, inner") || !strings.Contains(last, "No longer available:\n- skill://inner") {
+		t.Fatalf("the model must be told to stop applying both and that the sub-skill is gone:\n%s", last)
+	}
+}

@@ -3,6 +3,7 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
@@ -269,13 +270,16 @@ func (a *app) skillsCommand(ctx sdk.Context, args string) error {
 		case skill.Parent != "":
 			state, description = "hidden: load "+skill.Parent+" first", skill.Description
 		default:
-			state, description = "hidden: when "+strings.Join(skill.WhenFiles, ", ")+" not met", skill.Description
+			state, description = "hidden: when "+strings.Join(append(slices.Clone(skill.WhenFiles), skill.WhenEnv...), ", ")+" not met", skill.Description
 		}
 		line := fmt.Sprintf("%-*s  %s", width, skill.Name, state)
 		if description != "" {
 			line += " · " + description
 		}
 		b.WriteString(line + "\n")
+		for _, problem := range skill.Problems {
+			fmt.Fprintf(&b, "%-*s  ! %s\n", width, "", problem)
+		}
 	}
 	if b.Len() == 0 {
 		b.WriteString("No skills found.\n")

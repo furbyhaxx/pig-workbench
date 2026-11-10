@@ -5,10 +5,14 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/bmatcuk/doublestar/v4"
 )
 
 // Skill is one discovered skill.
@@ -19,10 +23,13 @@ type Skill struct {
 	File        string
 	Parent      string
 	WhenFiles   []string
+	WhenEnv     []string
 	AutoFiles   []string
 	AutoTouched []string
-	Bundled     bool
-	Body        string
+	// Problems names invalid when or auto_load frontmatter; it is shown to the user, never to the model.
+	Problems []string
+	Bundled  bool
+	Body     string
 }
 
 // Catalog is a point-in-time scan.
@@ -150,134 +157,117 @@ func readSkill(path, root string) (Skill, error) {
 	if err != nil {
 		return Skill{}, err
 	}
-	name := filepath.Base(filepath.Dir(path))
-	description := ""
-	var when, autoFiles, autoTouched []string
-	var bundled bool
+	dir := filepath.Dir(path)
+	skill := Skill{Name: filepath.Base(dir), Dir: dir, File: path}
 	body := data
 	if bytes.HasPrefix(data, []byte("---\n")) {
 		rest := data[4:]
-		end := bytes.Index(rest, []byte("\n---"))
-		if end >= 0 {
-			front := string(rest[:end])
+		if end := bytes.Index(rest, []byte("\n---")); end >= 0 {
 			body = bytes.TrimLeft(rest[end+4:], "\n")
-			name, description, when, autoFiles, autoTouched, bundled = parseFront(front, name)
+			parseFront(string(rest[:end]), &skill)
 		}
 	}
-	parent := ""
-	dir := filepath.Dir(path)
 	if filepath.Clean(filepath.Dir(dir)) != filepath.Clean(root) && filepath.Base(filepath.Dir(dir)) == "skills" {
-		parent = filepath.Base(filepath.Dir(filepath.Dir(dir)))
+		skill.Parent = filepath.Base(filepath.Dir(filepath.Dir(dir)))
 	}
-	return Skill{Name: name, Description: description, Dir: dir, File: path, Parent: parent, WhenFiles: when, AutoFiles: autoFiles, AutoTouched: autoTouched, Bundled: bundled, Body: string(body)}, nil
+	skill.Body = string(body)
+	return skill, nil
 }
 
-func parseFront(front, name string) (string, string, []string, []string, []string, bool) {
-	var description string
-	var when, autoFiles, autoTouched []string
-	var bundled bool
-	section := ""
-	inFiles := false
+// parseFront reads the frontmatter subset: name, description, bundle, and the when and auto_load
+// blocks whose keys each hold a list, inline or as "- item" lines.
+func parseFront(front string, skill *Skill) {
+	blocks := map[string]map[string][]string{}
+	section, key := "", ""
 	sc := bufio.NewScanner(strings.NewReader(front))
 	for sc.Scan() {
 		line := sc.Text()
 		trim := strings.TrimSpace(line)
-		if strings.HasPrefix(line, "  - ") && inFiles {
-			item := strings.Trim(strings.TrimPrefix(trim, "- "), `"'`)
-			switch section {
-			case "when":
-				when = append(when, item)
-			case "auto-files":
-				autoFiles = append(autoFiles, item)
-			case "auto-touched":
-				autoTouched = append(autoTouched, item)
+		if trim == "" || strings.HasPrefix(trim, "#") {
+			continue
+		}
+		nested := line != strings.TrimLeft(line, " \t")
+		if nested && section != "" {
+			if item, ok := strings.CutPrefix(trim, "- "); ok {
+				blocks[section][key] = append(blocks[section][key], unquote(item))
+				continue
 			}
+			name, value, _ := strings.Cut(trim, ":")
+			key = strings.TrimSpace(name)
+			blocks[section][key] = append(blocks[section][key], splitList(strings.TrimSpace(value))...)
 			continue
 		}
-		inFiles = false
-		key, value, ok := strings.Cut(trim, ":")
-		if !ok {
+		name, value, ok := strings.Cut(trim, ":")
+		if !ok || nested {
 			continue
 		}
-		value = strings.Trim(strings.TrimSpace(value), `"'`)
-		switch key {
+		section = ""
+		value = strings.TrimSpace(value)
+		switch name {
 		case "name":
-			if value != "" {
-				name = value
+			if value = unquote(value); value != "" {
+				skill.Name = value
 			}
 		case "description":
-			description = value
-		case "files":
-			target := &when
-			if section == "auto_load" {
-				target = &autoFiles
-			}
-			if strings.HasPrefix(value, "[") {
-				*target = append(*target, splitList(value)...)
-			} else {
-				inFiles = true
-				if section == "auto_load" {
-					section = "auto-files"
-				} else {
-					section = "when"
-				}
-			}
-		case "touched":
-			if strings.HasPrefix(value, "[") {
-				autoTouched = append(autoTouched, splitList(value)...)
-			} else {
-				inFiles = true
-				section = "auto-touched"
-			}
-		case "when", "auto_load":
-			section = key
+			skill.Description = unquote(value)
 		case "bundle":
-			bundled = value == "true"
+			skill.Bundled = value == "true"
+		case "when", "auto_load":
+			section, key = name, ""
+			blocks[section] = map[string][]string{}
 		}
 	}
-	return name, description, when, autoFiles, autoTouched, bundled
+	if when, ok := blocks["when"]; ok {
+		if problem := checkBlock(when, "files", "env"); problem != "" {
+			skill.Problems = append(skill.Problems, "when ignored, skill listed unconditionally: "+problem)
+		} else {
+			skill.WhenFiles, skill.WhenEnv = when["files"], when["env"]
+		}
+	}
+	if auto, ok := blocks["auto_load"]; ok {
+		if problem := checkBlock(auto, "files", "touched"); problem != "" {
+			skill.Problems = append(skill.Problems, "auto_load ignored: "+problem)
+		} else {
+			skill.AutoFiles, skill.AutoTouched = auto["files"], auto["touched"]
+		}
+	}
 }
 
+// checkBlock names what makes a condition block invalid: an unknown key, an empty list or a bad glob.
+func checkBlock(block map[string][]string, allowed ...string) string {
+	if len(block) == 0 {
+		return "no conditions"
+	}
+	for _, key := range slices.Sorted(maps.Keys(block)) {
+		if !slices.Contains(allowed, key) {
+			return "unknown key " + strconv.Quote(key)
+		}
+		if len(block[key]) == 0 {
+			return key + " is empty"
+		}
+		if key == "env" {
+			continue
+		}
+		for _, item := range block[key] {
+			if !doublestar.ValidatePattern(item) {
+				return "invalid pattern " + strconv.Quote(item)
+			}
+		}
+	}
+	return ""
+}
+
+func unquote(value string) string { return strings.Trim(strings.TrimSpace(value), `"'`) }
+
+// splitList reads an inline list or one scalar; an empty value yields nothing.
 func splitList(value string) []string {
 	var out []string
 	for _, part := range strings.Split(strings.Trim(value, "[]"), ",") {
-		part = strings.Trim(strings.TrimSpace(part), `"'`)
-		if part != "" {
+		if part = unquote(part); part != "" {
 			out = append(out, part)
 		}
 	}
 	return out
-}
-
-// Visible reports skills whose when.files match root, hiding nested skills until parent is loaded.
-func Visible(catalog Catalog, root string, loaded map[string]bool) []Skill {
-	var out []Skill
-	for _, skill := range catalog.Skills {
-		if skill.Parent != "" && !loaded[skill.Parent] {
-			continue
-		}
-		if !whenHolds(root, skill.WhenFiles) {
-			continue
-		}
-		out = append(out, skill)
-	}
-	return out
-}
-
-func whenHolds(root string, patterns []string) bool {
-	if len(patterns) == 0 {
-		return true
-	}
-	for _, pattern := range patterns {
-		matches, err := filepath.Glob(filepath.Join(root, pattern))
-		if err == nil && len(matches) > 0 {
-			return true
-		}
-		if _, err := os.Stat(filepath.Join(root, pattern)); err == nil {
-			return true
-		}
-	}
-	return false
 }
 
 // Find returns one skill by name.

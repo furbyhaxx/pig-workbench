@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -30,6 +32,8 @@ type skillState struct {
 	stamp    string
 	cached   skills.Catalog
 	persist  func(loaded, declined []string) error
+	// conditions reuses glob walks between boundaries.
+	conditions skills.Conditions
 }
 
 // setHost retains PiG's discovered skills that the model may invoke; they lead the catalog.
@@ -171,6 +175,13 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	}
 	skill, err := skills.Find(catalog, name)
 	if err != nil {
+		return resource.ReadResult{}, resource.ErrNotFound
+	}
+	// Only a listed skill can be loaded: one hidden by its when or by an unloaded parent does not exist yet.
+	s.skills.mu.Lock()
+	loaded := maps.Clone(s.skills.loaded)
+	s.skills.mu.Unlock()
+	if !loaded[skill.Name] && !slices.ContainsFunc(s.visibleSkills(catalog, loaded), func(item skills.Skill) bool { return item.Name == skill.Name }) {
 		return resource.ReadResult{}, resource.ErrNotFound
 	}
 	if request.Selector.Explicit {
@@ -380,10 +391,23 @@ func (s *session) visibleSkills(catalog skills.Catalog, loaded map[string]bool) 
 	if !s.settingBool("skills.conditions", true) {
 		catalog.Skills = slices.Clone(catalog.Skills)
 		for i := range catalog.Skills {
-			catalog.Skills[i].WhenFiles = nil
+			catalog.Skills[i].WhenFiles, catalog.Skills[i].WhenEnv = nil, nil
 		}
 	}
-	return skills.Visible(catalog, s.location.Current().Cwd, loaded)
+	return s.skills.conditions.Visible(context.Background(), catalog, skillRoot(s.location.Current().Cwd), loaded)
+}
+
+// skillRoot is the directory condition globs resolve against: the repository root above cwd, or cwd
+// outside a repository.
+func skillRoot(cwd string) string {
+	for dir := cwd; ; dir = filepath.Dir(dir) {
+		if _, err := os.Lstat(filepath.Join(dir, ".git")); err == nil {
+			return dir
+		}
+		if dir == filepath.Dir(dir) {
+			return cwd
+		}
+	}
 }
 
 // skillFrame delivers one skill notice as a trusted Workbench frame; key keeps repeated events apart.
@@ -410,7 +434,7 @@ func (a *app) deliverAutoSkills(ctx sdk.Context, s *session) {
 	loaded := s.skills.loaded
 	touched := append([]string(nil), s.skills.touched...)
 	s.skills.mu.Unlock()
-	for _, skill := range skills.AutoLoad(s.visibleSkills(catalog, loaded), s.location.Current().Cwd, touched, declined) {
+	for _, skill := range s.skills.conditions.AutoLoad(requestContext{ctx}, s.visibleSkills(catalog, loaded), skillRoot(s.location.Current().Cwd), touched, declined) {
 		s.skills.mu.Lock()
 		already := s.skills.loaded[skill.Name]
 		if !already {

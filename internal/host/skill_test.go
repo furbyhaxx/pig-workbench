@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
@@ -22,6 +24,19 @@ func TestSkillReadLoadsAndUnloadDeclines(t *testing.T) {
 		t.Fatal(err)
 	}
 	current := &session{skills: &skillState{loaded: map[string]bool{}, declined: map[string]bool{}, replayed: map[string]bool{}, roots: func() []string { return []string{root} }}}
+	place, err := location.New(context.Background(), root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current.location = place
+	settings, err := config.New(config.Paths{User: filepath.Join(t.TempDir(), "user.toml"), Project: filepath.Join(t.TempDir(), "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	current.settings = settings
 	provider := skillProvider{source: func() (*session, bool) { return current, true }}
 	request := resource.ReadRequest{URI: "skill://alpha", Requested: "skill://alpha", Budget: resource.Budget{Bytes: 4096, Lines: 40}}
 	first, err := provider.Read(context.Background(), request)
@@ -56,6 +71,19 @@ func TestUnloadWithdrawsRevealedSubSkills(t *testing.T) {
 		}
 	}
 	current := &session{skills: &skillState{loaded: map[string]bool{}, declined: map[string]bool{}, replayed: map[string]bool{}, roots: func() []string { return []string{root} }}}
+	place, err := location.New(context.Background(), root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current.location = place
+	settings, err := config.New(config.Paths{User: filepath.Join(t.TempDir(), "user.toml"), Project: filepath.Join(t.TempDir(), "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	current.settings = settings
 	provider := skillProvider{source: func() (*session, bool) { return current, true }}
 	for _, name := range []string{"alpha", "beta"} {
 		uri := "skill://" + name

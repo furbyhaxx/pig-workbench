@@ -1,9 +1,6 @@
 package skills
 
-import (
-	"path/filepath"
-	"strings"
-)
+import "strings"
 
 // Listed is one prompt line after the budget ladder.
 type Listed struct {
@@ -53,42 +50,4 @@ func bytesOf(items []Listed) int {
 		}
 	}
 	return n
-}
-
-// AutoLoad reports skills whose auto_load files exist or whose touched globs match a touched path.
-func AutoLoad(items []Skill, root string, touched []string, declined map[string]bool) []Skill {
-	var out []Skill
-	for _, skill := range items {
-		if skill.Parent != "" || declined[skill.Name] {
-			continue
-		}
-		if len(skill.AutoFiles) == 0 && len(skill.AutoTouched) == 0 {
-			continue
-		}
-		if len(skill.AutoFiles) > 0 && !whenHolds(root, skill.AutoFiles) {
-			continue
-		}
-		if len(skill.AutoTouched) > 0 && !touchedAny(skill.AutoTouched, touched) {
-			continue
-		}
-		out = append(out, skill)
-	}
-	return out
-}
-
-func touchedAny(patterns, touched []string) bool {
-	for _, path := range touched {
-		for _, pattern := range patterns {
-			ok, err := matchPath(pattern, path)
-			if err == nil && ok {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func matchPath(pattern, path string) (bool, error) {
-	pattern = strings.ReplaceAll(pattern, "**", "*")
-	return filepath.Match(pattern, filepath.Base(path))
 }

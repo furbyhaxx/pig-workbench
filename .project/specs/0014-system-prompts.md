@@ -5,15 +5,15 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "published"
-  revision: 15
+  revision: 16
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-10T18:00:00+01:00"
+  updated_at: "2026-11-10T19:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 15
-      reason: "Skill notices are ledger frames like every other frame"
-      changes: ["§8.2, §8.3, §8.5: unload, auto-load and the post-compaction pointers are workbench.skills notice frames with instruction authority"]
+    - revision: 16
+      reason: "Condition evaluation as implemented"
+      changes: ["§8.3: plain paths checked at every boundary, glob results reused for 30 seconds, touched matching, only listed skills load"]
 ---
 
 # 1. Purpose and scope
@@ -297,7 +297,7 @@ auto_load:       # trigger: holds → body delivered without a load
   touched: ["**/*.sql"]              # a successful read/write/edit/grep/find/ls touched a match
 ```
 
-- All listed kinds must hold; within a kind any entry. Globs resolve against the repository root (cwd outside a repository); one bounded, gitignore-aware walk per pattern set, cached until location or patterns change.
+- All listed kinds must hold; within a kind any entry. Paths and globs resolve against the repository root (cwd outside a repository). A plain path is checked at every boundary; a glob costs one bounded, gitignore-aware walk whose result is reused for 30 seconds, so a new matching file is noticed within that time. A pattern without a slash in `touched` matches the file name, any other the path below the root. Only a listed skill can be loaded.
 - Auto-load delivers the body once as a `workbench.skills` notice frame (capped at 2000 lines / 50 KiB with a pointer to the file). Unloading an auto-loaded skill marks it declined for the session; an explicit load clears the mark.
 - An invalid `when` lists the skill unconditionally and reports it in `/workbench skills`; an invalid `auto_load` is ignored and reported. Diagnostics never reach the model.
 
