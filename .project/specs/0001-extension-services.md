@@ -5,15 +5,15 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T19:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location", "Host probe table P1–P30 added as §9"]
+    - revision: 15
+      reason: "User decision: operation.status is reserved, not built, until deferred work exists; the channel list named only part of the wire"
+      changes: ["operation.status marked reserved with its condition; an unknown mutation outcome is reconciled by reading", "Channel list names the two cancel channels and the provider progress channel with their direction and reason"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -38,10 +38,18 @@ Verified source: staged SDK `event_bus.go`, `tool_renderer_resolvers.go`, `tool_
 A producer registers its normal PiG tools/commands regardless of Workbench. Failure to discover Workbench MUST NOT disable those tools. Presentation falls back to the producer/host; frame-dependent features report unavailable rather than injecting a raw user message; schemes exist only while a provider and Workbench are both available.
 
 Channels:
-- `workbench:v1:request`: client → Workbench control/service calls.
-- `workbench:v1:reply`: Workbench → addressed client replies.
-- `workbench:v1:event`: ready, closing, registration/settings changes, frame delivery changes.
-- `workbench:v1:provider-request`, `provider-reply`, `provider-progress`: Workbench ↔ registered resource providers.
+| Channel | Direction | Content |
+|---|---|---|
+| `workbench:v1:request` | client → Workbench | Control and service calls |
+| `workbench:v1:reply` | Workbench → client | Addressed replies |
+| `workbench:v1:cancel` | client → Workbench | `cancel` for the caller's own pending request; no reply |
+| `workbench:v1:event` | Workbench → listeners | ready, closing, registration, settings, location and resource changes, frame delivery changes, session messages |
+| `workbench:v1:provider-request` | Workbench → contribution owner | One operation on a registered contribution |
+| `workbench:v1:provider-reply` | contribution owner → Workbench | Its addressed reply |
+| `workbench:v1:provider-cancel` | Workbench → contribution owner | Stop one running provider request; no reply |
+| `workbench:v1:provider-progress` | contribution owner → Workbench | Bounded progress notes while a request runs |
+
+The host runs one listener per channel at a time. A cancel or progress note queued behind a busy handler on the request channel would never be seen, so each has its own channel.
 
 All listeners filter session, generation, recipient and correlation before acting. Subscribe before discovery; unsubscribe on shutdown. Ready is an optimization, not the only handshake: a late-loading client calls `discover`. Do not rely on factory load order or periodic polling.
 
@@ -87,9 +95,9 @@ Reply has exactly one of `ok:true,result` or `ok:false,error`. Errors contain `c
 
 TimeoutMs is a cooperative execution budget, not a promise to preempt an arbitrary bus listener. Host cancellation releases only the caller (P3); it never reaches the receiving listener. Therefore:
 
-- `cancel` is an explicit method: `{"method":"cancel","params":{"requestId":"…"}}`, sent by the original caller after its Emit was cancelled or its own deadline passed. It needs no reply.
+- `cancel` is an explicit method on `workbench:v1:cancel`: `{"method":"cancel","params":{"requestId":"…"}}`, sent by the original caller after its Emit was cancelled or its own deadline passed. It needs no reply.
 - A receiver doing more than bounded validation polls a per-request cancellation flag set by `cancel` (observed latency: one poll interval) and stops with `cancelled`. Work that may outlive the caller's budget is not run in the listener: admit it, reply with an operation receipt and run it under the session supervisor.
-- A reply arriving after the caller gave up is discarded by correlation ID. Mutations cancelled mid-flight report `outcome: unknown` via `operation.status`.
+- A reply arriving after the caller gave up is discarded by correlation ID. A mutation cancelled mid-flight reports `outcome: unknown` in its error; the caller reads the affected resource before it retries.
 
 A listener that hangs can block Emit; abandoning it in an unowned goroutine is forbidden. No automatic second IPC daemon.
 
@@ -105,7 +113,7 @@ Methods:
 | unregister | registrationId → removed (idempotent for same owner/generation) |
 | describe | optional kind/key, cursor → bounded registration descriptors and nextCursor |
 | settings.get | registrationId → effective presentation settings and sources |
-| operation.status | operationId → receipt state for admitted deferred work |
+| operation.status | **Reserved, not implemented and not advertised.** It is built when Workbench first admits work that outlives the request and answers with an `operationId`; no v1 method does. Calling it returns `unsupported` |
 | cancel | requestId of the caller's own pending request → no reply; idempotent |
 | location.get | → current location (§8) |
 | resources.changed | registrationId of a `resourceProvider`, `{uri?, change, revision?}` → `{invalidated}`; drops retained cursors under the prefix and re-emits the event; a hint, not a revision substitute (SPEC-0004 §8) |

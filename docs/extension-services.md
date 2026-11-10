@@ -8,9 +8,14 @@ Workbench exposes an optional v1 service bus for cooperating PiG extensions. Sto
 |---|---|---|
 | `workbench:v1:request` | consumer → Workbench | validated `api.Request` |
 | `workbench:v1:reply` | Workbench → consumer | addressed `api.Reply` |
+| `workbench:v1:cancel` | consumer → Workbench | `cancel` for your own pending request; the client sends it when the call's context ends |
 | `workbench:v1:event` | Workbench → listeners | `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed`, `resources.changed`, `frames.deliveryChanged`, `sessions.message` |
 | `workbench:v1:provider-request` | Workbench → contribution owner | `api.ProviderRequest` addressed to your client identity |
 | `workbench:v1:provider-reply` | contribution owner → Workbench | `api.Reply` addressed to Workbench |
+| `workbench:v1:provider-cancel` | Workbench → contribution owner | stops one running provider request; it ends `req.Context()` |
+| `workbench:v1:provider-progress` | contribution owner → Workbench | bounded progress notes while a request runs |
+
+Cancel and progress have their own channels because the host runs one listener per channel at a time: a message queued behind a busy handler would not be seen.
 
 ## Use the Go client
 
@@ -128,7 +133,7 @@ stop, err := client.Serve(ext, func(ctx sdk.Context, req api.ProviderRequest) (a
 - `context.fields.set` binds `knowledge_cutoff` to the current model; a mismatched model fails `staleRevision` and a model change hides the value until you set it again.
 - `status.update` is coalesced to 4 updates per second; the receipt says `composedByWorkbench: true`, so stop your own `SetStatus`.
 
-`location.get` and `describe` are safe to query again. After an unknown mutation outcome, query an appropriate status method when available or reconcile the affected state before retrying; there is no general `operation.status` method.
+`location.get` and `describe` are safe to query again. After an unknown mutation outcome, read the affected resource before retrying. `operation.status` is reserved and returns `unsupported`: no v1 method starts work that outlives its request.
 
 ## Reference producer
 
