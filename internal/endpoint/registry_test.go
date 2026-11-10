@@ -346,3 +346,19 @@ func TestPruneKeepsADeadPIDWhoseEndpointStillAnswers(t *testing.T) {
 		t.Fatalf("an answering endpoint must be kept: %v", err)
 	}
 }
+
+func TestSessionIdentityRulesAreSharedByEveryConsumer(t *testing.T) {
+	for _, id := range []string{"", " ", "\t", ".", "..", "../outside", `a\b`, "a/b", "trailing ", "trailing.", "a:b", "a\x00b", "\xff"} {
+		if ValidSessionID(id) {
+			t.Errorf("ValidSessionID(%q) = true", id)
+		}
+	}
+	for _, id := range []string{"0195f3c2-7b1e-7d3a-9c41-5e2f8a6b4c10", "session-1", "sitzung_ä"} {
+		if !ValidSessionID(id) {
+			t.Errorf("ValidSessionID(%q) = false", id)
+		}
+	}
+	if SameToken("", "") || SameToken("a", "") || SameToken("a", "b") || !SameToken("token", "token") {
+		t.Error("SameToken must match only equal, non-empty tokens")
+	}
+}

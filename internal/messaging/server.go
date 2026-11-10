@@ -7,6 +7,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
 )
 
 // Handler serves requests that passed authentication.
@@ -104,7 +106,7 @@ func (s *Server) serve(conn net.Conn) {
 		return
 	}
 	var first hello
-	if err := readFrame(conn, &first); err != nil || first.Type != "hello" || first.V != ProtocolVersion || !sameToken(first.Token, s.token) {
+	if err := readFrame(conn, &first); err != nil || first.Type != "hello" || first.V != ProtocolVersion || !endpoint.SameToken(first.Token, s.token) {
 		return
 	}
 	var request Request

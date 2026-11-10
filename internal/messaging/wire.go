@@ -2,7 +2,6 @@
 package messaging
 
 import (
-	"crypto/subtle"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -164,8 +163,4 @@ func readFrame(conn net.Conn, value any) error {
 		return err
 	}
 	return json.Unmarshal(body, value)
-}
-
-func sameToken(a, b string) bool {
-	return len(a) > 0 && subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }

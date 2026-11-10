@@ -8,6 +8,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
 )
 
 const (
@@ -205,12 +207,8 @@ func validSource(source string) bool {
 	return true
 }
 
-func validSessionID(sessionID string) bool {
-	return utf8.ValidString(sessionID) && strings.TrimSpace(sessionID) != ""
-}
-
 func validContext(ctx Context) bool {
-	return validSessionID(ctx.SessionID) && validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch) && (ctx.Authority == "" || ctx.Authority == "data" || ctx.Trusted && ctx.Authority == "instruction")
+	return endpoint.ValidSessionID(ctx.SessionID) && validSource(ctx.ProducerPrefix) && utf8.ValidString(ctx.BranchLeaf) && utf8.ValidString(ctx.Epoch) && (ctx.Authority == "" || ctx.Authority == "data" || ctx.Trusted && ctx.Authority == "instruction")
 }
 
 func ownsSource(ctx Context, source string) bool {

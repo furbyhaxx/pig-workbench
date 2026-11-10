@@ -114,7 +114,8 @@ type PIDProbeUnsupportedError struct{}
 // Error describes the unavailable PID liveness probe.
 func (*PIDProbeUnsupportedError) Error() string { return "PID liveness probe unsupported" }
 
-func validSessionID(id string) bool {
+// ValidSessionID reports whether id is a session identifier Workbench accepts: usable as one file name on every platform.
+func ValidSessionID(id string) bool {
 	if id == "" || id == "." || id == ".." || !utf8.ValidString(id) || strings.HasSuffix(id, ".") || strings.HasSuffix(id, " ") {
 		return false
 	}
@@ -127,7 +128,7 @@ func validSessionID(id string) bool {
 }
 
 func validateRecord(record Record) error {
-	if record.SchemaVersion != 1 || !validSessionID(record.SessionID) || record.Token == "" || record.PID <= 0 || record.PID > math.MaxInt32 {
+	if record.SchemaVersion != 1 || !ValidSessionID(record.SessionID) || record.Token == "" || record.PID <= 0 || record.PID > math.MaxInt32 {
 		return errInvalidRecord
 	}
 	return nil

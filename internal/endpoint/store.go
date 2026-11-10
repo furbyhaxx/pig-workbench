@@ -97,7 +97,7 @@ func (r *Registry) lock(ctx context.Context) (*flock.Flock, error) {
 }
 
 func (r *Registry) recordPath(id string) (string, error) {
-	if !validSessionID(id) {
+	if !ValidSessionID(id) {
 		return "", errInvalidRecord
 	}
 	return filepath.Join(r.dir, id+".json"), nil

@@ -167,13 +167,15 @@ func TestValidatePublishAndOwnership(t *testing.T) {
 }
 
 func TestSessionRequiresIdentity(t *testing.T) {
-	s := NewSession("")
-	l := s.Ledger(Context{ProducerPrefix: "build-tools.build"})
-	if _, err := l.Admit(testPublish("event")); !errors.Is(err, ErrInvalidContext) {
-		t.Fatalf("empty session identity admission = %v", err)
-	}
-	if err := s.Restore(nil); !errors.Is(err, ErrInvalidContext) {
-		t.Fatalf("empty session identity restore = %v", err)
+	for _, id := range []string{"", "  ", "../other"} {
+		s := NewSession(id)
+		l := s.Ledger(Context{ProducerPrefix: "build-tools.build"})
+		if _, err := l.Admit(testPublish("event")); !errors.Is(err, ErrInvalidContext) {
+			t.Fatalf("session identity %q admission = %v", id, err)
+		}
+		if err := s.Restore(nil); !errors.Is(err, ErrInvalidContext) {
+			t.Fatalf("session identity %q restore = %v", id, err)
+		}
 	}
 }
 

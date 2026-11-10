@@ -12,8 +12,9 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
-func sameToken(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+// SameToken compares two session tokens in constant time; an empty token never matches.
+func SameToken(a, b string) bool {
+	return len(a) > 0 && subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 // Register publishes a record unless another live or unverified owner holds its ID.
@@ -35,7 +36,7 @@ func (r *Registry) Register(ctx context.Context, record Record) error {
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
 	}
-	if err == nil && (previous.PID != record.PID || !sameToken(previous.Token, record.Token)) {
+	if err == nil && (previous.PID != record.PID || !SameToken(previous.Token, record.Token)) {
 		alive, err := pidAlive(previous.PID)
 		if err != nil {
 			return fmt.Errorf("check existing endpoint liveness: %w", err)
@@ -62,7 +63,7 @@ func (r *Registry) Heartbeat(ctx context.Context, sessionID, token string) error
 	if err != nil {
 		return err
 	}
-	if !sameToken(record.Token, token) {
+	if !SameToken(record.Token, token) {
 		return ErrTokenMismatch
 	}
 	record.HeartbeatAt = time.Now().UTC()
@@ -91,7 +92,7 @@ func (r *Registry) Unregister(ctx context.Context, sessionID, token string) erro
 	if err != nil {
 		return err
 	}
-	if !sameToken(record.Token, token) {
+	if !SameToken(record.Token, token) {
 		return ErrTokenMismatch
 	}
 	if err := ctx.Err(); err != nil {

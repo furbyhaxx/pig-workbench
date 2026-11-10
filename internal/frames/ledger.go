@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
+
+	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
 )
 
 type storedRecord struct {
@@ -244,7 +246,7 @@ func (s *Session) Snapshot() []json.RawMessage {
 
 // Restore atomically rebuilds the session from its complete, ordered records.
 func (s *Session) Restore(snapshot []json.RawMessage) error {
-	if !validSessionID(s.sessionID) {
+	if !endpoint.ValidSessionID(s.sessionID) {
 		return ErrInvalidContext
 	}
 	s.mu.Lock()
