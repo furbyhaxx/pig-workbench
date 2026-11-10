@@ -205,7 +205,7 @@ func TestJobWaitUntilOutputReturnsBeforeExitAndPerStreamCursorsAreIndependent(t 
 	if err := s.waitOutput(wait, id, jobs.StreamStderr, 0); err != nil {
 		t.Fatalf("wait for stderr output: %v", err)
 	}
-	result, err := s.jobResult(id, jobs.StreamStderr, 0)
+	result, err := s.jobResult(id, jobs.StreamStderr, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}

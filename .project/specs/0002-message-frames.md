@@ -5,15 +5,15 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 15
+  revision: 16
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T14:23:07+01:00"
+  updated_at: "2026-11-10T18:56:07+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 15
-      reason: "frames.deliveryChanged implemented"
-      changes: ["Event payload and the states it reports"]
+    - revision: 16
+      reason: "Frame bodies reach the model as written"
+      changes: ["§6: only the closing delimiter and escape look-alikes are escaped in a body"]
 ---
 
 # 1. Purpose and dependency
@@ -149,7 +149,7 @@ Build exited with code 1. Inspect build://412/log for compiler diagnostics.
 </system-warning>
 ```
 
-Escape attributes and matching closing delimiters in body. Persist nonce/createdAt, never regenerate timestamps on replay. The nonce is one value per session lineage (session, forks and branches), shared by all frames and producers, persisted as the custom entry `pig-workbench.nonce`; it is never derived per frame. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
+Escape attributes. In the body escape only what could be mistaken for an escape: the matching closing delimiter becomes `&lt;/system-<kind>&gt;`, and a literal `&amp;` or `&lt;/system-` gets its `&` written as `&amp;`. All other text, `&` and `<` included, is delivered as written, and the projection still decodes to exactly one body. Projections written with every `&` escaped decode to the same body. Persist nonce/createdAt, never regenerate timestamps on replay. The nonce is one value per session lineage (session, forks and branches), shared by all frames and producers, persisted as the custom entry `pig-workbench.nonce`; it is never derived per frame. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
 
 Default external projection is framed data via the host-supported custom-message route. Native system/developer projection requires a verified capability and granted instruction authority; unsupported providers retain explicit envelope semantics without invented role support. Never change stored history roles to fit one provider. Preserve provider message-order constraints, including trailing assistant/tool sequences. Prompt wording must not tell the model that external data has higher authority than the user's instructions.
 

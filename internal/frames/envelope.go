@@ -28,8 +28,11 @@ func EncodeEnvelope(frame Frame) (string, error) {
 		return "", errors.New("frame projection lacks retained provenance")
 	}
 	closing := "</system-" + frame.Kind + ">"
-	body := strings.ReplaceAll(frame.Body, "&", "&amp;")
-	body = strings.ReplaceAll(body, closing, "&lt;/system-"+frame.Kind+"&gt;")
+	escaped := "&lt;/system-" + frame.Kind + "&gt;"
+	// Only text that could be mistaken for an escape is escaped, so a body reads as written
+	// ("a && b" stays "a && b") and the projection still decodes to exactly one body.
+	body := strings.NewReplacer("&amp;", "&amp;amp;", "&lt;/system-", "&amp;lt;/system-").Replace(frame.Body)
+	body = strings.ReplaceAll(body, closing, escaped)
 	return fmt.Sprintf("<system-%s src=\"%s\" seq=\"%d\" n=\"%s\" ts=\"%s\" trust=\"%s\" authority=\"%s\">\n%s\n%s", frame.Kind, html.EscapeString(frame.Source), frame.Sequence, html.EscapeString(frame.Nonce), frame.CreatedAt.Format(time.RFC3339Nano), frame.Trust, frame.Authority, body, closing), nil
 }
 
@@ -60,7 +63,7 @@ func DecodeEnvelope(text string) (Envelope, error) {
 	if err != nil {
 		return result, errors.New("invalid frame timestamp")
 	}
-	result = Envelope{Kind: fields[1], Source: html.UnescapeString(fields[2]), Sequence: sequence, Nonce: html.UnescapeString(fields[4]), CreatedAt: created, Trust: fields[6], Authority: fields[7], Body: html.UnescapeString(body)}
+	result = Envelope{Kind: fields[1], Source: html.UnescapeString(fields[2]), Sequence: sequence, Nonce: html.UnescapeString(fields[4]), CreatedAt: created, Trust: fields[6], Authority: fields[7], Body: strings.NewReplacer("&amp;", "&", "&lt;/system-"+fields[1]+"&gt;", "</system-"+fields[1]+">").Replace(body)}
 	if !validSource(result.Source) || result.Nonce == "" {
 		return Envelope{}, errors.New("invalid frame attribution")
 	}

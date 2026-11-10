@@ -408,7 +408,7 @@ func TestLiveStoredSearchKeyIsRedactedInJobLogs(t *testing.T) {
 		mu.Lock()
 		index := len(bodies)
 		bodies = append(bodies, string(raw))
-		if match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(string(raw)); match != nil {
+		if match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+): running`).FindStringSubmatch(string(raw)); match != nil {
 			id = match[1]
 		}
 		name, args := steps(index)

@@ -210,6 +210,33 @@ func newIdentityPrefix() (string, error) {
 	return hex.EncodeToString(raw[:]), nil
 }
 
+// ShortID is the form of a job ID shown to people and models: the first four characters of
+// the manager prefix, a dash and the sequence without leading zeros. Other text is returned as is.
+func ShortID(id string) string {
+	if len(id) != 2*identityPrefixBytes+identitySequenceWidth {
+		return id
+	}
+	sequence := strings.TrimLeft(id[2*identityPrefixBytes:], "0")
+	if sequence == "" {
+		sequence = "0"
+	}
+	return id[:4] + "-" + sequence
+}
+
+// FullID expands a short ID of this manager; any other text, a full ID included, is returned
+// as is. The four prefix characters must match, so a short ID from before a reload names nothing.
+func (m *Manager) FullID(id string) string {
+	head, sequence, ok := strings.Cut(id, "-")
+	if !ok || head != m.prefix[:4] || sequence == "" || len(sequence) > identitySequenceWidth {
+		return id
+	}
+	value, err := strconv.ParseUint(sequence, 16, 64)
+	if err != nil {
+		return id
+	}
+	return fmt.Sprintf("%s%0*x", m.prefix, identitySequenceWidth, value)
+}
+
 // admitIdentityLocked reserves this manager's next identity. Sequences only grow, so an
 // ID is never handed out twice and a retired one stays identifiable as issued.
 func (m *Manager) admitIdentityLocked() (string, uint64, error) {

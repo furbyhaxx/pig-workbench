@@ -37,7 +37,7 @@ func TestLiveProviderRequestsNeverCarryAKnownSecret(t *testing.T) {
 		recorder.mu.Lock()
 		last := recorder.bodies[len(recorder.bodies)-1]
 		recorder.mu.Unlock()
-		id := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(last)
+		id := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+): running`).FindStringSubmatch(last)
 		switch {
 		case index == 3 && id != nil:
 			return &scriptedCall{"jobs", map[string]any{"action": "output", "id": id[1]}}

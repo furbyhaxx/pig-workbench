@@ -33,7 +33,7 @@ race: _modfile
 	go test -race -modfile="{{tmp}}/go.mod" ./...
 
 integration: _modfile
-	go test -race -tags=integration -modfile="{{tmp}}/go.mod" ./internal/host
+	go test -race -tags=integration -timeout 30m -modfile="{{tmp}}/go.mod" ./internal/host
 
 # Opt-in live evaluation with real provider spend; the key stays in the environment.
 live-eval pattern="TestLiveEval": _modfile

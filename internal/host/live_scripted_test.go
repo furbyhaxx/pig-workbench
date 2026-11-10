@@ -97,7 +97,10 @@ func runScriptedRequests(t *testing.T, root, tools, config string, fixtures []st
 		}
 		encoded, _ := json.Marshal(request.Messages)
 		mu.Lock()
-		latest = results
+		// The host's own requests (a compaction summary) carry no tool results and may arrive in between.
+		if len(results) >= len(latest) {
+			latest = results
+		}
 		requests = append(requests, string(encoded))
 		mu.Unlock()
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -126,11 +129,18 @@ func runScriptedRequests(t *testing.T, root, tools, config string, fixtures []st
 	}
 	fixture := startRPCWithExtensions(t, root, true, fixtures, "--model", "workbench-fixture/mock", "--tools", tools)
 	fixture.send("script", "prompt", "Run the scripted fixture.")
-	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	end := fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 	mu.Lock()
 	defer mu.Unlock()
 	if len(latest) != len(steps) {
-		t.Fatalf("script ran %d of %d steps; results: %q", len(latest), len(steps), latest)
+		ended, _ := json.Marshal(end)
+		if len(ended) > 1500 {
+			ended = ended[len(ended)-1500:]
+		}
+		for i, request := range requests {
+			t.Logf("request %d: %d bytes, %d tool messages, tail %s", i, len(request), strings.Count(request, `"role":"tool"`), request[max(0, len(request)-300):])
+		}
+		t.Fatalf("script ran %d of %d steps; results: %q\nagent_end tail: %s", len(latest), len(steps), latest, ended)
 	}
 	return latest, requests
 }
@@ -339,7 +349,7 @@ func TestLiveControlWriteRejectsRevisionBeforeSideEffect(t *testing.T) {
 			return scriptedCall{"bash", map[string]any{"command": "sleep 30", "background": true}}
 		},
 		func(prior []string) scriptedCall {
-			match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(prior[0])
+			match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+): running`).FindStringSubmatch(prior[0])
 			if len(match) != 2 {
 				t.Fatalf("background job did not start: %s", prior[0])
 			}

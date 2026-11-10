@@ -30,7 +30,7 @@ func TestLiveBackgroundJobStdinAndCompletion(t *testing.T) {
 	requests := 0
 	latest := ""
 	jobID := ""
-	idPattern := regexp.MustCompile(`Job ([0-9a-f]{32}):`)
+	idPattern := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+):`)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -377,7 +377,7 @@ func promotedJob(t *testing.T, settings string) (*requestRecorder, *rpcFixture, 
 	first := recorder.bodies[len(recorder.bodies)-1]
 	requestsAfterFirst := len(recorder.bodies)
 	recorder.mu.Unlock()
-	match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(first)
+	match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+): running`).FindStringSubmatch(first)
 	if match == nil {
 		t.Fatalf("promotion did not return the running job: %s", first)
 	}
@@ -392,7 +392,7 @@ func promotedJob(t *testing.T, settings string) (*requestRecorder, *rpcFixture, 
 func TestLiveJobsToolWaitsForOutputAndSendsASignal(t *testing.T) {
 	root := t.TempDir()
 	idOf := func(results []string) string {
-		match := regexp.MustCompile(`Job ([0-9a-f]{32}):`).FindStringSubmatch(results[0])
+		match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+):`).FindStringSubmatch(results[0])
 		if match == nil {
 			t.Fatalf("no job id in %q", results[0])
 		}
@@ -438,7 +438,7 @@ func TestLiveWaitedPromotedJobQueuesNoCompletionNotice(t *testing.T) {
 		recorder.mu.Lock()
 		current := recorder.bodies[index]
 		recorder.mu.Unlock()
-		match := regexp.MustCompile(`Job ([0-9a-f]{32}): running`).FindStringSubmatch(current)
+		match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+): running`).FindStringSubmatch(current)
 		if match == nil {
 			return nil
 		}
@@ -623,8 +623,11 @@ func TestLiveACommandThatCannotStartIsListedAsFailedToStart(t *testing.T) {
 		},
 		func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "list"}} },
 	)
-	if !strings.Contains(results[0], "job failed to start") {
-		t.Errorf("the start failure was not reported: %.300q", results[0])
+	if !regexp.MustCompile(`^job failed to start: .* \(job [0-9a-f]{4}-1\)$`).MatchString(results[0]) {
+		t.Errorf("the start failure was not reported with its short id: %.300q", results[0])
+	}
+	if len(results[1]) > 4000 || !strings.Contains(results[1], "bytes in total)") {
+		t.Errorf("a job row must bound its command: %d bytes", len(results[1]))
 	}
 	if !strings.Contains(results[1], `"state":"failedToStart"`) || !strings.Contains(results[1], `"title":"too long"`) || !strings.Contains(results[1], `"running":false`) {
 		t.Errorf("the failed start is not listed: %.600s", results[1])
@@ -640,7 +643,7 @@ func TestLiveThirtyForegroundCommandsKeepAFinishedBackgroundJob(t *testing.T) {
 			return scriptedCall{"bash", map[string]any{"command": "echo background-output", "background": true}}
 		},
 		func(results []string) scriptedCall {
-			if match := regexp.MustCompile(`Job ([0-9a-f]{32}):`).FindStringSubmatch(results[0]); match != nil {
+			if match := regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+):`).FindStringSubmatch(results[0]); match != nil {
 				id = match[1]
 			}
 			return scriptedCall{"jobs", map[string]any{"action": "wait", "id": id, "timeout_seconds": 20}}

@@ -211,8 +211,8 @@ func TestLiveWorkbenchMenuOpensInteractivePanelsInTUI(t *testing.T) {
 		t.Fatalf("panel save did not persist both edits:\n%s", data)
 	}
 
-	s.keys("Down", "Down", "Down", "Enter")
-	s.waitFor("edit.snapshot.max-versions", 10*time.Second)
+	s.keys("Down", "Enter")
+	s.waitFor("Settings › edit.snapshot.", 10*time.Second)
 	s.keys("Down", "Enter")
 }
 

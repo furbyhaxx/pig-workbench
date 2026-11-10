@@ -21,6 +21,13 @@ func (jobProvider) Scheme() string { return "job" }
 
 var jobFiles = []string{"status", "cmdline", "cwd", "log", "stdout", "stderr", "stdin", "ctl"}
 
+// fullJobID expands a short job ID in the first URI segment in place.
+func fullJobID(s *session, parts []string) {
+	if len(parts) > 0 {
+		parts[0] = s.jobs.FullID(parts[0])
+	}
+}
+
 func splitJob(uri string) ([]string, error) {
 	rest, ok := cutScheme(uri, "job")
 	if !ok {
@@ -56,6 +63,7 @@ func (p jobProvider) Stat(ctx context.Context, uri string) (resource.StatResult,
 	if err != nil {
 		return resource.StatResult{}, err
 	}
+	fullJobID(s, parts)
 	switch len(parts) {
 	case 0:
 		return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
@@ -90,19 +98,20 @@ func (p jobProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	if err != nil {
 		return resource.Listing{}, err
 	}
+	fullJobID(s, parts)
 	var names []string
 	base := "job://"
 	kind := resource.EntryDir
 	switch len(parts) {
 	case 0:
 		for _, state := range s.jobs.List() {
-			names = append(names, state.ID)
+			names = append(names, jobs.ShortID(state.ID))
 		}
 	case 1:
 		if _, err := s.jobs.Status(parts[0]); err != nil {
 			return resource.Listing{}, resource.ErrNotFound
 		}
-		names, base, kind = jobFiles, "job://"+parts[0]+"/", resource.EntryFile
+		names, base, kind = jobFiles, "job://"+jobs.ShortID(parts[0])+"/", resource.EntryFile
 	default:
 		return resource.Listing{}, errors.New("job:// lists only the catalog and one job")
 	}
@@ -129,6 +138,7 @@ func (p jobProvider) Read(ctx context.Context, request resource.ReadRequest) (re
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
+	fullJobID(s, parts)
 	id, name := parts[0], parts[1]
 	data, err := jobFile(s, id, name)
 	if err != nil {
@@ -193,6 +203,7 @@ func (p jobProvider) jobAction(s *session, uri, content string) error {
 	if err != nil {
 		return err
 	}
+	fullJobID(s, parts)
 	if len(parts) != 2 {
 		return errors.New("job:// writes target stdin or ctl of one job")
 	}
@@ -236,7 +247,7 @@ func jobCatalog(s *session) string {
 		s.jobMeta.mu.Lock()
 		meta := s.jobMeta.values[state.ID]
 		s.jobMeta.mu.Unlock()
-		_, _ = fmt.Fprintf(&b, "%s\t%s\t%s\n", state.ID, jobLabel(state, meta), meta.describe())
+		_, _ = fmt.Fprintf(&b, "%s\t%s\t%s\n", jobs.ShortID(state.ID), jobLabel(state, meta), meta.describe())
 	}
 	return b.String()
 }

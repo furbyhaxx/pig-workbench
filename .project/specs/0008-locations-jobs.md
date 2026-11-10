@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 16
+  revision: 17
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T18:28:51+01:00"
+  updated_at: "2026-11-10T18:56:07+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 16
-      reason: "Define what jobs.raw-logs controls"
-      changes: ["§7: bash and jobs results are cleaned of terminal sequences unless jobs.raw-logs is true; job:// stays raw"]
+    - revision: 17
+      reason: "Short job IDs and plain foreground results"
+      changes: ["§6: short ID form, and when a result carries the job line"]
 ---
 
 # 1. Scope and references
@@ -127,7 +127,7 @@ The `state` fact is one of `running`, `stopping`, `exited`, `cancelled`, `timedO
 
 Result shape: `list` returns `{"jobs": [...], "omitted": N}`, where `omitted` counts older finished jobs no longer retained. Each row, and the Details of every single-job result, carries camelCase facts: `id`, `title`, `command`, `cwd`, `startedAt` (RFC 3339), `state`, `running`, and once the job ended `exitCode` or `signal` and `durationMs`. A fact that is not known is omitted, never zero. Single-job Details add `cursor`, `truncated`, `gapFrom` and `locationRevision`.
 
-IDs are stable session-scoped identities; human names are accepted in commands only with disambiguation. Foreign-session IDs cannot be controlled by guessing. Viewing a UI/job URI does not mark a model notification delivered.
+IDs are stable session-scoped identities. Every model- and user-facing place shows the short form `<4 hex>-<sequence>` (for example `ad15-2a`); tools and `job://` accept the short and the full form, and a short ID from before a reload names nothing. A `bash` command that ran in the foreground, exited with 0 and whose whole output fits the result returns only that output (`(no output)` when empty); every other `bash` and `jobs` result starts with `Job <id>: <state>`, with ` (exit N)` after a non-zero exit; human names are accepted in commands only with disambiguation. Foreign-session IDs cannot be controlled by guessing. Viewing a UI/job URI does not mark a model notification delivered.
 
 Input:
 - pipe: Enter newline, Tab tab, ordinary input bytes; EOF closes stdin; Ctrl+C is explicit interrupt signal action, not byte 0x03.

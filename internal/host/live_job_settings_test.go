@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var liveJobID = regexp.MustCompile(`Job ([0-9a-f]{32}):`)
+var liveJobID = regexp.MustCompile(`Job ([0-9a-f]{4}-[0-9a-f]+):`)
 
 func bashStep(args map[string]any) scriptStep {
 	return func([]string) scriptedCall { return scriptedCall{"bash", args} }
@@ -35,7 +35,7 @@ func TestLiveYieldAfterSettingPromotesForegroundCommands(t *testing.T) {
 	if !strings.Contains(results[0], ": running") {
 		t.Errorf("the configured delay did not promote the command: %q", results[0])
 	}
-	if !strings.Contains(results[2], "waited") || !strings.Contains(results[2], ": exited") {
+	if results[2] != "waited\n" {
 		t.Errorf("yield_seconds 0 must wait for the exit: %q", results[2])
 	}
 	if plain := runScripted(t, t.TempDir(), "bash", bashStep(map[string]any{"command": "sleep 0.8; echo waited"})); !strings.Contains(plain[0], "waited") {
@@ -108,5 +108,27 @@ func TestLiveRawLogsSettingKeepsTerminalSequences(t *testing.T) {
 	raw := runScriptedConfig(t, t.TempDir(), "bash", "[jobs]\nraw-logs = true\n", bashStep(coloured))
 	if !strings.Contains(raw[0], "[31mred") || !strings.Contains(raw[0], "10%") {
 		t.Errorf("raw-logs must return the bytes as written: %q", raw[0])
+	}
+}
+
+// TestLiveForegroundResultsCarryAJobLineOnlyWhenTheModelNeedsIt pins the bash result text.
+func TestLiveForegroundResultsCarryAJobLineOnlyWhenTheModelNeedsIt(t *testing.T) {
+	results := runScripted(t, t.TempDir(), "bash,jobs",
+		bashStep(map[string]any{"command": "echo plain"}),
+		bashStep(map[string]any{"command": "true"}),
+		bashStep(map[string]any{"command": "echo broken; exit 3"}),
+		bashStep(map[string]any{"command": "head -c 120000 /dev/zero | tr '\\0' a"}),
+		bashStep(map[string]any{"command": "sleep 30", "background": true}),
+		jobStep(4, map[string]any{"action": "kill"}),
+		jobStep(2, map[string]any{"action": "status"}),
+	)
+	if results[0] != "plain\n" || results[1] != "(no output)" {
+		t.Errorf("a clean foreground command must return only its output: %q, %q", results[0], results[1])
+	}
+	short := `^Job [0-9a-f]{4}-[0-9a-f]+: `
+	for index, want := range map[int]string{2: short + `exited \(exit 3\)\nbroken\n$`, 3: short + `exited\naaaa`, 4: short + `running\n$`, 6: short + `exited \(exit 3\)\nbroken\n$`} {
+		if !regexp.MustCompile(want).MatchString(results[index]) {
+			t.Errorf("result %d = %.80q, want %s", index, results[index], want)
+		}
 	}
 }

@@ -30,3 +30,44 @@ func TestEnvelopeRoundTripPreservesHostileBodyAndAttribution(t *testing.T) {
 		t.Fatal("invalid sequence accepted")
 	}
 }
+
+// TestEnvelopeLeavesOrdinaryTextUnescapedAndStaysInjective pins that a body reaches the model as written.
+func TestEnvelopeLeavesOrdinaryTextUnescapedAndStaysInjective(t *testing.T) {
+	frame := Frame{Kind: "notice", EventKey: "event", Source: "workbench.jobs", Sequence: 1, Nonce: "n", CreatedAt: time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC), Trust: "trusted", Authority: "data"}
+	frame.Body = "Command: make a && make b > out 2>&1; echo \"<done>\" &lt; &#39;"
+	encoded, err := EncodeEnvelope(frame)
+	if err != nil || !strings.Contains(encoded, "\n"+frame.Body+"\n") {
+		t.Fatalf("ordinary text was altered (%v):\n%s", err, encoded)
+	}
+	seen := map[string]string{}
+	for _, body := range []string{
+		"&", "&amp;", "&amp;amp;", "&amp;amp;amp;", "&&amp;", "&amp", "amp;",
+		"</system-notice>", "&lt;/system-notice&gt;", "&amp;lt;/system-notice&gt;", "&lt;/system-notice>", "&lt;/system-warning&gt;",
+		"</system-notice></system-notice>", "&</system-notice>", "&amp;</system-notice>", "&lt;", "&lt;/system-", "&amp;lt;/system-",
+	} {
+		frame.Body = body
+		encoded, err := EncodeEnvelope(frame)
+		if err != nil {
+			t.Fatalf("%q: %v", body, err)
+		}
+		if strings.Count(encoded, "</system-notice>") != 1 {
+			t.Errorf("%q closes the projection early: %s", body, encoded)
+		}
+		if other, taken := seen[encoded]; taken {
+			t.Errorf("%q and %q share one projection", body, other)
+		}
+		seen[encoded] = body
+		if decoded, err := DecodeEnvelope(encoded); err != nil || decoded.Body != body {
+			t.Errorf("%q decoded as %q (%v)", body, decoded.Body, err)
+		}
+	}
+}
+
+// TestEnvelopeDecodesProjectionsWrittenWithEveryAmpersandEscaped keeps frames of earlier sessions readable.
+func TestEnvelopeDecodesProjectionsWrittenWithEveryAmpersandEscaped(t *testing.T) {
+	stored := "<system-notice src=\"workbench.jobs\" seq=\"1\" n=\"n\" ts=\"2026-11-10T09:00:00Z\" trust=\"trusted\" authority=\"data\">\na &amp;&amp; b &amp;lt; c &lt;/system-notice&gt; &amp;amp;\n</system-notice>"
+	decoded, err := DecodeEnvelope(stored)
+	if err != nil || decoded.Body != "a && b &lt; c </system-notice> &amp;" {
+		t.Fatalf("decoded %q (%v)", decoded.Body, err)
+	}
+}

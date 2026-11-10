@@ -693,3 +693,31 @@ func TestManagerForegroundCommandsDoNotRetireBackgroundJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestShortIDsExpandOnlyInTheirOwnManager pins the displayed form of a job ID.
+func TestShortIDsExpandOnlyInTheirOwnManager(t *testing.T) {
+	first, err := NewManager(ManagerOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first.Close()
+	id, err := first.Start(t.Context(), Spec{Command: []string{"true"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	short := ShortID(id)
+	if short != id[:4]+"-1" || first.FullID(short) != id || first.FullID(id) != id {
+		t.Fatalf("short %q of %q expands to %q", short, id, first.FullID(short))
+	}
+	if _, err := first.Status(first.FullID(short)); err != nil {
+		t.Fatalf("status through the short ID: %v", err)
+	}
+	for _, other := range []string{"zzzz-1", short + "x", id[:4] + "-", "plain", ""} {
+		if got := first.FullID(other); got != other {
+			t.Errorf("FullID(%q) = %q, want it unchanged", other, got)
+		}
+	}
+	if ShortID("not-an-id") != "not-an-id" {
+		t.Error("ShortID must leave other text alone")
+	}
+}

@@ -7,6 +7,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/kit"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/jobs"
 )
 
 // jobRow is one job as the panel lists it.
@@ -52,7 +53,7 @@ func (p *jobsPanel) View(width int) kit.View {
 	rows := p.rows()
 	items := make([]kit.SelectItem, len(rows))
 	for i, row := range rows {
-		items[i] = kit.SelectItem{Value: row.id, Label: row.id + "  " + row.label, Description: fitLine(row.command, max(12, width-28))}
+		items[i] = kit.SelectItem{Value: row.id, Label: jobs.ShortID(row.id) + "  " + row.label, Description: fitLine(row.command, max(12, width-28))}
 	}
 	hint := "enter open · k stop · w wait · r refresh · " + sdk.KeyText("tui.select.cancel") + " close"
 	status := p.status()
@@ -108,9 +109,9 @@ func (p *jobsPanel) run(action string) {
 	case err != nil:
 		p.message = action + ": " + err.Error()
 	case action == "kill":
-		p.message = "Stopped " + row.id
+		p.message = "Stopped " + jobs.ShortID(row.id)
 	case action == "wait":
-		p.message = "Waited on " + row.id
+		p.message = "Waited on " + jobs.ShortID(row.id)
 	}
 	if p.detail != "" {
 		if err == nil && (action == "wait" || action == "kill") {
