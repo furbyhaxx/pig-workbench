@@ -204,7 +204,7 @@ func TestJobWaitUntilOutputReturnsBeforeExitAndPerStreamCursorsAreIndependent(t 
 	if !strings.Contains(result.Content, "err1") || strings.Contains(result.Content, "out1") || !strings.Contains(result.Content, "running") {
 		t.Fatalf("stderr view wrong: %q", result.Content)
 	}
-	next := result.Details.(map[string]any)["cursor"].(int64)
+	next := result.Details.(jobPage).Cursor
 	short, cancelShort := context.WithTimeout(t.Context(), 200*time.Millisecond)
 	defer cancelShort()
 	if err := s.waitOutput(short, id, jobs.StreamStderr, next); !errors.Is(err, context.DeadlineExceeded) {

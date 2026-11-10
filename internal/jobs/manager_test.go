@@ -469,8 +469,8 @@ func TestManagerRetiresOldestFinishedBeyondCap(t *testing.T) {
 		finished = append(finished, id)
 	}
 	listed := manager.List()
-	if len(listed) != 3 {
-		t.Fatalf("retained states = %+v", listed)
+	if len(listed) != 3 || manager.Retired() != 2 {
+		t.Fatalf("retained states = %+v, retired = %d", listed, manager.Retired())
 	}
 	if listed[0].ID != active || !listed[0].Running {
 		t.Fatalf("running job not retained first: %+v", listed)

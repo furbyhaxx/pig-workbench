@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T11:55:00+01:00"
+  updated_at: "2026-11-10T19:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "User decision of 10.11.2026: ordinary commands must not be refused for mentioning a scheme, and scheme paths work as command arguments"
-      changes: ["G8.20 rewritten: detection by static argument words, http and https excluded, readable scheme arguments passed as read-only copies, writes only by standalone forms, `!` commands included, `bash.route-to-tools` switches it off", "G8.19 names the copy as the second permitted rewrite of shell text"]
+    - revision: 14
+      reason: "User approved breaking the jobs result envelope (10.11.2026)"
+      changes: ["§6: typed camelCase list and single-job results with an explicit omitted count"]
 ---
 
 # 1. Scope and references
@@ -124,6 +124,8 @@ Terminal reason separately records normal, nonzeroExit, killed, timedOut, cancel
 | wait | id optional (any active), until output|exit, timeout default 30 s/max 300 s, cursor for output | changed/timedOutWait/current facts; wait expiry is not job failure |
 | write | id; input and/or keys[] or eof | Accepted bytes/keys, current stdin status |
 | kill | id, signal default TERM; approved force option | Signal request receipt and observed state; killed only after evidence |
+
+Result shape: `list` returns `{"jobs": [...], "omitted": N}`, where `omitted` counts older finished jobs no longer retained. Each row, and the Details of every single-job result, carries camelCase facts: `id`, `title`, `command`, `cwd`, `startedAt` (RFC 3339), `state`, `running`, and once the job ended `exitCode` or `signal` and `durationMs`. A fact that is not known is omitted, never zero. Single-job Details add `cursor`, `truncated`, `gapFrom` and `locationRevision`.
 
 IDs are stable session-scoped identities; human names are accepted in commands only with disambiguation. Foreign-session IDs cannot be controlled by guessing. Viewing a UI/job URI does not mark a model notification delivered.
 

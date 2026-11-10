@@ -314,8 +314,17 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 			}
 		}
 		s.jobMeta.mu.Unlock()
-		encoded, _ := json.Marshal(states)
-		return sdk.ToolResult{Content: string(encoded), Details: states}, nil
+		list := jobList{Jobs: make([]jobFacts, 0, len(states)), Omitted: s.jobs.Retired()}
+		s.jobMeta.mu.Lock()
+		for _, state := range states {
+			list.Jobs = append(list.Jobs, newJobFacts(state, s.jobMeta.values[state.ID]))
+		}
+		s.jobMeta.mu.Unlock()
+		encoded, err := json.Marshal(list)
+		if err != nil {
+			return nil, err
+		}
+		return sdk.ToolResult{Content: string(encoded), Details: list}, nil
 	}
 	if input.ID == "" {
 		return nil, errors.New("job id is required")
@@ -368,6 +377,46 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	return s.jobResult(input.ID, stream, input.Cursor)
 }
 
+// jobFacts is one job as the jobs tool reports it (SPEC-0008 §6). Absent facts are omitted, never zero.
+type jobFacts struct {
+	ID        string `json:"id"`
+	Title     string `json:"title,omitempty"`
+	Command   string `json:"command"`
+	Cwd       string `json:"cwd"`
+	StartedAt string `json:"startedAt,omitempty"`
+	State     string `json:"state"`
+	Running   bool   `json:"running"`
+	ExitCode  *int   `json:"exitCode,omitempty"`
+	Signal    string `json:"signal,omitempty"`
+	// DurationMs is the run time in milliseconds, present once the job exited.
+	DurationMs *int64 `json:"durationMs,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+// jobList is the list result: every active job, the retained finished ones and how many older
+// finished jobs were dropped.
+type jobList struct {
+	Jobs    []jobFacts `json:"jobs"`
+	Omitted int        `json:"omitted"`
+}
+
+func newJobFacts(state jobs.JobState, metadata jobMetadata) jobFacts {
+	facts := jobFacts{ID: state.ID, Command: metadata.Command, Cwd: metadata.Cwd, State: jobLabel(state, metadata), Running: state.Running, Error: state.Error}
+	if !metadata.Started.IsZero() {
+		facts.StartedAt = metadata.Started.Format(time.RFC3339)
+	}
+	if state.Exit != nil {
+		code, duration := state.Exit.Code, state.Exit.Duration.Milliseconds()
+		facts.DurationMs = &duration
+		if state.Exit.Signaled {
+			facts.Signal = state.Exit.Signal
+		} else {
+			facts.ExitCode = &code
+		}
+	}
+	return facts
+}
+
 func jobLabel(state jobs.JobState, metadata jobMetadata) string {
 	label := "running"
 	if !state.Running {
@@ -412,6 +461,15 @@ func (s *session) jobListText() string {
 	return b.String()
 }
 
+// jobPage is the Details of a single-job result: the job's facts plus the output page it carries.
+type jobPage struct {
+	jobFacts
+	Cursor           int64  `json:"cursor"`
+	Truncated        bool   `json:"truncated"`
+	GapFrom          int64  `json:"gapFrom"`
+	LocationRevision uint64 `json:"locationRevision"`
+}
+
 func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.ToolResult, error) {
 	state, err := s.jobs.Status(id)
 	if err != nil {
@@ -444,7 +502,7 @@ func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.To
 	s.jobMeta.mu.Unlock()
 	label := jobLabel(state, metadata)
 	content := fmt.Sprintf("Job %s: %s\n%s", id, label, output)
-	details := map[string]any{"id": id, "state": label, "running": state.Running, "exit": state.Exit, "error": state.Error, "cursor": next, "truncated": truncated, "gapFrom": gap, "command": metadata.Command, "cwd": metadata.Cwd, "locationRevision": metadata.LocationRevision}
+	details := jobPage{jobFacts: newJobFacts(state, metadata), Cursor: next, Truncated: truncated, GapFrom: gap, LocationRevision: metadata.LocationRevision}
 	failed := state.Error != "" || state.Exit != nil && state.Exit.Code != 0 || metadata.TimedOut
 	return sdk.ToolResult{Content: content, Details: details, IsError: failed}, nil
 }

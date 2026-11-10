@@ -118,6 +118,7 @@ type Manager struct {
 	closed          bool
 	jobs            map[string]*managedJob
 	finished        []*managedJob
+	retired         int
 	prefix          string
 	sequence        uint64
 	owned           sync.WaitGroup
@@ -336,6 +337,7 @@ func (m *Manager) retireFinishedLocked() []*managedJob {
 		return nil
 	}
 	retired := m.finished[:excess]
+	m.retired += excess
 	m.finished = append([]*managedJob(nil), m.finished[excess:]...)
 	for _, job := range retired {
 		delete(m.jobs, job.state.ID)
@@ -463,6 +465,13 @@ func (m *Manager) ProcessID(id string) (int, string, bool) {
 		identity = ""
 	}
 	return pid, identity, true
+}
+
+// Retired counts the terminal states dropped beyond MaxFinished since the manager started.
+func (m *Manager) Retired() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.retired
 }
 
 func (m *Manager) List() []JobState {

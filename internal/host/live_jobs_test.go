@@ -464,3 +464,48 @@ func TestLiveWaitedPromotedJobQueuesNoCompletionNotice(t *testing.T) {
 		}
 	}
 }
+
+// TestLiveJobsListReportsTypedRowsAndTheOmittedCount pins the SPEC-0008 §6 list result: camelCase
+// rows naming command, cwd, start and state, a run time with its unit, and an explicit omitted count.
+func TestLiveJobsListReportsTypedRowsAndTheOmittedCount(t *testing.T) {
+	root := t.TempDir()
+	list := func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "list"}} }
+	results := runScripted(t, root, "bash,jobs",
+		func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": "exit 3"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "sleep 30", "background": true}}
+		},
+		list,
+	)
+	var got struct {
+		Jobs []struct {
+			ID, Command, Cwd, StartedAt, State string
+			Running                            bool
+			ExitCode                           *int
+			DurationMs                         *int64
+		}
+		Omitted *int
+	}
+	if err := json.Unmarshal([]byte(results[2]), &got); err != nil {
+		t.Fatalf("list is not the typed object: %v\n%s", err, results[2])
+	}
+	if got.Omitted == nil || *got.Omitted != 0 || len(got.Jobs) != 2 {
+		t.Fatalf("want two rows and an explicit omitted count: %s", results[2])
+	}
+	for _, key := range []string{`"ID"`, `"Running"`, `"Exit"`, `"Duration"`} {
+		if strings.Contains(results[2], key) {
+			t.Errorf("list still carries the Go field %s: %s", key, results[2])
+		}
+	}
+	done, live := got.Jobs[0], got.Jobs[1]
+	resolved, _ := filepath.EvalSymlinks(root)
+	if done.Command != "exit 3" || done.Cwd != resolved || done.State != "exited" || done.Running || done.ExitCode == nil || *done.ExitCode != 3 || done.DurationMs == nil {
+		t.Errorf("finished row = %+v", done)
+	}
+	if _, err := time.Parse(time.RFC3339, done.StartedAt); err != nil {
+		t.Errorf("startedAt %q is not RFC 3339", done.StartedAt)
+	}
+	if live.Command != "sleep 30" || live.State != "running" || !live.Running || live.ExitCode != nil || live.DurationMs != nil {
+		t.Errorf("running row must carry no exit facts: %+v", live)
+	}
+}
