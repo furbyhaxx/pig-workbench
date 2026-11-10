@@ -31,14 +31,14 @@ func TestPresentationHeaderHostDurationOverridesProducerApproximationOnly(t *tes
 	descriptor := presentation.Descriptor{Label: "Build", MetricDefinitions: []presentation.MetricDefinition{{ID: "durationMs", Label: "duration", Unit: presentation.UnitMilliseconds}}}
 	snapshot := presentation.Snapshot{Phase: presentation.PhaseSettled, Metrics: []presentation.Metric{{ID: "durationMs", Value: 10, Unit: presentation.UnitMilliseconds}}}
 	host := int64(2500)
-	if got := presentationHeader(descriptor, snapshot, false, 120, "", &host, true); !strings.Contains(got, "2.50s") || strings.Contains(got, "10ms") {
+	if got := presentationHeader(descriptor, snapshot, false, 120, "", &host, true, false); !strings.Contains(got, "2.50s") || strings.Contains(got, "10ms") {
 		t.Fatalf("host duration did not win: %q", got)
 	}
-	if got := presentationHeader(descriptor, snapshot, false, 120, "", nil, true); !strings.Contains(got, "10ms") {
+	if got := presentationHeader(descriptor, snapshot, false, 120, "", nil, true, false); !strings.Contains(got, "10ms") {
 		t.Fatalf("producer metric dropped without a host value: %q", got)
 	}
 	none := presentation.Snapshot{Phase: presentation.PhaseSettled}
-	if got := presentationHeader(descriptor, none, false, 120, "", &host, true); strings.Contains(got, "duration") {
+	if got := presentationHeader(descriptor, none, false, 120, "", &host, true, false); strings.Contains(got, "duration") {
 		t.Fatalf("a metric the producer never reported was invented: %q", got)
 	}
 }

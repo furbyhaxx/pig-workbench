@@ -216,3 +216,40 @@ func TestRowStatusDiffersByGlyphAndTokenAndSurvivesWithoutColour(t *testing.T) {
 		}
 	}
 }
+
+func TestOwnRowBodiesShowPathsRelativeToTheWorkingLocation(t *testing.T) {
+	for tool, text := range map[string]string{
+		"write": "Wrote 4 bytes to file:///w/app/notes.txt\nRevision: r1\n",
+		"find":  "/w/app/internal/a.go\n/w/app/b.go\n/etc/hosts\n",
+		"grep":  "/w/app/internal/a.go:3:1: x\n",
+	} {
+		entry := builtinRegistration(tool)
+		result := ownResult(t, tool, map[string]any{"path": "."}, sdk.ToolResult{Content: text})
+		snapshot, err := decodeToolSnapshot(entry.descriptor, result.Details)
+		if err != nil {
+			t.Fatal(err)
+		}
+		record := presentationRecord{snapshot: snapshot, valid: true}
+		out := renderPresentationResult(entry.descriptor, entry.builtin, result, sdk.ToolRenderResultOptions{Expanded: true}, sdk.ToolRenderContext{}, 80, builtinDisplay(entry, 0), record, "/w/app")
+		joined := strings.Join(out[1:], "\n")
+		if strings.Contains(joined, "/w/app") || strings.Contains(joined, "file://") {
+			t.Errorf("%s body keeps an absolute path below the working location:\n%s", tool, joined)
+		}
+		if tool == "find" && (!strings.Contains(joined, "internal/a.go\nb.go") || !strings.Contains(joined, "/etc/hosts")) {
+			t.Errorf("find body:\n%s", joined)
+		}
+	}
+}
+
+func TestOwnRowsStateOnlyDurationsWorthReading(t *testing.T) {
+	result := ownResult(t, "ls", map[string]any{"path": "."}, sdk.ToolResult{Content: "a.go\n"})
+	quick, slow := int64(12), int64(2500)
+	_, out := renderOwn(t, "ls", map[string]any{"path": "."}, result, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{DurationMs: &quick}, 80)
+	if strings.Contains(out[0], "time") {
+		t.Errorf("a 12 ms call states its time: %q", out[0])
+	}
+	_, out = renderOwn(t, "ls", map[string]any{"path": "."}, result, sdk.ToolRenderResultOptions{}, sdk.ToolRenderContext{DurationMs: &slow}, 80)
+	if !strings.Contains(out[0], "time 2.50s") {
+		t.Errorf("a 2.5 s call lost its time: %q", out[0])
+	}
+}

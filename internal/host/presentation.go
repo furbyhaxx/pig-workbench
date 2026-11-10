@@ -189,7 +189,7 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			if err != nil || !display.enabled {
 				return fitPresentationLines([]string{entry.descriptor.Label + " · presentation disabled; delegation appliesAfterReload"}, width, 2), nil
 			}
-			return renderPresentationCall(entry, args, rc, s.callRoot(rc.ToolCallID), width, display.shorten), nil
+			return renderPresentationCall(entry, args, rc, s.rowRoot(rc), width, display.shorten), nil
 		},
 		Result: func(ctx sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
 			paint := themePainter(ctx)
@@ -201,17 +201,25 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			descriptor.DefaultDisplay.Density, descriptor.DefaultDisplay.PreviewLines = display.density, display.preview
 			record := s.presentationView(entry, toolName, render.ToolCallID, result.Details, false)
 			if !record.valid {
-				return paintStatus(renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID)), paint), nil
+				return paintStatus(renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.rowRoot(render)), paint), nil
 			}
 			key := presentationLayoutKey{call: toolName + "\x00" + entry.owner + "\x00" + entry.key + "\x00" + render.ToolCallID, data: record.sequence, settings: display.revision, width: width, expanded: options.Expanded, partial: options.IsPartial, hostPartial: render.IsPartial, hostError: render.IsError}
 			if render.DurationMs != nil {
 				key.duration, key.durationKnown = *render.DurationMs, true
 			}
 			return paintStatus(layouts.render(key, func() []string {
-				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID))
+				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.rowRoot(render))
 			}), paint), nil
 		},
 	}
+}
+
+// rowRoot is the working location a row's paths are shown against: the one captured for the call, or the host's for a row restored from history.
+func (s *session) rowRoot(render sdk.ToolRenderContext) string {
+	if root := s.callRoot(render.ToolCallID); root != "" {
+		return root
+	}
+	return render.Cwd
 }
 
 func decodeToolSnapshot(descriptor presentation.Descriptor, details any) (presentation.Snapshot, error) {

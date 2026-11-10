@@ -42,8 +42,25 @@ func rawPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRe
 
 const expandedBodyLines = 80
 
+// shownDurationMs is the shortest duration an own tool's row states; below it the time is noise on every row.
+const shownDurationMs = 1000
+
+// relativeLines shows paths below the call's working location relative to it, as the call row does; display only.
+func relativeLines(lines []string, root string) []string {
+	root = strings.TrimSuffix(root, "/")
+	if root == "" {
+		return lines
+	}
+	replacer := strings.NewReplacer("file://"+root+"/", "", root+"/", "")
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = replacer.Replace(line)
+	}
+	return out
+}
+
 // builtinPendingResult renders an own tool's result that has no snapshot yet: output still streaming, or a call the host failed before the tool returned one.
-func builtinPendingResult(descriptor presentation.Descriptor, builtin *builtinPresentation, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, preview int) []string {
+func builtinPendingResult(descriptor presentation.Descriptor, builtin *builtinPresentation, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, preview int, root string) []string {
 	status := string(presentation.OutcomeSucceeded)
 	switch {
 	case render.IsError:
@@ -56,17 +73,17 @@ func builtinPendingResult(descriptor presentation.Descriptor, builtin *builtinPr
 		preview = expandedBodyLines
 	}
 	parts := []string{statusGlyph(status, false) + descriptor.Label, status}
-	if render.DurationMs != nil {
+	if render.DurationMs != nil && *render.DurationMs >= shownDurationMs {
 		parts = append(parts, "time "+formatMetric(presentation.Metric{Value: float64(*render.DurationMs), Unit: presentation.UnitMilliseconds}))
 	}
-	lines := append([]string{strings.Join(parts, " · ")}, previewBody(resultLines(result.Content), builtin.body, preview)...)
+	lines := append([]string{strings.Join(parts, " · ")}, relativeLines(previewBody(resultLines(result.Content), builtin.body, preview), root)...)
 	return fitPresentationLines(lines, width, preview+4)
 }
 
 func renderPresentationResult(descriptor presentation.Descriptor, builtin *builtinPresentation, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay, record presentationRecord, root string) []string {
 	if !record.valid {
 		if builtin != nil {
-			return builtinPendingResult(descriptor, builtin, result, options, render, width, descriptor.DefaultDisplay.PreviewLines)
+			return builtinPendingResult(descriptor, builtin, result, options, render, width, descriptor.DefaultDisplay.PreviewLines, root)
 		}
 		diagnostic := ""
 		if result.Details != nil {
@@ -88,7 +105,7 @@ func renderPresentationResult(descriptor presentation.Descriptor, builtin *built
 		snapshot.Target = nil
 		mode = builtin.body
 	}
-	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width, root, render.DurationMs, display.shorten)}
+	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width, root, render.DurationMs, display.shorten, builtin != nil)}
 	preview := descriptor.DefaultDisplay.PreviewLines
 	switch descriptor.DefaultDisplay.Density {
 	case "compact":
@@ -121,7 +138,11 @@ func renderPresentationResult(descriptor presentation.Descriptor, builtin *built
 				body = append(body, presentationBlockLines(block)...)
 			}
 		}
-		lines = append(lines, previewBody(body, mode, preview)...)
+		body = previewBody(body, mode, preview)
+		if builtin != nil {
+			body = relativeLines(body, root)
+		}
+		lines = append(lines, body...)
 	}
 	if snapshot.Continuation != nil {
 		continuation := "continue: " + snapshot.Continuation.Explanation
@@ -188,7 +209,7 @@ func resultLines(blocks []map[string]any) []string {
 	return splitPresentationText(text)
 }
 
-func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int, root string, hostDuration *int64, shorten bool) string {
+func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int, root string, hostDuration *int64, shorten, builtin bool) string {
 	title := snapshot.Title
 	if title == "" {
 		title = descriptor.Label
@@ -226,6 +247,9 @@ func presentationHeader(descriptor presentation.Descriptor, snapshot presentatio
 	for _, metric := range snapshot.Metrics {
 		if hostDuration != nil && metric.ID == "durationMs" && metric.Unit == presentation.UnitMilliseconds {
 			metric.Value = float64(*hostDuration)
+		}
+		if builtin && metric.ID == "durationMs" && metric.Value < shownDurationMs {
+			continue
 		}
 		label := metric.ID
 		if definition, ok := definitions[metric.ID]; ok {
