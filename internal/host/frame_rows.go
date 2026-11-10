@@ -52,11 +52,8 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		if err != nil {
 			return nil, err
 		}
-		lines := bodyLines(text)
-		row := frameRow{glyph: "◆", tone: "accent", label: "skill", pad: options.OutputPad}
-		if len(lines) > 0 {
-			row.facts, row.body = []string{lines[0]}, lines[1:]
-		}
+		row := skillRow(text)
+		row.pad = options.OutputPad
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 	ext.MessageRenderer("pig-workbench.ask", func(ctx sdk.Context, message map[string]any, options sdk.MessageRenderOptions, width int) ([]string, error) {
@@ -206,6 +203,15 @@ func instructionPath(path, root string, width int) string {
 var askAnswerID = regexp.MustCompile(` \[[^\]]*\]: `)
 
 // askRow lists every answer of a recovered form on its own line by question label; it is never collapsed.
+// skillRow heads a skill message with its first line and keeps the rest as the body.
+func skillRow(text string) frameRow {
+	row := frameRow{glyph: "◆", tone: "accent", label: "skill"}
+	if lines := bodyLines(text); len(lines) > 0 {
+		row.facts, row.body = []string{lines[0]}, lines[1:]
+	}
+	return row
+}
+
 func askRow(text string) frameRow {
 	row := frameRow{glyph: "●", tone: "success", label: "ask", open: true}
 	lines := bodyLines(text)

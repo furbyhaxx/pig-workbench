@@ -76,3 +76,15 @@ func TestContextFramesSummarizeInPlainWords(t *testing.T) {
 		}
 	}
 }
+
+func TestSkillMessageRendersOneRowWithItsBodyBehindExpansion(t *testing.T) {
+	plain := func(_, text string) string { return text }
+	row := skillRow("Skill rust loaded from /skills/rust\nline one\nline two\n")
+	closed := row.render(plain, false, 80)
+	if len(closed) != 1 || !strings.HasPrefix(closed[0], "◆ skill · Skill rust loaded from /skills/rust · 2 lines") {
+		t.Fatalf("collapsed skill row = %q", closed)
+	}
+	if open := row.render(plain, true, 80); len(open) != 3 || !strings.Contains(open[1], "line one") {
+		t.Fatalf("expanded skill row = %q", open)
+	}
+}
