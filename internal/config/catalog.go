@@ -287,6 +287,9 @@ func Catalog() []Definition {
 		case "skills.listing-budget":
 			d.Application = "live"
 			d.Description = "Target byte budget for the session.skills frame and the /workbench skills listing; over it descriptions are shortened, then dropped, and every skill stays listed by name. Zero disables the ladder."
+		case "skills.conditions":
+			d.Application = "live"
+			d.Description = "Applies the when and auto_load conditions of SKILL.md files. false lists every skill whatever its when says and auto-loads none."
 		case "activity.shortcut":
 			d.Application = "live"
 			d.Description = "Key that shows the activity line's inspector (for example alt+w or ctrl+shift+s). PiG registers shortcuts while the extension loads, so the user-layer value is read at load and a change applies after /reload; runtime and project values are not consulted."

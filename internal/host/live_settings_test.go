@@ -61,6 +61,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
 		{"fetch-backends", []string{"fetch.disabled-backends"}, TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader},
 		{"model-cutoffs", []string{"models.knowledge-cutoffs"}, TestModelFrameCutoffPrecedenceIsSettingThenContributedThenSnapshot},
+		{"skills-conditions", []string{"skills.conditions"}, TestLiveSkillConditionsOffListsEverySkillAndAutoLoadsNone},
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
 		{"bash-routing", []string{"bash.route-to-tools"}, TestLiveBashLeavesSchemePathsToTheShellWhenRoutingIsOff},
 		{"read-concurrency", []string{"read.concurrency"}, TestLiveMultiReadFetchesWithTheConfiguredConcurrencyInInputOrder},

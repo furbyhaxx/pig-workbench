@@ -16,7 +16,6 @@ var pendingConsumers = []string{
 	"jobs.session-log-bytes",
 	"jobs.termination-grace-ms",
 	"jobs.yield-after-ms",
-	"skills.conditions",
 }
 
 func TestEveryShownSettingHasAConsumer(t *testing.T) {

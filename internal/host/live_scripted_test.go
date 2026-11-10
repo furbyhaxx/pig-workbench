@@ -1522,3 +1522,38 @@ func TestLiveSkillAvailabilityChangesArriveAsDiffFrames(t *testing.T) {
 		t.Fatalf("an unchanged catalog sent another skills frame:\n%s", plain(4))
 	}
 }
+
+// TestLiveSkillConditionsOffListsEverySkillAndAutoLoadsNone covers skills.conditions: with false a skill
+// whose when is unmet is listed anyway and a touched auto_load pattern delivers no body.
+func TestLiveSkillConditionsOffListsEverySkillAndAutoLoadsNone(t *testing.T) {
+	run := func(config string) string {
+		root := t.TempDir()
+		for name, front := range map[string]string{
+			"gated": "when:\n  files: [\"Cargo.toml\"]\n",
+			"auto":  "auto_load:\n  touched: [\"*.sql\"]\n",
+		} {
+			dir := filepath.Join(root, "agent", "skills", name)
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\ndescription: about "+name+"\n"+front+"---\nBODY-OF-"+name+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		query := filepath.Join(root, "q.sql")
+		if err := os.WriteFile(query, []byte("select 1;\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		read := func([]string) scriptedCall { return scriptedCall{tool: "read", args: map[string]any{"path": query}} }
+		_, requests := runScriptedRequests(t, root, "read", config, nil, read, read)
+		return strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`, `\n`, "\n").Replace(requests[len(requests)-1])
+	}
+	on := run("")
+	if strings.Contains(on, "skill://gated") || !strings.Contains(on, "BODY-OF-auto") {
+		t.Fatalf("with conditions on the unmet skill must stay unlisted and the touched one auto-load:\n%s", on)
+	}
+	off := run("[skills]\nconditions = false\n")
+	if !strings.Contains(off, "- skill://gated: about gated") || strings.Contains(off, "BODY-OF-auto") {
+		t.Fatalf("with conditions off every skill is listed and none auto-loads:\n%s", off)
+	}
+}

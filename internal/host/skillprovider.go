@@ -136,7 +136,7 @@ func (p skillProvider) List(ctx context.Context, uri, cursor string, limit int) 
 			}
 		}
 	} else if len(parts) == 0 {
-		for _, skill := range skills.Visible(catalog, s.location.Current().Cwd, loaded) {
+		for _, skill := range s.visibleSkills(catalog, loaded) {
 			names = append(names, skill.Name)
 		}
 	} else {
@@ -345,11 +345,23 @@ func (s *session) listedSkills() ([]skills.Listed, map[string]bool, error) {
 			}
 		}
 	}
-	return skills.List(skills.Visible(catalog, s.location.Current().Cwd, loaded), budget), loaded, nil
+	return skills.List(s.visibleSkills(catalog, loaded), budget), loaded, nil
+}
+
+// visibleSkills applies the when conditions unless skills.conditions is off, which lists every skill
+// whose parent is loaded.
+func (s *session) visibleSkills(catalog skills.Catalog, loaded map[string]bool) []skills.Skill {
+	if !s.settingBool("skills.conditions", true) {
+		catalog.Skills = slices.Clone(catalog.Skills)
+		for i := range catalog.Skills {
+			catalog.Skills[i].WhenFiles = nil
+		}
+	}
+	return skills.Visible(catalog, s.location.Current().Cwd, loaded)
 }
 
 func (s *session) deliverAutoSkills(ctx sdk.Context) {
-	if s == nil || s.skills == nil {
+	if s == nil || s.skills == nil || !s.settingBool("skills.conditions", true) {
 		return
 	}
 	catalog, err := s.skills.catalog()
@@ -361,7 +373,7 @@ func (s *session) deliverAutoSkills(ctx sdk.Context) {
 	loaded := s.skills.loaded
 	touched := append([]string(nil), s.skills.touched...)
 	s.skills.mu.Unlock()
-	for _, skill := range skills.AutoLoad(skills.Visible(catalog, s.location.Current().Cwd, loaded), s.location.Current().Cwd, touched, declined) {
+	for _, skill := range skills.AutoLoad(s.visibleSkills(catalog, loaded), s.location.Current().Cwd, touched, declined) {
 		s.skills.mu.Lock()
 		already := s.skills.loaded[skill.Name]
 		if !already {
