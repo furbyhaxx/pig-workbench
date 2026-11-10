@@ -146,17 +146,22 @@ func recoveredAnswers(form ask.Form, result ask.Result) string {
 		if !ok {
 			continue
 		}
-		parts := append([]string(nil), answer.Values...)
-		for _, extra := range []string{answer.Custom, answer.Placeholder} {
-			if extra != "" {
-				parts = append(parts, extra)
-			}
-		}
-		line := strings.Join(parts, ", ")
-		if answer.Note != "" {
-			line += " (note: " + answer.Note + ")"
-		}
-		out.WriteString("\n" + question.Label + " [" + question.ID + "]: " + strings.ReplaceAll(line, "\n", " "))
+		out.WriteString("\n" + question.Label + " [" + question.ID + "]: " + answerLine(answer))
 	}
 	return out.String()
+}
+
+// answerLine states one answer on one line: chosen values, custom text or the secret's placeholder, then the note.
+func answerLine(answer ask.Answered) string {
+	parts := append([]string(nil), answer.Values...)
+	for _, extra := range []string{answer.Custom, answer.Placeholder} {
+		if extra != "" {
+			parts = append(parts, extra)
+		}
+	}
+	line := strings.Join(parts, ", ")
+	if answer.Note != "" {
+		line += " (note: " + answer.Note + ")"
+	}
+	return strings.ReplaceAll(line, "\n", " ")
 }

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/ask"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
@@ -115,8 +116,13 @@ var builtinSnapshots = map[string]snapshotFill{
 			s.Summary = "some files did not change"
 		}
 	},
-	"bash": jobSnapshot,
-	"jobs": jobSnapshot,
+	"cd": func(s *presentation.Snapshot, _ map[string]any, _ sdk.ToolResult, details map[string]any) {
+		cwd, _ := details["cwd"].(string)
+		setTarget(s, []string{cwd})
+	},
+	"ask_user": askSnapshot,
+	"bash":     jobSnapshot,
+	"jobs":     jobSnapshot,
 	"grep": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
 		setTarget(s, []string{stringArg(params, "path")})
 		countMetric(s, "matches", max(detailLen(details, "matches"), detailLen(details, "paths")))
@@ -256,4 +262,48 @@ func outputTail(output string) string {
 		}
 		return r
 	}, strings.Join(lines, "\n"))
+}
+
+// askSnapshot maps the ask result to its outcome and lists each answer by question label, in the form's order.
+func askSnapshot(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
+	set := func(outcome presentation.Outcome, summary string) {
+		s.Outcome = &outcome
+		s.Summary = summary
+	}
+	reason, _ := details["reason"].(string)
+	reason = oneLine(plainLine(reason), 200)
+	switch {
+	case details["cancelled"] == true:
+		set(presentation.OutcomeCancelled, reason)
+		return
+	case details["timedOut"] == true:
+		set(presentation.OutcomeTimedOut, reason)
+		return
+	case details["interactionUnavailable"] == true:
+		set(presentation.OutcomeFailed, "interaction unavailable")
+		return
+	}
+	var answers map[string]ask.Answered
+	if encoded, err := json.Marshal(details["answers"]); err != nil || json.Unmarshal(encoded, &answers) != nil {
+		return
+	}
+	table := &presentation.TableBlock{Columns: []presentation.Column{{ID: "question", Label: "Question", Cell: presentation.CellLabel}, {ID: "answer", Label: "Answer", Cell: presentation.CellText}}}
+	questions, _ := params["questions"].([]any)
+	for _, raw := range questions {
+		question, _ := raw.(map[string]any)
+		id := stringArg(question, "id")
+		answer, ok := answers[id]
+		if !ok || len(table.Rows) == presentation.MaxTableRows {
+			continue
+		}
+		label := stringArg(question, "label")
+		if label == "" {
+			label = id
+		}
+		table.Rows = append(table.Rows, []presentation.Cell{{Kind: presentation.CellLabel, Text: plainLine(label)}, {Kind: presentation.CellText, Text: plainLine(answerLine(answer))}})
+	}
+	countMetric(s, "answers", len(table.Rows))
+	if len(table.Rows) > 0 {
+		s.Blocks = append(s.Blocks, presentation.Block{Kind: presentation.BlockTable, Table: table})
+	}
 }

@@ -1,13 +1,16 @@
 package host
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
+	"github.com/furbyhaxx/pig-workbench/internal/ask"
 	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
@@ -162,5 +165,46 @@ func TestBashAndJobsSnapshotsCarryTailExitAndOutcome(t *testing.T) {
 	wait := builtinSnapshotOf(t, "jobs", map[string]any{"action": "wait"}, sdk.ToolResult{Content: "Wait timed out", Details: map[string]any{"timedOutWait": true}})
 	if *wait.Outcome != presentation.OutcomeTimedOut {
 		t.Errorf("wait snapshot: %+v", wait)
+	}
+}
+
+func TestCdAndAskSnapshotsMapOutcomesAndAnswers(t *testing.T) {
+	cd := builtinSnapshotOf(t, "cd", map[string]any{"path": "internal"}, locationResult(location.Snapshot{Cwd: "/w/internal", Authority: "local", Revision: 3}))
+	if cd.Target == nil || cd.Target.Value != "/w/internal" || *cd.Outcome != presentation.OutcomeSucceeded {
+		t.Errorf("cd snapshot: %+v", cd)
+	}
+	form := map[string]any{"questions": []any{
+		map[string]any{"id": "db", "label": "Database"},
+		map[string]any{"id": "key", "label": "API key"},
+		map[string]any{"id": "skipped", "label": "Skipped"},
+	}}
+	snapshotOf := func(result ask.Result) presentation.Snapshot {
+		content, err := json.Marshal(result)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return builtinSnapshotOf(t, "ask_user", form, sdk.ToolResult{Content: string(content), Details: result})
+	}
+	answered := snapshotOf(ask.Result{Answers: map[string]ask.Answered{"key": {Placeholder: "red-sec-abc"}, "db": {Values: []string{"postgres"}, Note: "v\x1b16\nonly"}}})
+	if *answered.Outcome != presentation.OutcomeSucceeded || len(answered.Blocks) != 1 {
+		t.Fatalf("answered snapshot: %+v", answered)
+	}
+	rows := answered.Blocks[0].Table.Rows
+	if len(rows) != 2 || rows[0][0].Text != "Database" || rows[0][1].Text != "postgres (note: v16 only)" || rows[1][0].Text != "API key" || rows[1][1].Text != "red-sec-abc" {
+		t.Errorf("answer rows are not label and answer in form order: %+v", rows)
+	}
+	for name, tc := range map[string]struct {
+		result  ask.Result
+		outcome presentation.Outcome
+		summary string
+	}{
+		"cancelled":   {ask.Result{Cancelled: true, Reason: "user dismissed"}, presentation.OutcomeCancelled, "user dismissed"},
+		"timedOut":    {ask.Result{TimedOut: true, Reason: "dialog deadline"}, presentation.OutcomeTimedOut, "dialog deadline"},
+		"unavailable": {ask.Result{Unavailable: "print mode has no UI"}, presentation.OutcomeFailed, "interaction unavailable"},
+	} {
+		snapshot := snapshotOf(tc.result)
+		if *snapshot.Outcome != tc.outcome || snapshot.Summary != tc.summary || len(snapshot.Blocks) != 0 {
+			t.Errorf("%s: %+v", name, snapshot)
+		}
 	}
 }
