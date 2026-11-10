@@ -721,3 +721,30 @@ func TestShortIDsExpandOnlyInTheirOwnManager(t *testing.T) {
 		t.Error("ShortID must leave other text alone")
 	}
 }
+
+func TestManagerRefusesAnOversizedStdinWriteWithoutSendingIt(t *testing.T) {
+	manager, err := NewManager(ManagerOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer manager.Close()
+	id, err := manager.Start(t.Context(), Spec{Command: []string{"cat"}, Stdin: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := manager.Write(id, make([]byte, MaxInput+1)); !errors.Is(err, ErrInputTooLarge) || n != 0 {
+		t.Fatalf("oversized write: n=%d err=%v", n, err)
+	}
+	if _, err := manager.Write(id, []byte("ok\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.EOF(id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.Wait(t.Context(), id); err != nil {
+		t.Fatal(err)
+	}
+	if data, _, _, _, err := manager.Output(id, 0, 1024); err != nil || string(data) != "ok\n" {
+		t.Fatalf("output %q err %v", data, err)
+	}
+}

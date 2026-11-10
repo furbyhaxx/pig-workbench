@@ -1,12 +1,22 @@
 package jobs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
 
+// MaxInput bounds one stdin write.
+const MaxInput = 64 << 10
+
+// ErrInputTooLarge reports a stdin write beyond MaxInput; nothing was sent.
+var ErrInputTooLarge = errors.New("stdin input exceeds 64 KiB; send it in smaller writes")
+
 // Write sends bytes to the stdin pipe of a retained live job.
 func (m *Manager) Write(id string, data []byte) (int, error) {
+	if len(data) > MaxInput {
+		return 0, ErrInputTooLarge
+	}
 	job, err := m.job(id)
 	if err != nil {
 		return 0, err

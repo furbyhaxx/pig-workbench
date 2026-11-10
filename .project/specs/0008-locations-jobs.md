@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 17
+  revision: 18
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T18:56:07+01:00"
+  updated_at: "2026-11-10T19:33:20+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 17
-      reason: "Short job IDs and plain foreground results"
-      changes: ["§6: short ID form, and when a result carries the job line"]
+    - revision: 18
+      reason: "Action table states the arguments the jobs tool accepts"
+      changes: ["§6: list, status, output, wait, write, eof and kill rows rewritten; eof is its own action; wait has no default timeout"]
 ---
 
 # 1. Scope and references
@@ -118,12 +118,13 @@ The `state` fact is one of `running`, `stopping`, `exited`, `cancelled`, `timedO
 `jobs` action schema:
 | Action | Arguments/defaults | Result |
 |---|---|---|
-| list | maxFinished default 20, bounded cursor | All active + retained finished; explicit omitted count |
-| status | id, lines default 40 | Facts plus bounded tail |
-| output | id; exactly one tailLines or cursor; stream selection | Output page + next cursor/gap facts |
-| wait | id optional (any active), until output|exit, timeout default 30 s/max 300 s, cursor for output | changed/timedOutWait/current facts; wait expiry is not job failure |
-| write | id; input and/or keys[] or eof | Accepted bytes/keys, current stdin status |
-| kill | id, signal default TERM; approved force option | Signal request receipt and observed state; killed only after evidence |
+| list | none | Every active job and the retained finished ones (`jobs.max-finished` background, at most 10 foreground), plus `omitted` |
+| status | id | Facts and the first output page |
+| output | id; `cursor` default 0; `stream` combined, stdout or stderr | Output page of at most 48 KiB, next cursor, `truncated`, `gapFrom` |
+| wait | id optional (without it: the first active job that ends or writes); `until` exit (default) or output; `cursor` for output; `timeout_seconds` 0–3600, none by default | The job's current facts and output page. An expired wait is a normal result that names the jobs still running; the caller can cancel a wait without touching the job |
+| write | id, `text` up to 64 KiB | Bytes are sent to stdin; refused once stdin is closed or the job ended. Key names arrive with the PTY backend |
+| eof | id | Stdin closed |
+| kill | id; `signal` TERM (default), KILL, INT, HUP or QUIT | TERM and KILL stop the process group with the configured grace and escalation; INT, HUP and QUIT deliver that signal and report the state observed afterwards |
 
 Result shape: `list` returns `{"jobs": [...], "omitted": N}`, where `omitted` counts older finished jobs no longer retained. Each row, and the Details of every single-job result, carries camelCase facts: `id`, `title`, `command`, `cwd`, `startedAt` (RFC 3339), `state`, `running`, and once the job ended `exitCode` or `signal` and `durationMs`. A fact that is not known is omitted, never zero. Single-job Details add `cursor`, `truncated`, `gapFrom` and `locationRevision`.
 
