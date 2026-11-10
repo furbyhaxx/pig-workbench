@@ -29,3 +29,23 @@ func TestJobLabelNamesEverySpecState(t *testing.T) {
 		t.Errorf("a deadline kill is labelled %q", got)
 	}
 }
+
+// TestTerminalTextKeepsWhatATerminalWouldShow pins the default cleaning of command output.
+func TestTerminalTextKeepsWhatATerminalWouldShow(t *testing.T) {
+	for input, want := range map[string]string{
+		"plain\n":                                   "plain\n",
+		"\x1b[1;31mred\x1b[0m text\n":               "red text\n",
+		"crlf\r\nnext\r\n":                          "crlf\nnext\n",
+		"10%\r50%\r100%\ndone\n":                    "100%\ndone\n",
+		"\x1b]0;window title\x07shown\n":            "shown\n",
+		"\x1b]8;;https://x\x1b\\link\x1b]8;;\x1b\\": "link",
+		"tab\there\x00\x08\x7f\n":                   "tab\there\n",
+		"héllo ✓\n":                                 "héllo ✓\n",
+		"cut \x1b[3":                                "cut ",
+		"spinner\r\r\n":                             "spinner\n",
+	} {
+		if got := string(terminalText([]byte(input))); got != want {
+			t.Errorf("terminalText(%q) = %q, want %q", input, got, want)
+		}
+	}
+}

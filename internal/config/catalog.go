@@ -94,7 +94,7 @@ func Catalog() []Definition {
 		integer("jobs.timeout-seconds", 120, 0, 86400, DenyProject),
 		integer("jobs.yield-after-ms", 0, 0, 300000, DenyProject),
 		integer("jobs.termination-grace-ms", 2000, 0, 60000, DenyProject),
-		integer("jobs.max-finished", 20, 0, 10000, DenyProject),
+		integer("jobs.max-finished", 20, 1, 10000, DenyProject),
 		integer("jobs.log-bytes", 10485760, 1024, 1<<40, DenyProject),
 		integer("jobs.session-log-bytes", 104857600, 1024, 1<<40, DenyProject),
 		boolean("jobs.wake-on-completion", true, DenyProject),
@@ -224,6 +224,24 @@ func Catalog() []Definition {
 		case "jobs.timeout-seconds":
 			d.Application = "live"
 			d.Description = "Default bash hard deadline in seconds; zero disables it. A tool-call timeout overrides this value."
+		case "jobs.yield-after-ms":
+			d.Application = "live"
+			d.Description = "Promote a foreground bash command to a background job after this many milliseconds; zero never promotes. A call's yield_seconds overrides this value."
+		case "jobs.termination-grace-ms":
+			d.Application = "live"
+			d.Description = "How long a stopped or timed-out job may react to TERM before it is killed. Applies from the next bash call."
+		case "jobs.max-finished":
+			d.Application = "live"
+			d.Description = "Finished background and promoted jobs kept with their logs; foreground commands keep their own window of at most 10. Applies from the next bash call."
+		case "jobs.log-bytes":
+			d.Application = "live"
+			d.Description = "Output bytes kept per job; older bytes are dropped and reported as a gap. Applies to output written after the next bash call."
+		case "jobs.session-log-bytes":
+			d.Application = "live"
+			d.Description = "Output bytes kept across all jobs of the session; the oldest logs are evicted first. Applies to output written after the next bash call."
+		case "jobs.raw-logs":
+			d.Application = "live"
+			d.Description = "false strips terminal escape sequences and control bytes from bash and jobs results and keeps only the last drawing of a redrawn line; true returns the bytes as written. job:// resources always hold the raw log."
 		case "jobs.wake-on-completion":
 			d.Application = "live"
 			d.Description = "Start a turn when a background or promoted job finishes while the session is idle; a running session receives the notice at its next boundary."

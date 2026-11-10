@@ -183,7 +183,15 @@ func newJobTestSession(t *testing.T) *session {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { manager.Close() })
-	return &session{jobs: manager, jobMeta: jobMetadataStore{values: map[string]jobMetadata{}}}
+	root := t.TempDir()
+	settings, err := config.New(config.Paths{User: filepath.Join(root, "Workbench.toml"), Project: filepath.Join(root, "project.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	return &session{jobs: manager, settings: settings, jobMeta: jobMetadataStore{values: map[string]jobMetadata{}}}
 }
 
 func TestJobWaitUntilOutputReturnsBeforeExitAndPerStreamCursorsAreIndependent(t *testing.T) {

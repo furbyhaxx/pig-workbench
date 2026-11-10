@@ -130,6 +130,8 @@ type Manager struct {
 	maxActive       int
 	maxFinished     int
 	maxForeground   int
+	logBytes        int64
+	sessionLogBytes int64
 	active          int
 	closed          bool
 	jobs            map[string]*managedJob
@@ -181,9 +183,10 @@ func NewManager(options ManagerOptions) (*Manager, error) {
 		maxActive:     options.MaxActive,
 		maxFinished:   options.MaxFinished,
 		maxForeground: options.MaxForeground,
-		prefix:        prefix,
-		jobs:          make(map[string]*managedJob),
-		closeDone:     make(chan struct{}),
+		logBytes:      options.LogBytes, sessionLogBytes: options.SessionLogBytes,
+		prefix:    prefix,
+		jobs:      make(map[string]*managedJob),
+		closeDone: make(chan struct{}),
 	}, nil
 }
 
@@ -222,6 +225,41 @@ func (m *Manager) admitIdentityLocked() (string, uint64, error) {
 // The job's output goes exclusively to the manager's log store.
 func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 	return m.start(ctx, spec, false)
+}
+
+// Configure applies new limits to later output, terminations and completions. Zero fields keep
+// their current value; jobs already finished are retired against the new caps at once.
+func (m *Manager) Configure(options ManagerOptions) error {
+	if options.LogBytes < 0 || options.SessionLogBytes < 0 || options.Grace < 0 || options.MaxActive < 0 || options.MaxFinished < 0 || options.MaxForeground < 0 {
+		return errors.New("job manager options must not be negative")
+	}
+	m.mu.Lock()
+	if options.LogBytes > 0 {
+		m.logBytes = options.LogBytes
+	}
+	if options.SessionLogBytes > 0 {
+		m.sessionLogBytes = options.SessionLogBytes
+	}
+	if err := m.logs.SetLimits(m.logBytes, m.sessionLogBytes); err != nil {
+		m.mu.Unlock()
+		return err
+	}
+	if options.Grace > 0 {
+		m.grace = options.Grace
+	}
+	if options.MaxActive > 0 {
+		m.maxActive = options.MaxActive
+	}
+	if options.MaxFinished > 0 {
+		m.maxFinished = options.MaxFinished
+	}
+	if options.MaxForeground > 0 {
+		m.maxForeground = options.MaxForeground
+	}
+	retired := m.retireFinishedLocked()
+	m.mu.Unlock()
+	m.forgetRetired(retired)
+	return nil
 }
 
 // StartForeground starts a job whose caller waits for it. Its finished state is retained in a
@@ -355,11 +393,15 @@ func (m *Manager) supervise(job *managedJob) {
 	case <-job.stop:
 	case <-job.process.watcher.done:
 	}
+	// Read before selectionMu: snapshots take it while holding mu.
+	m.mu.Lock()
+	configured := m.grace
+	m.mu.Unlock()
 	job.selectionMu.Lock()
 	grace := time.Duration(0)
 	cancelled := job.stopRequested
 	if cancelled {
-		grace = m.grace
+		grace = configured
 	}
 	job.selected = true
 	job.selectionMu.Unlock()

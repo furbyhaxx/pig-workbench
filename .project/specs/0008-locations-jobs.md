@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 15
+  revision: 16
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T18:18:24+01:00"
+  updated_at: "2026-11-10T18:28:51+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 15
-      reason: "Name the reported job states"
-      changes: ["§6: the state fact lists stopping, failedToStart and unknown; a failed start keeps a retained row"]
+    - revision: 16
+      reason: "Define what jobs.raw-logs controls"
+      changes: ["§7: bash and jobs results are cleaned of terminal sequences unless jobs.raw-logs is true; job:// stays raw"]
 ---
 
 # 1. Scope and references
@@ -143,7 +143,7 @@ One supervisor serves the jobs tool, /workbench jobs, /wb:jobs and the `job://` 
 
 Log storage is private session-owned state. Default per-job 10 MiB retained output, per-session 100 MiB; bounded rolling segments with monotonic cursor (job ID, stream, segment/generation, offset). Rotation reports lost byte intervals. No quota-triggered process blocking/deadlock; continue draining and record loss. Order across stdout/stderr is observed ingestion order, not a guaranteed global write order. UTF-8 chunk boundaries require stateful decoding.
 
-Logs keep raw output, including secret values a command prints; output read back through the jobs tool or `job://` passes the SPEC-0013 boundary like any tool result. Terminal controls are sanitized for display without interpreting them as UI commands.
+Logs keep raw output, including secret values a command prints; output read back through the jobs tool or `job://` passes the SPEC-0013 boundary like any tool result. Terminal controls are sanitized for display without interpreting them as UI commands. `bash` and `jobs` results are cleaned for the model the same way unless `jobs.raw-logs` is true: escape sequences and control bytes are dropped, CRLF becomes LF and a line redrawn with carriage returns keeps its last drawing; `job://` resources always return the raw bytes, and cursors count raw bytes.
 
 Completion emits one frame keyed by job ID/terminal revision. The frame is published with `wake` (SPEC-0002 §3): an idle session starts a turn, a running one receives it at the next boundary. `jobs.wake-on-completion` (default true) turns the wake off; the notice is then delivered with the next prompt. A job killed on request emits no frame, and neither does a job whose terminal state a `jobs` result (wait, status or output) already showed the model; a `jobs wait` still in flight when the job ends is settled first. UI viewing does not consume completion notification state. Output progress is coalesced, not one frame per line.
 

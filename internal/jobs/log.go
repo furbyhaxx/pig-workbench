@@ -97,6 +97,17 @@ func NewLogStore(perJob, perSession int64) (*LogStore, error) {
 	return store, nil
 }
 
+// SetLimits changes the caps for later appends; retained bytes shrink as their logs grow.
+func (l *LogStore) SetLimits(perJob, perSession int64) error {
+	if perJob <= 0 || perSession <= 0 {
+		return errors.New("log limits must be positive")
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.perJob, l.perSession = perJob, perSession
+	return nil
+}
+
 // Append copies data into a job's log; only empty IDs and closed stores fail.
 // A write after eviction or Drop revives the log without resetting its offset.
 func (l *LogStore) Append(jobID string, data []byte) error {

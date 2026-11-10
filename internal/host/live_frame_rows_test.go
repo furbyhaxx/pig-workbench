@@ -128,7 +128,8 @@ func TestLiveCdSendsTheLocationChangeAsOneSentence(t *testing.T) {
 func TestLiveFrameVisibilityHidesOrOpensRowsWithoutChangingDelivery(t *testing.T) {
 	for visibility, check := range map[string]func(string) bool{
 		"hidden": func(screen string) bool { return !strings.Contains(screen, "session.date") },
-		"shown":  func(screen string) bool { return strings.Contains(screen, "│   \"editMode\"") },
+		// The screen holds only the tail of the transcript, so any opened body's rail is the evidence.
+		"shown": func(screen string) bool { return strings.Contains(screen, " │ ") },
 	} {
 		t.Run(visibility, func(t *testing.T) {
 			root := t.TempDir()

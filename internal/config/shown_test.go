@@ -9,14 +9,7 @@ import (
 )
 
 // pendingConsumers names shown keys that still wait for their consumer; it only shrinks and is empty at the Slice 1 exit.
-var pendingConsumers = []string{
-	"jobs.log-bytes",
-	"jobs.max-finished",
-	"jobs.raw-logs",
-	"jobs.session-log-bytes",
-	"jobs.termination-grace-ms",
-	"jobs.yield-after-ms",
-}
+var pendingConsumers = []string{}
 
 func TestEveryShownSettingHasAConsumer(t *testing.T) {
 	var inert []string

@@ -46,7 +46,7 @@ type jobMetadataStore struct {
 }
 
 func (a *app) registerJobs(ext *sdk.Extension) {
-	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. cwd runs this one command in another directory without changing the location; title names the job in listings. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay. timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap. Scheme paths work as file arguments: a standalone ls, cat, rm, mkdir, mv, cp or `word > path` acts on the resource itself, and other commands read a copy (for example `cat job://<id>/log | wc -l`); writes need a standalone form.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}, "title": map[string]any{"type": "string", "maxLength": 80, "description": "Short one-line name shown in job listings."}, "cwd": map[string]any{"type": "string", "description": "Directory for this command only; absolute or relative to the Workbench location."}}}, Execute: a.bash})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. cwd runs this one command in another directory without changing the location; title names the job in listings. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay (0 never promotes). timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap. Scheme paths work as file arguments: a standalone ls, cat, rm, mkdir, mv, cp or `word > path` acts on the resource itself, and other commands read a copy (for example `cat job://<id>/log | wc -l`); writes need a standalone form.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}, "title": map[string]any{"type": "string", "maxLength": 80, "description": "Short one-line name shown in job listings."}, "cwd": map[string]any{"type": "string", "description": "Directory for this command only; absolute or relative to the Workbench location."}}}, Execute: a.bash})
 	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; wait without id returns the first active job that ends (or, with until=output, writes); status/output/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait returns at exit by default; until=output returns when new bytes pass the cursor. wait is cancellable without killing a background job. kill terminates its process group; signal=INT|HUP|QUIT sends that signal instead and reports the observed state. stream=stdout|stderr reads one stream; its cursor counts only that stream's bytes. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}, "until": map[string]any{"type": "string", "enum": []string{"exit", "output"}}, "stream": map[string]any{"type": "string", "enum": []string{"combined", "stdout", "stderr"}}, "signal": map[string]any{"type": "string", "enum": []string{"TERM", "INT", "HUP", "QUIT", "KILL"}}}}, Execute: a.jobsTool})
 }
 
@@ -54,7 +54,7 @@ type bashParams struct {
 	Command     string   `json:"command"`
 	Background  bool     `json:"background"`
 	Interactive bool     `json:"interactive"`
-	Yield       float64  `json:"yield_seconds"`
+	Yield       *float64 `json:"yield_seconds"`
 	Timeout     *float64 `json:"timeout_seconds"`
 	Title       string   `json:"title"`
 	Cwd         string   `json:"cwd"`
@@ -68,7 +68,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if len(input.Title) > 80 || strings.ContainsAny(input.Title, "\r\n") {
 		return nil, errors.New("title is one line of at most 80 characters")
 	}
-	if strings.TrimSpace(input.Command) == "" || input.Yield < 0 || input.Yield > 600 || input.Timeout != nil && (*input.Timeout < 0 || *input.Timeout > 86400) {
+	if strings.TrimSpace(input.Command) == "" || input.Yield != nil && (*input.Yield < 0 || *input.Yield > 600) || input.Timeout != nil && (*input.Timeout < 0 || *input.Timeout > 86400) {
 		return nil, errors.New("invalid command or timeout")
 	}
 	s, work, release, err := a.admit(ctx)
@@ -109,6 +109,9 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if err != nil {
 		s.secrets.withhold(ctx, err)
 		return nil, errors.New("the secrets boundary is unavailable; the command was not run")
+	}
+	if err := s.applyJobLimits(); err != nil {
+		return nil, err
 	}
 	start := s.jobs.StartForeground
 	if input.Background {
@@ -163,8 +166,12 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if !input.Background {
 		wait := work
 		cancel := func() {}
-		if input.Yield > 0 {
-			wait, cancel = context.WithTimeout(work, time.Duration(input.Yield*float64(time.Second)))
+		yield := time.Duration(s.settingInt("jobs.yield-after-ms", 0)) * time.Millisecond
+		if input.Yield != nil {
+			yield = time.Duration(*input.Yield * float64(time.Second))
+		}
+		if yield > 0 {
+			wait, cancel = context.WithTimeout(work, yield)
 		}
 		_, waitErr := s.jobs.Wait(wait, id)
 		cancel()
@@ -508,6 +515,20 @@ func newJobFacts(state jobs.JobState, metadata jobMetadata) jobFacts {
 	return facts
 }
 
+// applyJobLimits hands the current jobs.* limits to the manager, so a changed setting governs
+// the next command, later output and later completions without a reload.
+func (s *session) applyJobLimits() error {
+	finished := s.settingInt("jobs.max-finished", 20)
+	return s.jobs.Configure(jobs.ManagerOptions{
+		LogBytes:        int64(s.settingInt("jobs.log-bytes", 10<<20)),
+		SessionLogBytes: int64(s.settingInt("jobs.session-log-bytes", 100<<20)),
+		// Zero means "keep" to the manager, so an immediate kill is one nanosecond of grace.
+		Grace:         max(time.Duration(s.settingInt("jobs.termination-grace-ms", 2000))*time.Millisecond, time.Nanosecond),
+		MaxFinished:   finished,
+		MaxForeground: min(finished, 10),
+	})
+}
+
 // commandDir resolves a bash cwd override against base to an existing local directory.
 func commandDir(base, name string) (string, error) {
 	target, err := resource.ParsePath(base, name, "")
@@ -615,6 +636,9 @@ func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.To
 	}
 	s.jobMeta.mu.Unlock()
 	label := jobLabel(state, metadata)
+	if !s.settingBool("jobs.raw-logs", false) {
+		output = terminalText(output)
+	}
 	content := fmt.Sprintf("Job %s: %s\n%s", id, label, output)
 	details := jobPage{jobFacts: newJobFacts(state, metadata), Cursor: next, Truncated: truncated, GapFrom: gap, LocationRevision: metadata.LocationRevision}
 	failed := state.Error != "" || state.Exit != nil && state.Exit.Code != 0 || metadata.TimedOut

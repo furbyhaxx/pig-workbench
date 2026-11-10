@@ -41,6 +41,15 @@ max-lines = 400
 
 `jobs.wake-on-completion` (default `true`) lets a finished background job start a turn on an idle session, and `frames.wake-budget` (default 10 per producer and hour; zero disables it) bounds how often a frame producer registered with `allowWake` may do the same. Both are user/runtime settings.
 
+The other `jobs.*` settings are user or runtime scope and take effect with the next `bash` call, without a reload:
+
+- `jobs.timeout-seconds` (default 120, zero disables): hard deadline of a command; a call's `timeout_seconds` overrides it.
+- `jobs.yield-after-ms` (default 0, never): promote a foreground command to a background job after this delay; a call's `yield_seconds` overrides it, and `yield_seconds: 0` waits for the exit.
+- `jobs.termination-grace-ms` (default 2000): how long a stopped or timed-out job may react to TERM before it is killed.
+- `jobs.max-finished` (default 20, at least 1): finished background and promoted jobs kept with their logs. Foreground commands keep their own window of at most 10.
+- `jobs.log-bytes` (default 10 MiB) and `jobs.session-log-bytes` (default 100 MiB): output kept per job and across the session. Older bytes are dropped and reported as a gap; the oldest logs are evicted first.
+- `jobs.raw-logs` (default `false`): by default `bash` and `jobs` results drop terminal escape sequences and control bytes and keep only the last drawing of a line redrawn with carriage returns. `true` returns the bytes as written. `job://` resources always hold the raw log.
+
 `models.knowledge-cutoffs` (user/runtime only) overrides the knowledge cutoff the `session.model` frame shows. Entries are `<model-id>=<YYYY-MM[-DD]>`, optionally `provider/<model-id>=…`, for example `["claude-sonnet-5-5=2026-06"]`. Without an entry Workbench uses a cutoff a registered extension contributed, then a bundled models.dev snapshot, then an estimate of the model's earliest listed release date minus one year (shown with basis `estimated` and its release date as the source), and shows no cutoff when the model has no release date either. The frame always adds a short note that the model's training data is stale and should be verified. A malformed entry is named in the frame and ignored.
 
 `fetch.disabled-backends` (user/runtime; entries `owner/key` as shown by `/workbench integrations`) turns contributed fetch backends off for `read https://`; the builtin reader then serves those URLs and the producer's own tools keep working.

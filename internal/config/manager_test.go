@@ -146,7 +146,7 @@ func TestRoundTripUnknownFieldsAndExplicitValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Saved || !result.Published || !reflect.DeepEqual(result.Pending, []string{"jobs.yield-after-ms"}) {
+	if !result.Saved || !result.Published || len(result.Pending) != 0 {
 		t.Fatalf("save/apply status wrong: %+v", result)
 	}
 	bytes, err := os.ReadFile(paths.User)
