@@ -157,7 +157,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		outcomes, err := fileedit.Commit(work, filepath.Join(agent, "workbench", "locks", "edits"), []fileedit.Effect{{Path: target.Path, Revision: previous, Bytes: []byte(input.Content)}})
+		outcomes, err := fileedit.Commit(work, editLockDir(agent), []fileedit.Effect{{Path: target.Path, Revision: previous, Bytes: []byte(input.Content)}})
 		if err != nil {
 			if len(outcomes) > 0 && outcomes[0].Committed {
 				return sdk.ToolResult{Content: "Replacement landed but its durability check failed. Read the file before retrying.", Details: outcomes, IsError: true}, nil

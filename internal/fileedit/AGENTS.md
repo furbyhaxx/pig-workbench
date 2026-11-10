@@ -21,7 +21,8 @@ Rules
 - `Outcome`: `Committed` is true when the requested mutation landed, including a move whose source unlink failed or a replacement whose directory fsync failed (`Error` then names the incomplete step; re-read both paths, and `AfterRevision` is still the landed digest). A replacement whose bytes equal the current bytes reports `Committed:false`, empty `Error`, and equal before/after revisions without touching the file. `AfterRevision` stays empty for deletions.
 - A mid-batch failure marks every later effect `not attempted:` and counts landings that only failed their durability step in the committed count.
 - Errors name the stage, the path and the next action; never include source content, rejected bytes or lock metadata.
-- Remove only the temp files this package creates. Lock files stay in the caller's lock directory and are opened with `fileio.LockFlags()`.
+- Remove only the temp files this package creates. Lock files stay in the caller's lock directory, are opened with `fileio.LockFlags()` and leave only through `SweepLocks`.
+- `SweepLocks` unlinks a lock file only while holding it; `lockOne` rechecks that the locked descriptor is still the file at the path and retries, so never lock an edit file without that check.
 - `renamePath`, `removePath`, `linkPath`, `syncDir` are package vars so tests can inject failures. Tests must stay sequential (no `t.Parallel`) and must pass a private lock directory: `t.TempDir()` is group readable and `Commit` rejects it.
 - Callers own session snapshots, seen state, preview and receipts.
 

@@ -12,6 +12,7 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/gofrs/flock"
 
+	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
@@ -33,7 +34,17 @@ func (s *session) retainScratch(ctx sdk.Context) {
 	root, own := filepath.Dir(s.scratch), filepath.Base(s.scratch)
 	_ = s.supervisor.Start(func(lifetime context.Context) {
 		sweepScratch(lifetime, root, own, time.Duration(days)*24*time.Hour, time.Now())
+		if agent, err := sdk.AgentDir(); err == nil {
+			fileedit.SweepLocks(lifetime, editLockDir(agent), idleEditLockAge, time.Now())
+		}
 	})
+}
+
+// A lock file is recreated on demand, so a day without an edit is enough to drop it.
+const idleEditLockAge = 24 * time.Hour
+
+func editLockDir(agent string) string {
+	return filepath.Join(agent, "workbench", "locks", "edits")
 }
 
 func scratchLock(scratch string) *flock.Flock {

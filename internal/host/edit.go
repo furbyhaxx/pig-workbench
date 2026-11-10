@@ -255,7 +255,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	outcomes, commitErr := fileedit.Commit(work, filepath.Join(agent, "workbench", "locks", "edits"), effects)
+	outcomes, commitErr := fileedit.Commit(work, editLockDir(agent), effects)
 	changed := false
 	for index, outcome := range outcomes {
 		changed = changed || outcome.Committed
