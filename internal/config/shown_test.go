@@ -23,7 +23,6 @@ var pendingConsumers = []string{
 	"prompt.template",
 	"secrets.env-injection",
 	"skills.conditions",
-	"storage.finished-retention-days",
 }
 
 func TestEveryShownSettingHasAConsumer(t *testing.T) {

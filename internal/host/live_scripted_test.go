@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 type scriptedCall struct {
@@ -368,7 +369,7 @@ func TestLiveFindWalksScratchWithoutFollowingLinks(t *testing.T) {
 	results := runScripted(t, root, "find",
 		func([]string) scriptedCall {
 			dir := filepath.Join(cache, "pig-workbench", "scratch")
-			entries, err := os.ReadDir(dir)
+			entries, err := scratchDirectories(dir)
 			if err != nil || len(entries) != 1 {
 				t.Errorf("scratch session missing: entries=%v err=%v", entries, err)
 			} else {
@@ -405,7 +406,7 @@ func TestLiveLocalReadCannotEscapeScratch(t *testing.T) {
 	results := runScripted(t, root, "read",
 		func([]string) scriptedCall {
 			dir := filepath.Join(cache, "pig-workbench", "scratch")
-			entries, err := os.ReadDir(dir)
+			entries, err := scratchDirectories(dir)
 			if err != nil || len(entries) != 1 {
 				t.Errorf("scratch session missing: entries=%v err=%v", entries, err)
 			} else {
@@ -1326,5 +1327,53 @@ func TestLiveReadCutsLongLinesAtTheConfiguredColumnsAndARawReadMakesThemEditable
 	}
 	if got := readFile(t, path); got != "short\nreplaced\nlast\n" {
 		t.Fatalf("edit after the raw read: %q\n%s", got, results[3])
+	}
+}
+
+// scratchDirectories lists the session scratch directories, without their claim lock files.
+func scratchDirectories(dir string) ([]os.DirEntry, error) {
+	entries, err := os.ReadDir(dir)
+	return slices.DeleteFunc(entries, func(entry os.DirEntry) bool { return !entry.IsDir() }), err
+}
+
+func TestLiveSessionStartSweepsScratchLeftBehindPastTheRetention(t *testing.T) {
+	root := t.TempDir()
+	cache := filepath.Join(root, "cache")
+	t.Setenv("XDG_CACHE_HOME", cache)
+	dir := filepath.Join(cache, "pig-workbench", "scratch")
+	stale, kept := filepath.Join(dir, "crashed-session"), filepath.Join(dir, "yesterday-session")
+	for path, age := range map[string]time.Duration{stale: 3 * 24 * time.Hour, kept: 24 * time.Hour} {
+		if err := os.MkdirAll(path, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "note"), []byte("x"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		at := time.Now().Add(-age)
+		if err := os.Chtimes(path, at, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results := runScriptedConfig(t, root, "write,read", "[storage]\nfinished-retention-days = 2\n",
+		func([]string) scriptedCall {
+			return scriptedCall{"write", map[string]any{"path": "local://mine", "content": "own\n"}}
+		},
+		func([]string) scriptedCall {
+			// The sweep runs in the background from session start.
+			for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+				if _, err := os.Lstat(stale); err != nil {
+					break
+				}
+			}
+			return scriptedCall{"read", map[string]any{"path": "local://mine"}}
+		})
+	if !strings.Contains(results[1], "own") {
+		t.Fatalf("this session's scratch is not usable: %v", results)
+	}
+	if _, err := os.Lstat(stale); !os.IsNotExist(err) {
+		t.Fatalf("scratch older than the retention survived the session start: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(kept, "note")); err != nil {
+		t.Fatalf("scratch within the retention was removed: %v", err)
 	}
 }

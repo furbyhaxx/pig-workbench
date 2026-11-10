@@ -194,6 +194,9 @@ func Catalog() []Definition {
 		case "guides.disabled":
 			d.Application = "live"
 			d.Description = "Schemes whose guide is never added to a read."
+		case "storage.finished-retention-days":
+			d.Application = "live"
+			d.Description = "Days a finished session's local:// scratch directory is kept before a later session start removes it; a directory in use is never removed, and 0 removes unused ones at once."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."

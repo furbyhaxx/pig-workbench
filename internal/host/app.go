@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -64,6 +65,7 @@ type session struct {
 	skills              *skillState
 	prompt              promptState
 	scratch             string
+	scratchClaim        io.Closer
 	materialized        atomic.Uint64
 	projects            *project.Registry
 	host                sdk.Context
@@ -289,6 +291,7 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		return nil, a.fail(fmt.Errorf("subscribe Workbench provider progress: %w", err))
 	}
 	s.unsubscribe = func() { unsubscribe(); unsubscribeReplies(); unsubscribeCancel(); unsubscribeProgress() }
+	s.retainScratch(ctx)
 	// A reload or a crash skips shutdown cleanup, and the host delivers no
 	// session_shutdown to a reloaded runtime, so the next start of this session
 	// reclaims the job process groups its predecessor left behind.
@@ -363,6 +366,9 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 		}
 		if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: old.id, Generation: old.generation, EventID: old.generation + ":closing", Type: "closing", Data: map[string]any{}}); err != nil {
 			ctx.Notify("Workbench closing notification failed.", "warning")
+		}
+		if old.scratchClaim != nil {
+			_ = old.scratchClaim.Close()
 		}
 		if old.scratch != "" {
 			_ = os.RemoveAll(materializedRoot(old.scratch))

@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 21
+  revision: 22
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:02:37+01:00"
+  updated_at: "2026-11-10T17:19:28+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 21
-      reason: "User decision 10.11.2026: settings without a consumer are not shown"
-      changes: ["§3: the catalog holds only keys with a wired consumer; other table rows join it with their feature"]
+    - revision: 22
+      reason: "storage.finished-retention-days gained its consumer"
+      changes: ["§3 and §6: the key bounds how long a finished session's scratch directory is kept; the scratch row names the real location and the claim lock"]
 ---
 
 # 1. Scope and precedence
@@ -102,7 +102,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | tldr.timeout-ms/concurrency | 120000 / 2 | user/runtime; configured model/provider only |
 | tools.<owner>.<key> | contribution defaults | display fields from SPEC-0003 only |
 | trust.rules | no extra grants | user/runtime only; never project |
-| storage.finished-retention-days/out-retention-days | 7 / 7 | user/runtime; active references protected |
+| storage.finished-retention-days | 7 | user/runtime; days a finished session's scratch directory is kept. A directory a session holds is never removed; 0 removes unheld directories at the next session start |
 | statusline.mode / statusline.layout | segments / donor default layout | user/runtime; `footer` only by explicit user choice (SPEC-0009 §9) |
 | statusline.path-style | fish | user/runtime; `fish`, `full`, `relative`, `basename` (SPEC-0003 §10) |
 | ask.history.enabled / retention-days | true / 90 | user/runtime (SPEC-0009 §5, provisional) |
@@ -179,7 +179,7 @@ Use host-resolved config/agent/state roots (or platform equivalent), not current
 | Project registry | `{agentDir}/projects/` (index, per-project registry copy, private notes, sessions, sidecars; SPEC-0012 §3.4) |
 | Secret vault | `$XDG_DATA_HOME/pig-workbench/secrets/vault.jsonl`, encrypted values, shared by all sessions (SPEC-0013 §3.3) |
 | PiG source checkouts | `$XDG_DATA_HOME/pig-workbench/docs/source/<version>/`, symlinked from `~/.pig/docs/source` (SPEC-0012 §5.4) |
-| Scratch local:// | Private per-session directory under platform temporary root |
+| Scratch local:// | Private per-session directory `<user cache>/pig-workbench/scratch/<session>`, held by a shared lock `<session>.lock` while a session uses it; removed at shutdown, and at a later session start once unheld and untouched for `storage.finished-retention-days` |
 | Syntax/suffix/index caches | Rebuildable bounded state/cache; no secrets by default |
 | Short-tag snapshots/registers | Branch-aware memory; named register facts persisted only under bounded explicit format |
 | Runtime settings | Memory; reset on reload |
