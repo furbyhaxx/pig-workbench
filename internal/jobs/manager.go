@@ -517,6 +517,15 @@ func (m *Manager) Output(id string, cursor int64, max int) ([]byte, int64, bool,
 	return m.Stream(id, StreamCombined, cursor, max)
 }
 
+// Written reports how many combined output bytes the job has produced: the cursor just past its log.
+func (m *Manager) Written(id string) (int64, error) {
+	if _, err := m.job(id); err != nil {
+		return 0, err
+	}
+	written, _, _, err := m.logs.Facts(id)
+	return written, err
+}
+
 // Stream reads one output stream. Stdout and stderr cursors count only that stream's bytes;
 // the combined cursor counts both. A page may contain fewer than max bytes when the scan
 // crosses the other stream.

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -45,7 +47,7 @@ type jobMetadataStore struct {
 
 func (a *app) registerJobs(ext *sdk.Extension) {
 	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. cwd runs this one command in another directory without changing the location; title names the job in listings. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay. timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap. Scheme paths work as file arguments: a standalone ls, cat, rm, mkdir, mv, cp or `word > path` acts on the resource itself, and other commands read a copy (for example `cat job://<id>/log | wc -l`); writes need a standalone form.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}, "title": map[string]any{"type": "string", "maxLength": 80, "description": "Short one-line name shown in job listings."}, "cwd": map[string]any{"type": "string", "description": "Directory for this command only; absolute or relative to the Workbench location."}}}, Execute: a.bash})
-	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; status/output/wait/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait returns at exit by default; until=output returns when new bytes pass the cursor. wait is cancellable without killing a background job. kill terminates its process group; signal=INT|HUP|QUIT sends that signal instead and reports the observed state. stream=stdout|stderr reads one stream; its cursor counts only that stream's bytes. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}, "until": map[string]any{"type": "string", "enum": []string{"exit", "output"}}, "stream": map[string]any{"type": "string", "enum": []string{"combined", "stdout", "stderr"}}, "signal": map[string]any{"type": "string", "enum": []string{"TERM", "INT", "HUP", "QUIT", "KILL"}}}}, Execute: a.jobsTool})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; wait without id returns the first active job that ends (or, with until=output, writes); status/output/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait returns at exit by default; until=output returns when new bytes pass the cursor. wait is cancellable without killing a background job. kill terminates its process group; signal=INT|HUP|QUIT sends that signal instead and reports the observed state. stream=stdout|stderr reads one stream; its cursor counts only that stream's bytes. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}, "until": map[string]any{"type": "string", "enum": []string{"exit", "output"}}, "stream": map[string]any{"type": "string", "enum": []string{"combined", "stdout", "stderr"}}, "signal": map[string]any{"type": "string", "enum": []string{"TERM", "INT", "HUP", "QUIT", "KILL"}}}}, Execute: a.jobsTool})
 }
 
 type bashParams struct {
@@ -297,6 +299,51 @@ func (s *session) waitOutput(ctx context.Context, id string, stream jobs.Stream,
 	}
 }
 
+// waitAnyJob answers with the first active job that ends, or with output set the first that writes
+// new bytes or ends. An expired wait reports the active jobs; that is not a failure.
+func (s *session) waitAnyJob(ctx context.Context, output bool) (sdk.ToolResult, error) {
+	seen := map[string]int64{}
+	for _, state := range s.jobs.List() {
+		if !state.Running {
+			continue
+		}
+		written, err := s.jobs.Written(state.ID)
+		if err != nil {
+			continue
+		}
+		seen[state.ID] = written
+		s.adjustJobWaiters(state.ID, 1)
+		defer s.adjustJobWaiters(state.ID, -1)
+	}
+	if len(seen) == 0 {
+		return sdk.ToolResult{}, errors.New("no active job to wait for; jobs list shows finished ones")
+	}
+	for {
+		for _, id := range slices.Sorted(maps.Keys(seen)) {
+			state, err := s.jobs.Status(id)
+			if err != nil {
+				delete(seen, id)
+				continue
+			}
+			written, _ := s.jobs.Written(id)
+			if !state.Running || output && written > seen[id] {
+				return s.jobResult(id, jobs.StreamCombined, seen[id])
+			}
+		}
+		if len(seen) == 0 {
+			return sdk.ToolResult{}, errors.New("the awaited jobs are no longer retained")
+		}
+		select {
+		case <-ctx.Done():
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return sdk.ToolResult{Content: fmt.Sprintf("Wait timed out; %d job(s) still running: %s", len(seen), strings.Join(slices.Sorted(maps.Keys(seen)), ", ")), Details: map[string]any{"timedOutWait": true, "running": slices.Sorted(maps.Keys(seen))}}, nil
+			}
+			return sdk.ToolResult{}, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
 func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	var input jobParams
 	if err := decode(params, &input); err != nil {
@@ -348,6 +395,17 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 			return nil, err
 		}
 		return sdk.ToolResult{Content: string(encoded), Details: list}, nil
+	}
+	if input.ID == "" && input.Action == "wait" {
+		if input.Stream != "" && input.Stream != "combined" || input.Cursor != 0 {
+			return nil, errors.New("wait without id watches every active job's combined output; give an id to use stream or cursor")
+		}
+		wait, cancel := work, func() {}
+		if input.Timeout > 0 {
+			wait, cancel = context.WithTimeout(work, time.Duration(input.Timeout*float64(time.Second)))
+		}
+		defer cancel()
+		return s.waitAnyJob(wait, input.Until == "output")
 	}
 	if input.ID == "" {
 		return nil, errors.New("job id is required")

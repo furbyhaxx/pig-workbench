@@ -574,3 +574,41 @@ func TestLiveBashCwdLoadsThatDirectorysInstructions(t *testing.T) {
 		t.Fatal("running a command in pkg did not deliver pkg/AGENTS.md")
 	}
 }
+
+// TestLiveJobsWaitWithoutIDReturnsTheFirstJobThatEndsOrWrites pins SPEC-0008 §6: wait needs no id.
+func TestLiveJobsWaitWithoutIDReturnsTheFirstJobThatEndsOrWrites(t *testing.T) {
+	background := func(command string) scriptStep {
+		return func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": command, "background": true, "timeout_seconds": 60}}
+		}
+	}
+	wait := func(args map[string]any) scriptStep {
+		args["action"] = "wait"
+		return func([]string) scriptedCall { return scriptedCall{"jobs", args} }
+	}
+	results := runScripted(t, t.TempDir(), "bash,jobs",
+		wait(map[string]any{"timeout_seconds": 1}),
+		background("sleep 30"),
+		background("sleep 0.4; echo short-done"),
+		wait(map[string]any{"timeout_seconds": 20}),
+		background("sleep 0.4; echo tick; sleep 30"),
+		wait(map[string]any{"until": "output", "timeout_seconds": 20}),
+		wait(map[string]any{"timeout_seconds": 0.3}),
+		wait(map[string]any{"stream": "stderr"}),
+	)
+	if !strings.Contains(results[0], "no active job") {
+		t.Errorf("wait with nothing running must say so: %q", results[0])
+	}
+	if !strings.Contains(results[3], "short-done") || !strings.Contains(results[3], "exited") {
+		t.Errorf("wait must answer with the job that ended first: %q", results[3])
+	}
+	if !strings.Contains(results[5], "tick") || !strings.Contains(results[5], "running") {
+		t.Errorf("until=output must answer with the job that wrote, still running: %q", results[5])
+	}
+	if !strings.Contains(results[6], "Wait timed out; 2 job(s) still running") {
+		t.Errorf("an expired wait must report the running jobs, not fail: %q", results[6])
+	}
+	if !strings.Contains(results[7], "give an id") {
+		t.Errorf("stream needs an id: %q", results[7])
+	}
+}
