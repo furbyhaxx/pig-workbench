@@ -74,6 +74,7 @@ Skills available to this session.
 
 - ` + "`ls skill://`" + ` lists visible skills; ` + "`ls skill://loaded/`" + ` the loaded ones.
 - ` + "`read skill://<name>`" + ` loads a skill: its body and the directory to resolve its relative paths against.
+- ` + "`read skill://<name>:A-B`" + ` shows a line range of the body without loading the skill.
 - ` + "`write skill://<name>/ctl`" + ` with ` + "`unload`" + ` removes it from the loaded set.
 `,
 	"agent": `# agent://

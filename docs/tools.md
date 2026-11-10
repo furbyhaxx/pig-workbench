@@ -31,6 +31,8 @@ Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, 
 
 `ls agent://` shows each live session's title, project, cwd, state with idle time, model and trusted/blocked state; `session://self/messages` lists the inter-session messages this session sent and received.
 
+A line selector also works on a name-only URI of a Workbench scheme (`skill://name:10-40`, `out://id:raw`); on `skill://` it shows that range without loading the skill.
+
 Every scheme, builtin or contributed, has a guide page at `docs://workbench/schemes/<scheme>`; `ls docs://workbench/schemes/` lists them. An empty container lists as `(empty)`.
 
 Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill://`, `job://`, a registered provider's directory) returns the same paged listing view a local directory does; a provider only needs to implement listing.

@@ -1271,3 +1271,32 @@ func TestLiveSchemeGuidesListEveryBuiltinSchemeAndEmptyContainersSaySo(t *testin
 		t.Errorf("empty container = %q", results[2])
 	}
 }
+
+func TestLiveSkillLineSelectorReadsTheRangeWithoutLoadingTheSkill(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, ".agents", "skills", "ranged")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: ranged\ndescription: ranged skill\n---\n"+strings.Join([]string{"l-01", "l-02", "l-03", "l-04", "l-05", "l-06", "l-07", "l-08", "l-09", "l-10", "l-11", "l-12"}, "\n")+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read,ls",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "skill://ranged:5-6"}} },
+		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "skill://loaded/"}} },
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "skill://ranged"}} },
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "skill://ranged:1"}} },
+	)
+	if !strings.Contains(results[0], "5:l-05") || !strings.Contains(results[0], "6:l-06") || strings.Contains(results[0], "l-01") || strings.Contains(results[0], "l-12") || strings.Contains(results[0], "invalid resource URI") {
+		t.Errorf("ranged read = %s", results[0])
+	}
+	if strings.Contains(results[1], "ranged") {
+		t.Errorf("a ranged read loaded the skill: %s", results[1])
+	}
+	if !strings.Contains(results[2], "l-12") {
+		t.Errorf("bare read = %s", results[2])
+	}
+	if !strings.Contains(results[3], "1:l-01") || strings.Contains(results[3], "already loaded") {
+		t.Errorf("ranged read after loading = %s", results[3])
+	}
+}

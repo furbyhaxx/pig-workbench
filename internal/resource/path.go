@@ -38,6 +38,17 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 			return target, errors.New("URI scheme exceeds 32 bytes")
 		}
 		target.Scheme = scheme
+		var authoritySelection Selection
+		hasAuthoritySelection := false
+		if rest := input[i+3:]; nameAuthoritySchemes[scheme] && !strings.ContainsAny(rest, "/?#") {
+			name, selection, has, err := splitSelector(rest)
+			if err != nil {
+				return target, err
+			}
+			if has {
+				input, authoritySelection, hasAuthoritySelection = input[:i+3]+name, selection, true
+			}
+		}
 		u, err := url.Parse(input)
 		if err != nil {
 			return target, errors.New("invalid resource URI")
@@ -73,6 +84,9 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 		base, selection, has, err := splitSelector(path)
 		if err != nil {
 			return target, err
+		}
+		if hasAuthoritySelection {
+			selection, has = authoritySelection, true
 		}
 		decoded, err := url.PathUnescape(base)
 		if err != nil {
@@ -127,6 +141,10 @@ func withExplicit(t Target, explicit string, suffix bool) (Target, error) {
 	t.Selection = s
 	return t, err
 }
+
+// nameAuthoritySchemes are Workbench schemes whose authority is a name, never host:port,
+// so a trailing selector on a URI without a path belongs to the resource.
+var nameAuthoritySchemes = map[string]bool{"skill": true, "session": true, "job": true, "agent": true, "docs": true, "cfg": true, "artifact": true, "local": true, "out": true}
 
 func splitSelector(path string) (string, Selection, bool, error) {
 	pieces := strings.Split(path, ":")

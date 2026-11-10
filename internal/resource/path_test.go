@@ -3,6 +3,7 @@ package resource
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -50,5 +51,35 @@ func TestLiteralFilesAndURIPunctuation(t *testing.T) {
 	}
 	if _, err := ParsePath(root, "file://otherhost/a", ""); err == nil {
 		t.Fatal("foreign file authority accepted")
+	}
+}
+
+func TestSelectorOnANameAuthorityURIWithoutAPath(t *testing.T) {
+	for _, c := range []struct{ input, uri, selector string }{
+		{"skill://toml:1-3", "skill://toml", "1-3"},
+		{"skill://toml:5", "skill://toml", "5"},
+		{"out://ab12:raw", "out://ab12", "raw"},
+		{"skill://toml", "skill://toml", ""},
+	} {
+		target, err := ParsePath(t.TempDir(), c.input, "")
+		if err != nil {
+			t.Fatalf("%s: %v", c.input, err)
+		}
+		want, err := ParseSelector(c.selector)
+		if c.selector == "" {
+			want, err = Selection{}, nil
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if target.URI != c.uri || !reflect.DeepEqual(target.Selection, want) {
+			t.Errorf("%s = %q %+v, want %q %+v", c.input, target.URI, target.Selection, c.uri, want)
+		}
+	}
+	if target, err := ParsePath(t.TempDir(), "https://example.test:8080", ""); err != nil || target.URI != "https://example.test:8080/" {
+		t.Fatalf("a port on a network scheme must stay a port: %+v, %v", target, err)
+	}
+	if _, err := ParsePath(t.TempDir(), "skill://toml:1-3", "5"); err == nil {
+		t.Fatal("a suffix and an explicit selector were both accepted")
 	}
 }

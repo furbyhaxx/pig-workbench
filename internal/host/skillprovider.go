@@ -132,6 +132,14 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 	if err != nil {
 		return resource.ReadResult{}, resource.ErrNotFound
 	}
+	if request.Selector.Explicit {
+		// A line range, including the continuation of a long body, shows the text itself and leaves the loaded set alone.
+		page, err := resource.RenderText(ctx, request.URI, request.Requested, []byte(skill.Body+"\nresolve relative paths against "+skill.Dir+"\n"), request.Selector, request.Budget)
+		if err != nil {
+			return resource.ReadResult{}, err
+		}
+		return resource.ReadResult{Content: page.Content, Facts: page}, nil
+	}
 	s.skills.mu.Lock()
 	if s.skills.loaded == nil {
 		s.skills.loaded = map[string]bool{}
