@@ -3,6 +3,7 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"runtime"
 	"slices"
 	"sort"
@@ -371,11 +372,15 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			authority = "data"
 		}
 		fullBody := string(body)
-		if strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice" {
-			if previous, ok := state.views[key]; ok {
+		// A source the model already holds is never sent whole again: only what changed goes out.
+		instruction := strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice"
+		if previous, ok := state.views[key]; ok {
+			if instruction {
 				if diff := instructionDiff(fact, previous, fullBody, updateContext(configuration)); diff != "" {
 					body = []byte(diff)
 				}
+			} else if change := factChange(fact.source, previous, fullBody); change != "" {
+				body, kind = []byte(change), "notice"
 			}
 		}
 		ledger := state.ledger.Ledger(frames.Context{ProducerPrefix: prefix, BranchLeaf: state.scope.BranchLeaf, Epoch: epoch, Trusted: true, Authority: authority})
@@ -385,7 +390,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			return nil, err
 		}
 		admitted = append(admitted, receipt.FrameID)
-		if strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice" {
+		if instruction || fact.kind == "" {
 			state.staged[receipt.FrameID] = stagedView{key: key, full: fullBody}
 		}
 		state.last[key] = digest
@@ -605,6 +610,70 @@ func updateContext(configuration *config.Snapshot) int {
 		return int(value)
 	}
 	return 3
+}
+
+const factChangeIntro = "Changed in "
+
+// factChange lists the fields of a JSON fact that differ from the delivered view as "field: old -> new"
+// lines, lists as added and removed members. It returns "" when either view is not a JSON object.
+func factChange(source, previous, current string) string {
+	var before, after map[string]any
+	if json.Unmarshal([]byte(previous), &before) != nil || json.Unmarshal([]byte(current), &after) != nil {
+		return ""
+	}
+	names := make([]string, 0, len(after))
+	for name := range after {
+		names = append(names, name)
+	}
+	for name := range before {
+		if _, kept := after[name]; !kept {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	compact := func(value any, present bool) string {
+		if !present {
+			return "(unset)"
+		}
+		if text, ok := value.(string); ok {
+			return text
+		}
+		encoded, _ := json.Marshal(value)
+		return string(encoded)
+	}
+	var lines []string
+	for _, name := range names {
+		old, had := before[name]
+		now, has := after[name]
+		if had && has && reflect.DeepEqual(old, now) {
+			continue
+		}
+		oldList, wasList := old.([]any)
+		nowList, isList := now.([]any)
+		if wasList && isList {
+			var parts []string
+			for _, item := range nowList {
+				if !slices.ContainsFunc(oldList, func(other any) bool { return reflect.DeepEqual(other, item) }) {
+					parts = append(parts, "+"+compact(item, true))
+				}
+			}
+			for _, item := range oldList {
+				if !slices.ContainsFunc(nowList, func(other any) bool { return reflect.DeepEqual(other, item) }) {
+					parts = append(parts, "-"+compact(item, true))
+				}
+			}
+			if len(parts) == 0 {
+				parts = []string{"reordered"}
+			}
+			lines = append(lines, name+": "+strings.Join(parts, ", "))
+			continue
+		}
+		lines = append(lines, name+": "+compact(old, had)+" -> "+compact(now, has))
+	}
+	if len(lines) == 0 {
+		return ""
+	}
+	return factChangeIntro + source + "; every other field is unchanged.\n" + strings.Join(lines, "\n")
 }
 
 // instructionDiff returns the update body for a changed instruction view, or "" to send the full view.

@@ -100,3 +100,15 @@ func TestModelFrameStatesTheThinkingLevelOnlyForAReasoningModel(t *testing.T) {
 		t.Fatal("a model without reasoning has no thinking level")
 	}
 }
+
+func TestAChangedFactIsSentAsItsChangedFieldsOnly(t *testing.T) {
+	before := `{"id":"m","thinking":"medium","contextWindow":425000,"tools":["read","bash"],"training_data_notice":"long text"}`
+	after := `{"id":"m","thinking":"high","contextWindow":425000,"tools":["read","grep"],"training_data_notice":"long text"}`
+	want := "Changed in session.model; every other field is unchanged.\nthinking: medium -> high\ntools: +grep, -bash"
+	if got := factChange("session.model", before, after); got != want {
+		t.Fatalf("change = %q", got)
+	}
+	if got := factChange("session.model", before, before); got != "" {
+		t.Fatalf("unchanged facts produced %q", got)
+	}
+}

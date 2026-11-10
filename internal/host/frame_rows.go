@@ -118,6 +118,12 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 		row.body = row.body[1:]
 	case envelope.Source == "session.location" && json.Unmarshal([]byte(envelope.Body), &location) == nil && location.DisplayCwd != "":
 		row.facts = []string{displayTarget(location.DisplayCwd, "", width)}
+	case strings.HasPrefix(first, factChangeIntro):
+		row.body = row.body[1:]
+		row.facts = []string{fmt.Sprintf("%d changes", len(row.body))}
+		if len(row.body) == 1 {
+			row.facts = []string{strings.Replace(strings.Replace(row.body[0], ": ", " ", 1), " -> ", " → ", 1)}
+		}
 	case title != "":
 		row.facts = []string{title}
 	default:

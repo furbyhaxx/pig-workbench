@@ -60,16 +60,31 @@ func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
 	}
 }
 
-func TestLiveModelRowStatesTheThinkingLevel(t *testing.T) {
+func TestLiveThinkingLevelChangeSendsOnlyTheChangeNeverTheModelFrameAgain(t *testing.T) {
 	tuiModel = "mock-reasoning"
 	t.Cleanup(func() { tuiModel = "mock" })
 	s := startTUI(t, t.TempDir())
 	s.typeText("hello")
 	s.keys("Enter")
-	screen := s.waitFor("session.model · workbench-fixture/mock-reasoning:", 20*time.Second)
+	s.waitFor("session.model · workbench-fixture/mock-reasoning:medium", 20*time.Second)
+	s.waitFor("done", 20*time.Second)
+	s.keys("BTab")
+	s.typeText("again")
+	s.keys("Enter")
+	screen := s.waitFor("● session.model · thinking medium → ", 20*time.Second)
 	for _, line := range strings.Split(screen, "\n") {
 		if strings.Contains(line, "session.model") {
 			t.Log(strings.TrimSpace(line))
 		}
+	}
+	time.Sleep(2 * time.Second)
+	s.recorder.mu.Lock()
+	last := s.recorder.bodies[len(s.recorder.bodies)-1]
+	s.recorder.mu.Unlock()
+	if full := strings.Count(last, "training_data_notice"); full != 1 {
+		t.Fatalf("the model frame is in the request %d times, want once", full)
+	}
+	if !strings.Contains(last, "Changed in session.model; every other field is unchanged.") || !strings.Contains(last, "thinking: medium -> ") {
+		t.Fatalf("the request carries no change notice:\n%s", last)
 	}
 }

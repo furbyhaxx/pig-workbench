@@ -5,15 +5,15 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T14:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 13
+      reason: "User: a changed context source is never sent whole again"
+      changes: ["A changed source commits a notice frame with only the changed fields", "session.model carries the current thinking level instead of a reasoning flag"]
 ---
 
 # 1. Purpose and scope
@@ -184,9 +184,10 @@ Session facts that change are frames, not prompt text. Workbench evaluates them 
 | `session.environment` | OS, architecture, shell, terminal mode | `on-change` |
 | `session.project` | Project (SPEC-0012) name and root, session ID and title, git branch and short HEAD (no dirty state) | `on-change` |
 | `session.location` | Working location with authority, how plain paths resolve (SPEC-0008); a `cd` result also states it at once | `on-change` |
-| `session.model` | Model, context window, thinking level | `on-change` |
+| `session.model` | Model, context window, current thinking level (`thinking`, only for a reasoning model; no capability flag) | `on-change` |
 | `session.capabilities` | Schemes (one line each) and, with `skills.listing = "frame"`, the skill listing (§8) | `on-change` |
 
+- **A source is never sent whole twice.** Once the model holds a source's view, a change commits a `notice` frame under the same source that lists only the changed fields as `field: old -> new` (list fields as `+added, -removed`) and states that every other field is unchanged. This holds for every source, including a thinking-level change on `session.model`. The full body is sent again only when the delivered view is no longer known: after compaction, a branch switch or a resume.
 - `on-change` commits when the body differs from the last committed body of that source on the active branch since the last boundary; `on-input` commits on every user input, never on continuations; a boundary commits every source again.
 - Delivery: `SendMessage(steer)` from `before_agent_start` (SPEC-0002 delivery `beforePrompt`), so frames precede the user's message and are persisted. Persisting keeps history byte-stable; projecting them per request would rewrite the past.
 - The ledger is rebuilt from the branch's `pig-workbench.frame` entries; a compaction entry after a source's last frame counts as a boundary.
