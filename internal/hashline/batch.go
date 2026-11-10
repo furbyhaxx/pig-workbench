@@ -50,6 +50,8 @@ type Effects struct {
 	MoveTo         string
 	Touched        []LineSpan
 	Seen           []LineSpan
+	// Relocated reports that the source changed after the tagged read and the operations were moved onto the current text.
+	Relocated bool
 }
 
 // BatchPlan is the ordered result of one preflight. Effects follow first section
@@ -395,6 +397,7 @@ func stageBatchSection(input BatchInput, section *batchSection) (Effects, bool, 
 		MoveTo:         section.moveTo,
 		Touched:        result.Touched,
 		Seen:           SeenAfterStaging(result, seen),
+		Relocated:      section.drifted && len(section.lineOps) > 0,
 	}, true, nil
 }
 

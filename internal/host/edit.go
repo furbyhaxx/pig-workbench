@@ -299,7 +299,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 	} else {
 		content.WriteString("Edit batch committed.\n")
 	}
-	for _, outcome := range outcomes {
+	for index, outcome := range outcomes {
 		state := "unchanged"
 		if outcome.Committed {
 			state = "committed"
@@ -311,6 +311,9 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			}
 		}
 		fmt.Fprintf(&content, "%q: %s\n", filepath.Base(outcome.Path), state)
+		if tagged && outcome.Committed && index < len(plan.Effects) && plan.Effects[index].Relocated {
+			fmt.Fprintf(&content, "Warning: %q changed since the tagged read; the edit was applied to the same lines at their current position. Check the result below.\n", filepath.Base(outcome.Path))
+		}
 	}
 	if tagged && s.snapshots.Epoch() == epoch {
 		for index, outcome := range outcomes {

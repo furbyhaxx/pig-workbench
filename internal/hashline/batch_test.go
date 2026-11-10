@@ -696,6 +696,7 @@ func TestPlanBatchRelocatesOntoObservedCurrentSource(t *testing.T) {
 		Bytes:          []byte("new one\nnew two\nalpha\nbeta\ngamma-edited\ndelta\nepsilon\n"),
 		Touched:        []LineSpan{{5, 5}},
 		Seen:           []LineSpan{{5, 5}},
+		Relocated:      true,
 	}
 	if !reflect.DeepEqual(plan.Effects, []Effects{want}) {
 		t.Fatalf("effects = %#v, want %#v", plan.Effects, []Effects{want})

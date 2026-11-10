@@ -190,6 +190,9 @@ func TestLiveTaggedEditRelocatesAcrossExternalChange(t *testing.T) {
 	if !strings.Contains(latest, "changed") || !strings.Contains(latest, "zero") {
 		t.Fatalf("post-edit source did not reach the model: %s", latest)
 	}
+	if !strings.Contains(latest, "changed since the tagged read") {
+		t.Fatalf("a relocated edit did not say the file changed since the tagged read: %s", latest)
+	}
 }
 
 // editToolDescription returns the edit description the model received in the last provider request.
