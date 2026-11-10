@@ -12,9 +12,10 @@ type Listed struct {
 	Location    string `json:"location"`
 }
 
-// List applies the listing ladder: bundled descriptions go first, then other
-// descriptions shrink to 80 characters, then entries become names only.
-// Every skill remains listed by name.
+// List applies the listing ladder until the listing fits the budget in bytes: bundled skills lose their
+// descriptions, then other descriptions are cut to 80 characters, then entries lose their description from
+// the last-ranked upwards. Every skill remains listed by name, so a listing of names alone may exceed a
+// budget that is smaller than the names.
 func List(items []Skill, budget int) []Listed {
 	out := make([]Listed, len(items))
 	for i, skill := range items {
@@ -32,23 +33,24 @@ func List(items []Skill, budget int) []Listed {
 		return out
 	}
 	for i := range out {
-		if len(out[i].Description) > 80 {
-			out[i].Description = out[i].Description[:80]
+		if cut := []rune(out[i].Description); len(cut) > 80 {
+			out[i].Description = strings.TrimSpace(string(cut[:79])) + "…"
 		}
 	}
-	if bytesOf(out) <= budget {
-		return out
-	}
-	for i := range out {
+	for i := len(out) - 1; i >= 0 && bytesOf(out) > budget; i-- {
 		out[i].Description = ""
 	}
 	return out
 }
 
+// bytesOf is the size of the listing as delivered: one "- location: description" line per skill.
 func bytesOf(items []Listed) int {
 	n := 0
 	for _, item := range items {
-		n += len(item.Name) + len(item.Description) + len(item.Location) + 2
+		n += len("- ") + len(item.Location) + 1
+		if item.Description != "" {
+			n += len(": ") + len(item.Description)
+		}
 	}
 	return n
 }

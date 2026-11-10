@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,5 +111,20 @@ func TestSkillsChangeNamesOnlyWhatBecameAvailableOrWentAway(t *testing.T) {
 	lines = bodyLines(held)
 	if got := skillsRowSummary(lines[0], lines[1:]); got != "2 skills" {
 		t.Fatalf("listing row = %q", got)
+	}
+}
+
+func TestSkillsListingBodyIsTheBudgetedLinesAfterOneIntroLine(t *testing.T) {
+	var items []skills.Skill
+	for i := range 40 {
+		items = append(items, skills.Skill{Name: fmt.Sprintf("skill-%02d", i), Description: strings.Repeat("routing words ", 30)})
+	}
+	body := skillsListing(skills.List(items, 4096))
+	lines := strings.TrimPrefix(body, skillsListingIntro+"\n") + "\n"
+	if len(lines) > 4096 {
+		t.Fatalf("the listed lines are %d bytes over the 4096 budget", len(lines))
+	}
+	if order, _ := skillLines(body); len(order) != 40 {
+		t.Fatalf("listed %d of 40 skills", len(order))
 	}
 }
