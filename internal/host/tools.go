@@ -23,7 +23,7 @@ func (a *app) registerTools(ext *sdk.Extension) {
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"path":  map[string]any{"type": "string", "minLength": 1, "description": "Absolute or current-location-relative directory."},
 			"reset": map[string]any{"type": "boolean", "const": true, "description": "Return to the original session location."},
-		}}, Execute: a.cd,
+		}}, Execute: presented("cd", a.cd),
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "read", Label: "read", Description: "Read text from local paths or registered scheme:// resources; relative paths use the Workbench location. Use path suffixes :N, :A-B, :A+C, :-N, comma ranges or :raw (for example src/main.go:20-40) when supported by the provider. Literal filenames win. Exactly one of path or paths (1–32) is required; explicit selector is for one path only. Output is bounded to 50 KiB/2000 lines across the batch; Details report actual source coverage and continuation. For local text, raw preserves source bytes; ordinary ranges include one preceding and three trailing lines.",
@@ -32,7 +32,7 @@ func (a *app) registerTools(ext *sdk.Extension) {
 			"path":     map[string]any{"type": "string", "minLength": 1, "description": "Local path or registered scheme URI with an optional selector suffix, for example src/a.go:20-40 or src/a.go:raw. There is no separate raw parameter."},
 			"paths":    map[string]any{"type": "array", "minItems": 1, "maxItems": 32, "items": map[string]any{"type": "string", "minLength": 1}, "description": "Explicit ordered multi-read, sharing one output budget."},
 			"selector": map[string]any{"type": "string", "minLength": 1, "description": "Single-path selector when punctuation is ambiguous; cannot accompany a suffix."},
-		}}, Execute: a.read,
+		}}, Execute: presented("read", a.read),
 	})
 }
 

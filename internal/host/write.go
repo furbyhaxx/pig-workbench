@@ -31,7 +31,7 @@ func (a *app) registerWriteAndList(ext *sdk.Extension) {
 			"raw":              map[string]any{"type": "boolean", "description": "Write literal content without interpreting copied tagged-read formatting."},
 			"expectedRevision": map[string]any{"type": "string", "minLength": 1, "description": "Optional guard: the 64-hex Revision value from an earlier write receipt for this file; refused when the file changed since. A read header #TAG is not a revision. Omit when you have none."},
 		}},
-		Execute: a.write,
+		Execute: presented("write", a.write),
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "ls", Label: "ls",
@@ -43,7 +43,7 @@ func (a *app) registerWriteAndList(ext *sdk.Extension) {
 			"includeHidden": map[string]any{"type": "boolean", "description": "Include dot-prefixed entries; true by default."},
 			"limit":         map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum entries (default 200)."},
 		}},
-		Execute: a.ls,
+		Execute: presented("ls", a.ls),
 	})
 }
 
@@ -160,7 +160,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		outcomes, err := fileedit.Commit(work, editLockDir(agent), []fileedit.Effect{{Path: target.Path, Revision: previous, Bytes: []byte(input.Content)}})
 		if err != nil {
 			if len(outcomes) > 0 && outcomes[0].Committed {
-				return sdk.ToolResult{Content: "Replacement landed but its durability check failed. Read the file before retrying.", Details: outcomes, IsError: true}, nil
+				return sdk.ToolResult{Content: "Replacement landed but its durability check failed. Read the file before retrying.", Details: map[string]any{"outcomes": outcomes}, IsError: true}, nil
 			}
 			return nil, err
 		}

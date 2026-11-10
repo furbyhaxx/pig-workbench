@@ -27,7 +27,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Number of surrounding source lines before and after each match."},
 			"limit":      map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum matches (default 200)."},
 		}},
-		Execute: a.grep,
+		Execute: presented("grep", a.grep),
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
 		Name: "find", Label: "find",
@@ -39,7 +39,7 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"exclude": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Name globs to skip."},
 			"limit":   map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum entries (default 200)."},
 		}},
-		Execute: a.find,
+		Execute: presented("find", a.find),
 	})
 }
 
