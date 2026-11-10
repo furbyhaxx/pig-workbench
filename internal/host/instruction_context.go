@@ -133,11 +133,7 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 		return nil, err
 	}
 	input, _ := data["input"].(map[string]any)
-	targetPath, _ := input["path"].(string)
-	paths := []string{}
-	if targetPath != "" {
-		paths = append(paths, targetPath)
-	}
+	paths := readCallTargets(input)
 	if patch, ok := input["hashline"].(string); ok && patch != "" {
 		if document, err := hashline.Parse(patch); err == nil && len(document.Sections) <= 32 {
 			for _, section := range document.Sections {

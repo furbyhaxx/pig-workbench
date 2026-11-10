@@ -1021,3 +1021,28 @@ func TestLiveLinkedWorktreeInstructionsApplyOnceWithoutTrust(t *testing.T) {
 		t.Fatalf("the root rules, repeated byte for byte in a worktree, must arrive exactly once, got %d", got)
 	}
 }
+
+func TestLiveMultiReadDeliversTheInstructionsOfEveryTarget(t *testing.T) {
+	root := t.TempDir()
+	instructionTree(t, root, map[string]string{"a": "PATHS-RULE-A applies.", "a/deep": "PATHS-RULE-DEEP applies.", "b": "PATHS-RULE-B applies."})
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"paths": []string{"a/deep/x.txt", "b/x.txt:1"}}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("p", "prompt", "Go.")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if strings.Contains(recorder.bodies[0], "PATHS-RULE") {
+		t.Fatal("nested instructions must not load before a target is touched")
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	for _, marker := range []string{"PATHS-RULE-A", "PATHS-RULE-DEEP", "PATHS-RULE-B"} {
+		if got := strings.Count(last, marker); got != 1 {
+			t.Errorf("%s reached the model %d times, want exactly once", marker, got)
+		}
+	}
+}
