@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+	"github.com/furbyhaxx/pig-workbench/internal/ask"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 )
 
@@ -48,9 +49,14 @@ func TestFrameMessageRendersOneFittedRowAndABoundedExpansion(t *testing.T) {
 }
 
 func TestAskRowListsEveryAnswerOnItsOwnLineWithoutExpansion(t *testing.T) {
-	row := askRow(`Answers to the ask_user form that was left unanswered (Release): {"answers":{"target":{"values":["staging"]},"note":{"custom":"after lunch","note":"not Friday"}}}`)
+	form := ask.Form{Title: "Release", Questions: []ask.Question{{ID: "target", Label: "Deploy target"}, {ID: "when", Label: "Timing"}}}
+	text := recoveredAnswers(form, ask.Result{Answers: map[string]ask.Answered{"target": {Values: []string{"staging"}}, "when": {Custom: "after lunch", Note: "not Friday"}}})
+	if !strings.Contains(text, "\nDeploy target [target]: staging\n") {
+		t.Fatalf("model text = %q", text)
+	}
+	row := askRow(text)
 	lines := row.render(func(_, text string) string { return text }, false, 80)
-	want := []string{"● ask · Release · 2 answered", "│ target: staging", "│ note: after lunch (note: not Friday)"}
+	want := []string{"● ask · Release · 2 answered", "│ Deploy target: staging", "│ Timing: after lunch (note: not Friday)"}
 	if strings.Join(lines, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("ask row = %q", lines)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -104,9 +105,6 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 	if len(row.body) > 0 {
 		first = row.body[0]
 	}
-	var location struct {
-		DisplayCwd string `json:"displayCwd"`
-	}
 	switch {
 	case strings.HasPrefix(first, "Instructions from: "):
 		row.facts = []string{instructionPath(strings.TrimPrefix(first, "Instructions from: "), root, width), "loaded"}
@@ -116,8 +114,15 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 		row.facts = []string{instructionPath(path, root, width), "changed"}
 		row.diff = true
 		row.body = row.body[1:]
-	case envelope.Source == "session.location" && json.Unmarshal([]byte(envelope.Body), &location) == nil && location.DisplayCwd != "":
-		row.facts = []string{displayTarget(location.DisplayCwd, "", width)}
+	case envelope.Source == "session.location":
+		where, _, _ := strings.Cut(first, "; ")
+		if _, to, moved := strings.Cut(where, " to "); moved {
+			where = to
+		}
+		row.facts = []string{displayTarget(strings.TrimPrefix(where, locationIntro), "", width)}
+		if strings.HasPrefix(first, locationChangedIntro) {
+			row.facts = append(row.facts, "changed")
+		}
 	case strings.HasPrefix(first, factChangeIntro):
 		row.body = row.body[1:]
 		row.facts = []string{fmt.Sprintf("%d changes", len(row.body))}
@@ -198,68 +203,26 @@ func instructionPath(path, root string, width int) string {
 	return displayTarget(path, root, width)
 }
 
-// askRow lists every answer of a recovered form on its own line; it is never collapsed.
+var askAnswerID = regexp.MustCompile(` \[[^\]]*\]: `)
+
+// askRow lists every answer of a recovered form on its own line by question label; it is never collapsed.
 func askRow(text string) frameRow {
 	row := frameRow{glyph: "●", tone: "success", label: "ask", open: true}
-	intro, payload, ok := strings.Cut(text, "): {")
-	if !ok {
-		lines := bodyLines(text)
-		if len(lines) > 0 {
-			row.facts, row.body = []string{lines[0]}, lines[1:]
-		}
+	lines := bodyLines(text)
+	if len(lines) == 0 {
 		return row
 	}
-	if _, title, found := strings.Cut(intro, "("); found && title != "" {
+	head, outcome, _ := strings.Cut(strings.TrimPrefix(lines[0], recoveredAnswersIntro), ":")
+	if title := strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(head), "("), ")"); title != "" {
 		row.facts = []string{title}
 	}
-	var result struct {
-		Answers   map[string]json.RawMessage `json:"answers"`
-		Cancelled bool                       `json:"cancelled"`
-		TimedOut  bool                       `json:"timedOut"`
-		Reason    string                     `json:"reason"`
+	if outcome = strings.TrimSpace(outcome); outcome != "" {
+		row.facts = append(row.facts, outcome)
+	} else {
+		row.facts = append(row.facts, fmt.Sprintf("%d answered", len(lines)-1))
 	}
-	payload = "{" + payload
-	if json.Unmarshal([]byte(payload), &result) != nil {
-		row.body = bodyLines(payload)
-		return row
-	}
-	switch {
-	case result.Cancelled:
-		row.facts = append(row.facts, "cancelled")
-	case result.TimedOut:
-		row.facts = append(row.facts, "timed out")
-	default:
-		row.facts = append(row.facts, fmt.Sprintf("%d answered", len(result.Answers)))
-	}
-	if result.Reason != "" {
-		row.body = append(row.body, tui.StripTerminalSequences(result.Reason))
-	}
-	ids := make([]string, 0, len(result.Answers))
-	for id := range result.Answers {
-		ids = append(ids, id)
-	}
-	sort.Slice(ids, func(i, j int) bool {
-		return strings.Index(payload, `"`+ids[i]+`":`) < strings.Index(payload, `"`+ids[j]+`":`)
-	})
-	for _, id := range ids {
-		var answer struct {
-			Values      []string `json:"values"`
-			Custom      string   `json:"custom"`
-			Note        string   `json:"note"`
-			Placeholder string   `json:"placeholder"`
-		}
-		_ = json.Unmarshal(result.Answers[id], &answer)
-		value := strings.Join(answer.Values, ", ")
-		for _, extra := range []string{answer.Custom, answer.Placeholder} {
-			if extra != "" && value != "" {
-				value += ", "
-			}
-			value += extra
-		}
-		if answer.Note != "" {
-			value += " (note: " + answer.Note + ")"
-		}
-		row.body = append(row.body, tui.StripTerminalSequences(strings.ReplaceAll(id+": "+value, "\n", " ")))
+	for _, line := range lines[1:] {
+		row.body = append(row.body, askAnswerID.ReplaceAllString(line, ": "))
 	}
 	return row
 }

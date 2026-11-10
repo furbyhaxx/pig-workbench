@@ -29,4 +29,4 @@
 
 ────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/w...
-17.6%/32k (auto)                mock
+17.3%/32k (auto)                mock

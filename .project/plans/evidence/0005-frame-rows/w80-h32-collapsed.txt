@@ -3,13 +3,13 @@
  Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
  -g extended-keys on` to ~/.tmux.conf and restart tmux.
 
- i session.date · 2026-11-10 13:39 CET · 4 lines · ctrl+o expand
+ i session.date · 2026-11-10 13:59 CET · 4 lines · ctrl+o expand
 
  i session.environment · linux/amd64 · 5 lines · ctrl+o expand
 
  i session.project · Global (global) · 7 lines · ctrl+o expand
 
- i session.location · ~/.cache/pig-workbench-test-tmp… · 9 lines · ctrl+o expand
+ i session.location · ~/.cache/pig-workbench-test-tmp/…/001 · ctrl+o expand
 
  i session.model · workbench-fixture/mock · 32k conte… · 8 lines · ctrl+o expand
 
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes30...
-17.6%/32k (auto)                                                            mock
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes84...
+17.3%/32k (auto)                                                            mock

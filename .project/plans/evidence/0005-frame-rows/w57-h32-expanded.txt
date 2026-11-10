@@ -7,7 +7,7 @@
  │     "skill"
  │   ]
  │ }
- └ info · trusted data · seq 6 · 10.11.2026 13:39 · deli…
+ └ info · trusted data · seq 6 · 10.11.2026 13:59 · deli…
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines
  │ ## AGENTS.md [project, instruction]
@@ -29,4 +29,4 @@
 
 ─────────────────────────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRen...
-17.6%/32k (auto)                                     mock
+17.3%/32k (auto)                                     mock

@@ -119,12 +119,44 @@ func (a *app) askCommand(ctx sdk.Context, args string) error {
 		if err := resolveAsk(ctx, record, state, result); err != nil {
 			return err
 		}
-		output, err := json.Marshal(result)
-		if err != nil {
-			return err
-		}
 		trigger := true
-		return ctx.SendMessage("pig-workbench.ask", "Answers to the ask_user form that was left unanswered ("+form.Title+"): "+string(output), true, sdk.SendMessageOptions{DeliverAs: "followUp", TriggerTurn: &trigger})
+		return ctx.SendMessage("pig-workbench.ask", recoveredAnswers(form, result), true, sdk.SendMessageOptions{DeliverAs: "followUp", TriggerTurn: &trigger})
 	}
 	return errors.New("usage: /workbench ask [show|resume|discard]")
+}
+
+const recoveredAnswersIntro = "Answers to the ask_user form that was left unanswered"
+
+// recoveredAnswers states a recovered form's outcome with one "label [id]: answer" line per question.
+func recoveredAnswers(form ask.Form, result ask.Result) string {
+	head := recoveredAnswersIntro
+	if form.Title != "" {
+		head += " (" + form.Title + ")"
+	}
+	switch {
+	case result.Cancelled:
+		return head + ": the user cancelled it. " + result.Reason
+	case result.TimedOut:
+		return head + ": it timed out. " + result.Reason
+	}
+	var out strings.Builder
+	out.WriteString(head + ":")
+	for _, question := range form.Questions {
+		answer, ok := result.Answers[question.ID]
+		if !ok {
+			continue
+		}
+		parts := append([]string(nil), answer.Values...)
+		for _, extra := range []string{answer.Custom, answer.Placeholder} {
+			if extra != "" {
+				parts = append(parts, extra)
+			}
+		}
+		line := strings.Join(parts, ", ")
+		if answer.Note != "" {
+			line += " (note: " + answer.Note + ")"
+		}
+		out.WriteString("\n" + question.Label + " [" + question.ID + "]: " + strings.ReplaceAll(line, "\n", " "))
+	}
+	return out.String()
 }

@@ -88,3 +88,29 @@ func TestLiveThinkingLevelChangeSendsOnlyTheChangeNeverTheModelFrameAgain(t *tes
 		t.Fatalf("the request carries no change notice:\n%s", last)
 	}
 }
+
+func TestLiveCdSendsTheLocationChangeAsOneSentence(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUIScripted(t, root, []scriptedCall{{tool: "cd", args: map[string]any{"path": "sub"}}})
+	s.typeText("go")
+	s.keys("Enter")
+	s.waitFor("done", 20*time.Second)
+	s.typeText("next")
+	s.keys("Enter")
+	screen := s.waitFor("● session.location · ", 20*time.Second)
+	for _, line := range strings.Split(screen, "\n") {
+		if strings.Contains(line, "session.location") {
+			t.Log(strings.TrimSpace(line))
+		}
+	}
+	time.Sleep(2 * time.Second)
+	s.recorder.mu.Lock()
+	last := s.recorder.bodies[len(s.recorder.bodies)-1]
+	s.recorder.mu.Unlock()
+	if !strings.Contains(last, "Working location: "+root+"; plain paths and cwd resolve there") || !strings.Contains(last, "Working location changed from "+root+" to "+filepath.Join(root, "sub")+"; plain paths and cwd now resolve there") {
+		t.Fatalf("the request lacks the location sentence or its change:\n%s", last)
+	}
+}

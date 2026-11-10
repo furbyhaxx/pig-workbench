@@ -16,6 +16,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
+	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/messaging"
 	"github.com/furbyhaxx/pig-workbench/internal/modelknowledge"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
@@ -219,7 +220,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		{source: "session.date", value: map[string]any{"date": time.Now().Format("2006-01-02"), "timezone": time.Now().Format("MST -07:00")}},
 		{source: "session.environment", value: map[string]any{"os": runtime.GOOS, "architecture": runtime.GOARCH, "hostCwd": ctx.Cwd()}},
 		{source: "session.project", value: projectFacts},
-		{source: "session.location", value: current},
+		{source: "session.location", value: locationSentence(current)},
 		{source: "session.model", value: modelFacts},
 		{source: "session.capabilities", value: map[string]any{"activeTools": tools, "schemes": s.router.Schemes()}},
 	}
@@ -379,6 +380,10 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 				if diff := instructionDiff(fact, previous, fullBody, updateContext(configuration)); diff != "" {
 					body = []byte(diff)
 				}
+			} else if fact.source == "session.location" {
+				was, _, _ := strings.Cut(strings.TrimPrefix(previous, locationIntro), "; ")
+				now, rest, _ := strings.Cut(strings.TrimPrefix(fullBody, locationIntro), "; ")
+				body, kind = []byte(locationChangedIntro+was+" to "+now+"; "+strings.Replace(rest, "cwd resolve", "cwd now resolve", 1)), "notice"
 			} else if change := factChange(fact.source, previous, fullBody); change != "" {
 				body, kind = []byte(change), "notice"
 			}
@@ -610,6 +615,26 @@ func updateContext(configuration *config.Snapshot) int {
 		return int(value)
 	}
 	return 3
+}
+
+const (
+	locationIntro        = "Working location: "
+	locationChangedIntro = "Working location changed from "
+)
+
+// locationSentence states where plain paths resolve; a non-local authority prefixes the directory.
+func locationSentence(current location.Snapshot) string {
+	where := current.DisplayCwd
+	if where == "" {
+		where = current.Cwd
+	}
+	if current.Authority != "" && current.Authority != "local" {
+		where = current.Authority + ":" + where
+	}
+	if !current.Available {
+		return locationIntro + where + "; it is currently unavailable; use file:///... for local files."
+	}
+	return locationIntro + where + "; plain paths and cwd resolve there; use file:///... for local files."
 }
 
 const factChangeIntro = "Changed in "

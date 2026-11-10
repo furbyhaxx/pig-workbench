@@ -3,13 +3,13 @@
  may not work. Add `set -g extended-keys on` to
  ~/.tmux.conf and restart tmux.
 
- i session.date · 2026-11-10 13:39 CET · 4 lines
+ i session.date · 2026-11-10 13:59 CET · 4 lines
 
  i session.environment · linux/amd64 · 5 lines
 
  i session.project · Global (global) · 7 lines
 
- i session.location · ~/.cache/…/001 · 9 lines
+ i session.location · ~/.cache/…/001 · ctrl+o expand
 
  i session.model · workbench-fixture/mock · 32k context
 
@@ -29,4 +29,4 @@
 
 ─────────────────────────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRen...
-17.6%/32k (auto)                                     mock
+17.3%/32k (auto)                                     mock
