@@ -14,11 +14,11 @@
     },
     {
       "id": "g3",
-      "text": "No stub, inert setting or unused code remains in Slice 1; every catalog key is consumed or marked planned."
+      "text": "No stub, inert setting or unused code remains in Slice 1; every shown catalog key has a consumer."
     },
     {
       "id": "g4",
-      "text": "Own and contributed tool rows share one renderer; frames, panels and the activity line follow the reviewed layouts."
+      "text": "Own and contributed tool rows share one renderer; skills arrive only as frames with availability diffs; frames, panels and the activity line follow the reviewed layouts."
     },
     {
       "id": "g5",
@@ -27,9 +27,9 @@
   ],
   "seq": {
     "g": 9,
-    "c": 198,
-    "p": 23,
-    "a": 75
+    "c": 216,
+    "p": 26,
+    "a": 80
   },
   "pins": [
     {
@@ -101,6 +101,27 @@
       "text": "M9: yeah, approved.",
       "source": "user",
       "at": "2026-11-10T08:58:59.209Z"
+    },
+    {
+      "id": "p24",
+      "kind": "rule",
+      "text": "H4b: do not show unwired things",
+      "source": "user",
+      "at": "2026-11-10T09:29:21.718Z"
+    },
+    {
+      "id": "p25",
+      "kind": "rule",
+      "text": "H5: actually skills must be delivered only as a frame, where progressive discovery emits another frame with only the diff (aka available now, not available anymore)",
+      "source": "user",
+      "at": "2026-11-10T09:29:21.718Z"
+    },
+    {
+      "id": "p26",
+      "kind": "rule",
+      "text": "update .project/AGENTS.md to match dot-project standards",
+      "source": "user",
+      "at": "2026-11-10T09:29:21.718Z"
     }
   ],
   "attachments": [
@@ -142,27 +163,64 @@
     }
   ],
   "createdAt": "2026-11-10T08:58:48.113Z",
-  "updatedAt": "2026-11-10T08:58:59.209Z",
+  "updatedAt": "2026-11-10T09:30:47.641Z",
   "claim": {
     "session": "01a1c42f-88be-7431-8126-ea2c9e4939ee",
-    "at": "2026-11-10T08:58:59.208Z",
+    "at": "2026-11-10T09:30:47.641Z",
     "name": "review slice 1"
   },
   "tasks": [
     {
       "id": "1",
       "title": "Orientation, Analysis, Scope & Objective clarification",
-      "status": "todo",
-      "updatedAt": "2026-11-10T08:58:48.113Z",
+      "status": "doing",
+      "updatedAt": "2026-11-10T09:29:21.707Z",
+      "startedAt": "2026-11-10T09:29:21.707Z",
       "subtasks": [
         {
           "id": "1.1",
+          "title": "Apply the user's second decision round to plan, list and .project rules",
+          "status": "done",
+          "createdAt": "2026-11-10T09:29:21.694Z",
+          "updatedAt": "2026-11-10T09:30:47.641Z",
+          "startedAt": "2026-11-10T09:29:21.707Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c199",
+              "text": "PLAN-0005 revision 2 records H4b, H5, M6 and the agreed items"
+            },
+            {
+              "id": "c200",
+              "text": "Task list matches and validates"
+            },
+            {
+              "id": "c201",
+              "text": ".project/AGENTS.md follows the dot-project standard"
+            }
+          ],
+          "report": {
+            "outcome": "PLAN-0005 revision 2 and the task list (169 tasks, valid) record the second decision round; .project/AGENTS.md, reviews/AGENTS.md and the root AGENTS.md line now follow the dot-project standard. Committed as 8b78be0.",
+            "decisions": [
+              "Unwired settings are hidden everywhere, saved values preserved and ignored — user: do not show unwired things",
+              "Skills: frame-only delivery (source session.skills) with availability diff frames; skills.listing setting removed; SPEC-0014 revision is task 7.6",
+              "operation.status stays reserved in SPEC-0001",
+              ".project rules follow dot-project: delete with trailers, single changelog entry"
+            ],
+            "open": [
+              "Existing artifacts still carry multi-entry changelogs and plans/AGENTS.md still says 'appended revision' (pinned as p5); migration is task 14.7",
+              "Task-list JSON changes after 479e4e6 are uncommitted (.pig/tasks/slice-1-remediation.json)"
+            ]
+          },
+          "endedAt": "2026-11-10T09:30:47.641Z"
+        },
+        {
+          "id": "1.2",
           "title": "Read PLAN-0005, the review and the user decisions",
           "status": "todo",
           "updatedAt": "2026-11-10T08:58:48.113Z"
         },
         {
-          "id": "1.2",
+          "id": "1.3",
           "title": "Record the gate baseline at HEAD",
           "status": "todo",
           "updatedAt": "2026-11-10T08:58:48.113Z",
@@ -568,11 +626,11 @@
               "id": "a15"
             }
           ],
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.387Z",
           "acceptanceCriteria": [
             {
               "id": "c30",
-              "text": "The setting selects the projection role or the key is planned with its reason"
+              "text": "The setting selects the projection role, or the key is hidden with its reason in the plan"
             },
             {
               "id": "c31",
@@ -1144,11 +1202,11 @@
           "id": "a35"
         }
       ],
-      "updatedAt": "2026-11-10T08:58:48.113Z",
+      "updatedAt": "2026-11-10T09:30:33.329Z",
       "goals": [
         {
           "id": "g8",
-          "text": "Every catalog key is consumed, or marked planned and read-only."
+          "text": "Every shown catalog key is consumed; keys without a consumer are not shown anywhere."
         }
       ],
       "subtasks": [
@@ -1156,7 +1214,7 @@
           "id": "6.1",
           "title": "Classification table and guard test",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.450Z",
           "acceptanceCriteria": [
             {
               "id": "c66",
@@ -1164,23 +1222,23 @@
             },
             {
               "id": "c67",
-              "text": "A test fails for a key that is neither consumed nor planned"
+              "text": "A test fails when a shown key has no consumer"
             }
           ]
         },
         {
           "id": "6.2",
-          "title": "Planned application",
+          "title": "Keys without a consumer are hidden",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.513Z",
           "acceptanceCriteria": [
             {
               "id": "c68",
-              "text": "Planned keys are read-only in the panel and name their slice"
+              "text": "Hidden keys are absent from the panel, settings catalog, cfg resources and docs"
             },
             {
               "id": "c69",
-              "text": "Saved values of planned keys still load"
+              "text": "A saved value of a hidden key is preserved on save and ignored"
             }
           ]
         },
@@ -1286,7 +1344,7 @@
               "id": "6.3.7",
               "title": "projects settings",
               "status": "todo",
-              "updatedAt": "2026-11-10T08:58:48.113Z",
+              "updatedAt": "2026-11-10T09:30:33.570Z",
               "acceptanceCriteria": [
                 {
                   "id": "c76",
@@ -1294,7 +1352,7 @@
                 },
                 {
                   "id": "c77",
-                  "text": "storage-links is consumed or planned"
+                  "text": "storage-links is consumed or hidden"
                 }
               ]
             },
@@ -1362,7 +1420,7 @@
               "id": "6.3.11",
               "title": "activity settings labels",
               "status": "todo",
-              "updatedAt": "2026-11-10T08:58:48.113Z",
+              "updatedAt": "2026-11-10T09:30:33.638Z",
               "acceptanceCriteria": [
                 {
                   "id": "c82",
@@ -1370,7 +1428,7 @@
                 },
                 {
                   "id": "c83",
-                  "text": "replace-working-indicator is consumed or planned"
+                  "text": "replace-working-indicator is consumed or hidden"
                 }
               ]
             }
@@ -1380,11 +1438,11 @@
           "id": "6.4",
           "title": "Verify area E",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.699Z",
           "acceptanceCriteria": [
             {
               "id": "c84",
-              "text": "Guard test passes with zero unconsumed keys"
+              "text": "Guard test passes: no shown key without a consumer"
             },
             {
               "id": "c85",
@@ -1444,7 +1502,7 @@
         },
         {
           "id": "7.2",
-          "title": "Single listing in the template",
+          "title": "Listing delivered only as a frame",
           "status": "todo",
           "attachments": [
             {
@@ -1458,20 +1516,138 @@
               "id": "a43"
             }
           ],
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.757Z",
           "acceptanceCriteria": [
             {
               "id": "c88",
-              "text": "The prompt lists each skill once"
+              "text": "The rendered system prompt contains no skill listing"
             },
             {
               "id": "c89",
+              "text": "A session.skills frame lists every available skill by skill-scheme name, within budget"
+            },
+            {
+              "id": "c202",
               "text": "Golden renders updated"
             }
           ]
         },
         {
           "id": "7.3",
+          "title": "Availability diff frames",
+          "status": "todo",
+          "createdAt": "2026-11-10T09:30:33.813Z",
+          "updatedAt": "2026-11-10T09:30:33.813Z",
+          "attachments": [
+            {
+              "id": "a76",
+              "path": ".project/specs/0014-system-prompts.md",
+              "anchor": {
+                "section": "8.3 Conditions"
+              },
+              "note": "what changes availability",
+              "hash": "ef376689ca0a",
+              "at": "2026-11-10T09:30:33.814Z"
+            },
+            {
+              "id": "a77",
+              "path": ".project/specs/0014-system-prompts.md",
+              "anchor": {
+                "section": "8.4 Nested skills"
+              },
+              "note": "sub-skills revealed by a parent load",
+              "hash": "3c97ddb6e8ca",
+              "at": "2026-11-10T09:30:33.814Z"
+            }
+          ],
+          "acceptanceCriteria": [
+            {
+              "id": "c203",
+              "text": "A when condition that starts holding emits one frame naming only that skill"
+            },
+            {
+              "id": "c204",
+              "text": "A withdrawn skill is named as no longer available"
+            },
+            {
+              "id": "c205",
+              "text": "No availability change emits no frame"
+            }
+          ]
+        },
+        {
+          "id": "7.4",
+          "title": "Full listing after compaction",
+          "status": "todo",
+          "createdAt": "2026-11-10T09:30:33.813Z",
+          "updatedAt": "2026-11-10T09:30:33.813Z",
+          "attachments": [
+            {
+              "id": "a78",
+              "path": ".project/specs/0014-system-prompts.md",
+              "anchor": {
+                "section": "8.5 After compaction"
+              },
+              "note": "replay rules",
+              "hash": "58ae1d96a732",
+              "at": "2026-11-10T09:30:33.814Z"
+            }
+          ],
+          "acceptanceCriteria": [
+            {
+              "id": "c206",
+              "text": "After compaction the full listing frame is delivered once, then diffs resume"
+            }
+          ]
+        },
+        {
+          "id": "7.5",
+          "title": "Remove the skills.listing setting",
+          "status": "todo",
+          "createdAt": "2026-11-10T09:30:33.813Z",
+          "updatedAt": "2026-11-10T09:30:33.813Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c207",
+              "text": "The key is gone from catalog, docs and code"
+            },
+            {
+              "id": "c208",
+              "text": "An existing value in Workbench.toml is preserved and ignored"
+            }
+          ]
+        },
+        {
+          "id": "7.6",
+          "title": "SPEC-0014 revision for frame-only skills",
+          "status": "todo",
+          "createdAt": "2026-11-10T09:30:33.813Z",
+          "updatedAt": "2026-11-10T09:30:33.813Z",
+          "attachments": [
+            {
+              "id": "a79",
+              "path": ".project/specs/0014-system-prompts.md",
+              "anchor": {
+                "section": "5. Context frames"
+              },
+              "note": "existing frame set and rules",
+              "hash": "91089f60db56",
+              "at": "2026-11-10T09:30:33.814Z"
+            }
+          ],
+          "acceptanceCriteria": [
+            {
+              "id": "c209",
+              "text": "Sections 7, 8.1 and 8.5 state frame-only delivery and diff frames in a new revision"
+            },
+            {
+              "id": "c210",
+              "text": "SPEC-0002 lists the session.skills source if it enumerates sources"
+            }
+          ]
+        },
+        {
+          "id": "7.7",
           "title": "skills.listing-budget",
           "status": "todo",
           "updatedAt": "2026-11-10T08:58:48.113Z",
@@ -1487,7 +1663,7 @@
           ]
         },
         {
-          "id": "7.4",
+          "id": "7.8",
           "title": "skills.conditions",
           "status": "todo",
           "attachments": [
@@ -1509,7 +1685,7 @@
           ]
         },
         {
-          "id": "7.5",
+          "id": "7.9",
           "title": "Load and unload for host skills",
           "status": "todo",
           "attachments": [
@@ -1535,7 +1711,7 @@
           ]
         },
         {
-          "id": "7.6",
+          "id": "7.10",
           "title": "/workbench skills verbs and panel",
           "status": "todo",
           "pins": [
@@ -1560,7 +1736,7 @@
           ]
         },
         {
-          "id": "7.7",
+          "id": "7.11",
           "title": "Conditions, nested skills and replay verified",
           "status": "todo",
           "attachments": [
@@ -1594,7 +1770,7 @@
           ]
         },
         {
-          "id": "7.8",
+          "id": "7.12",
           "title": "Verify area F",
           "status": "todo",
           "updatedAt": "2026-11-10T08:58:48.113Z",
@@ -2808,11 +2984,11 @@
           "id": "14.1",
           "title": "Settings reference from the catalog",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.879Z",
           "acceptanceCriteria": [
             {
               "id": "c183",
-              "text": "docs/configuration.md lists all keys, generated"
+              "text": "docs/configuration.md lists every shown key, generated"
             },
             {
               "id": "c184",
@@ -2890,7 +3066,7 @@
           "id": "14.6",
           "title": "Backlog for leftovers",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:33.940Z",
           "acceptanceCriteria": [
             {
               "id": "c191",
@@ -2898,7 +3074,85 @@
             },
             {
               "id": "c192",
-              "text": "The archive-or-delete rule is decided with the user"
+              "text": "Each item has exactly one pointer line in a BACKLOG.md"
+            }
+          ]
+        },
+        {
+          "id": "14.7",
+          "title": "dot-project migration",
+          "status": "todo",
+          "createdAt": "2026-11-10T09:30:34.002Z",
+          "updatedAt": "2026-11-10T09:30:34.002Z",
+          "attachments": [
+            {
+              "id": "a80",
+              "path": ".project/AGENTS.md",
+              "note": "rules now in force",
+              "hash": "9e745ccf1606",
+              "at": "2026-11-10T09:30:34.003Z"
+            }
+          ],
+          "subtasks": [
+            {
+              "id": "14.7.1",
+              "title": "One changelog entry per artifact",
+              "status": "todo",
+              "createdAt": "2026-11-10T09:30:34.002Z",
+              "updatedAt": "2026-11-10T09:30:34.002Z",
+              "acceptanceCriteria": [
+                {
+                  "id": "c211",
+                  "text": "Every artifact frontmatter has a single changelog entry"
+                }
+              ]
+            },
+            {
+              "id": "14.7.2",
+              "title": "Artifact check in just check",
+              "status": "todo",
+              "createdAt": "2026-11-10T09:30:34.002Z",
+              "updatedAt": "2026-11-10T09:30:34.002Z",
+              "acceptanceCriteria": [
+                {
+                  "id": "c212",
+                  "text": "A check script runs in just check and passes"
+                },
+                {
+                  "id": "c213",
+                  "text": "It fails on a dangling artifact path or id"
+                }
+              ]
+            },
+            {
+              "id": "14.7.3",
+              "title": "Delete consumed artifacts",
+              "status": "todo",
+              "createdAt": "2026-11-10T09:30:34.002Z",
+              "updatedAt": "2026-11-10T09:30:34.002Z",
+              "acceptanceCriteria": [
+                {
+                  "id": "c214",
+                  "text": "Consumed handoffs and analyses are removed with Artifact-Deleted trailers"
+                },
+                {
+                  "id": "c215",
+                  "text": "No reference to a deleted artifact remains"
+                }
+              ]
+            },
+            {
+              "id": "14.7.4",
+              "title": "Sub-directory AGENTS.md files aligned",
+              "status": "todo",
+              "createdAt": "2026-11-10T09:30:34.002Z",
+              "updatedAt": "2026-11-10T09:30:34.002Z",
+              "acceptanceCriteria": [
+                {
+                  "id": "c216",
+                  "text": "No .project AGENTS.md mentions archiving or appended changelogs"
+                }
+              ]
             }
           ]
         }
@@ -3002,11 +3256,11 @@
           "id": "15.6",
           "title": "Review disposition",
           "status": "todo",
-          "updatedAt": "2026-11-10T08:58:48.113Z",
+          "updatedAt": "2026-11-10T09:30:34.062Z",
           "acceptanceCriteria": [
             {
               "id": "c198",
-              "text": "REV-2026-11-10-slice-1 is handled by the superseding rule"
+              "text": "The review is deleted with Artifact-Deleted trailers; open findings are backlog items"
             }
           ]
         }
