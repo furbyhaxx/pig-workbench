@@ -10,7 +10,7 @@ import (
 )
 
 func TestFixtureSectionOrder(t *testing.T) {
-	root := filepath.Join("..", "..", ".project", "analyses", "2026-11-03-system-prompt-host-probes", "evidence", "fixtures")
+	root := filepath.Join("testdata", "host-options")
 	loader, err := NewFileSystemLoader(FileSystemOptions{Builtin: BuiltinFS()})
 	if err != nil {
 		t.Fatal(err)
