@@ -1,0 +1,597 @@
+{
+  "$schema": "https://raw.githubusercontent.com/furbyhaxx/pi-accordion/feat/pi-native/extension/skills/accordion-task-lists/references/tasks.schema.json",
+  "version": 3,
+  "slug": "slice-1-review",
+  "title": "Slice 1 review and gap analysis",
+  "goals": [
+    {
+      "id": "g1",
+      "text": "A written, evidence-backed review (REV artifact in .project/) of Slice 1 against PLAN-0001 §9 / PLAN-0002 and SPEC-0001..0014"
+    },
+    {
+      "id": "g2",
+      "text": "Findings ranked by impact for: spec adherence, soundness/wiring/bugs, docs currency, duplication, unified TUI appearance, extending-pig UI/UX standards"
+    },
+    {
+      "id": "g3",
+      "text": "Gates (check/race) observed and reported; no code changes unless the user asks"
+    }
+  ],
+  "seq": {
+    "g": 3,
+    "c": 7
+  },
+  "createdAt": "2026-11-10T06:44:23.805Z",
+  "updatedAt": "2026-11-10T07:05:35.590Z",
+  "claim": {
+    "session": "01a1c42f-88be-7431-8126-ea2c9e4939ee",
+    "at": "2026-11-10T07:05:35.590Z",
+    "name": "review slice 1"
+  },
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Orientation, Analysis, Scope & Objective clarification",
+      "status": "done",
+      "createdAt": "2026-11-10T06:44:23.805Z",
+      "updatedAt": "2026-11-10T06:45:02.544Z",
+      "startedAt": "2026-11-10T06:44:28.712Z",
+      "report": {
+        "outcome": "Orientation done; review tree with 6 areas / 28 leaf tasks created."
+      },
+      "endedAt": "2026-11-10T06:45:02.544Z",
+      "subtasks": [
+        {
+          "id": "1.1",
+          "title": "Read inventory, probes, handoffs, skills (extending-pig, dot-project) and map code layout",
+          "status": "done",
+          "createdAt": "2026-11-10T06:44:23.805Z",
+          "updatedAt": "2026-11-10T06:45:02.538Z",
+          "startedAt": "2026-11-10T06:44:28.712Z",
+          "report": {
+            "outcome": "Read PLAN-0001 (scope, §6 ambient contract, §9 ownership), PLAN-0002 (phases, exit, mode matrix), the Slice 1 inventory (self-attested 24/24 rows, 4 non-passing sub-anchors, named host limits) and extending-pig SKILL + ui-ux.md + dashboard-standard.md. Repo: ~86k Go lines, internal/host is 17.5k non-test lines in ~159 files; no BACKLOG.md and no .project/backlog/ exist although AGENTS.md references them; .project has no reviews/ dir yet. Task tree populated.",
+            "decisions": [
+              "Review only, no code changes — user asked for comparison/review/gap analysis",
+              "Standards to check UI against: ui-ux.md header grammar (glyph, target, metrics joined by ' · '), three densities, nine-line dashboard frame, fixed height, no single-key actions, KeyHint labels, theme tokens only, config rule 7"
+            ],
+            "open": [
+              "Inventory already admits: jobs states failedToStart/stopping missing; relocation stricter than spec (no 8-char evidence/payload body compare); donor fixtures not pinned; PLAN-0002 status still 'draft' and Progress says 'not complete'",
+              "extending-pig says config JSON and tools <name>_<verb>; project deliberately uses TOML and builtin tool names (AGENTS.md) — treat as agreed deviations"
+            ]
+          },
+          "endedAt": "2026-11-10T06:45:02.538Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c1",
+              "text": "Review task tree populated per area"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Gates and mechanical scans",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T06:58:14.707Z",
+      "startedAt": "2026-11-10T06:45:02.549Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 2.3 is blocked",
+          "on": "2.3",
+          "at": "2026-11-10T06:46:55.632Z",
+          "resumedAt": "2026-11-10T06:57:18.735Z"
+        }
+      ],
+      "report": {
+        "outcome": "check green, race green, integration red by one path-length-dependent TUI test; no markers; 4 unused code items via staticcheck."
+      },
+      "endedAt": "2026-11-10T06:58:14.707Z",
+      "subtasks": [
+        {
+          "id": "2.1",
+          "title": "Run just check and just race; record results",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:45:45.806Z",
+          "startedAt": "2026-11-10T06:45:02.549Z",
+          "report": {
+            "outcome": "At HEAD 00649e9 (10.11.2026): `just check` exit 0 (fmt, vet, 27 packages ok, PiG build, package validate valid: extensions 1, skills 0) and `just race` exit 0 (27 packages ok). Logs in ~/.cache/pig-workbench-test-tmp/logs/{check,race}.log. TMPDIR set outside /tmp.",
+            "open": [
+              "start() error paths after jobs.NewManager/buildRouter leak the job manager and scratch dir (app.go ~l.230-262) — minor",
+              "session.host retains the session_start sdk.Context (app.go host := ctx; skills persist closure) though internal/AGENTS.md forbids retaining request contexts; verify SDK validity in 3.1",
+              "Integration job 296cc8d630e3e353000000000000000d running in background -> ~/.cache/pig-workbench-test-tmp/logs/integration.log (task 2.3)"
+            ]
+          },
+          "endedAt": "2026-11-10T06:45:45.806Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c2",
+              "text": "Exit status and failures of both gates recorded"
+            }
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "Marker/stub/unsupported/unwired scans and static analysis (vet, staticcheck, deadcode if available)",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:46:55.613Z",
+          "startedAt": "2026-11-10T06:45:45.813Z",
+          "report": {
+            "outcome": "No TODO/FIXME/stub markers. staticcheck: 4 unused items (fetchRouter.list, statusBoard.list, jobCatalog, managerLogWriter), one dead assignment, one deprecated SDK field, style nits; 'unsupported' sites are legitimate refusals, no advertised-capability stub found. Details written to the findings file.",
+            "decisions": [
+              "deadcode is unusable for a factory extension (no main); ignored",
+              "Static tools run in a copy at ~/.cache/pig-workbench-test-tmp/copy (GOWORK=off, .tmp/go.mod as go.mod)",
+              "All findings accumulate in ~/.cache/pig-workbench-test-tmp/findings.md (outside repo so the integration build is not disturbed)"
+            ]
+          },
+          "endedAt": "2026-11-10T06:46:55.613Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c3",
+              "text": "List of suspicious markers and dead code with locations"
+            }
+          ]
+        },
+        {
+          "id": "2.3",
+          "title": "Run just integration (background) and record result",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:58:14.701Z",
+          "startedAt": "2026-11-10T06:46:55.619Z",
+          "blocks": [
+            {
+              "reason": "third-party",
+              "detail": "background job 296cc8d630e3e353000000000000000d (just integration) still running; log ~/.cache/pig-workbench-test-tmp/logs/integration.log",
+              "at": "2026-11-10T06:46:55.632Z",
+              "resumedAt": "2026-11-10T06:57:18.735Z"
+            }
+          ],
+          "report": {
+            "outcome": "`just integration` at 00649e9: FAIL after 476 s with exactly one failing test, TestLiveTrustPanelAddsAndRemovesARulePersistently (live_menu_test.go:476). Deterministic with the documented long TMPDIR (typed rule scrolls out of the 100-col input), passes with a short TMPDIR; test fragility, not a product defect. All other live tests passed."
+          },
+          "endedAt": "2026-11-10T06:58:14.701Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c4",
+              "text": "Integration result recorded or reason it could not run"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Wiring, lifecycle and soundness",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T06:48:56.782Z",
+      "startedAt": "2026-11-10T06:46:55.638Z",
+      "report": {
+        "outcome": "Wiring is sound and thin; lifecycle joins owned work. One medium race window (s.endpoint/s.activity set after session publication), several low items, two SPEC-0001 drifts (operation.status, frames.deliveryChanged). All in findings file."
+      },
+      "endedAt": "2026-11-10T06:48:56.782Z",
+      "subtasks": [
+        {
+          "id": "3.1",
+          "title": "extension.go and host/app.go registration, lifecycle, shutdown joins",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:47:50.072Z",
+          "startedAt": "2026-11-10T06:46:55.638Z",
+          "report": {
+            "outcome": "Factory is thin (17 lines) and host.Register wires 10 tools (read, cd, ask_user, bash, jobs, edit, write, ls, grep, find), commands workbench/cd/wb:cd/tools/wb:jobs, one shortcut and one ToolRenderer resolver; 27 event hooks. Shutdown joins status, activity, endpoint, supervisor, jobs and removes scratch. Findings appended to the findings file.",
+            "open": [
+              "s.endpoint/s.activity assigned after a.session is published (race window)",
+              "companion commands lack completions"
+            ]
+          },
+          "endedAt": "2026-11-10T06:47:50.072Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c5",
+              "text": "Registration map and lifecycle findings recorded"
+            }
+          ]
+        },
+        {
+          "id": "3.2",
+          "title": "Concurrency, globals, goroutine ownership, context use across host",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:48:30.066Z",
+          "startedAt": "2026-11-10T06:47:50.080Z",
+          "report": {
+            "outcome": "Concurrency is disciplined overall (supervisor admission, per-action admission in panels, one mutex-guarded global, race gate green). Low findings recorded: unsynchronized prompt* fields, whole-map clear() eviction in snapshots.go, render-timeout goroutine. To check later in 5.3: sessionsPanel.rows closure does registry/socket I/O — verify it is not called from render."
+          },
+          "endedAt": "2026-11-10T06:48:30.066Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c6",
+              "text": "Findings with file:line"
+            }
+          ]
+        },
+        {
+          "id": "3.3",
+          "title": "Service bus / contribution seams other extensions build on (api/, contributed_*)",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:48:56.776Z",
+          "startedAt": "2026-11-10T06:48:30.076Z",
+          "report": {
+            "outcome": "Service dispatcher matches SPEC-0001 for discover/register/unregister/describe/settings.get/resources.changed/status.update/snapshots.*/sessions.*/secrets.redact/context.fields.set/location.get, strict decoding, timeout bounds, generation checks and per-owner limit. Gaps: operation.status unimplemented, frames.deliveryChanged never emitted, channel lists incomplete in spec/docs, version hardcoded. Recorded in findings file."
+          },
+          "endedAt": "2026-11-10T06:48:56.776Z",
+          "acceptanceCriteria": [
+            {
+              "id": "c7",
+              "text": "Seam contract findings vs SPEC-0001 recorded"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Spec adherence",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T06:57:18.729Z",
+      "startedAt": "2026-11-10T06:48:56.787Z",
+      "report": {
+        "outcome": "All 14 specs compared; findings in ~/.cache/pig-workbench-test-tmp/findings.md. Top: bash refuses any command containing a registered scheme prefix incl. http/https (critical); frame ledger lifetime 2 MiB wall; paths[] reads skip instruction discovery; session root listing fails beyond 16 entries; system-prompt resource stub; host skills absent from skill tree; 65/100 settings inert; several spec routes/resources missing."
+      },
+      "endedAt": "2026-11-10T06:57:18.729Z",
+      "subtasks": [
+        {
+          "id": "4.1",
+          "title": "SPEC-0001 extension services",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:49:51.877Z",
+          "startedAt": "2026-11-10T06:48:56.787Z",
+          "report": {
+            "outcome": "SPEC-0001: diagnostics resources (cfg://workbench/integrations, docs://workbench/schemes) exist; method/event drifts recorded in 3.3. Side discovery: 65/100 catalog settings are inert ('unavailable'), incl. Slice-1-scope keys such as prompt.template; and a live false positive of the bash scheme-command detector hit this very session (to reproduce in 4.8)."
+          },
+          "endedAt": "2026-11-10T06:49:51.877Z"
+        },
+        {
+          "id": "4.2",
+          "title": "SPEC-0002 message frames",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:50:49.848Z",
+          "startedAt": "2026-11-10T06:49:51.884Z",
+          "report": {
+            "outcome": "SPEC-0002: admission, dedup, coalescing, expiry, limits, envelope and wake rules are implemented as specified. HIGH defect proven by a throwaway test: the 2 MiB body budget counts every frame ever admitted in the session lineage (terminal records never release), so a long session eventually fails every context-frame admission and third-party publish. Details in findings file.",
+            "open": [
+              "Verify in 4.7 whether Read with paths[] registers instruction touches (live observation suggests not)"
+            ]
+          },
+          "endedAt": "2026-11-10T06:50:49.848Z"
+        },
+        {
+          "id": "4.3",
+          "title": "SPEC-0003 tool presentation",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:51:44.150Z",
+          "startedAt": "2026-11-10T06:50:49.854Z",
+          "report": {
+            "outcome": "SPEC-0003 data contract (strict decoder, bounds, lifecycle, ownership check, settings) is implemented and well tested; no new drift found in §2-§6. While working, discovered and live-reproduced a CRITICAL bash defect: any command text containing a registered non-locatable scheme prefix incl. http/https is refused (curl URL, grep for scheme strings, echo, heredocs). Recorded with file:line in findings.",
+            "open": [
+              "5.1 must compare host/own_tools_render.go (own ten tools) with host/presentation_render.go (contributed tools): two render paths",
+              "Findings-file appends must not contain scheme+colon-slash-slash text (bash refuses the command)"
+            ]
+          },
+          "endedAt": "2026-11-10T06:51:44.150Z"
+        },
+        {
+          "id": "4.4",
+          "title": "SPEC-0004 resource providers",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:52:19.602Z",
+          "startedAt": "2026-11-10T06:51:44.158Z",
+          "report": {
+            "outcome": "SPEC-0004 live spot checks through the real tools: retired scheme answers with replacement (ok), cfg and job trees list, https read works with a path. Gaps: session self/frames and self/instructions/ are not readable, bare-origin https URL is refused, docs workbench/schemes/ empty listing prints nothing. Recorded in findings."
+          },
+          "endedAt": "2026-11-10T06:52:19.602Z"
+        },
+        {
+          "id": "4.5",
+          "title": "SPEC-0005 hashline editing",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:53:05.077Z",
+          "startedAt": "2026-11-10T06:52:19.609Z",
+          "report": {
+            "outcome": "SPEC-0005 verified live through the real edit tool on scratch files (~/.cache/pig-workbench-test-tmp/edit): block replace, cross-file CUT/paste, CRLF, unseen-line guard and stale-tag relocation work. Only low findings (error wording, silent recovery, paste form undocumented in the tool description, known G5.2 deviation not written back to the spec)."
+          },
+          "endedAt": "2026-11-10T06:53:05.077Z"
+        },
+        {
+          "id": "4.6",
+          "title": "SPEC-0006 advanced read and search",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:53:28.474Z",
+          "startedAt": "2026-11-10T06:53:05.082Z",
+          "report": {
+            "outcome": "SPEC-0006 verified live: selectors, literal punctuation filenames, multi-read with per-target errors, summaries, grep/find/ls bounded output all correct. One low wording finding. Observed: a single-path Read and a Grep under internal/host delivered internal/AGENTS.md and host/AGENTS.md frames; the earlier paths[] read of .project/plans did not deliver nested AGENTS.md (to test in 4.7)."
+          },
+          "endedAt": "2026-11-10T06:53:28.474Z"
+        },
+        {
+          "id": "4.7",
+          "title": "SPEC-0007 ambient context",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:54:10.274Z",
+          "startedAt": "2026-11-10T06:53:28.481Z",
+          "report": {
+            "outcome": "SPEC-0007: ancestors placement, host files and single-path touches work live. HIGH: read with paths[] never triggers instruction discovery (instruction_context.go:136 reads only input[\"path\"]), live-confirmed twice. Not re-verified here: pins, caps, diff updates (covered by the project's own live tests).",
+            "open": [
+              "Integration job finished: FAIL, one test (TestLiveTrustPanelAddsAndRemovesARulePersistently); task 2.3 can now be resumed and closed"
+            ]
+          },
+          "endedAt": "2026-11-10T06:54:10.274Z"
+        },
+        {
+          "id": "4.8",
+          "title": "SPEC-0008 locations and jobs",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:54:38.997Z",
+          "startedAt": "2026-11-10T06:54:15.101Z",
+          "report": {
+            "outcome": "SPEC-0008: location capture, job tree, completion notice verified live. Drifts: bash lacks title/cwd, jobs list returns raw PascalCase Go JSON without command, wait needs id, missing states, foreground calls consume the finished-job retention. G8.20 spec text itself needs an http/https exemption. Recorded."
+          },
+          "endedAt": "2026-11-10T06:54:38.997Z"
+        },
+        {
+          "id": "4.9",
+          "title": "SPEC-0009 interaction and commands",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:55:06.738Z",
+          "startedAt": "2026-11-10T06:54:39.003Z",
+          "report": {
+            "outcome": "SPEC-0009: all top-level routes exist, but several specified subcommands (frames show/hide, prompt render/diff, skills load/unload, tools --format, jobs monitor) are absent, aliases are not canonicalized and verbs differ per family; the activity line lacks the state, instructions and location items and polls with I/O at 2 Hz. Recorded.",
+            "open": [
+              "ask_user not exercised live (would interrupt the user); relying on the project's RPC live tests"
+            ]
+          },
+          "endedAt": "2026-11-10T06:55:06.738Z"
+        },
+        {
+          "id": "4.10",
+          "title": "SPEC-0010 configuration, state, trust",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:55:18.867Z",
+          "startedAt": "2026-11-10T06:55:06.754Z",
+          "report": {
+            "outcome": "SPEC-0010: layering, typed catalog, atomic 0600 saves (temp+fsync+rename, flock), malformed refusal and trust limits are implemented per spec and extending-pig invariant 7. The main gap is the already recorded 65/100 inert catalog keys (shown with application 'unavailable'); instructions.classes configuration is deferred by PLAN-0002."
+          },
+          "endedAt": "2026-11-10T06:55:18.867Z"
+        },
+        {
+          "id": "4.11",
+          "title": "SPEC-0011 inter-session messaging",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:55:37.270Z",
+          "startedAt": "2026-11-10T06:55:18.873Z",
+          "report": {
+            "outcome": "SPEC-0011: endpoint discovery and agent tree verified live (5 peers listed); send/wake not exercised to avoid waking the user's other agents (covered by project live tests). Found: edit lock files accumulate without cleanup (131 files), small tree/column drifts."
+          },
+          "endedAt": "2026-11-10T06:55:37.270Z"
+        },
+        {
+          "id": "4.12",
+          "title": "SPEC-0012 projects and URI namespace",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:56:23.165Z",
+          "startedAt": "2026-11-10T06:55:37.277Z",
+          "report": {
+            "outcome": "SPEC-0012 live: artifact, local, cfg, job, agent trees list; retired schemes answer. HIGH: session root and by-id listings fail on a real machine because sessionProvider.List ignores the 16-entry page limit enforced by list.go. Session subtree lacks tree/messages/frames/instructions; skill tree excludes user-level skills; out root unsupported. Project registry/storage conversion not re-verified (covered by project tests)."
+          },
+          "endedAt": "2026-11-10T06:56:23.165Z"
+        },
+        {
+          "id": "4.13",
+          "title": "SPEC-0013 secrets",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:56:51.251Z",
+          "startedAt": "2026-11-10T06:56:23.172Z",
+          "report": {
+            "outcome": "SPEC-0013 live with synthetic random tokens in ~/.cache scratch: token shapes are redacted in read and bash results. Gap: an env file referenced by a tool call (read of a .env outside the cwd chain) is not learned, its KEY value reaches the model in plaintext, contrary to §2. Vault/ask-secret/env-injection not re-verified live (secrets.env-injection is an inert setting)."
+          },
+          "endedAt": "2026-11-10T06:56:51.251Z"
+        },
+        {
+          "id": "4.14",
+          "title": "SPEC-0014 system prompts and skills",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T06:57:18.722Z",
+          "startedAt": "2026-11-10T06:56:51.257Z",
+          "report": {
+            "outcome": "SPEC-0014 live: the system-prompt session resource is a hardcoded, stale one-line stub; host-discovered skills are not in the skill tree (only cwd-local skill dirs), so progressive disclosure covers almost no real skill; prompt.template is not wired. Engine, epochs, frames and the six context frames were observed working in this session's own context (date, environment, project, location, model, capabilities frames arrived once)."
+          },
+          "endedAt": "2026-11-10T06:57:18.722Z"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "TUI consistency and UX standards",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T07:02:21.308Z",
+      "startedAt": "2026-11-10T06:58:14.714Z",
+      "report": {
+        "outcome": "TUI review done; findings in ~/.cache/pig-workbench-test-tmp/findings-tui.md. Headline: frames render as raw envelopes in the transcript (no message renderer); tool rows uniform but unstyled and built by two parallel renderers; panels use single-key actions and hardcoded key names."
+      },
+      "endedAt": "2026-11-10T07:02:21.308Z",
+      "subtasks": [
+        {
+          "id": "5.1",
+          "title": "Tool renderers: ten own tools, all lifecycle states, one grammar",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:01:26.424Z",
+          "startedAt": "2026-11-10T06:58:14.714Z",
+          "report": {
+            "outcome": "Ten own tools share one plain row grammar (label · target/facts; label · status · lines · time), contributed tools use the same header shape through a second code path. No glyphs, theme tokens or densities (chrome deferred to PLAN-0004). Own tools do not use the SPEC-0003 snapshot path. Findings appended to findings.md."
+          },
+          "endedAt": "2026-11-10T07:01:26.424Z"
+        },
+        {
+          "id": "5.2",
+          "title": "Frames, notices and message renderers appearance",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:01:45.435Z",
+          "startedAt": "2026-11-10T07:01:26.431Z",
+          "report": {
+            "outcome": "Frames, skill and ask messages have no message renderer: raw envelopes with JSON are shown in the transcript (~70 lines at session start). SDK MessageRenderer exists and is unused; frames.display.* settings inert. Recorded in ~/.cache/pig-workbench-test-tmp/findings-tui.md (the bash heredoc append was itself refused by the scheme-prefix bug, a live repro)."
+          },
+          "endedAt": "2026-11-10T07:01:45.435Z"
+        },
+        {
+          "id": "5.3",
+          "title": "Hub, panels and settings vs ui-ux.md and dashboard-standard.md",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:01:54.947Z",
+          "startedAt": "2026-11-10T07:01:45.440Z",
+          "report": {
+            "outcome": "Hub and 16 panels captured live. Functional and width-safe, but: single-key actions in 5 panels (jobs_panel.go:180-186, instructions_panel.go:101-109, sessions_panel.go:97-117, trust_panel.go:68-70, settings_array.go:79), hardcoded key names instead of KeyHint, content-dependent panel height, no dashboard frame, inconsistent empty states. Settings panel does have search, scope tab, provenance, takes-effect note and staged save (good)."
+          },
+          "endedAt": "2026-11-10T07:01:54.947Z"
+        },
+        {
+          "id": "5.4",
+          "title": "Activity line, status segments, widgets",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:02:10.712Z",
+          "startedAt": "2026-11-10T07:01:54.953Z",
+          "report": {
+            "outcome": "Activity line and status segments work and fit widths; plain unstyled text, poll-driven goroutine outside the supervisor. Low-severity notes only."
+          },
+          "endedAt": "2026-11-10T07:02:10.712Z"
+        },
+        {
+          "id": "5.5",
+          "title": "Live captures at 36/57/80/140 and short height",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:02:21.302Z",
+          "startedAt": "2026-11-10T07:02:10.719Z",
+          "report": {
+            "outcome": "Live captures taken in an isolated agent dir under tmux (hub at 36/57/80/140 and 80x16; all 16 hub panels at 80x24); tool rows judged from committed evidence captures. No overflow. Capture dir removed. Own tools share one row grammar across all states; details in ~/.cache/pig-workbench-test-tmp/findings-tui.md."
+          },
+          "endedAt": "2026-11-10T07:02:21.302Z"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Docs currency and duplication",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T07:03:28.089Z",
+      "startedAt": "2026-11-10T07:02:21.314Z",
+      "report": {
+        "outcome": "Docs, plan consistency and duplication reviewed; all appended to ~/.cache/pig-workbench-test-tmp/findings-tui.md."
+      },
+      "endedAt": "2026-11-10T07:03:28.089Z",
+      "subtasks": [
+        {
+          "id": "6.1",
+          "title": "README, docs/, AGENTS.md files vs actual tools, commands, settings, schemes",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:02:44.267Z",
+          "startedAt": "2026-11-10T07:02:21.314Z",
+          "report": {
+            "outcome": "Docs are accurate where they speak but incomplete: 80/100 settings undocumented, the three biggest behavioural gaps (bash scheme-prefix refusal, skills coverage, system-prompt stub) unmentioned, one package without AGENTS.md, stale package list and stale plan Progress text. Appended to findings-tui.md."
+          },
+          "endedAt": "2026-11-10T07:02:44.267Z"
+        },
+        {
+          "id": "6.2",
+          "title": "Plan/inventory/backlog status consistency (.project)",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:03:03.233Z",
+          "startedAt": "2026-11-10T07:02:44.282Z",
+          "report": {
+            "outcome": "Inventory PASS table dates from eb55bf7 (141 commits behind HEAD) and is contradicted by several review findings; PLAN-0002 exit items 2 and 6 are open; plans still 'draft'; no BACKLOG.md/.project/backlog for the open items; skills verification task was abandoned. Appended to findings-tui.md."
+          },
+          "endedAt": "2026-11-10T07:03:03.233Z"
+        },
+        {
+          "id": "6.3",
+          "title": "Code duplication survey",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:03:28.082Z",
+          "startedAt": "2026-11-10T07:03:03.239Z",
+          "report": {
+            "outcome": "No large clone groups, but repeated small primitives: syncDirectory x4, nonblockFlag x3, sameToken x2, validSessionID x2, 6 rename-based atomic-write sites and 6 flock sites, two tool-row renderers, scattered text sanitisers. Appended to findings-tui.md. dupl binary removed."
+          },
+          "endedAt": "2026-11-10T07:03:28.082Z"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Write review artifact and final report",
+      "status": "done",
+      "createdAt": "2026-11-10T06:45:02.530Z",
+      "updatedAt": "2026-11-10T07:05:35.590Z",
+      "startedAt": "2026-11-10T07:03:28.095Z",
+      "report": {
+        "outcome": "Review artifact written and committed (d5bcdfa); summary delivered."
+      },
+      "endedAt": "2026-11-10T07:05:35.590Z",
+      "subtasks": [
+        {
+          "id": "7.1",
+          "title": "Write .project review artifact with ranked findings",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:05:30.753Z",
+          "startedAt": "2026-11-10T07:03:28.095Z",
+          "report": {
+            "outcome": "Review artifact committed as d5bcdfa: .project/reviews/2026-11-10-slice-1/README.md with evidence/ (check, race, integration, staticcheck logs), reviews/AGENTS.md and a row in .project/AGENTS.md. Working notes, copies and temporarily installed tools removed."
+          },
+          "endedAt": "2026-11-10T07:05:30.753Z"
+        },
+        {
+          "id": "7.2",
+          "title": "Final summary to user",
+          "status": "done",
+          "createdAt": "2026-11-10T06:45:02.530Z",
+          "updatedAt": "2026-11-10T07:05:35.585Z",
+          "startedAt": "2026-11-10T07:05:30.759Z",
+          "report": {
+            "outcome": "Final summary delivered to the user; commit d5bcdfa verified to contain only the review artifact paths."
+          },
+          "endedAt": "2026-11-10T07:05:35.585Z"
+        }
+      ]
+    }
+  ]
+}
