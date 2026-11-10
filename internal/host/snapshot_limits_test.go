@@ -21,7 +21,7 @@ func TestSnapshotStoreFollowsTheEditSnapshotSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := &session{settings: manager, snapshots: store, pendingViews: make(map[string][]pendingView)}
+	s := &session{settings: manager, snapshots: store, pendingViews: newRecent[[]pendingView](256)}
 	set := func(key string, value int64) {
 		t.Helper()
 		baseline, err := manager.Current()

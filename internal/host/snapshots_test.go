@@ -33,7 +33,7 @@ func TestReadVisibilityRequiresIntactDeliveredBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := &session{snapshots: store, pendingViews: make(map[string][]pendingView)}
+	s := &session{snapshots: store, pendingViews: newRecent[[]pendingView](256)}
 	a := &app{session: s}
 	s.rememberRead("cut", "epoch", target, page)
 	if _, err := a.confirmRead(sdk.Context{}, map[string]any{"toolName": "read", "toolCallId": "cut", "content": []any{map[string]any{"type": "text", "text": "truncated"}}}); err != nil {
@@ -94,7 +94,7 @@ func TestAnnotationOrderCannotChangeSeenVisibility(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := &session{snapshots: store, pendingViews: make(map[string][]pendingView)}
+		s := &session{snapshots: store, pendingViews: newRecent[[]pendingView](256)}
 		a := &app{session: s}
 		s.rememberRead(name, "epoch", target, page)
 		blocks := annotate([]any{map[string]any{"type": "text", "text": page.Content}})

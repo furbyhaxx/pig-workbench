@@ -23,7 +23,7 @@ type editState struct {
 	mode      string
 	mu        sync.Mutex
 	registers map[string]hashline.Register
-	noops     map[string]int
+	noops     *recent[int]
 }
 type editParams struct {
 	Hashline string              `json:"hashline"`
@@ -245,7 +245,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		Effects []fileedit.Effect
 	}{input, effects})
 	fingerprint := hashline.SourceRevision(fingerprintBytes)
-	if s.editState.noops[fingerprint] > 0 {
+	if repeats, _ := s.editState.noops.get(fingerprint); repeats > 0 {
 		return nil, errors.New("repeated no-op edit refused; change the intended operation or read the current source")
 	}
 	if s.snapshots.Epoch() != epoch {
@@ -264,12 +264,10 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		}
 	}
 	if !changed && commitErr == nil {
-		if len(s.editState.noops) >= 128 {
-			clear(s.editState.noops)
-		}
-		s.editState.noops[fingerprint]++
+		repeats, _ := s.editState.noops.get(fingerprint)
+		s.editState.noops.put(fingerprint, repeats+1)
 	} else {
-		delete(s.editState.noops, fingerprint)
+		s.editState.noops.remove(fingerprint)
 	}
 	if s.snapshots.Epoch() == epoch {
 		for name, value := range plan.Registers {

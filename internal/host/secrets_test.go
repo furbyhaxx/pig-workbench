@@ -275,7 +275,7 @@ func TestSeenStateSurvivesRedactionOfTheDeliveredBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := &session{snapshots: store, pendingViews: make(map[string][]pendingView), secrets: b}
+	s := &session{snapshots: store, pendingViews: newRecent[[]pendingView](256), secrets: b}
 	a := &app{session: s}
 	s.rememberRead("call", "epoch", target, page)
 	patch, cause := b.resultPatch(map[string]any{"content": []any{map[string]any{"type": "text", "text": page.Content}}})

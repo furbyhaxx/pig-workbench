@@ -49,7 +49,8 @@ func (a *app) capturePresentation(data, result map[string]any, final bool) {
 	}
 	if !final {
 		s.viewsMu.Lock()
-		running := s.runningCalls[callID] == tool
+		name, _ := s.runningCalls.get(callID)
+		running := name == tool
 		s.viewsMu.Unlock()
 		if !running {
 			return

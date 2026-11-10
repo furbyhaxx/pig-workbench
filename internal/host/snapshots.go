@@ -65,10 +65,7 @@ func (s *session) rememberRead(callID, epoch string, target resource.Target, pag
 	view := pendingView{uri: snapshot.URI, revision: snapshot.Revision, epoch: epoch, block: page.Content, spans: spans, tagged: !target.Selection.Raw && page.Facts.Tag != "" && page.Facts.Tag == snapshot.Tag}
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
-	if len(s.pendingViews) >= 256 {
-		clear(s.pendingViews)
-	}
-	s.pendingViews[callID] = append(s.pendingViews[callID], view)
+	s.addPendingView(callID, view)
 }
 
 func (s *session) rememberCommitted(effect hashline.Effects, outcome fileedit.Outcome, epoch string) {
@@ -109,10 +106,13 @@ func (s *session) rememberWritten(callID, epoch string, target resource.Target, 
 	}
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
-	if len(s.pendingViews) >= 256 {
-		clear(s.pendingViews)
-	}
-	s.pendingViews[callID] = append(s.pendingViews[callID], pendingView{uri: target.URI, revision: snapshot.Revision, epoch: epoch, block: receipt, spans: spans})
+	s.addPendingView(callID, pendingView{uri: target.URI, revision: snapshot.Revision, epoch: epoch, block: receipt, spans: spans})
+}
+
+// addPendingView requires viewsMu.
+func (s *session) addPendingView(callID string, view pendingView) {
+	views, _ := s.pendingViews.get(callID)
+	s.pendingViews.put(callID, append(views, view))
 }
 
 // trackCall records which tool runs a call so snapshots.view can verify its caller owns it.
@@ -128,14 +128,8 @@ func (a *app) trackCall(_ sdk.Context, data map[string]any) (any, error) {
 	}
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
-	if len(s.runningCalls) >= 256 {
-		clear(s.runningCalls)
-	}
-	s.runningCalls[id] = name
-	if len(s.callRoots) >= 512 {
-		clear(s.callRoots)
-	}
-	s.callRoots[id] = s.location.Current().Cwd
+	s.runningCalls.put(id, name)
+	s.callRoots.put(id, s.location.Current().Cwd)
 	return nil, nil
 }
 
@@ -143,7 +137,8 @@ func (a *app) trackCall(_ sdk.Context, data map[string]any) (any, error) {
 func (s *session) callRoot(id string) string {
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
-	return s.callRoots[id]
+	root, _ := s.callRoots.get(id)
+	return root
 }
 
 func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
@@ -153,9 +148,9 @@ func (a *app) confirmRead(ctx sdk.Context, data map[string]any) (any, error) {
 	}
 	id, _ := data["toolCallId"].(string)
 	s.viewsMu.Lock()
-	views := s.pendingViews[id]
-	delete(s.pendingViews, id)
-	delete(s.runningCalls, id)
+	views, _ := s.pendingViews.get(id)
+	s.pendingViews.remove(id)
+	s.runningCalls.remove(id)
 	s.viewsMu.Unlock()
 	for _, view := range views {
 		if view.block != "" && (containsTextBlock(data["content"], view.block) || containsTextBlock(data["content"], s.redactedView(view.block))) {
@@ -191,7 +186,7 @@ func (a *app) invalidateSeen(_ sdk.Context, _ map[string]any) (any, error) {
 		return nil, err
 	}
 	s.viewsMu.Lock()
-	clear(s.pendingViews)
+	s.pendingViews.reset()
 	s.viewsMu.Unlock()
 	return nil, s.snapshots.SetEpoch(hex.EncodeToString(nonce[:]))
 }

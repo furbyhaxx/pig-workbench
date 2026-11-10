@@ -49,7 +49,7 @@ func (a *app) snapshotsService(work context.Context, host sdk.Context, s *sessio
 
 func (a *app) snapshotView(work context.Context, host sdk.Context, s *session, request api.Request, params api.SnapshotViewParams) (any, *api.Error) {
 	s.viewsMu.Lock()
-	toolName := s.runningCalls[params.ToolCallID]
+	toolName, _ := s.runningCalls.get(params.ToolCallID)
 	s.viewsMu.Unlock()
 	denied := &api.Error{Code: "permissionDenied", Field: "params.toolCallId", Message: "toolCallId is not a running call of a tool this owner registered", Outcome: "notApplied"}
 	if toolName == "" {

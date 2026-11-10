@@ -47,9 +47,9 @@ type session struct {
 	jobMeta             jobMetadataStore
 	snapshots           *hashline.Store
 	viewsMu             sync.Mutex
-	pendingViews        map[string][]pendingView
-	runningCalls        map[string]string
-	callRoots           map[string]string
+	pendingViews        *recent[[]pendingView]
+	runningCalls        *recent[string]
+	callRoots           *recent[string]
 	guideInjected       map[string]string
 	jobRegistry         *jobs.Registry
 	jobOwner            *jobs.OwnerHandle
@@ -238,16 +238,16 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		return fail(err)
 	}
 	s := &session{
-		editState:     editState{mode: "", registers: make(map[string]hashline.Register), noops: make(map[string]int)},
+		editState:     editState{mode: "", registers: make(map[string]hashline.Register), noops: newRecent[int](128)},
 		presentations: newPresentationCatalog(),
 		contributions: contributions,
 		contextFrames: contextState,
 		jobs:          jobManager,
 		jobMeta:       jobMetadataStore{values: make(map[string]jobMetadata)},
 		snapshots:     snapshots,
-		pendingViews:  make(map[string][]pendingView),
-		runningCalls:  make(map[string]string),
-		callRoots:     make(map[string]string),
+		pendingViews:  newRecent[[]pendingView](256),
+		runningCalls:  newRecent[string](256),
+		callRoots:     newRecent[string](512),
 		guideInjected: make(map[string]string),
 		id:            id,
 		generation:    generation,
