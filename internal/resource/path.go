@@ -46,6 +46,10 @@ func ParsePath(cwd, input, explicit string) (Target, error) {
 			return target, errors.New("file URI cannot contain credentials")
 		}
 		path := u.EscapedPath()
+		// An origin without a path names its root document; a port keeps the colon, so no selector can hide there.
+		if path == "" && (scheme == "http" || scheme == "https") && u.Host != "" {
+			path = "/"
+		}
 		if scheme == "file" {
 			if u.Host != "" && u.Host != "localhost" {
 				return target, errors.New("file URI must be local")

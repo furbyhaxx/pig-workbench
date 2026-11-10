@@ -161,3 +161,30 @@ func TestHTTPProviderReportsStaticRedirect(t *testing.T) {
 		t.Fatalf("static redirect = %#v", result)
 	}
 }
+
+func TestHTTPOriginWithoutAPathReadsItsRootDocument(t *testing.T) {
+	var requested string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requested = r.URL.Path
+		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprint(w, "root document\n")
+	}))
+	defer server.Close()
+	target, err := ParsePath(t.TempDir(), server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.URI != server.URL+"/" {
+		t.Fatalf("target = %+v", target)
+	}
+	result := httpRead(t, HTTPProvider{}, server.URL, "", Budget{Bytes: 8192, Lines: 100})
+	if requested != "/" || !strings.Contains(result.Content, "root document") {
+		t.Fatalf("requested %q, content %q", requested, result.Content)
+	}
+	if query, err := ParsePath(t.TempDir(), "https://example.test?q=1", ""); err != nil || query.URI != "https://example.test/?q=1" {
+		t.Fatalf("query on a bare origin = %+v, %v", query, err)
+	}
+	if bare, err := ParsePath(t.TempDir(), "skill://name", ""); err != nil || bare.URI != "skill://name" {
+		t.Fatalf("other schemes must keep an empty path: %+v, %v", bare, err)
+	}
+}
