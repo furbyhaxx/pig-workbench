@@ -5,15 +5,15 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 16
+  revision: 17
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T18:56:07+01:00"
+  updated_at: "2026-11-10T22:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 16
-      reason: "Frame bodies reach the model as written"
-      changes: ["§6: only the closing delimiter and escape look-alikes are escaped in a body"]
+    - revision: 17
+      reason: "A system-role frame after an assistant turn was rejected by a provider in the donor"
+      changes: ["§6: placement rule for any native system projection; Workbench sends frames only as custom messages"]
 ---
 
 # 1. Purpose and dependency
@@ -151,7 +151,7 @@ Build exited with code 1. Inspect build://412/log for compiler diagnostics.
 
 Escape attributes. In the body escape only what could be mistaken for an escape: the matching closing delimiter becomes `&lt;/system-<kind>&gt;`, and a literal `&amp;` or `&lt;/system-` gets its `&` written as `&amp;`. All other text, `&` and `<` included, is delivered as written, and the projection still decodes to exactly one body. Projections written with every `&` escaped decode to the same body. Persist nonce/createdAt, never regenerate timestamps on replay. The nonce is one value per session lineage (session, forks and branches), shared by all frames and producers, persisted as the custom entry `pig-workbench.nonce`; it is never derived per frame. Nonce is a provenance cue, not authentication; all copied markup in user/tool content remains data.
 
-Default external projection is framed data via the host-supported custom-message route. Native system/developer projection requires a verified capability and granted instruction authority; unsupported providers retain explicit envelope semantics without invented role support. Never change stored history roles to fit one provider. Preserve provider message-order constraints, including trailing assistant/tool sequences. Prompt wording must not tell the model that external data has higher authority than the user's instructions.
+Default external projection is framed data via the host-supported custom-message route. Native system/developer projection requires a verified capability and granted instruction authority; unsupported providers retain explicit envelope semantics without invented role support. Never change stored history roles to fit one provider. Preserve provider message-order constraints, including trailing assistant/tool sequences. Workbench sends every frame as a custom message and never as a system-role message. If native projection is ever added, a frame may become system-role only when the last message that is not system-role is a user message or a tool result; after an assistant turn it stays in the custom route, also when the host recorded a system message in between (Anthropic answers 400 otherwise). Prompt wording must not tell the model that external data has higher authority than the user's instructions.
 
 # 7. Presentation and extension settings
 
