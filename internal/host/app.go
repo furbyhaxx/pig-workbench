@@ -66,6 +66,7 @@ type session struct {
 	promptEpoch         string
 	promptErr           string
 	scratch             string
+	materialized        atomic.Uint64
 	projects            *project.Registry
 	host                sdk.Context
 	bus                 *providerBus
@@ -365,6 +366,7 @@ func (a *app) shutdown(ctx sdk.Context, _ map[string]any) (any, error) {
 			ctx.Notify("Workbench closing notification failed.", "warning")
 		}
 		if old.scratch != "" {
+			_ = os.RemoveAll(materializedRoot(old.scratch))
 			if err := os.RemoveAll(old.scratch); err != nil {
 				ctx.Notify("Workbench scratch cleanup failed: "+err.Error(), "warning")
 			}

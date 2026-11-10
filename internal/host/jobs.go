@@ -72,7 +72,8 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if input.Timeout != nil {
 		timeout = *input.Timeout
 	}
-	if handled, result, err := a.dispatchSchemeCommand(ctx, work, s, input.Command); handled {
+	handled, result, command, err := a.prepareShellCommand(ctx, work, s, input.Command)
+	if handled || err != nil {
 		return result, err
 	}
 	shell := "/bin/sh"
@@ -84,7 +85,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		s.secrets.withhold(ctx, err)
 		return nil, errors.New("the secrets boundary is unavailable; the command was not run")
 	}
-	id, err := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", input.Command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
+	id, err := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
 	if err != nil {
 		return nil, err
 	}
