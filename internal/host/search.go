@@ -26,9 +26,6 @@ func (a *app) registerSearchTools(ext *sdk.Extension) {
 			"filesOnly":  map[string]any{"type": "boolean", "description": "Return distinct matching file paths without source text or context."},
 			"context":    map[string]any{"type": "integer", "minimum": 0, "maximum": 10, "description": "Number of surrounding source lines before and after each match."},
 			"limit":      map[string]any{"type": "integer", "minimum": 1, "maximum": 2000, "description": "Maximum matches (default 200)."},
-		}, "oneOf": []any{
-			map[string]any{"required": []string{"pattern"}, "not": map[string]any{"required": []string{"patterns"}}},
-			map[string]any{"required": []string{"patterns", "literal"}, "not": map[string]any{"required": []string{"pattern"}}, "properties": map[string]any{"literal": map[string]any{"const": true}}},
 		}},
 		Execute: a.grep,
 	})

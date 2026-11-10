@@ -517,7 +517,7 @@ func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
 	server := recorder.serve(t)
 	defer server.Close()
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
-	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "grep")
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write,edit,grep,find,ls,bash,jobs,cd,ask_user")
 	fixture.send("go", "prompt", "Search for the terms.")
 	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 	recorder.mu.Lock()
@@ -532,38 +532,36 @@ func TestLiveGrepAcceptsLiteralPatternList(t *testing.T) {
 	var request struct {
 		Tools []struct {
 			Function struct {
-				Name       string `json:"name"`
-				Parameters struct {
-					Required []string `json:"required"`
-					OneOf    []struct {
-						Required []string `json:"required"`
-						Not      struct {
-							Required []string `json:"required"`
-						} `json:"not"`
-						Properties struct {
-							Literal struct {
-								Const *bool `json:"const"`
-							} `json:"literal"`
-						} `json:"properties"`
-					} `json:"oneOf"`
-				} `json:"parameters"`
+				Name       string         `json:"name"`
+				Parameters map[string]any `json:"parameters"`
 			} `json:"function"`
 		} `json:"tools"`
 	}
 	if err := json.Unmarshal([]byte(recorder.bodies[0]), &request); err != nil {
 		t.Fatal(err)
 	}
+	published := false
 	for _, tool := range request.Tools {
-		if tool.Function.Name != "grep" {
-			continue
-		}
 		p := tool.Function.Parameters
-		if slices.Contains(p.Required, "pattern") || len(p.OneOf) != 2 || !slices.Contains(p.OneOf[0].Required, "pattern") || !slices.Contains(p.OneOf[0].Not.Required, "patterns") || !slices.Contains(p.OneOf[1].Required, "patterns") || !slices.Contains(p.OneOf[1].Required, "literal") || !slices.Contains(p.OneOf[1].Not.Required, "pattern") || p.OneOf[1].Properties.Literal.Const == nil || !*p.OneOf[1].Properties.Literal.Const {
-			t.Fatalf("the published schema does not offer both search forms: %+v", p)
+		// Providers such as xAI refuse a tool whose parameter root is a union; alternatives are stated in the description and checked by the handler.
+		if p["type"] != "object" {
+			t.Fatalf("%s: parameter root is not a plain object: %v", tool.Function.Name, p["type"])
 		}
-		return
+		for _, combinator := range []string{"oneOf", "anyOf", "allOf", "not"} {
+			if _, ok := p[combinator]; ok {
+				t.Fatalf("%s: parameter root carries %s", tool.Function.Name, combinator)
+			}
+		}
+		if tool.Function.Name == "grep" {
+			published = true
+			if required, _ := p["required"].([]any); slices.Contains(required, any("pattern")) {
+				t.Fatalf("the published schema requires pattern, so patterns cannot be used alone: %v", required)
+			}
+		}
 	}
-	t.Fatal("grep was not published to the provider")
+	if !published || len(request.Tools) < 10 {
+		t.Fatalf("expected grep among the ten own tools, got %d tools", len(request.Tools))
+	}
 }
 
 func TestLiveEditRefusesLinesTheModelNeverSaw(t *testing.T) {

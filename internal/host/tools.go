@@ -23,10 +23,6 @@ func (a *app) registerTools(ext *sdk.Extension) {
 		Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "properties": map[string]any{
 			"path":  map[string]any{"type": "string", "minLength": 1, "description": "Absolute or current-location-relative directory."},
 			"reset": map[string]any{"type": "boolean", "const": true, "description": "Return to the original session location."},
-		}, "oneOf": []any{
-			map[string]any{"maxProperties": 0},
-			map[string]any{"required": []string{"path"}, "maxProperties": 1},
-			map[string]any{"required": []string{"reset"}, "maxProperties": 1},
 		}}, Execute: a.cd,
 	})
 	ext.RegisterTool(sdk.ToolDefinition{
@@ -36,9 +32,6 @@ func (a *app) registerTools(ext *sdk.Extension) {
 			"path":     map[string]any{"type": "string", "minLength": 1, "description": "Local path or registered scheme URI with an optional selector suffix, for example src/a.go:20-40 or src/a.go:raw. There is no separate raw parameter."},
 			"paths":    map[string]any{"type": "array", "minItems": 1, "maxItems": 32, "items": map[string]any{"type": "string", "minLength": 1}, "description": "Explicit ordered multi-read, sharing one output budget."},
 			"selector": map[string]any{"type": "string", "minLength": 1, "description": "Single-path selector when punctuation is ambiguous; cannot accompany a suffix."},
-		}, "oneOf": []any{
-			map[string]any{"required": []string{"path"}, "not": map[string]any{"required": []string{"paths"}}},
-			map[string]any{"required": []string{"paths"}, "not": map[string]any{"anyOf": []any{map[string]any{"required": []string{"path"}}, map[string]any{"required": []string{"selector"}}}}},
 		}}, Execute: a.read,
 	})
 }
