@@ -302,6 +302,20 @@ func TestLiveBashSchemeArgumentsThatCannotBecomeFiles(t *testing.T) {
 	}
 }
 
+func TestLiveBashLeavesSchemePathsToTheShellWhenRoutingIsOff(t *testing.T) {
+	results := runScriptedConfig(t, t.TempDir(), "bash", "[bash]\nroute-to-tools=false\n",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "ls session://self/"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "cat session://self/title | cat"}}
+		},
+	)
+	if len(results) != 2 || !strings.Contains(results[0], "No such file") || !strings.Contains(results[1], "No such file") {
+		t.Fatalf("scheme paths were still routed: %v", results)
+	}
+}
+
 func TestLiveSchemeRedirectUsesControlWrite(t *testing.T) {
 	results := runScripted(t, t.TempDir(), "bash,read",
 		func([]string) scriptedCall {

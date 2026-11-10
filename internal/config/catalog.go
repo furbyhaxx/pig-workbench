@@ -187,6 +187,9 @@ func Catalog() []Definition {
 		case "edit.mode":
 			d.Application = "live"
 			d.Description = "Select hashline, exact-text replace, or auto edit input; captured at the next turn boundary."
+		case "bash.route-to-tools":
+			d.Application = "live"
+			d.Description = "Run standalone ls, cat, rm, mv, cp, mkdir and `text > path` on scheme paths in-process, and pass readable scheme paths to other commands as read-only copies; applies to bash and ! commands."
 		case "edit.enforce-seen-lines":
 			d.Application = "live"
 			d.Description = "Require fully emitted source lines before hashline edits; projects may require but not disable the guard."
