@@ -16,6 +16,9 @@ func TestCheckSeenResolvedRangeAndEpoch(t *testing.T) {
 	if !errors.As(err, &unseen) || !reflect.DeepEqual(unseen.Missing, []LineSpan{{Start: 3, End: 7}}) {
 		t.Fatalf("CheckSeen error = %#v; want unseen lines 3..7", err)
 	}
+	if got := (&UnseenLinesError{Missing: []LineSpan{{Start: 3, End: 7}, {Start: 100, End: 100}}}).Error(); got != "source lines 3-7, 100 were not seen in the current epoch; read them before editing" {
+		t.Fatalf("refusal text = %q", got)
+	}
 	view.Ranges = []LineSpan{{Start: 5, End: 8}, {Start: 2, End: 4}}
 	if err := CheckSeen(source, view, "epoch-1", ops); err != nil {
 		t.Fatalf("adjacent coverage rejected: %v", err)

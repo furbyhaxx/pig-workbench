@@ -14,6 +14,35 @@ import (
 	"github.com/furbyhaxx/pig-workbench/api"
 )
 
+func TestLiveIncompleteSingleReadNamesItsSelectorAndNeverSaysBatch(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "long.txt"), []byte(lines(5000)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "short.txt"), []byte(lines(3)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	results := runScripted(t, root, "read",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "long.txt"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"paths": []any{"short.txt", "missing.txt"}}}
+		},
+	)
+	if len(results) != 2 || strings.Contains(results[0], "Batch incomplete") || !strings.Contains(results[0], "continue with selector :") {
+		t.Fatalf("single incomplete read: %.300q", lastChars(results, 0))
+	}
+	if !strings.Contains(results[1], "Batch incomplete") {
+		t.Fatalf("an incomplete batch lost its notice: %.300q", lastChars(results, 1))
+	}
+}
+
+func lastChars(results []string, i int) string {
+	if i >= len(results) {
+		return "(no result)"
+	}
+	return results[i][max(0, len(results[i])-300):]
+}
+
 func TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "source.txt"), []byte(lines(20)), 0600); err != nil {

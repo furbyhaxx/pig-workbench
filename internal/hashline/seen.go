@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -23,7 +24,14 @@ type UnseenLinesError struct {
 }
 
 func (e *UnseenLinesError) Error() string {
-	return fmt.Sprintf("source lines %v were not seen in the current epoch; read them before editing", e.Missing)
+	spans := make([]string, len(e.Missing))
+	for i, span := range e.Missing {
+		spans[i] = strconv.Itoa(span.Start)
+		if span.End > span.Start {
+			spans[i] += "-" + strconv.Itoa(span.End)
+		}
+	}
+	return "source lines " + strings.Join(spans, ", ") + " were not seen in the current epoch; read them before editing"
 }
 
 // StaleSeenEpochError reports an invalid, empty or non-current visibility epoch.
