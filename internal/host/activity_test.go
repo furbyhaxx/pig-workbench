@@ -114,6 +114,10 @@ func TestActivityLeadsWithTheTurnStateAndNamesAnAwayLocation(t *testing.T) {
 	if got := renderActivity(s.activityItems(), 40); got != "Compacting ≡2 ⌂" {
 		t.Fatalf("narrow while compacting: %q", got)
 	}
+	s.contextFrames.staged = map[string]stagedView{"f1": {key: "instructions.steering/a", full: "x2"}, "f2": {key: "instructions.steering/new", full: "n"}}
+	if got := renderActivity(s.activityItems(), 80); got != "Compacting  2 instructions (1 changed)  in nested" {
+		t.Fatalf("a held file with an undelivered update counts as changed: %q", got)
+	}
 	s.phase.setCompacting(false)
 	s.phase.setWorking(false)
 	if got := renderActivity(s.activityItems(), 80); !strings.HasPrefix(got, "Ready") {

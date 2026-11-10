@@ -123,8 +123,18 @@ func (s *session) activityItems() []activityItem {
 				files++
 			}
 		}
+		changed := 0
+		for _, view := range c.staged {
+			if _, held := c.views[view.key]; held && strings.HasPrefix(view.key, "instructions.") {
+				changed++
+			}
+		}
 		c.mu.Unlock()
-		items = append(items, activityItem{Key: "instructions", Label: "instructions", Glyph: "≡", Count: files, Priority: 50, Open: "/workbench instructions"})
+		item := activityItem{Key: "instructions", Label: "instructions", Glyph: "≡", Count: files, Priority: 50, Open: "/workbench instructions"}
+		if changed > 0 {
+			item.Text = fmt.Sprintf("%d instructions (%d changed)", files, changed)
+		}
+		items = append(items, item)
 	}
 	if s.skills != nil {
 		s.skills.mu.Lock()
@@ -183,10 +193,10 @@ func (i activityItem) wide() string {
 }
 
 func (i activityItem) narrow() string {
-	switch {
-	case i.Key == "state":
+	switch i.Key {
+	case "state":
 		return i.Text
-	case i.Text != "":
+	case "location":
 		return i.Glyph
 	}
 	return i.Glyph + strconv.Itoa(i.Count)
