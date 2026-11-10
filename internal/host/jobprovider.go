@@ -236,22 +236,6 @@ func (p jobProvider) jobAction(s *session, uri, content string) error {
 	}
 }
 
-// jobCatalog renders the job list for ls job://.
-func jobCatalog(s *session) string {
-	states := s.jobs.List()
-	if len(states) == 0 {
-		return "no jobs\n"
-	}
-	var b strings.Builder
-	for _, state := range states {
-		s.jobMeta.mu.Lock()
-		meta := s.jobMeta.values[state.ID]
-		s.jobMeta.mu.Unlock()
-		_, _ = fmt.Fprintf(&b, "%s\t%s\t%s\n", jobs.ShortID(state.ID), jobLabel(state, meta), meta.describe())
-	}
-	return b.String()
-}
-
 var jobSignals = map[string]syscall.Signal{"TERM": syscall.SIGTERM, "INT": syscall.SIGINT, "HUP": syscall.SIGHUP, "QUIT": syscall.SIGQUIT, "KILL": syscall.SIGKILL}
 
 // jobSignal resolves a signal name for the jobs tool and job://<id>/ctl alike; case and a SIG prefix do not matter.

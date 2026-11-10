@@ -1039,7 +1039,7 @@ func (w wireIdentity) convert(field string) (FileIdentity, error) {
 			return FileIdentity{}, err
 		}
 	}
-	return FileIdentity{Path: w.Path, Revision: w.Revision}, nil
+	return FileIdentity(w), nil
 }
 
 func (w wireHunkSpec) convert(field string) (Hunk, error) {
@@ -1210,7 +1210,7 @@ func (w wireImageRef) convert(field string) (ImageRefBlock, error) {
 	if err := validateText(field+".alt", w.Alt, false); err != nil {
 		return ImageRefBlock{}, err
 	}
-	return ImageRefBlock{Resource: w.Resource, BlockID: w.BlockID, MediaType: w.MediaType, Alt: w.Alt}, nil
+	return ImageRefBlock(w), nil
 }
 
 type wireChildren struct {
@@ -1290,7 +1290,7 @@ func (w wireContinuation) convert(field string) (Continuation, error) {
 			return Continuation{}, err
 		}
 	}
-	return Continuation{URI: w.URI, Cursor: w.Cursor, Explanation: w.Explanation}, nil
+	return Continuation(w), nil
 }
 
 type wireError struct {
@@ -1308,7 +1308,7 @@ func (w wireError) convert(field string) (PresentationError, error) {
 	if err := validateText(field+".message", w.Message, true); err != nil {
 		return PresentationError{}, err
 	}
-	return PresentationError{Code: w.Code, Message: w.Message}, nil
+	return PresentationError(w), nil
 }
 
 type wireProvenance struct {

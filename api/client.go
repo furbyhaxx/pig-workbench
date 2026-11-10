@@ -17,11 +17,11 @@ import (
 
 var (
 	// ErrUnavailable means discovery found no live Workbench responder.
-	ErrUnavailable = errors.New("Workbench is unavailable; use the extension's own fallback or retry after a ready event")
+	ErrUnavailable = errors.New("no Workbench is available; use the extension's own fallback or retry after a ready event")
 	// ErrAmbiguous means more than one responder answered a single request.
 	ErrAmbiguous = errors.New("multiple Workbench responders answered; resolve the duplicate extensions before retrying")
 	// ErrClosed means the client has unsubscribed and cannot make requests.
-	ErrClosed = errors.New("Workbench client is closed")
+	ErrClosed = errors.New("the Workbench client is closed")
 )
 
 // TransportError retains a request ID for explicit reconciliation after a failed call.
@@ -127,7 +127,7 @@ func (c *Client) Discover(ctx sdk.Context, capabilities ...string) (Discovery, e
 	}
 	for _, capability := range capabilities {
 		if !slices.Contains(endpoint.Capabilities, capability) {
-			return Discovery{}, fmt.Errorf("Workbench did not provide required capability %q", capability)
+			return Discovery{}, fmt.Errorf("required capability %q is not provided by Workbench", capability)
 		}
 	}
 	return endpoint, nil
@@ -139,7 +139,7 @@ func (c *Client) Call(ctx sdk.Context, endpoint Discovery, method string, params
 	if result != nil {
 		target := reflect.ValueOf(result)
 		if target.Kind() != reflect.Pointer || target.IsNil() {
-			return errors.New("Workbench result destination must be a non-nil pointer")
+			return errors.New("result destination must be a non-nil pointer")
 		}
 	}
 	request, err := c.request(ctx, endpoint.Generation, method, params, options)
@@ -172,10 +172,10 @@ func (c *Client) Call(ctx sdk.Context, endpoint Discovery, method string, params
 	}
 	encoded, err := json.Marshal(reply.Result)
 	if err != nil {
-		return &TransportError{RequestID: request.ID, Outcome: "unknown", cause: errors.New("Workbench result could not be decoded")}
+		return &TransportError{RequestID: request.ID, Outcome: "unknown", cause: errors.New("the Workbench result could not be decoded")}
 	}
 	if err := json.Unmarshal(encoded, result); err != nil {
-		return &TransportError{RequestID: request.ID, Outcome: "unknown", cause: errors.New("Workbench result shape is incompatible")}
+		return &TransportError{RequestID: request.ID, Outcome: "unknown", cause: errors.New("the Workbench result shape is incompatible")}
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (c *Client) request(ctx sdk.Context, generation, method string, params any,
 	}
 	encoded, err := json.Marshal(params)
 	if err != nil {
-		return Request{}, errors.New("Workbench params must be JSON-serializable")
+		return Request{}, errors.New("params must be JSON-serializable")
 	}
 	request := Request{Version: 1, ID: id, SessionID: session, Generation: generation, From: c.identity, Method: method, Params: encoded, TimeoutMS: 30000}
 	if options != nil {

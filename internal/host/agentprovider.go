@@ -252,23 +252,21 @@ func (e *sessionEndpoint) inboxText(ctx context.Context, query url.Values) (stri
 		}
 		from = record.SessionID
 	}
-	for {
-		env, err := e.wait(ctx, from, wait)
-		if err != nil {
-			return "", err
-		}
-		if env == nil {
-			return "No message arrived.\n", nil
-		}
-		if env.Progress {
-			start := time.Now()
-			text := "Progress from " + peerLabel(env.From) + ": " + env.Body + "\n"
-			wait = max(wait-time.Since(start), 5*time.Second)
-			next, err := e.inboxText(ctx, url.Values{"wait": {strconv.Itoa(int(wait / time.Second))}, "from": {env.From.SessionID}})
-			return text + next, err
-		}
-		return renderMessage(*env) + "\n", nil
+	env, err := e.wait(ctx, from, wait)
+	if err != nil {
+		return "", err
 	}
+	if env == nil {
+		return "No message arrived.\n", nil
+	}
+	if env.Progress {
+		start := time.Now()
+		text := "Progress from " + peerLabel(env.From) + ": " + env.Body + "\n"
+		wait = max(wait-time.Since(start), 5*time.Second)
+		next, err := e.inboxText(ctx, url.Values{"wait": {strconv.Itoa(int(wait / time.Second))}, "from": {env.From.SessionID}})
+		return text + next, err
+	}
+	return renderMessage(*env) + "\n", nil
 }
 
 // agentWrite sends the written content to agent://<id>/inbox.

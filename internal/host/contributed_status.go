@@ -111,19 +111,6 @@ func (b *statusBoard) activity() []statusSegment {
 	return items
 }
 
-func (b *statusBoard) list() []statusSegment {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	items := make([]statusSegment, 0, len(b.segments))
-	for _, segment := range b.segments {
-		copied := *segment
-		copied.pending = nil
-		items = append(items, copied)
-	}
-	slices.SortFunc(items, func(a, b statusSegment) int { return strings.Compare(a.owner+"/"+a.key, b.owner+"/"+b.key) })
-	return items
-}
-
 func (b *statusBoard) add(segment *statusSegment) {
 	b.mu.Lock()
 	defer b.mu.Unlock()

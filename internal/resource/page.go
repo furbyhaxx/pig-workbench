@@ -89,12 +89,12 @@ func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, o
 	if budget.Bytes <= 0 || budget.Lines <= 0 {
 		return page, errors.New("read budget must be positive")
 	}
-	header := "[" + displayText(page.CanonicalURI) + "]\n"
-	if target.Selection.Raw {
-		header = ""
-	} else if page.Tag != "" {
+	var header string
+	switch {
+	case target.Selection.Raw:
+	case page.Tag != "":
 		header = "[" + displayText(page.CanonicalURI) + "#" + page.Tag + "]\n"
-	} else {
+	default:
 		header = "[" + displayText(page.CanonicalURI) + "]\nHashline snapshot unavailable; use exact-text edit mode.\n"
 	}
 	const footerBytes = 256

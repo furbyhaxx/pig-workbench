@@ -7,10 +7,6 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 )
 
-func replyFor(request Request, result any, protocol *Error) Reply {
-	return Reply{Version: 1, ID: request.ID, SessionID: request.SessionID, Generation: "generation", To: request.From, OK: protocol == nil, Result: result, Error: protocol}
-}
-
 func TestClientIgnoresUnboundReplies(t *testing.T) {
 	client := &Client{identity: Identity{Owner: "build", Instance: "one"}, pending: map[string]*pendingCall{"request": {session: "session", generation: "generation"}}}
 	base := Reply{Version: 1, ID: "request", SessionID: "session", Generation: "generation", To: client.identity, OK: true, Result: map[string]any{}}

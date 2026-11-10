@@ -190,18 +190,6 @@ func NewManager(options ManagerOptions) (*Manager, error) {
 	}, nil
 }
 
-type managerLogWriter struct {
-	logs *LogStore
-	id   string
-}
-
-func (w managerLogWriter) Write(data []byte) (int, error) {
-	if err := w.logs.Append(w.id, data); err != nil {
-		return 0, err
-	}
-	return len(data), nil
-}
-
 func newIdentityPrefix() (string, error) {
 	var raw [identityPrefixBytes]byte
 	if _, err := io.ReadFull(rand.Reader, raw[:]); err != nil {

@@ -139,12 +139,6 @@ func (f *fetchRouter) remove(registrationID string) {
 	f.backends = slices.DeleteFunc(f.backends, func(b fetchBackend) bool { return b.registrationID == registrationID })
 }
 
-func (f *fetchRouter) list() []fetchBackend {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return slices.Clone(f.backends)
-}
-
 // specificity ranks a rule: exact host beats a longer suffix beats a shorter one beats "*",
 // then a longer path prefix wins. Negative means no match.
 func ruleSpecificity(rule fetchMatch, host, path string) int {

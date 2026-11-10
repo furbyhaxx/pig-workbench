@@ -79,9 +79,7 @@ func TestAuthoringSurfaceCompiles(t *testing.T) {
 		}
 		return nil
 	}
-	if producer == nil {
-		t.Fatal("unreachable")
-	}
+	_ = producer
 }
 
 // TestDocumentedWireNames pins the JSON names a producer and consumer depend on.

@@ -169,16 +169,13 @@ func renderLines(ctx context.Context, canonical, requested string, ranges []Rang
 func utf8Valid(s string) bool { return utf8.ValidString(s) }
 
 func utf8ValidPrefix(candidate string) bool {
-	for len(candidate) > 0 {
-		if r := candidate[len(candidate)-1]; r < 0x80 {
-			return true
-		}
-		for cut := len(candidate) - 1; cut >= 0 && cut >= len(candidate)-4; cut-- {
-			if candidate[cut]&0xC0 != 0x80 {
-				return utf8Valid(candidate[cut:])
-			}
-		}
-		return false
+	if len(candidate) == 0 || candidate[len(candidate)-1] < 0x80 {
+		return true
 	}
-	return true
+	for cut := len(candidate) - 1; cut >= 0 && cut >= len(candidate)-4; cut-- {
+		if candidate[cut]&0xC0 != 0x80 {
+			return utf8Valid(candidate[cut:])
+		}
+	}
+	return false
 }

@@ -189,7 +189,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			var relocation *hashline.RelocationError
 			if errors.As(err, &relocation) {
 				if context := currentSourceContext(work, s, ctx.ToolCallID(), captured.Cwd, epoch, relocation, currentSources[relocation.Path].Raw); context != "" {
-					return nil, fmt.Errorf("%w\nCurrent tagged source around the affected anchor:\n%s\nRead the current source and retry with its coordinates.", err, context)
+					return nil, fmt.Errorf("%w\nCurrent tagged source around the affected anchor:\n%s\nRead the current source and retry with its coordinates", err, context)
 				}
 			}
 			return nil, err

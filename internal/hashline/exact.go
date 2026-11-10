@@ -42,7 +42,7 @@ func ReplaceExact(source []byte, edits []TextEdit) ([]byte, []TextChange, error)
 		if start < 0 {
 			return nil, nil, fmt.Errorf("edit %d: oldText not found; read the current file and retry", index+1)
 		}
-		if bytes.Index(source[start+1:], old) >= 0 {
+		if bytes.Contains(source[start+1:], old) {
 			return nil, nil, fmt.Errorf("edit %d: oldText is ambiguous; include more unchanged context", index+1)
 		}
 		replacements = append(replacements, replacement{TextChange{Start: start, End: start + len(old), ReplacementBytes: len(edit.NewText)}, []byte(edit.NewText)})

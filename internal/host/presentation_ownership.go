@@ -9,6 +9,9 @@ type presentationToolsKey struct{}
 
 func ownsTool(tools []sdk.ToolInfo, owner, name string) bool {
 	for _, tool := range tools {
+		// SourceInfo names where an extension was loaded from ("local", a package), not which
+		// extension registered the tool; Source is the only owner identity the host reports.
+		//lint:ignore SA1019 no replacement carries the registering extension's name
 		if tool.Name == name && tool.Source == owner {
 			return true
 		}

@@ -413,10 +413,10 @@ func (a *app) current() (*session, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	if a.initErr != nil {
-		return nil, fmt.Errorf("Workbench initialization failed: %w", a.initErr)
+		return nil, fmt.Errorf("initialization of Workbench failed: %w", a.initErr)
 	}
 	if a.session == nil {
-		return nil, errors.New("Workbench session is not active")
+		return nil, errors.New("no Workbench session is active")
 	}
 	return a.session, nil
 }
