@@ -9,13 +9,13 @@
 
  i session.project · id global, name Global, recognizedBy global, root $HOME/.cache/pig-workbench-test-… · 7 lines · ctrl+o expand
 
- i session.location · authority local, available true, cwd $HOME/.cache/pig-workbench-test-tmp/work/Tes… · 9 lines · ctrl+o expand
+ i session.location · ~/.cache/pig-workbench-test-tmp/work/…/001 · 9 lines · ctrl+o expand
 
  i session.model · contextWindow 32000, id mock, maxOutputTokens 4000, name Workbench scripted fixture, provider … · 9 lines · ctrl+o expand
 
  i session.capabilities · activeTools 10, editMode hashline, schemes 12 · 29 lines · ctrl+o expand
 
- ◆ instructions.steering · Instructions from: AGENTS.md · 6 lines · ctrl+o expand
+ ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
 
  hello
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes3603745854/001
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes1451488879/001
 17.6%/32k (auto)                                                                                                                        mock

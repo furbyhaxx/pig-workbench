@@ -1,0 +1,32 @@
+
+
+ [38;5;3mWarning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
+[39m [38;5;3m-g extended-keys on` to ~/.tmux.conf and restart tmux.[39m
+
+ [38;5;4mi[39m session.date · date 2026-11-10, timezone CET +01:00[2m · 4 lines · ctrl+o expand
+
+[0m [38;5;4mi[39m session.environment · architecture amd64, hostCwd …[2m · 5 lines · ctrl+o expand
+
+[0m [38;5;4mi[39m session.project · id global, name Global, recogniz…[2m · 7 lines · ctrl+o expand
+
+[0m [38;5;4mi[39m session.location · ~/.cache/pig-workbench-test-tmp…[2m · 9 lines · ctrl+o expand
+
+[0m [38;5;4mi[39m session.model · contextWindow 32000, id mock, maxO…[2m · 9 lines · ctrl+o expand
+
+[0m [38;5;4mi[39m session.capabilities · activeTools 10, editMode h…[2m · 29 lines · ctrl+o expand
+
+[0m [38;5;5m◆[39m instructions.steering · AGENTS.md · loaded[2m · 5 lines · ctrl+o expand[0m
+
+
+ hello
+
+
+ done
+
+ [2mTool output: collapsed[0m
+
+[2m────────────────────────────────────────────────────────────────────────────────
+[0;7m [0m
+[2m────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes14...
+17.6%/32k (auto)                                                            mock

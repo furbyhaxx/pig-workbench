@@ -1,15 +1,15 @@
+ │     "http",
+ │     "https",
+ │     "job",
+ │     "local",
  │     "out",
  │     "session",
  │     "skill"
  │   ]
  │ }
- └ info · trusted data · seq 6 · 10.11.2026 11:08 · deli…
+ └ info · trusted data · seq 6 · 10.11.2026 12:44 · deli…
 
- ◆ instructions.steering · Instructions from: AGENTS.md
- │ Instructions from:
- │ $HOME/.cache/pig-workbench-test-tmp/work/Tes
- │ tLiveFramesRenderAsRowsNotEnvelopes3603745854/001/AGEN
- │ TS.md
+ ◆ instructions.steering · AGENTS.md · loaded · 5 lines
  │ ## AGENTS.md [project, instruction]
  │ # Fixture
  │

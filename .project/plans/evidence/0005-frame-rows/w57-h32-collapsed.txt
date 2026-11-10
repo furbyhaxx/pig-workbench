@@ -9,13 +9,13 @@
 
  i session.project · id global… · 7 lines · ctrl+o expand
 
- i session.location · authorit… · 9 lines · ctrl+o expand
+ i session.location · ~/.cache… · 9 lines · ctrl+o expand
 
  i session.model · contextWind… · 9 lines · ctrl+o expand
 
- i session.capabilities · act… · 29 lines · ctrl+o expand
+ i session.capabilities · activeTools 10, edi… · 29 lines
 
- ◆ instructions.steering · Ins… · 6 lines · ctrl+o expand
+ ◆ instructions.steering · AGENTS.md · loaded · 5 lines
 
 
  hello

@@ -9,13 +9,13 @@
 
  i session.project · id global, name Global, recogniz… · 7 lines · ctrl+o expand
 
- i session.location · authority local, available true… · 9 lines · ctrl+o expand
+ i session.location · ~/.cache/pig-workbench-test-tmp… · 9 lines · ctrl+o expand
 
  i session.model · contextWindow 32000, id mock, maxO… · 9 lines · ctrl+o expand
 
  i session.capabilities · activeTools 10, editMode h… · 29 lines · ctrl+o expand
 
- ◆ instructions.steering · Instructions from: AGENTS.… · 6 lines · ctrl+o expand
+ ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
 
  hello
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes36...
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes14...
 17.6%/32k (auto)                                                            mock

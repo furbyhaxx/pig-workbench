@@ -1,14 +1,14 @@
+ │     "https",
+ │     "job",
+ │     "local",
+ │     "out",
+ │     "session",
  │     "skill"
  │   ]
  │ }
  └ info · trusted data · seq 6 · 10…
 
- ◆ instructions.steering · Instruct…
- │ Instructions from:
- │ $HOME/.cache/pig-workbe
- │ nch-test-tmp/work/TestLiveFramesR
- │ enderAsRowsNotEnvelopes3603745854
- │ /001/AGENTS.md
+ ◆ instructions.steering · AGENTS.m…
  │ ## AGENTS.md [project,
  │ instruction]
  │ # Fixture

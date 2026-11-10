@@ -1,5 +1,5 @@
 
- ◆ instructions.steering · Instructions from: AGENTS.… · 6 lines · ctrl+o expand
+ ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
 
  hello
@@ -12,5 +12,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes36...
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes14...
 17.6%/32k (auto)                                                            mock
