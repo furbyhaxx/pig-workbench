@@ -43,7 +43,7 @@ func TestParseAllCanonicalOperations(t *testing.T) {
 		"CUT 8.=10\nCUT 11.=12 @range\nCUT 13*\nCUT 14* @block\n" +
 		"PUT <15 @clip\nPUT >16 @clip\nPUT >17* @clip\n" +
 		"PUT 18.=19 @clip\nPUT 20* @clip\n" +
-		"PUT <21\nPUT >22\nPUT >23*\n" +
+		"PUT <21\nPUT >22\nPUT >$ @clip\nPUT >23*\n" +
 		"REM\nMV target\nMV target#part\nMV \"target path\"\n"
 	want := []Op{
 		{Kind: PUT_RANGE, Line: 2, End: 4, Payload: []string{"replacement"}},
@@ -62,6 +62,7 @@ func TestParseAllCanonicalOperations(t *testing.T) {
 		{Kind: PUT_FROM_REGISTER, Target: PUT_BLOCK, Line: 20, Block: true, Register: "clip"},
 		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_BEFORE, Line: 21},
 		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_AFTER, Line: 22},
+		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_AFTER, Register: "clip"},
 		{Kind: PUT_FROM_REGISTER, Target: PUT_BLOCK_AFTER, Line: 23, Block: true},
 		{Kind: REM},
 		{Kind: MV, Dest: "target"},
@@ -146,7 +147,6 @@ func TestParseErrorsNameOffendingLine(t *testing.T) {
 		{"unclosed header quote", "[\"bad#ABCD]\nREM\n", 1},
 		{"unknown operation", "[f#ABCD]\nWHAT\n", 2},
 		{"register payload", "[f#ABCD]\nPUT >3 @name\n+unexpected\n", 3},
-		{"register EOF anchor", "[f#ABCD]\nPUT >$ @name\n", 2},
 		{"missing payload", "[f#ABCD]\nPUT >3:\nREM\n", 2},
 		{"invalid single line", "[f#ABCD]\nPUT 2: \n", 2},
 		{"zero line", "[f#ABCD]\nPUT <0:\n+x\n", 2},
@@ -190,7 +190,7 @@ func TestFormatRejectsInvalidOperations(t *testing.T) {
 		{Kind: PUT_INSERT_BEFORE, Payload: []string{"x"}},
 		{Kind: CUT_RANGE, Line: 2, End: 1},
 		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_AFTER, Line: 2, Register: "x", Payload: []string{"x"}},
-		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_AFTER, Register: "x"},
+		{Kind: PUT_FROM_REGISTER, Target: PUT_INSERT_BEFORE, Register: "x"},
 	} {
 		doc := Document{Sections: []Section{{Path: "file", Tag: "1234", Ops: []Op{op}}}}
 		_, err := Format(doc)

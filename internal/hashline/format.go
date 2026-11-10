@@ -105,7 +105,7 @@ func formatOperation(op Op, line int) (string, error) {
 		if len(op.Payload) != 0 {
 			return "", parseError(line, "register paste cannot have a payload")
 		}
-		if op.Line == 0 {
+		if op.Line == 0 && kind != PUT_INSERT_AFTER {
 			return "", parseError(line, "register paste requires a numbered target")
 		}
 		if op.Register == "" && (kind == PUT_RANGE || kind == PUT_BLOCK) {

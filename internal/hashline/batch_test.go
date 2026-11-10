@@ -676,6 +676,23 @@ func TestPlanBatchKeepsEndingOfSurvivingDuplicateLine(t *testing.T) {
 	}
 }
 
+func TestPlanBatchPastesARegisterAtTheEnd(t *testing.T) {
+	const epoch = "epoch-1"
+	source := batchSeen(batchSnapshot(t, "file:///src/a.go", epoch, "one\ntwo\nthree\n"), LineSpan{1, 3})
+	plan, err := PlanBatch(BatchInput{
+		Document:    batchDocument(t, batchSectionText(source, "src/a.go", "CUT 1.=1 @first", "PUT >$ @first")),
+		Sources:     map[string]Snapshot{"src/a.go": source},
+		Epoch:       epoch,
+		EnforceSeen: true,
+	})
+	if err != nil {
+		t.Fatalf("PlanBatch: %v", err)
+	}
+	if len(plan.Effects) != 1 || string(plan.Effects[0].Bytes) != "two\nthree\none\n" {
+		t.Fatalf("effects = %#v", plan.Effects)
+	}
+}
+
 func TestPlanBatchRelocatesOntoObservedCurrentSource(t *testing.T) {
 	const epoch = "epoch-1"
 	original := batchSeen(batchSnapshot(t, "file:///src/a.go", epoch, "alpha\nbeta\ngamma\ndelta\nepsilon\n"), LineSpan{1, 5})

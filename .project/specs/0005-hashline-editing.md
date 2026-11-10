@@ -5,15 +5,15 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-11T00:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 14
+      reason: "A register paste is accepted at the end of the file"
+      changes: ["PUT >$ @name added to the grammar table"]
 ---
 
 # 1. Authority and scope
@@ -69,7 +69,7 @@ Section `[PATH#TAG]` is required for each existing source. Paths can be quoted w
 | PUT >N*: | Insert after that block at sibling depth |
 | CUT N.=M / CUT N* | Remove and capture range/block to batch anonymous clipboard |
 | CUT N.=M @name / CUT N* @name | Remove and capture to named clipboard |
-| PUT <N @name / PUT >N @name | Paste into gap; anonymous when name omitted |
+| PUT <N @name / PUT >N @name / PUT >$ @name | Paste into gap or at the end; anonymous when name omitted |
 | PUT >N* @name | Paste after block; anonymous gap paste allowed by donor grammar |
 | PUT N.=M @name / PUT N* @name | Replace range/block from named register (name required) |
 | REM | Delete file |

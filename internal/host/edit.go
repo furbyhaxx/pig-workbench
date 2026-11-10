@@ -58,7 +58,8 @@ func (a *app) editDefinition(mode string) sdk.ToolDefinition {
 const editHashlineText = `Edit a local UTF-8 file with a hashline batch: read the file first, then send {hashline} that starts with the header line copied from that read, [path#TAG], followed by operations. Line numbers refer to the file as you read it, and every payload row starts with +.
 - PUT 4.=4: replace line 4; PUT 4.=6: replace lines 4-6 (a blank payload line is a lone +)
 - PUT >5: insert after line 5; PUT <1: insert before line 1; PUT >$: append at the end
-- CUT 7.=8 deletes lines 7-8 and keeps them in a register for PUT @name; PUT 6*: replaces the syntax block starting at line 6
+- CUT 7.=8 @name: delete lines 7-8 and keep them; PUT >12 @name (also <N, >$, or A.=B to replace) pastes them, in this or a later section, with no payload rows
+- PUT 6*: replaces the syntax block starting at line 6; CUT 6* @name cuts it
 - REM deletes the file; MV new/path moves it
 Example:
 [src/a.go#7F3A]
