@@ -154,7 +154,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	pointers := make([]string, len(targets))
 	for i, target := range targets {
 		if provider, ok := s.contributedDescriptor(target.Scheme); ok {
-			pointers[i] = "Provider guide: read docs://workbench/schemes/" + provider.canonical
+			pointers[i] = guidePointer(provider.canonical)
 			reserves[i] = len(pointers[i]) + 2
 		}
 	}

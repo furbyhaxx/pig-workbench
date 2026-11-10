@@ -138,4 +138,4 @@ The fixture's `/reference status` reconciles its registration receipts with the 
 
 ## Guides on first touch
 
-When the model first reads a contributed scheme in a session, Workbench appends that scheme's guide to the read result once. The guide is not repeated on later reads, and it is injected again after the owner re-registers the scheme with a new descriptor. The same text is always available on demand at `docs://workbench/schemes/<scheme>` and `docs://<owner>/`.
+When the model first reads a contributed scheme in a session, Workbench appends that scheme's guide to the read result once. The guide is not repeated on later reads, and it is injected again after the owner re-registers the scheme with a new descriptor. The same text is always available on demand at `docs://workbench/schemes/<scheme>` and `docs://<owner>/`. `guides.enabled = false` turns this off, `guides.disabled` lists schemes to skip, and a guide longer than `guides.max-bytes` (default 2048; 0 means always) is replaced by a one-line pointer to `docs://workbench/schemes/<scheme>`.

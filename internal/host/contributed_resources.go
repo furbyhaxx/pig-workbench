@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -354,6 +355,21 @@ func (s *session) firstTouchGuide(scheme string) (string, bool) {
 	if !ok {
 		return "", false
 	}
+	limit := 2048
+	if s.settings != nil {
+		if snapshot, err := s.settings.Current(); err == nil {
+			if !enabled(snapshot, "guides.enabled", true) {
+				return "", false
+			}
+			if entry, ok := snapshot.Get("guides.disabled"); ok {
+				disabled, _ := entry.Value.([]string)
+				if slices.Contains(disabled, provider.canonical) {
+					return "", false
+				}
+			}
+			limit = intValue(snapshot, "guides.max-bytes", limit)
+		}
+	}
 	revision := provider.registrationID + ":" + provider.descriptor.GuideRevision + ":" + provider.descriptor.Summary
 	s.viewsMu.Lock()
 	defer s.viewsMu.Unlock()
@@ -368,7 +384,14 @@ func (s *session) firstTouchGuide(scheme string) (string, bool) {
 		return "", false
 	}
 	s.guideInjected[provider.canonical] = revision
+	if limit == 0 || len(provider.descriptor.Guide) > limit {
+		return guidePointer(provider.canonical), true
+	}
 	return guide, true
+}
+
+func guidePointer(scheme string) string {
+	return "Provider guide: read docs://workbench/schemes/" + scheme
 }
 
 // schemeGuide renders the docs://workbench/schemes/<scheme> page for a contributed scheme.

@@ -12,9 +12,6 @@ import (
 var pendingConsumers = []string{
 	"activity.replace-working-indicator",
 	"context.timezone",
-	"guides.disabled",
-	"guides.enabled",
-	"guides.max-bytes",
 	"jobs.log-bytes",
 	"jobs.max-finished",
 	"jobs.raw-logs",

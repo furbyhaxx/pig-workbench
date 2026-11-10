@@ -292,3 +292,55 @@ func TestProviderSearchResultsAreValidatedAgainstTheSearchedRoot(t *testing.T) {
 		t.Fatalf("root without trailing slash must contain its children and default to complete: %+v %v", got, err)
 	}
 }
+
+func TestGuideSettingsControlFirstTouchDelivery(t *testing.T) {
+	provider := &contributedProvider{
+		scheme:         "kb",
+		canonical:      "kb",
+		registrationID: "reg-1",
+		owner:          api.Identity{Owner: "kb-tools", Instance: "i-1"},
+		descriptor:     resource.ProviderDescriptor{Schemes: []string{"kb"}, Summary: "Knowledge base", Guide: "Use kb://<id>/", GuideRevision: "1"},
+	}
+	router := resource.NewRouter()
+	if err := router.RegisterContributed([]resource.Provider{provider}); err != nil {
+		t.Fatal(err)
+	}
+	touch := func(edits ...config.Edit) (string, bool) {
+		t.Helper()
+		manager, err := config.New(config.Paths{User: t.TempDir() + "/a.toml", Project: t.TempDir() + "/b.toml"}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := manager.Load(t.Context(), false); err != nil {
+			t.Fatal(err)
+		}
+		if len(edits) > 0 {
+			baseline, err := manager.Current()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := manager.Save(t.Context(), config.Runtime, baseline, edits, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return (&session{router: router, settings: manager}).firstTouchGuide("kb")
+	}
+	if guide, ok := touch(); !ok || !strings.Contains(guide, "Use kb://<id>/") {
+		t.Fatalf("default settings must deliver the guide: %q %v", guide, ok)
+	}
+	if _, ok := touch(config.Edit{Key: "guides.enabled", Value: false}); ok {
+		t.Fatal("guides.enabled = false still delivered a guide")
+	}
+	if _, ok := touch(config.Edit{Key: "guides.disabled", Value: []string{"kb"}}); ok {
+		t.Fatal("a scheme in guides.disabled still delivered its guide")
+	}
+	if guide, ok := touch(config.Edit{Key: "guides.disabled", Value: []string{"other"}}); !ok || !strings.Contains(guide, "Use kb://<id>/") {
+		t.Fatal("guides.disabled for another scheme suppressed this one")
+	}
+	for _, limit := range []int64{0, 5} {
+		guide, ok := touch(config.Edit{Key: "guides.max-bytes", Value: limit})
+		if !ok || strings.Contains(guide, "Use kb://<id>/") || guide != "Provider guide: read docs://workbench/schemes/kb" {
+			t.Fatalf("guides.max-bytes = %d must deliver a pointer instead of the guide: %q %v", limit, guide, ok)
+		}
+	}
+}

@@ -185,6 +185,15 @@ func Catalog() []Definition {
 		case "edit.snapshot.max-file-bytes":
 			d.Application = "live"
 			d.Description = "Largest file that gets a snapshot; a larger file is read without a tag and edited with exact text."
+		case "guides.enabled":
+			d.Application = "live"
+			d.Description = "Add a contributed scheme's guide to the first read of that scheme in a session."
+		case "guides.max-bytes":
+			d.Application = "live"
+			d.Description = "A guide longer than this is replaced by a pointer to docs://workbench/schemes/<scheme>; 0 always sends the pointer."
+		case "guides.disabled":
+			d.Application = "live"
+			d.Description = "Schemes whose guide is never added to a read."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."
