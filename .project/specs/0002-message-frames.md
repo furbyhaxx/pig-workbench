@@ -5,15 +5,15 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T12:20:00+01:00"
+  updated_at: "2026-11-10T14:23:07+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "History counted against the pending body bound, so a long session lost frame delivery"
-      changes: ["§4 separates the pending bounds from a history bound: delivered and other non-pending frames never block admission, and the oldest lose their body in memory while digest and receipt stay", "§8 gains the long-session scenario"]
+    - revision: 15
+      reason: "frames.deliveryChanged implemented"
+      changes: ["Event payload and the states it reports"]
 ---
 
 # 1. Purpose and dependency
@@ -40,6 +40,7 @@ External sources default to data authority. Requesting instruction authority is 
 Service methods:
 - `frames.publish`: registrationId + publish request → durable admission receipt.
 - `frames.status`: frameId → admitted/pending/delivered/cancelled/failed with reason.
+- Event `frames.deliveryChanged {frameId, source, eventKey, state}`: sent with the producer's `registrationId` when a provider request carried the frame (`state: "delivered"`). Workbench's own frames emit none. Superseded, expired and cancelled states are read through `frames.status`.
 - `frames.cancel`: frameId → cancel only an undelivered frame owned by caller.
 - `frames.list`: branch scope + filters/cursor → bounded records.
 - `frames.get`: frameId → stored record, bounded body page and delivery state. `bodyDropped: true` with an empty body means the history bound of §4 removed the text from memory.

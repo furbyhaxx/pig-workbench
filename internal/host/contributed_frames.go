@@ -108,6 +108,18 @@ type producerRegistry struct {
 	fields    map[string]contributedFields
 }
 
+// registrationFor returns the registration whose source prefix owns source, or "" for Workbench's own frames.
+func (r *producerRegistry) registrationFor(source string) string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for id, producer := range r.producers {
+		if source == producer.key || strings.HasPrefix(source, producer.key+".") {
+			return id
+		}
+	}
+	return ""
+}
+
 func newProducerRegistry() *producerRegistry {
 	return &producerRegistry{producers: make(map[string]frameProducer), fields: make(map[string]contributedFields)}
 }

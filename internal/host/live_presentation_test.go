@@ -171,3 +171,37 @@ func TestLivePresentationOwnerCannotClaimAnotherExtensionsTool(t *testing.T) {
 		t.Fatalf("foreign tool was claimed without verified ownership: %+v", event)
 	}
 }
+
+func TestLiveFrameDeliveryChangedReachesTheProducerOnce(t *testing.T) {
+	t.Setenv("WORKBENCH_REFERENCE_OBSERVE_DISPLAY", "1")
+	root := t.TempDir()
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	t.Cleanup(server.Close)
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, []string{"reference-producer"}, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("p", "prompt", "say done")
+	seen := map[string]api.FrameDeliveryChanged{}
+	fixture.wait(func(e map[string]any) bool {
+		if e["type"] == "extension_ui_request" && e["method"] == "notify" && strings.Contains(fmt.Sprint(e["message"]), `"frameDelivery"`) {
+			var output struct {
+				FrameDelivery  api.FrameDeliveryChanged `json:"frameDelivery"`
+				RegistrationID string                   `json:"registrationId"`
+			}
+			if err := json.Unmarshal([]byte(e["message"].(string)), &output); err != nil {
+				t.Fatal(err)
+			}
+			if output.RegistrationID == "" || output.FrameDelivery.State != "delivered" || output.FrameDelivery.Source != "reference.research" {
+				t.Fatalf("unexpected delivery event: %+v", output)
+			}
+			if _, twice := seen[output.FrameDelivery.FrameID]; twice {
+				t.Fatalf("frame %s reported delivered twice", output.FrameDelivery.FrameID)
+			}
+			seen[output.FrameDelivery.FrameID] = output.FrameDelivery
+		}
+		return e["type"] == "agent_end"
+	})
+	if len(seen) != 2 {
+		t.Fatalf("want a delivery event for the notice and the claim, have %v", seen)
+	}
+}

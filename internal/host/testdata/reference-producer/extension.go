@@ -378,7 +378,15 @@ func Extension() *sdk.Extension {
 				return err
 			}
 			var event api.Event
-			if json.Unmarshal(encoded, &event) != nil || event.Type != "settings.changed" || event.RegistrationID == "" {
+			if json.Unmarshal(encoded, &event) != nil || event.RegistrationID == "" {
+				return nil
+			}
+			if event.Type == "frames.deliveryChanged" {
+				out, _ := json.Marshal(map[string]any{"frameDelivery": event.Data, "registrationId": event.RegistrationID})
+				ctx.Notify(string(out), "info")
+				return nil
+			}
+			if event.Type != "settings.changed" {
 				return nil
 			}
 			payload, _ := json.Marshal(event.Data)

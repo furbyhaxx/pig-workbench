@@ -8,7 +8,7 @@ Workbench exposes an optional v1 service bus for cooperating PiG extensions. Sto
 |---|---|---|
 | `workbench:v1:request` | consumer → Workbench | validated `api.Request` |
 | `workbench:v1:reply` | Workbench → consumer | addressed `api.Reply` |
-| `workbench:v1:event` | Workbench → listeners | `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed`, `resources.changed`, `sessions.message` |
+| `workbench:v1:event` | Workbench → listeners | `ready`, `closing`, `location.changed`, `settings.changed`, `registration.changed`, `resources.changed`, `frames.deliveryChanged`, `sessions.message` |
 | `workbench:v1:provider-request` | Workbench → contribution owner | `api.ProviderRequest` addressed to your client identity |
 | `workbench:v1:provider-reply` | contribution owner → Workbench | `api.Reply` addressed to Workbench |
 
@@ -52,7 +52,7 @@ Create the client while the extension factory runs or from `OnLoaded`, and share
 | `fetch` | Workbench → you: `fetch` | `fetchBackend` (SPEC-0004 §11) |
 | `status` | `status.update` | `statusSegment` (SPEC-0009 §9) |
 | `docs` | — | `docs` (served at `docs://<owner>/`) |
-| `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set` | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
+| `frames` | `frames.publish`, `frames.status`, `frames.get`, `frames.cancel`, `frames.list`, `context.fields.set`; event `frames.deliveryChanged` (`api.FrameDeliveryChanged {frameId, source, eventKey, state}`) with your `registrationId` once a provider request carried your frame. It is a notification: `frames.status` recovers a missed one and reports the other states | `frameProducer` (SPEC-0002 §2, SPEC-0014 §5.1) |
 | `snapshots` | `snapshots.view`, `snapshots.status`, `snapshots.touched` | — |
 | `sessions` | `sessions.list`, `sessions.send` | — (advertised when the session endpoint is available) |
 | `secrets` | `secrets.redact` | — (advertised only to granted owners) |

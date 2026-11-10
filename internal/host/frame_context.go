@@ -12,6 +12,7 @@ import (
 	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/api"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
@@ -512,6 +513,20 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	if err != nil {
 		return nil, nil
 	}
+	delivered, err := s.confirmDelivered(ctx, data)
+	// Listeners run inside Emit, so the frame lock is released first.
+	for _, frame := range delivered {
+		registrationID := s.producers.registrationFor(frame.Source)
+		if registrationID == "" {
+			continue
+		}
+		_ = ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":frame:" + frame.FrameID + ":delivered", Type: "frames.deliveryChanged", RegistrationID: registrationID, Data: api.FrameDeliveryChanged{FrameID: frame.FrameID, Source: frame.Source, EventKey: frame.EventKey, State: "delivered"}})
+	}
+	return nil, err
+}
+
+// confirmDelivered marks the pending frames the provider request carries and returns them.
+func (s *session) confirmDelivered(ctx sdk.Context, data map[string]any) ([]frames.Frame, error) {
 	state := s.contextFrames
 	state.mu.Lock()
 	defer state.mu.Unlock()
@@ -539,6 +554,7 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	pending = append(pending, prompt...)
 	messages, _ := data["messages"].([]any)
 	var delivered []string
+	var confirmed []frames.Frame
 	for _, frame := range pending {
 		encoded, err := frames.EncodeEnvelope(frame)
 		if err != nil {
@@ -547,6 +563,7 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		for _, raw := range messages {
 			if message, ok := raw.(map[string]any); ok && containsTextBlock(message["content"], encoded) {
 				delivered = append(delivered, frame.FrameID)
+				confirmed = append(confirmed, frame)
 				break
 			}
 		}
@@ -560,7 +577,7 @@ func (a *app) confirmContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			delete(state.staged, id)
 		}
 	}
-	return nil, persistFrames(ctx, state.ledger, delivered)
+	return confirmed, persistFrames(ctx, state.ledger, delivered)
 }
 
 // branchScope binds delivery to the current context epoch and every entry on the active branch.
