@@ -29,6 +29,8 @@ Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 li
 
 Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.
 
+Every scheme, builtin or contributed, has a guide page at `docs://workbench/schemes/<scheme>`; `ls docs://workbench/schemes/` lists them. An empty container lists as `(empty)`.
+
 Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill://`, `job://`, a registered provider's directory) returns the same paged listing view a local directory does; a provider only needs to implement listing.
 
 `http(s)://` reads can use a registered fetch backend or the builtin static reader. In the builtin reader, HTML is converted to readable Markdown by default, while `:raw` keeps the decoded document. Credentials in URLs, bare hosts without an explicit `/`, non-http(s) redirects and redirect cycles are refused; redirects are reauthorized per hop within an 8-hop limit. Charset metadata is decoded, bodies and rendered output are capped at 4 MiB, binary media is refused, and page facts name the handler, content type, final URI and notices. Scripts are never executed and meta/script redirects are reported, not followed.

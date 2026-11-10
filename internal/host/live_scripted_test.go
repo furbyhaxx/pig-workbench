@@ -1248,3 +1248,26 @@ func TestLiveSystemPromptResourceServesThePromptOfTheEpochAndNamesItsSource(t *t
 		})
 	}
 }
+
+func TestLiveSchemeGuidesListEveryBuiltinSchemeAndEmptyContainersSaySo(t *testing.T) {
+	results := runScripted(t, t.TempDir(), "read,ls",
+		func([]string) scriptedCall {
+			return scriptedCall{"ls", map[string]any{"path": "docs://workbench/schemes/"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"read", map[string]any{"path": "docs://workbench/schemes/job"}}
+		},
+		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "out://"}} },
+	)
+	for _, scheme := range []string{"file", "http", "https", "local", "out", "artifact", "cfg", "session", "job", "skill", "agent", "docs"} {
+		if !strings.Contains(results[0], " "+scheme+"\n") {
+			t.Errorf("scheme guide listing lacks %s: %s", scheme, results[0])
+		}
+	}
+	if !strings.Contains(results[1], "# job://") || !strings.Contains(results[1], "signal <HUP|INT|QUIT|TERM|KILL>") {
+		t.Errorf("job guide = %s", results[1])
+	}
+	if !strings.Contains(results[2], "(empty)") {
+		t.Errorf("empty container = %q", results[2])
+	}
+}

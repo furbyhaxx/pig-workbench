@@ -165,6 +165,13 @@ func listContainer(ctx context.Context, s *session, target resource.Target, curs
 		state.Pending = state.Pending[1:]
 	}
 	complete := state.Complete && len(state.Pending) == 0
+	if complete && len(entries) == 0 && body.Len() == 0 {
+		if skipped > 0 {
+			fmt.Fprintf(&body, "(no visible entries; %d hidden)\n", skipped)
+		} else {
+			body.WriteString("(empty)\n")
+		}
+	}
 	next := ""
 	if !complete {
 		raw, err := json.Marshal(state)
