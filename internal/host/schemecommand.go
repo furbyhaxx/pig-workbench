@@ -243,7 +243,7 @@ var externalSchemes = map[string]bool{"http": true, "https": true}
 // prepareShellCommand applies scheme paths to a shell command. A standalone verb runs
 // in-process (handled). Otherwise the returned command has each readable scheme argument
 // replaced by a read-only copy; a command without scheme paths comes back unchanged.
-func (a *app) prepareShellCommand(ctx sdk.Context, work context.Context, s *session, command string) (bool, any, string, error) {
+func (a *app) prepareShellCommand(ctx sdk.Context, work context.Context, s *session, command, operation string) (bool, any, string, error) {
 	if !s.settingBool("bash.route-to-tools", true) {
 		return false, nil, command, nil
 	}
@@ -258,7 +258,7 @@ func (a *app) prepareShellCommand(ctx sdk.Context, work context.Context, s *sess
 		return true, nil, "", err
 	}
 	if plan.standalone != nil {
-		result, err := a.runStandaloneScheme(ctx, work, s, *plan.standalone)
+		result, err := a.runStandaloneScheme(ctx, work, s, *plan.standalone, operation)
 		return true, result, "", err
 	}
 	if len(plan.reads) == 0 {
@@ -346,13 +346,13 @@ func materializedRoot(scratch string) string { return scratch + ".args" }
 func shellQuote(value string) string { return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'" }
 
 // runStandaloneScheme runs one in-process verb through the router.
-func (a *app) runStandaloneScheme(ctx sdk.Context, work context.Context, s *session, parsed schemeCommand) (any, error) {
+func (a *app) runStandaloneScheme(ctx sdk.Context, work context.Context, s *session, parsed schemeCommand, lease string) (any, error) {
 	if parsed.verb == "rm" || parsed.verb == "mv" || parsed.verb == "cp" || parsed.verb == "mkdir" {
 		target, err := resource.ParsePath("/", parsed.paths[0], "")
 		if err != nil {
 			return nil, err
 		}
-		_, release, err := s.location.Acquire(ctx.ToolCallID(), true)
+		_, release, err := s.location.Acquire(lease, true)
 		if err != nil {
 			return nil, err
 		}
@@ -373,7 +373,7 @@ func (a *app) runStandaloneScheme(ctx sdk.Context, work context.Context, s *sess
 		if target.Selection.Explicit {
 			return nil, errors.New("redirect takes a whole path, not a line selector")
 		}
-		_, release, err := s.location.Acquire(ctx.ToolCallID(), true)
+		_, release, err := s.location.Acquire(lease, true)
 		if err != nil {
 			return nil, err
 		}

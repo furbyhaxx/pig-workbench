@@ -72,7 +72,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	if input.Timeout != nil {
 		timeout = *input.Timeout
 	}
-	handled, result, command, err := a.prepareShellCommand(ctx, work, s, input.Command)
+	handled, result, command, err := a.prepareShellCommand(ctx, work, s, input.Command, ctx.ToolCallID())
 	if handled || err != nil {
 		return result, err
 	}

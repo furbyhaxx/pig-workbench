@@ -7,6 +7,9 @@ import (
 
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -813,5 +816,24 @@ func TestLiveRepositoryInNoProjectIsOfferedAProjectOnce(t *testing.T) {
 	time.Sleep(3 * time.Second)
 	if strings.Contains(second.history(), "belongs to no project yet") {
 		t.Fatal("the same repository was offered a second time")
+	}
+}
+
+func TestLiveUserBashListsASchemeDirectoryAndRunsACommandWithAURL(t *testing.T) {
+	web := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "fetched-by-user-curl") }))
+	defer web.Close()
+	s := startTUI(t, t.TempDir())
+	s.typeText("!ls session://self/")
+	s.keys("Enter")
+	if screen := s.waitFor("system-prompt", 15*time.Second); strings.Contains(screen, "No such file") {
+		t.Fatalf("the scheme directory went to the shell:\n%s", screen)
+	}
+	s.typeText("!curl -s " + web.URL + "/page")
+	s.keys("Enter")
+	s.waitFor("fetched-by-user-curl", 15*time.Second)
+	s.typeText("!cat cfg://workbench/status | wc -c | sed 's/^/bytes=/'")
+	s.keys("Enter")
+	if screen := s.waitFor("bytes=", 15*time.Second); strings.Contains(screen, "bytes=0\n") {
+		t.Fatalf("the scheme path was not passed as a file:\n%s", screen)
 	}
 }

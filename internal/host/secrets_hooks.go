@@ -8,6 +8,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/secrets"
 	"os"
 	"os/exec"
+	"strconv"
 )
 
 // redactText replaces secrets in text. active is false when the user disabled secrets.
@@ -109,16 +110,17 @@ func (a *app) redactResult(ctx sdk.Context, data map[string]any) (any, error) {
 
 const maxUserBashOutput = 4 << 20
 
-// userBash runs a user `!` command with placeholders substituted and its output redacted,
-// so the transcript only ever holds placeholders. Output is buffered because a secret
-// split across two streamed chunks would escape detection.
+// userBash runs a user `!` command with placeholders substituted, scheme paths applied and
+// its output redacted, so the transcript only ever holds placeholders. Output is buffered
+// because a secret split across two streamed chunks would escape detection.
 func (a *app) userBash(ctx sdk.Context, _ map[string]any) (any, error) {
 	s, err := a.current()
 	if err != nil {
 		return nil, nil
 	}
 	guard, enabled, err := s.secrets.Guard()
-	if err == nil && !enabled {
+	routed := s.router != nil && s.settingBool("bash.route-to-tools", true)
+	if err == nil && !enabled && !routed {
 		return nil, nil
 	}
 	return map[string]any{"operations": sdk.BashOperations{Exec: func(command, cwd string, options sdk.BashExecOptions) (sdk.BashExecResult, error) {
@@ -126,17 +128,48 @@ func (a *app) userBash(ctx sdk.Context, _ map[string]any) (any, error) {
 			s.secrets.withhold(ctx, err)
 			return sdk.BashExecResult{}, errors.New("secrets boundary unavailable; command not run")
 		}
-		real, subErr := guard.Substitute(command)
-		if subErr != nil {
-			return sdk.BashExecResult{}, errors.New("command refused: it names an unknown or deleted secret placeholder")
-		}
-		shell := "/bin/sh"
-		if _, statErr := os.Stat("/bin/bash"); statErr == nil {
-			shell = "/bin/bash"
+		redact := func(text string) (string, error) { return text, nil }
+		real := command
+		if enabled {
+			var subErr error
+			if real, subErr = guard.Substitute(command); subErr != nil {
+				return sdk.BashExecResult{}, errors.New("command refused: it names an unknown or deleted secret placeholder")
+			}
+			redact = guard.Redact
 		}
 		signal := options.Signal
 		if signal == nil {
 			signal = context.Background()
+		}
+		if routed {
+			work, release, admitErr := s.supervisor.Admit(signal)
+			if admitErr != nil {
+				return sdk.BashExecResult{}, admitErr
+			}
+			handled, result, rewritten, prepErr := a.prepareShellCommand(ctx, work, s, real, "user-bash-"+strconv.FormatUint(s.materialized.Add(1), 10))
+			release()
+			if handled || prepErr != nil {
+				text, code := "", 0
+				if prepErr != nil {
+					text, code = prepErr.Error()+"\n", 1
+				} else if tool, ok := result.(sdk.ToolResult); ok {
+					text = tool.Content
+				}
+				redacted, redactErr := redact(text)
+				if redactErr != nil {
+					s.secrets.withhold(ctx, redactErr)
+					return sdk.BashExecResult{}, errors.New("secrets boundary unavailable; output withheld")
+				}
+				if options.OnData != nil && redacted != "" {
+					options.OnData([]byte(redacted))
+				}
+				return sdk.BashExecResult{ExitCode: &code}, nil
+			}
+			real = rewritten
+		}
+		shell := "/bin/sh"
+		if _, statErr := os.Stat("/bin/bash"); statErr == nil {
+			shell = "/bin/bash"
 		}
 		cmd := exec.CommandContext(signal, shell, "-c", real)
 		cmd.Dir = cwd
@@ -150,7 +183,7 @@ func (a *app) userBash(ctx sdk.Context, _ map[string]any) (any, error) {
 		output.limit = maxUserBashOutput
 		cmd.Stdout, cmd.Stderr = &output, &output
 		runErr := cmd.Run()
-		redacted, redactErr := guard.Redact(output.String())
+		redacted, redactErr := redact(output.String())
 		if redactErr != nil {
 			s.secrets.withhold(ctx, redactErr)
 			return sdk.BashExecResult{}, errors.New("secrets boundary unavailable; output withheld")
