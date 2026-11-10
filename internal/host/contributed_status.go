@@ -271,5 +271,6 @@ func (a *app) statusUpdate(ctx sdk.Context, s *session, request api.Request) (an
 	if err := s.status.update(ctx, request.RegistrationID, value); err != nil {
 		return nil, &api.Error{Code: "notFound", Message: err.Error(), Outcome: "notApplied"}
 	}
+	s.pokeActivity()
 	return map[string]any{"accepted": true, "composedByWorkbench": true}, nil
 }

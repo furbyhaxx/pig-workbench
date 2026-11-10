@@ -14,20 +14,63 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
+	"github.com/furbyhaxx/pig-workbench/internal/pathdisplay"
 )
 
 const (
-	activityKey          = "workbench-activity"
-	activityPollInterval = 500 * time.Millisecond
-	narrowActivity       = 50
+	activityKey = "workbench-activity"
+	// activityMinInterval coalesces event-driven publishing to at most four per second.
+	activityMinInterval = 250 * time.Millisecond
+	// activityFallbackInterval heals a missed event and refreshes the peer count, the one fact read from disk.
+	activityFallbackInterval = 5 * time.Second
+	narrowActivity           = 50
 )
+
+// activityPhase is the turn state the line leads with. Compaction can run inside or outside a turn,
+// so both facts are kept and compaction wins while it lasts.
+type activityPhase struct {
+	mu         sync.Mutex
+	working    bool
+	compacting bool
+	since      time.Time
+}
+
+func (p *activityPhase) setWorking(on bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.working != on {
+		p.working, p.since = on, time.Now()
+	}
+}
+
+func (p *activityPhase) setCompacting(on bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.compacting = on
+}
+
+func (p *activityPhase) get() (working, compacting bool, since time.Time) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.working, p.compacting, p.since
+}
+
+func elapsedText(d time.Duration) string {
+	seconds := int(d / time.Second)
+	if seconds < 60 {
+		return strconv.Itoa(seconds) + "s"
+	}
+	return fmt.Sprintf("%dm%02ds", seconds/60, seconds%60)
+}
 
 // activityItem is one counted fact of the activity line. Zero counts are not shown.
 type activityItem struct {
-	Key      string `json:"key"`
-	Label    string `json:"label"`
-	Glyph    string `json:"glyph"`
-	Count    int    `json:"count"`
+	Key   string `json:"key"`
+	Label string `json:"label"`
+	Glyph string `json:"glyph"`
+	Count int    `json:"count"`
+	// Text replaces "<count> <label>" for items that state a fact instead of a count.
+	Text     string `json:"text,omitempty"`
 	Severity string `json:"severity,omitempty"`
 	Priority int    `json:"priority"`
 	// Open is the command that inspects the item.
@@ -37,6 +80,23 @@ type activityItem struct {
 // activityItems derives the line from the live registries: no I/O beyond reading them.
 func (s *session) activityItems() []activityItem {
 	var items []activityItem
+	asks := 0
+	if e := s.endpoint; e != nil {
+		e.mu.Lock()
+		asks = e.waiting
+		e.mu.Unlock()
+	}
+	working, compacting, since := s.phase.get()
+	state := activityItem{Key: "state", Text: "Ready", Glyph: "●", Count: 1, Priority: 110, Open: "/workbench"}
+	switch {
+	case asks > 0:
+		state.Text, state.Severity = "Waiting for you", "warning"
+	case compacting:
+		state.Text = "Compacting"
+	case working:
+		state.Text = "Working " + elapsedText(time.Since(since))
+	}
+	items = append(items, state)
 	if s.jobs != nil {
 		running, failed := 0, 0
 		for _, job := range s.jobs.List() {
@@ -54,14 +114,17 @@ func (s *session) activityItems() []activityItem {
 			activityItem{Key: "jobs", Label: "jobs", Glyph: "⚙", Count: running, Priority: 80, Open: "/workbench jobs"},
 			activityItem{Key: "jobs.failed", Label: "failed", Glyph: "✗", Count: failed, Severity: "error", Priority: 90, Open: "/workbench jobs"})
 	}
-	if e := s.endpoint; e != nil {
-		e.mu.Lock()
-		asks := e.waiting
-		e.mu.Unlock()
-		items = append(items, activityItem{Key: "ask", Label: "waiting for you", Glyph: "?", Count: min(asks, 1), Severity: "warning", Priority: 100, Open: "/workbench ask show"})
-		if peers, err := e.peers(context.Background()); err == nil {
-			items = append(items, activityItem{Key: "peers", Label: "live sessions", Glyph: "⚇", Count: len(peers), Priority: 60, Open: "/workbench sessions"})
+	items = append(items, activityItem{Key: "peers", Label: "live sessions", Glyph: "⚇", Count: s.livePeers(), Priority: 60, Open: "/workbench sessions"})
+	if c := s.contextFrames; c != nil {
+		c.mu.Lock()
+		files := 0
+		for key := range c.views {
+			if strings.HasPrefix(key, "instructions.") {
+				files++
+			}
 		}
+		c.mu.Unlock()
+		items = append(items, activityItem{Key: "instructions", Label: "instructions", Glyph: "≡", Count: files, Priority: 50, Open: "/workbench instructions"})
 	}
 	if s.skills != nil {
 		s.skills.mu.Lock()
@@ -73,6 +136,11 @@ func (s *session) activityItems() []activityItem {
 		}
 		s.skills.mu.Unlock()
 		items = append(items, activityItem{Key: "skills", Label: "skills", Glyph: "◆", Count: loaded, Priority: 40, Open: "/workbench skills"})
+	}
+	if s.location != nil {
+		if current := s.location.Current(); current.Cwd != current.Origin {
+			items = append(items, activityItem{Key: "location", Text: "in " + pathdisplay.Display(pathdisplay.Target{Value: current.Cwd, Root: current.Origin, NoFish: true}, 32), Glyph: "⌂", Count: 1, Priority: 30, Open: "/cd"})
+		}
 	}
 	for _, segment := range s.status.activity() {
 		count := 0
@@ -102,6 +170,9 @@ func (s *session) activityItems() []activityItem {
 }
 
 func (i activityItem) wide() string {
+	if i.Text != "" {
+		return i.Text
+	}
 	text := strconv.Itoa(i.Count) + " " + i.Label
 	if i.Severity == "error" || i.Severity == "warning" {
 		if !strings.Contains(i.Label, i.Severity) && i.Label != "failed" && i.Label != "waiting for you" {
@@ -111,7 +182,47 @@ func (i activityItem) wide() string {
 	return text
 }
 
-func (i activityItem) narrow() string { return i.Glyph + strconv.Itoa(i.Count) }
+func (i activityItem) narrow() string {
+	switch {
+	case i.Key == "state":
+		return i.Text
+	case i.Text != "":
+		return i.Glyph
+	}
+	return i.Glyph + strconv.Itoa(i.Count)
+}
+
+// livePeers counts discoverable sessions. With a line running it answers from the count that line
+// last read, so deriving the items never touches the registry on disk.
+func (s *session) livePeers() int {
+	if line := s.activity; line != nil {
+		line.mu.Lock()
+		defer line.mu.Unlock()
+		return line.peers
+	}
+	return s.readPeers()
+}
+
+func (s *session) readPeers() int {
+	if s.endpoint == nil {
+		return 0
+	}
+	peers, err := s.endpoint.peers(context.Background())
+	if err != nil {
+		return 0
+	}
+	return len(peers)
+}
+
+// pokeActivity asks the line to republish after a state change; it never blocks.
+func (s *session) pokeActivity() {
+	if line := s.activity; line != nil {
+		select {
+		case line.poke <- struct{}{}:
+		default:
+		}
+	}
+}
 
 // renderActivity lays the items out in one row of at most width columns. Below 50 columns items
 // become glyph plus number; the lowest priority drops first and no item is cut.
@@ -138,9 +249,6 @@ func renderActivity(items []activityItem, width int) string {
 }
 
 func activitySummary(items []activityItem) string {
-	if len(items) == 0 {
-		return "idle"
-	}
 	parts := make([]string, len(items))
 	for i, item := range items {
 		parts[i] = item.wide()
@@ -153,6 +261,8 @@ type activityLine struct {
 	mu     sync.Mutex
 	items  []activityItem
 	signal string
+	peers  int
+	poke   chan struct{}
 	stop   chan struct{}
 	done   chan struct{}
 }
@@ -168,7 +278,7 @@ func (a *app) startActivity(ctx sdk.Context, s *session) {
 	if !s.settingBool("activity.enabled", true) || !ctx.HasUI() {
 		return
 	}
-	line := &activityLine{stop: make(chan struct{}), done: make(chan struct{})}
+	line := &activityLine{poke: make(chan struct{}, 1), stop: make(chan struct{}), done: make(chan struct{}), peers: s.readPeers()}
 	s.activity = line
 	placement := "aboveEditor"
 	if s.settingString("activity.placement", "above-editor") == "below-editor" {
@@ -195,16 +305,36 @@ func (a *app) startActivity(ctx sdk.Context, s *session) {
 	publish()
 	go func() {
 		defer close(line.done)
-		ticker := time.NewTicker(activityPollInterval)
-		defer ticker.Stop()
+		fallback := time.NewTicker(activityFallbackInterval)
+		defer fallback.Stop()
+		second := time.NewTicker(time.Second)
+		defer second.Stop()
+		var last time.Time
 		for {
 			select {
 			case <-line.stop:
 				return
-			case <-ticker.C:
-				if detached(ctx, publish) {
-					return
+			case <-line.poke:
+				if wait := activityMinInterval - time.Since(last); wait > 0 {
+					select {
+					case <-line.stop:
+						return
+					case <-time.After(wait):
+					}
 				}
+			case <-second.C:
+				if working, compacting, _ := s.phase.get(); !working || compacting {
+					continue
+				}
+			case <-fallback.C:
+				peers := s.readPeers()
+				line.mu.Lock()
+				line.peers = peers
+				line.mu.Unlock()
+			}
+			last = time.Now()
+			if detached(ctx, publish) {
+				return
 			}
 		}
 	}()
@@ -258,16 +388,18 @@ func (a *app) activityShortcut(ctx sdk.Context) error {
 		return err
 	}
 	items := s.activityItems()
-	if len(items) == 0 {
-		a.notify(ctx, "Workbench activity: idle.")
-		return nil
-	}
 	a.notify(ctx, "Workbench activity: "+activitySummary(items))
-	if args, ok := strings.CutPrefix(items[0].Open, "/workbench "); ok {
-		return a.workbench(ctx, args)
+	for _, item := range items {
+		if item.Key == "state" {
+			continue
+		}
+		if args, ok := strings.CutPrefix(item.Open, "/workbench "); ok {
+			return a.workbench(ctx, args)
+		}
+		if item.Open != "" {
+			a.notify(ctx, "Open with "+item.Open)
+			return nil
+		}
 	}
-	if items[0].Open != "" {
-		a.notify(ctx, "Open with "+items[0].Open)
-	}
-	return nil
+	return a.workbench(ctx, "")
 }

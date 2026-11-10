@@ -209,6 +209,7 @@ func (a *app) announceJobCompletion(lifetime context.Context, s *session, id str
 	if _, err := s.jobs.Wait(lifetime, id); err != nil {
 		return
 	}
+	s.pokeActivity()
 	state, err := s.jobs.Status(id)
 	if err != nil {
 		return

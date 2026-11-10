@@ -5,15 +5,15 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "published"
-  revision: 16
+  revision: 17
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-11T00:40:00+01:00"
+  updated_at: "2026-11-11T01:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 16
-      reason: "Command routes follow the implementation: one alias table, short unknown-verb answer, prompt and tools verbs, companion completions"
-      changes: ["§8: jobs, prompt and tools rows, alias and completion rules; jobs monitor and write move to PLAN-0003 W6"]
+    - revision: 17
+      reason: "Activity line follows the implementation: state item, instruction files, away location, event-driven publishing"
+      changes: ["§9: states shown today, what the instruction count means, publishing triggers, shortcut target"]
 ---
 
 # 1. Scope and sources
@@ -165,10 +165,10 @@ Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `s
 - `segments`: Workbench publishes short status entries through the host (`ctx.SetStatus`): location, running jobs, pending ask, context warning, live peers (SPEC-0011). At most a short ambient status; multi-line widgets are opt-in and cleared after completion.
 - `footer`: Workbench composes the whole footer with the donor layout engine (lines, items, priority, minimum columns, merge, right alignment, conditions, wrapping, hit regions) and builtin segments (usage, cost, agent, model, path with branch in the `statusline.path-style` style (SPEC-0003 §10), remote identity). Only an explicit user choice enables it; installing an extension never does.
 - **Activity line**: one row above the editor, on by default (`activity.enabled`), drawn as a kit view widget (`SetWidget` with `placement: aboveEditor`).
-  - Content, by priority: state (`Ready`, `Working <elapsed>`, `Waiting for you`, `Compacting`, `Retrying n/m`) with host-animated dots (`kit.Loader` frames); live agents and unread messages (SPEC-0011); running and failed jobs (SPEC-0008); active and changed instruction files (SPEC-0007); enabled skills; location only when away from the starting checkout (SPEC-0003 §10); contributed items; coordinator mark.
-  - Zero counts are hidden unless the user pins the item (`show: always`). Severity pairs color with a word (`1 failed`). Below 50 columns items become glyph + number (`⚇2 ⚙2✗1 ◆5`). Lowest priority drops first; no item is cut mid-word.
-  - Sent on change, coalesced to ≤ 4 per second; once per second while working (elapsed time). No I/O in render.
-  - Click (fullscreen mode, the target mode): an item opens its inspector (`/workbench sessions`, `jobs`, `instructions`, `ls skill://`, `/cd`, a contributed `open` target); the state opens the hub (SKETCH-0001 §3). Keyboard: shortcut `alt+w` (setting `activity.shortcut`) opens the hub with the first non-zero item selected. Headless: `/workbench show` and `cfg://workbench/status` carry the same items.
+  - Content, by priority: state (`Ready`, `Working <elapsed>`, `Waiting for you`, `Compacting`); failed and running jobs (SPEC-0008); live sessions (SPEC-0011); instruction files the model currently holds (SPEC-0007); loaded skills; location only when away from the starting checkout, as `in <path>` relative to it (SPEC-0003 §10); contributed items. The state item is always shown, so the line is never empty. `Retrying n/m` joins when the host exposes retry events; unread messages and the coordinator mark come with their features (PLAN-0003 W6).
+  - Zero counts are hidden. Severity pairs with a word (`1 failed`). Below 50 columns counted items become glyph + number (`✗1 ⚙2 ⚇2 ≡3 ◆5`), the location becomes its glyph and the state keeps its words. Lowest priority drops first; no item is cut mid-word.
+  - Published on events (turn start and end, compaction, a finished tool call, a finished background job, a question opening or closing, a contributed `status.update`), coalesced to ≤ 4 per second; once per second while working (elapsed time). A five-second tick heals a missed event and refreshes the live-session count, the one fact read from disk. No I/O in render.
+  - Click (fullscreen mode, the target mode): an item opens its inspector (`/workbench sessions`, `jobs`, `instructions`, `ls skill://`, `/cd`, a contributed `open` target); the state opens the hub (SKETCH-0001 §3). Keyboard: shortcut `alt+w` (setting `activity.shortcut`) opens the inspector of the first item after the state, or the hub when there is none. Headless: `/workbench show` and `cfg://workbench/status` carry the same items.
   - While the line is on, Workbench publishes no `SetStatus` segments for jobs, peers or pending ask. PiG's own working indicator stays visible. A setting `activity.replace-working-indicator` that hides it joins the catalog only together with a state item that shows the retry and compaction events the indicator shows, after those events are verified observable.
   - Host gap: the SDK delivers kit view events only to open `ctx.Custom` overlays (`view.go` `viewEvent`), so clicks on a widget `MouseRegion` are dropped today. Until the PiG change lands (PLAN-0001 M0.2), the line renders without hover affordances and the shortcut is the entry.
 - Other extensions register `statusSegment` contributions `{key, label, priority, minColumns, maxColumns, align, placement?, glyph?, open?}`, where `placement` is `status` (default) or `activity`, `glyph` is one cell for narrow widths, and `open` is a command or resource URI run only on an explicit click or Enter. `status.update` also accepts `count` and `severity` for activity items, which Workbench renders as `N <label>` and hides at zero. and push values with `status.update` `{text ≤ 64 columns plain, style: normal|dim|success|warning|error}`, coalesced to 4 updates per second. In both modes the user orders and hides them in `/workbench statusline`. The receipt says `composedByWorkbench: true`, so the producer stops its own `SetStatus` to avoid duplicates; it resumes when Workbench closes.

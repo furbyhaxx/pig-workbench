@@ -78,6 +78,7 @@ type session struct {
 	children            *childCalls
 	endpoint            *sessionEndpoint
 	activity            *activityLine
+	phase               activityPhase
 	installedMu         sync.Mutex
 	installed           map[string]func()
 	projectMu           sync.Mutex
@@ -125,6 +126,10 @@ func Register(ext *sdk.Extension) {
 	ext.OnEvent(sdk.EventSessionTree, a.invalidateSeen)
 	ext.OnEvent("session_compact", a.invalidateSeen)
 	ext.OnEvent("session_compact", a.replaySkills)
+	ext.OnEvent(sdk.EventSessionBeforeCompact, a.activityCompacting(true))
+	ext.OnEvent(sdk.EventSessionCompact, a.activityCompacting(false))
+	ext.OnEvent(sdk.EventSessionCompactFailed, a.activityCompacting(false))
+	ext.OnEvent(sdk.EventToolExecutionEnd, a.refreshActivity)
 	ext.OnEvent(sdk.EventAgentStart, a.onAgentStart)
 	ext.OnEvent(sdk.EventAgentEnd, a.onAgentEnd)
 	ext.OnEvent("input", a.redactInput)

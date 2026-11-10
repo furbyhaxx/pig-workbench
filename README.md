@@ -48,7 +48,7 @@ In the TUI, `/workbench` opens a menu of every Workbench view; typing narrows it
 **Deferred depth:**
 
 - Broadcast, coordinator and by-project agent/session trees belong to Slice 2. The rich questionnaire panel is later UI work.
-- Activity-item click needs a fork host change. `activity.shortcut` (default `alt+w`) is read from the user layer when the extension loads, so a change applies after `/reload`; runtime and project values are not consulted. `/workbench show` names the active key.
+- The activity line above the editor leads with the turn state (`Ready`, `Working 12s`, `Waiting for you`, `Compacting`), then failed and running jobs, live sessions, held instruction files, loaded skills and `in <path>` when the working location left the starting checkout. Activity-item click needs a fork host change. `activity.shortcut` (default `alt+w`) is read from the user layer when the extension loads, so a change applies after `/reload`; runtime and project values are not consulted. `/workbench show` names the active key.
 - Workbench cannot be fused into a Piglet Binary (`build.extensionRealization: fused`): PiG's builder merges `go.mod` without the member's indirect requirements and stops with `go: updates to go.mod needed` (reproduced on PiG 0.7.0, [log](.project/analyses/2026-11-05-slice-1-inventory/evidence/fused-reprobe.log)). Install it as a normal extension.
 - Additional resource formats, SSH locations, PTY jobs, extended recovery and other depth are listed in the [Slice 2 plan](.project/plans/0003-slice-2-feature-complete.md).
 

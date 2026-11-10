@@ -587,7 +587,7 @@ func TestLiveActivitySettingsControlWidget(t *testing.T) {
 				t.Fatalf("script did not finish:\n%s", capture)
 			}
 			if tc.want == "" {
-				time.Sleep(2 * activityPollInterval)
+				time.Sleep(time.Second)
 				capture = tmux("capture-pane", "-p", "-t", "workbench")
 			}
 			line := -1
@@ -812,7 +812,7 @@ func TestLiveActivityShortcutSettingBindsTheConfiguredKey(t *testing.T) {
 			opened, capture := false, ""
 			for attempt := 0; attempt < 6 && !opened; attempt++ {
 				tmux("send-keys", "-t", "workbench", tc.press)
-				capture, opened = waitFor("Workbench activity: idle", 4*time.Second)
+				capture, opened = waitFor("Workbench activity: Ready", 4*time.Second)
 			}
 			if !opened {
 				t.Fatalf("%s did not open the inspector:\n%s", tc.press, capture)

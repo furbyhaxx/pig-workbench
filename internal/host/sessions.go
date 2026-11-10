@@ -295,6 +295,7 @@ func (e *sessionEndpoint) setState(ctx sdk.Context, state string) {
 	e.record.State, e.record.StateSince = state, time.Now()
 	e.refreshLocked(ctx)
 	e.publishLocked(ctx)
+	e.s.pokeActivity()
 }
 
 func (e *sessionEndpoint) beginAsk(ctx sdk.Context) func() {
@@ -315,18 +316,44 @@ func (e *sessionEndpoint) beginAsk(ctx sdk.Context) func() {
 
 // onAgentStart and onAgentEnd keep the published state aligned with the turn.
 func (a *app) onAgentStart(ctx sdk.Context, _ map[string]any) (any, error) {
-	if s, err := a.current(); err == nil && s.endpoint != nil {
-		s.endpoint.setState(ctx, "busy")
+	if s, err := a.current(); err == nil {
+		s.phase.setWorking(true)
+		s.pokeActivity()
+		if s.endpoint != nil {
+			s.endpoint.setState(ctx, "busy")
+		}
 	}
 	return nil, nil
 }
 
 func (a *app) onAgentEnd(ctx sdk.Context, _ map[string]any) (any, error) {
-	if s, err := a.current(); err == nil && s.endpoint != nil {
-		s.endpoint.mu.Lock()
-		s.endpoint.origin = nil
-		s.endpoint.mu.Unlock()
-		s.endpoint.setState(ctx, "idle")
+	if s, err := a.current(); err == nil {
+		s.phase.setWorking(false)
+		s.pokeActivity()
+		if s.endpoint != nil {
+			s.endpoint.mu.Lock()
+			s.endpoint.origin = nil
+			s.endpoint.mu.Unlock()
+			s.endpoint.setState(ctx, "idle")
+		}
+	}
+	return nil, nil
+}
+
+func (a *app) activityCompacting(on bool) func(sdk.Context, map[string]any) (any, error) {
+	return func(sdk.Context, map[string]any) (any, error) {
+		if s, err := a.current(); err == nil {
+			s.phase.setCompacting(on)
+			s.pokeActivity()
+		}
+		return nil, nil
+	}
+}
+
+// refreshActivity republishes after a tool ran: jobs, skills, instructions and location change there.
+func (a *app) refreshActivity(sdk.Context, map[string]any) (any, error) {
+	if s, err := a.current(); err == nil {
+		s.pokeActivity()
 	}
 	return nil, nil
 }
