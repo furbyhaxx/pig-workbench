@@ -180,6 +180,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	target.URI = resource.FileURI(canonical)
+	s.contextFrames.recordAuthored(canonical, []byte(input.Content))
 	receipt := fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(input.Content), target.URI, revision)
 	s.rememberWritten(ctx.ToolCallID(), epoch, target, []byte(input.Content), receipt)
 	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision}}, nil

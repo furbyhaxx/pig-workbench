@@ -206,6 +206,9 @@ func Catalog() []Definition {
 		case "instructions.updates.context":
 			d.Application = "live"
 			d.Description = "Context lines around instruction updates; full views are sent when a reconstructible diff is not smaller."
+		case "instructions.updates.self-edits":
+			d.Application = "live"
+			d.Description = "How a change the agent made itself to a delivered instruction file reaches it: a one-line notice, the same diff as an outside change, or nothing. Bytes the agent did not write always arrive as a diff."
 		case "jobs.timeout-seconds":
 			d.Application = "live"
 			d.Description = "Default bash hard deadline in seconds; zero disables it. A tool-call timeout overrides this value."

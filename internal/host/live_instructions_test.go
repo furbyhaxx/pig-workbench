@@ -1083,3 +1083,52 @@ func TestLiveSessionSelfInstructionsListActiveFilesAndCtlInJSONMode(t *testing.T
 		t.Errorf("self listing lacks instructions:\n%s", results[3])
 	}
 }
+
+func TestLiveSelfEditedInstructionsFollowTheSelfEditsSetting(t *testing.T) {
+	for mode, want := range map[string]struct{ notice, diff bool }{"notice": {notice: true}, "diff": {diff: true}, "silent": {}} {
+		t.Run(mode, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.Mkdir(filepath.Join(root, ".git"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			agent := filepath.Join(root, "agent")
+			if err := os.MkdirAll(agent, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[instructions.updates]\nself-edits = \""+mode+"\"\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			steering := strings.Repeat("Steering rule that must hold.\n", 40)
+			if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte(steering), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			recorder := &requestRecorder{calls: []scriptedCall{
+				{"read", map[string]any{"path": "AGENTS.md"}},
+				{"write", map[string]any{"path": "AGENTS.md", "content": steering + "SELF-AUTHORED-RULE applies.\n"}},
+				{"write", map[string]any{"path": "b.txt", "content": "made\n"}},
+			}}
+			server := recorder.serve(t)
+			defer server.Close()
+			writeFixtureProvider(t, agent, server.URL)
+			fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,write")
+			fixture.send("p", "prompt", "Go.")
+			fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			last := recorder.bodies[len(recorder.bodies)-1]
+			results := toolResults(t, last)
+			if len(results) != 3 || !strings.Contains(results[1], "Wrote") {
+				t.Fatalf("the self-edit did not land: %q", results)
+			}
+			if got := strings.Contains(last, "You changed this instruction file yourself"); got != want.notice {
+				t.Errorf("self-edit notice present = %t, want %t", got, want.notice)
+			}
+			if got := strings.Contains(last, "Instruction update for"); got != want.diff {
+				t.Errorf("instruction diff present = %t, want %t", got, want.diff)
+			}
+			if mode != "diff" && strings.Contains(results[2], "instructionContextChanged") {
+				t.Errorf("the agent's own edit must not block its next mutation: %q", results[2])
+			}
+		})
+	}
+}

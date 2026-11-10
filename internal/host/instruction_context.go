@@ -180,7 +180,9 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 			if err := sendFrameBlocks(ctx, blocks); err != nil {
 				return nil, err
 			}
-			changed = strings.Contains(strings.Join(blocks, "\n"), `src="instructions.`)
+			for _, block := range blocks {
+				changed = changed || strings.Contains(block, `src="instructions.`) && !strings.Contains(block, selfEditNotice)
+			}
 		}
 		if mutating {
 			if incomplete, ok := output["workbenchIncompleteInstructions"].([]string); ok && len(incomplete) > 0 {

@@ -256,8 +256,11 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	outcomes, commitErr := fileedit.Commit(work, filepath.Join(agent, "workbench", "locks", "edits"), effects)
 	changed := false
-	for _, outcome := range outcomes {
+	for index, outcome := range outcomes {
 		changed = changed || outcome.Committed
+		if outcome.Committed && index < len(effects) && !effects[index].Delete && effects[index].MoveTo == "" {
+			s.contextFrames.recordAuthored(outcome.Path, effects[index].Bytes)
+		}
 	}
 	if !changed && commitErr == nil {
 		if len(s.editState.noops) >= 128 {

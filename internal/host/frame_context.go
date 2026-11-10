@@ -1,6 +1,8 @@
 package host
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -46,6 +48,27 @@ type contextFrameState struct {
 	retained         []string
 	retainedLocation uint64
 	retainedEpoch    string
+	// authored maps a delivered instruction file to the SHA-256 of the bytes the agent's own edit or
+	// write last committed there, so its next view change is recognised as a self-edit (SPEC-0007 §8).
+	authored map[string]string
+}
+
+const selfEditNotice = "You changed this instruction file yourself: "
+
+// recordAuthored notes bytes an edit or write committed to an instruction file the model already holds.
+func (c *contextFrameState) recordAuthored(path string, content []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key := range c.views {
+		if strings.HasPrefix(key, "instructions.") && strings.HasSuffix(key, "/"+path) {
+			sum := sha256.Sum256(content)
+			if c.authored == nil {
+				c.authored = make(map[string]string)
+			}
+			c.authored[path] = hex.EncodeToString(sum[:])
+			return
+		}
+	}
 }
 
 // retainedFor returns the retained explicit targets while the location and context epoch are unchanged.
@@ -377,7 +400,24 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		// A source the model already holds is never sent whole again: only what changed goes out.
 		instruction := strings.HasPrefix(fact.source, "instructions.") && fact.kind != "notice"
 		if previous, ok := state.views[key]; ok {
+			selfEdit := instruction && fact.revision != "" && state.authored[fact.resource] == fact.revision
 			if instruction {
+				delete(state.authored, fact.resource)
+			}
+			mode := "diff"
+			if selfEdit {
+				mode = "notice"
+				if entry, ok := configuration.Get("instructions.updates.self-edits"); ok {
+					mode, _ = entry.Value.(string)
+				}
+			}
+			if mode == "silent" {
+				state.views[key], state.last[key] = fullBody, digest
+				continue
+			}
+			if mode == "notice" {
+				body, kind = []byte(selfEditNotice+fact.resource+". The view you hold now includes that edit; nothing else changed."), "notice"
+			} else if instruction {
 				if diff := instructionDiff(fact, previous, fullBody, updateContext(configuration)); diff != "" {
 					body = []byte(diff)
 				}
