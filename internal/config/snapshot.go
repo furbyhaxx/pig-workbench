@@ -106,9 +106,6 @@ func compose(documents map[Scope]*document, revision uint64, definitions map[str
 		snapshot.warnings = append(snapshot.warnings, doc.warnings...)
 	}
 	integer := func(key string) int { return int(snapshot.values[key].Value.(int64)) }
-	if integer("read.query.default-rows") > integer("read.query.max-rows") {
-		return nil, &Error{Key: "read.query.default-rows", Reason: "default row count must not exceed read.query.max-rows"}
-	}
 	snapshot.read = ReadPolicy{MaxBytes: integer("read.max-bytes"), MaxLines: integer("read.max-lines"), Concurrency: integer("read.concurrency")}
 	return snapshot, nil
 }

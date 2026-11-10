@@ -1,24 +1,41 @@
 package config
 
 import (
+	"context"
+	"os"
 	"slices"
+	"strings"
 	"testing"
 )
 
 // pendingConsumers names shown keys that still wait for their consumer; it only shrinks and is empty at the Slice 1 exit.
 var pendingConsumers = []string{
-	"activity.replace-working-indicator", "answer.retries", "answer.timeout-ms", "ask.auto-submit", "ask.confirm-dismiss-when-dirty",
-	"ask.history.enabled", "ask.history.retention-days", "ask.present-single-as-multi", "context.timezone", "coordinator.answer-attribution",
-	"coordinator.audit", "coordinator.classes", "coordinator.confirm-destructive", "coordinator.frames", "coordinator.lease-hours",
-	"coordinator.mark-targets", "coordinator.single", "coordinator.target-consent", "docs.source-paths", "docs.source-versions-kept",
-	"edit.model-repair.enabled", "edit.snapshot.max-bytes", "edit.snapshot.max-file-bytes", "edit.snapshot.max-paths", "edit.snapshot.max-versions",
-	"frames.role", "guides.disabled", "guides.enabled", "guides.max-bytes", "instructions.agents-md-reminder", "jobs.log-bytes",
-	"jobs.max-finished", "jobs.raw-logs", "jobs.session-log-bytes", "jobs.termination-grace-ms", "jobs.yield-after-ms",
-	"locations.ssh-host-write", "locations.worktree-parent", "projects.offer-registration", "projects.storage-links", "prompt.template",
-	"read.concurrency", "read.output-max-columns", "read.query.default-rows", "read.query.max-rows", "read.query.timeout-ms",
-	"read.summarize.min-body-lines", "read.summarize.min-comment-lines", "read.summarize.prose", "secrets.env-injection",
-	"sessions.broadcast", "skills.conditions", "statusline.mode", "statusline.path-style", "storage.finished-retention-days",
-	"storage.out-retention-days", "tldr.concurrency", "tldr.timeout-ms",
+	"activity.replace-working-indicator",
+	"context.timezone",
+	"edit.snapshot.max-bytes",
+	"edit.snapshot.max-file-bytes",
+	"edit.snapshot.max-paths",
+	"edit.snapshot.max-versions",
+	"guides.disabled",
+	"guides.enabled",
+	"guides.max-bytes",
+	"jobs.log-bytes",
+	"jobs.max-finished",
+	"jobs.raw-logs",
+	"jobs.session-log-bytes",
+	"jobs.termination-grace-ms",
+	"jobs.yield-after-ms",
+	"projects.offer-registration",
+	"projects.storage-links",
+	"prompt.template",
+	"read.concurrency",
+	"read.output-max-columns",
+	"read.summarize.min-body-lines",
+	"read.summarize.min-comment-lines",
+	"read.summarize.prose",
+	"secrets.env-injection",
+	"skills.conditions",
+	"storage.finished-retention-days",
 }
 
 func TestEveryShownSettingHasAConsumer(t *testing.T) {
@@ -33,5 +50,26 @@ func TestEveryShownSettingHasAConsumer(t *testing.T) {
 	slices.Sort(pending)
 	if !slices.Equal(inert, pending) {
 		t.Fatalf("shown settings without a consumer = %v, want exactly the pending list %v; wire the key or remove it from the catalog", inert, pending)
+	}
+}
+
+func TestAValueOfARemovedSettingSurvivesASaveAndIsIgnored(t *testing.T) {
+	m, paths := setup(t, "[coordinator]\nsingle = false # mine\n\n[read]\nmax-lines = 100\n", "")
+	if err := m.Load(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	snapshot := current(t, m)
+	if _, shown := snapshot.Get("coordinator.single"); shown {
+		t.Fatal("a setting without a consumer is shown")
+	}
+	if _, err := m.Save(context.Background(), User, snapshot, []Edit{{Key: "coordinator.single", Value: true}}, nil); err == nil {
+		t.Fatal("a setting without a consumer was saved")
+	}
+	if _, err := m.Save(context.Background(), User, snapshot, []Edit{{Key: "read.max-lines", Value: int64(200)}}, nil); err != nil {
+		t.Fatal(err)
+	}
+	saved, err := os.ReadFile(paths.User)
+	if err != nil || !strings.Contains(string(saved), "single = false") || !strings.Contains(string(saved), "# mine") || !strings.Contains(string(saved), "max-lines = 200") {
+		t.Fatalf("saved file lost the retained value: %v\n%s", err, saved)
 	}
 }
