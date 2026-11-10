@@ -134,8 +134,22 @@ func TestLiveToolReceivesTheRealValueWhileTheTranscriptKeepsThePlaceholder(t *te
 }
 
 func TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted(t *testing.T) {
+	testInjectedEnvSecret(t, true)
+}
+
+func TestLiveEnvInjectionOffKeepsVaultSecretsOutOfJobs(t *testing.T) {
+	testInjectedEnvSecret(t, false)
+}
+
+func testInjectedEnvSecret(t *testing.T, injection bool) {
 	root := t.TempDir()
 	agent := filepath.Join(root, "agent")
+	if err := os.MkdirAll(agent, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), fmt.Appendf(nil, "[secrets]\nenv-injection = %t\n", injection), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
 	writeFixtureProvider(t, agent, "http://127.0.0.1:1")
 	settings, err := config.New(config.Paths{User: filepath.Join(agent, "Workbench.toml"), Project: filepath.Join(root, "project", "Workbench.toml")}, nil)
@@ -166,6 +180,12 @@ func TestLiveBashReceivesAnInjectedEnvSecretAndItsOutputStaysRedacted(t *testing
 	fixture.send("script", "prompt", "Print the service token variable.")
 	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
 	got, err := os.ReadFile(filepath.Join(root, "got.txt"))
+	if !injection {
+		if err != nil || len(got) != 0 {
+			t.Fatalf("with secrets.env-injection off the command saw %q (%v), want an unset variable", got, err)
+		}
+		return
+	}
 	if err != nil || string(got) != value {
 		t.Fatalf("the command saw %q (%v), want the injected value", got, err)
 	}

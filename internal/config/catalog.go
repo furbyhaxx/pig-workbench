@@ -202,6 +202,9 @@ func Catalog() []Definition {
 		case "context.timezone":
 			d.Application = "live"
 			d.Description = "Time zone of the session.date frame: `system` or an IANA name such as Europe/Zurich. An unknown zone delivers `Date is unavailable.` instead of a guessed date."
+		case "secrets.env-injection":
+			d.Application = "live"
+			d.Description = "Set vault secrets that have an environment name as real values in the environment of bash calls and jobs; false starts them without those variables."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."

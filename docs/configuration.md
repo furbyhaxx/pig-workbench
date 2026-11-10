@@ -37,6 +37,8 @@ max-lines = 400
 
 `context.timezone` (default `system`) sets the zone of the `session.date` frame: `system` or an IANA name such as `Europe/Zurich`. An unknown zone delivers `Date is unavailable.`, never a guessed date. In a running session a changed date or zone reaches the model before the next prompt as a short change notice, not as a repeated frame.
 
+`secrets.env-injection` (default `true`) sets vault secrets that carry an environment name as real values in the environment of `bash` calls and jobs; their output still reaches the model as placeholders. With `false` those variables are not set. The host process environment is never changed.
+
 `jobs.wake-on-completion` (default `true`) lets a finished background job start a turn on an idle session, and `frames.wake-budget` (default 10 per producer and hour; zero disables it) bounds how often a frame producer registered with `allowWake` may do the same. Both are user/runtime settings.
 
 `models.knowledge-cutoffs` (user/runtime only) overrides the knowledge cutoff the `session.model` frame shows. Entries are `<model-id>=<YYYY-MM[-DD]>`, optionally `provider/<model-id>=…`, for example `["claude-sonnet-5-5=2026-06"]`. Without an entry Workbench uses a cutoff a registered extension contributed, then a bundled models.dev snapshot, then an estimate of the model's earliest listed release date minus one year (shown with basis `estimated` and its release date as the source), and shows no cutoff when the model has no release date either. The frame always adds a short note that the model's training data is stale and should be verified. A malformed entry is named in the frame and ignored.

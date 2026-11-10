@@ -60,10 +60,15 @@ func encodedLen(text string) int {
 }
 
 // injectedEnvironment returns NAME=value pairs for vault secrets bound to an environment name in
-// the session's project or global scope. The host process environment is never changed.
+// the session's project or global scope, or none while secrets.env-injection is off. The host process environment is never changed.
 func (b *secretsBoundary) injectedEnvironment(projectID string) ([]string, error) {
 	if _, enabled, err := b.Guard(); err != nil || !enabled {
 		return nil, err
+	}
+	if snapshot, err := b.settings.Current(); err == nil {
+		if entry, ok := snapshot.Get("secrets.env-injection"); ok && entry.Value == false {
+			return nil, nil
+		}
 	}
 	b.mu.Lock()
 	vault := b.vault

@@ -17,7 +17,6 @@ var pendingConsumers = []string{
 	"jobs.session-log-bytes",
 	"jobs.termination-grace-ms",
 	"jobs.yield-after-ms",
-	"secrets.env-injection",
 	"skills.conditions",
 }
 
