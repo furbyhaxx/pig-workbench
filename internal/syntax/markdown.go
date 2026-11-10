@@ -66,3 +66,24 @@ func markdownBlocks(ctx context.Context, headings []markdownHeading, faults [][2
 	}
 	return ctx.Err()
 }
+
+// foldSections lists sound headings as declarations and folds the text between them when it reaches minimum lines.
+func foldSections(headings []markdownHeading, lines lineIndex, minimum int, summary *Summary, folds []int32, retained []bool) {
+	previous := 0
+	fold := func(next int) {
+		if next-previous-1 >= minimum {
+			folds[previous+1]++
+			folds[next]--
+		}
+	}
+	for _, heading := range headings {
+		if heading.bad || heading.line <= previous || heading.line > len(lines.starts) {
+			continue
+		}
+		summary.Declarations = append(summary.Declarations, Declaration{Kind: "heading", Line: heading.line, Text: lines.text(heading.line-1, heading.line-1), Indent: heading.column - 1})
+		retained[heading.line] = true
+		fold(heading.line)
+		previous = heading.line
+	}
+	fold(len(lines.starts) + 1)
+}

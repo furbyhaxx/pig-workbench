@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
@@ -53,7 +52,8 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 	if lines < minimum {
 		return resource.ReadResult{}, false, nil
 	}
-	summary, _, err := a.syntax.Analyze(ctx, info.ModTime().UTC().Format("20060102T150405.000000000"), target.Path, source)
+	folding := syntax.Folding{BodyLines: intValue(configuration, "read.summarize.min-body-lines", syntax.DefaultFolding.BodyLines), CommentLines: intValue(configuration, "read.summarize.min-comment-lines", syntax.DefaultFolding.CommentLines)}
+	summary, _, err := a.syntax.Analyze(ctx, info.ModTime().UTC().Format("20060102T150405.000000000"), target.Path, source, folding)
 	if err != nil {
 		if errors.Is(err, syntax.ErrNoGrammar) || errors.Is(err, syntax.ErrTooLarge) {
 			return resource.ReadResult{}, false, nil
@@ -63,10 +63,13 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 		}
 		return resource.ReadResult{}, false, err
 	}
-	if len(summary.Declarations) == 0 {
+	if len(summary.Declarations) == 0 || len(summary.Omitted) == 0 {
 		return resource.ReadResult{}, false, nil
 	}
-	rendered, omitted := renderSummary(string(source), summary)
+	if summary.Language == "markdown" && !enabled(configuration, "read.summarize.prose", false) {
+		return resource.ReadResult{}, false, nil
+	}
+	rendered, shown := renderSummary(string(source), summary.Omitted)
 	if rendered == "" {
 		return resource.ReadResult{}, false, nil
 	}
@@ -84,79 +87,48 @@ func (a *app) summaryView(ctx context.Context, target resource.Target, configura
 		CanonicalURI:      resource.FileURI(target.Path),
 		CoordinateSpace:   "source-lines",
 		TotalLines:        lines,
-		ShownRanges:       declarationSpans(summary, lines),
-		FullyShownRanges:  declarationSpans(summary, lines),
+		ShownRanges:       shown,
+		FullyShownRanges:  shown,
 		SelectionComplete: false,
 		ResourceComplete:  false,
 		Continuation:      resource.FileURI(target.Path) + ":1-" + fmt.Sprint(lines),
 		Truncation:        "summary",
 	}
-	facts.ShownRanges = mergeSpans(facts.ShownRanges)
-	facts.FullyShownRanges = mergeSpans(facts.FullyShownRanges)
 	content := hashline.Header(resource.FileURI(target.Path), normalized.Tag) + "\nSummary of " + resource.FileURI(target.Path) + fmt.Sprintf(" (%s, %d declarations, %d lines).\n", summary.Language, len(summary.Declarations), lines)
-	content += "Only declaration lines are shown; bodies are folded. This view never marks folded lines seen.\n"
+	content += fmt.Sprintf("Declaration bodies of %d or more lines and comment blocks of %d or more are folded. This view never marks folded lines seen.\n", folding.BodyLines, folding.CommentLines)
 	content += "Read the full text with selector :1-" + fmt.Sprint(lines) + " or use a line range.\n\n"
 	content += rendered
-	if len(omitted) > 0 {
-		facts.OmittedRanges = omitted
-	}
+	facts.OmittedRanges = summary.Omitted
 	return resource.ReadResult{Content: content, Facts: facts}, true, nil
 }
 
-func renderSummary(source string, summary syntax.Summary) (string, [][2]int) {
+// renderSummary prints every line outside the folded ranges at its source coordinate and returns the shown spans.
+func renderSummary(source string, omitted [][2]int) (string, []resource.Range) {
 	lines := strings.Split(strings.ReplaceAll(source, "\r\n", "\n"), "\n")
 	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
 	var out strings.Builder
-	var omitted [][2]int
-	previous := 0
-	for _, declaration := range summary.Declarations {
-		line := declaration.Line
-		if line < 1 || line > len(lines) {
+	shown := []resource.Range{}
+	next := 1
+	show := func(until int) {
+		if until >= next {
+			shown = append(shown, resource.Range{Start: next, End: until})
+		}
+		for ; next <= until; next++ {
+			fmt.Fprintf(&out, "%d:%s\n", next, lines[next-1])
+		}
+	}
+	for _, fold := range omitted {
+		if fold[0] < next || fold[1] > len(lines) || fold[1] < fold[0] {
 			continue
 		}
-		if line-1 > previous {
-			omitted = append(omitted, [2]int{previous + 1, line - 1})
-			fmt.Fprintf(&out, "⋯ lines %d-%d omitted (%d lines)\n", previous+1, line-1, line-previous-1)
-		}
-		fmt.Fprintf(&out, "%d:%s\n", line, strings.TrimRight(lines[line-1], "\r"))
-		previous = line
+		show(fold[0] - 1)
+		fmt.Fprintf(&out, "⋯ lines %d-%d omitted (%d lines)\n", fold[0], fold[1], fold[1]-fold[0]+1)
+		next = fold[1] + 1
 	}
-	if previous < len(lines) {
-		omitted = append(omitted, [2]int{previous + 1, len(lines)})
-		fmt.Fprintf(&out, "⋯ lines %d-%d omitted (%d lines)\n", previous+1, len(lines), len(lines)-previous)
-	}
-	return out.String(), omitted
-}
-
-func declarationSpans(summary syntax.Summary, total int) []resource.Range {
-	spans := make([]resource.Range, 0, len(summary.Declarations))
-	for _, declaration := range summary.Declarations {
-		if declaration.Line >= 1 && declaration.Line <= total {
-			spans = append(spans, resource.Range{Start: declaration.Line, End: declaration.Line})
-		}
-	}
-	sort.SliceStable(spans, func(i, j int) bool { return spans[i].Start < spans[j].Start })
-	return spans
-}
-
-func mergeSpans(spans []resource.Range) []resource.Range {
-	if len(spans) == 0 {
-		return []resource.Range{}
-	}
-	merged := []resource.Range{spans[0]}
-	for _, span := range spans[1:] {
-		last := &merged[len(merged)-1]
-		if span.Start <= last.End+1 {
-			if span.End > last.End {
-				last.End = span.End
-			}
-			continue
-		}
-		merged = append(merged, span)
-	}
-	return merged
+	show(len(lines))
+	return out.String(), shown
 }
 
 func enabled(snapshot *config.Snapshot, key string, fallback bool) bool {

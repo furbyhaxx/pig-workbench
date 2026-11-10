@@ -155,6 +155,15 @@ func Catalog() []Definition {
 		case "read.summarize.min-total-lines":
 			d.Application = "live"
 			d.Description = "Minimum source lines for a declaration summary on a bare local code read."
+		case "read.summarize.min-body-lines":
+			d.Application = "live"
+			d.Description = "A declaration body of at least this many lines is folded in a summary; shorter bodies are shown."
+		case "read.summarize.min-comment-lines":
+			d.Application = "live"
+			d.Description = "A comment block of at least this many lines is folded in a summary to its first and last line."
+		case "read.summarize.prose":
+			d.Application = "live"
+			d.Description = "Summarize large Markdown files to their headings; off reads them as exact text."
 		case "edit.mode":
 			d.Application = "live"
 			d.Description = "Select hashline, exact-text replace, or auto edit input; captured at the next turn boundary."

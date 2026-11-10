@@ -16,6 +16,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/syntax"
 )
 
 type editState struct {
@@ -165,7 +166,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		enforce, _ := configuration.Get("edit.enforce-seen-lines")
 		plan, err = hashline.PlanBatch(hashline.BatchInput{Document: document, Sources: sources, CurrentSources: currentSources, Epoch: epoch, EnforceSeen: enforce.Value == true, Registers: s.editState.registers, ResolveBlock: func(path string, source hashline.Normalized, line int) (hashline.LineSpan, error) {
 			snapshot := sources[path]
-			_, spans, err := a.syntax.Analyze(work, snapshot.Revision, paths[snapshot.URI], source.Bytes)
+			_, spans, err := a.syntax.Analyze(work, snapshot.Revision, paths[snapshot.URI], source.Bytes, syntax.DefaultFolding)
 			if err != nil {
 				return hashline.LineSpan{}, err
 			}

@@ -114,8 +114,10 @@ func TestSummaryViewFoldsBodiesOnly(t *testing.T) {
 		t.Fatalf("summary reported as complete: %+v", view.Facts)
 	}
 	for _, span := range view.Facts.FullyShownRanges {
-		if span.End != span.Start {
-			t.Fatalf("summary marked a body range as seen: %+v", span)
+		for _, fold := range view.Facts.OmittedRanges {
+			if span.Start <= fold[1] && fold[0] <= span.End {
+				t.Fatalf("summary marked folded lines %v as seen: %+v", fold, span)
+			}
 		}
 	}
 	if len(view.Facts.OmittedRanges) == 0 {
@@ -153,5 +155,88 @@ func TestSummaryViewFoldsBodiesOnly(t *testing.T) {
 	}
 	if _, ok, err := app.summaryView(context.Background(), textTarget, snapshot); ok || err != nil {
 		t.Fatalf("non-code file was summarised: ok=%v err=%v", ok, err)
+	}
+}
+
+func summarySnapshot(t *testing.T, edits ...config.Edit) *config.Snapshot {
+	t.Helper()
+	manager, err := config.New(config.Paths{User: filepath.Join(t.TempDir(), "a.toml"), Project: filepath.Join(t.TempDir(), "b.toml")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Load(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	baseline, err := manager.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(edits) == 0 {
+		return baseline
+	}
+	if _, err := manager.Save(t.Context(), config.Runtime, baseline, edits, nil); err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := manager.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return snapshot
+}
+
+func summarize(t *testing.T, name, text string, snapshot *config.Snapshot) (resource.ReadResult, bool) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+		t.Fatal(err)
+	}
+	target, err := resource.ParsePath(filepath.Dir(path), path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, ok, err := (&app{syntax: syntax.New()}).summaryView(t.Context(), target, snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return view, ok
+}
+
+func TestSummaryFoldThresholdsFollowTheSettings(t *testing.T) {
+	var body strings.Builder
+	body.WriteString("package fixture\n\n")
+	for index := 0; index < 30; index++ {
+		body.WriteString("// note\n// note\n// note\n// note\n// note\n")
+		fmt.Fprintf(&body, "func short%d(value int) int {\n\tvalue++\n\tvalue++\n\tvalue++\n\tvalue++\n\treturn value\n}\n\n", index)
+	}
+	text := body.String()
+	if _, ok := summarize(t, "short.go", text, summarySnapshot(t)); ok {
+		t.Fatal("five-line bodies and comments were folded under the default thresholds")
+	}
+	bodies, ok := summarize(t, "short.go", text, summarySnapshot(t, config.Edit{Key: "read.summarize.min-body-lines", Value: int64(5)}))
+	if !ok || len(bodies.Facts.OmittedRanges) != 30 || strings.Contains(bodies.Content, "return value") || !strings.Contains(bodies.Content, "// note") {
+		t.Fatalf("min-body-lines=5 did not fold exactly the bodies: ok=%v folds=%d", ok, len(bodies.Facts.OmittedRanges))
+	}
+	comments, ok := summarize(t, "short.go", text, summarySnapshot(t, config.Edit{Key: "read.summarize.min-comment-lines", Value: int64(5)}))
+	if !ok || len(comments.Facts.OmittedRanges) != 30 || !strings.Contains(comments.Content, "return value") || strings.Count(comments.Content, "// note") != 60 {
+		t.Fatalf("min-comment-lines=5 did not fold exactly the comment interiors: ok=%v folds=%d", ok, len(comments.Facts.OmittedRanges))
+	}
+}
+
+func TestProseSummaryIsOffUntilEnabled(t *testing.T) {
+	var body strings.Builder
+	for index := 0; index < 10; index++ {
+		fmt.Fprintf(&body, "## Section %d\n\n", index)
+		body.WriteString(strings.Repeat("A sentence of prose.\n", 30))
+	}
+	text := body.String()
+	if _, ok := summarize(t, "notes.md", text, summarySnapshot(t)); ok {
+		t.Fatal("Markdown was summarised with read.summarize.prose off")
+	}
+	view, ok := summarize(t, "notes.md", text, summarySnapshot(t, config.Edit{Key: "read.summarize.prose", Value: true}))
+	if !ok {
+		t.Fatal("Markdown was not summarised with read.summarize.prose on")
+	}
+	if strings.Count(view.Content, "## Section") != 10 || strings.Contains(view.Content, "A sentence of prose.") || len(view.Facts.OmittedRanges) != 10 {
+		t.Fatalf("prose summary must keep the ten headings and fold the text: %s", view.Content)
 	}
 }

@@ -66,8 +66,8 @@ func New() *Service {
 	return &Service{cache: newResultCache()}
 }
 
-// Analyze returns structural facts for source. Callers must not modify source during the call.
-func (s *Service) Analyze(ctx context.Context, revision, filename string, source []byte) (Summary, map[int]Block, error) {
+// Analyze returns structural facts for source; folding only affects Summary.Omitted. Callers must not modify source during the call.
+func (s *Service) Analyze(ctx context.Context, revision, filename string, source []byte, folding Folding) (Summary, map[int]Block, error) {
 	if err := ctx.Err(); err != nil {
 		return Summary{}, nil, err
 	}
@@ -93,6 +93,7 @@ func (s *Service) Analyze(ctx context.Context, revision, filename string, source
 		language: language,
 		grammar:  entry.Name,
 		version:  language.Version(),
+		folding:  folding,
 	}
 	if err := ctx.Err(); err != nil {
 		return Summary{}, nil, err
@@ -127,7 +128,7 @@ func (s *Service) Analyze(ctx context.Context, revision, filename string, source
 	if tree.ParseStopReason() == ts.ParseStopNoStacksAlive {
 		return Summary{}, nil, fmt.Errorf("%w: parser stopped without accepting the source", ErrUnparseable)
 	}
-	summary, blocks, err := collect(ctx, entry.Name, language, tree.RootNode(), source)
+	summary, blocks, err := collect(ctx, entry.Name, language, tree.RootNode(), source, folding)
 	if err != nil {
 		return Summary{}, nil, err
 	}

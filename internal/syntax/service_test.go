@@ -28,7 +28,7 @@ func fixture(t *testing.T, name, source string) (string, []byte) {
 func analyzeFixture(t *testing.T, name, source string) (Summary, map[int]Block) {
 	t.Helper()
 	path, data := fixture(t, name, source)
-	summary, blocks, err := New().Analyze(context.Background(), "revision", path, data)
+	summary, blocks, err := New().Analyze(context.Background(), "revision", path, data, DefaultFolding)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,22 +163,22 @@ func TestFoldThresholds(t *testing.T) {
 func TestRejectionsAndCancellation(t *testing.T) {
 	service := New()
 	path, source := fixture(t, "unknown.unregistered_extension_xyz", "plain text\n")
-	if _, _, err := service.Analyze(context.Background(), "r", path, source); !errors.Is(err, ErrNoGrammar) {
+	if _, _, err := service.Analyze(context.Background(), "r", path, source, DefaultFolding); !errors.Is(err, ErrNoGrammar) {
 		t.Fatalf("unknown extension: %v", err)
 	}
 	path, source = fixture(t, "large.go", strings.Repeat("x", 4*1024*1024+1))
-	if _, _, err := service.Analyze(context.Background(), "r", path, source); !errors.Is(err, ErrTooLarge) {
+	if _, _, err := service.Analyze(context.Background(), "r", path, source, DefaultFolding); !errors.Is(err, ErrTooLarge) {
 		t.Fatalf("oversized source: %v", err)
 	}
 	for _, bad := range []string{"package sample\n//\xff\n", "package sample\n//\x00\n"} {
 		path, source := fixture(t, "bad.go", bad)
-		if _, _, err := service.Analyze(context.Background(), "r", path, source); !errors.Is(err, ErrUnparseable) {
+		if _, _, err := service.Analyze(context.Background(), "r", path, source, DefaultFolding); !errors.Is(err, ErrUnparseable) {
 			t.Fatalf("invalid source should use text fallback: %v", err)
 		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, _, err := service.Analyze(ctx, "r", path, source); !errors.Is(err, context.Canceled) {
+	if _, _, err := service.Analyze(ctx, "r", path, source, DefaultFolding); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled request: %v", err)
 	}
 }
@@ -204,7 +204,7 @@ func TestCancellationDuringAnalysis(t *testing.T) {
 	ctx := &admissionContext{Context: base, entered: make(chan struct{}), release: make(chan struct{})}
 	result := make(chan error, 1)
 	go func() {
-		_, _, err := New().Analyze(ctx, "r", path, source)
+		_, _, err := New().Analyze(ctx, "r", path, source, DefaultFolding)
 		result <- err
 	}()
 	<-ctx.entered
@@ -218,11 +218,11 @@ func TestCancellationDuringAnalysis(t *testing.T) {
 func TestCacheIsolationAndExactRevision(t *testing.T) {
 	service := New()
 	path, source := fixture(t, "cache.go", "package sample\nfunc first() {\n println(1)\n}\n")
-	one, blocks, err := service.Analyze(context.Background(), "same", path, source)
+	one, blocks, err := service.Analyze(context.Background(), "same", path, source, DefaultFolding)
 	if err != nil {
 		t.Fatal(err)
 	}
-	two, again, err := service.Analyze(context.Background(), "same", path, source)
+	two, again, err := service.Analyze(context.Background(), "same", path, source, DefaultFolding)
 	if err != nil || !reflect.DeepEqual(one, two) || !reflect.DeepEqual(blocks, again) {
 		t.Fatalf("cache hit differs: %+v %+v %v", two, again, err)
 	}
@@ -230,12 +230,12 @@ func TestCacheIsolationAndExactRevision(t *testing.T) {
 	if len(two.Declarations) > 0 {
 		two.Declarations[0].Text = "changed"
 	}
-	three, retained, err := service.Analyze(context.Background(), "same", path, source)
+	three, retained, err := service.Analyze(context.Background(), "same", path, source, DefaultFolding)
 	if err != nil || !reflect.DeepEqual(one, three) || !reflect.DeepEqual(blocks, retained) {
 		t.Fatal("caller mutated cached result")
 	}
 	changed := []byte("package sample\nfunc changed() {\n println(1)\n println(2)\n}\n")
-	_, changedBlocks, err := service.Analyze(context.Background(), "same", path, changed)
+	_, changedBlocks, err := service.Analyze(context.Background(), "same", path, changed, DefaultFolding)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestCacheEvictionAndCanonicalIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, name := range []string{path, link, "file://" + path} {
-		if _, _, err := service.Analyze(context.Background(), "hot", name, source); err != nil {
+		if _, _, err := service.Analyze(context.Background(), "hot", name, source, DefaultFolding); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -260,14 +260,14 @@ func TestCacheEvictionAndCanonicalIdentity(t *testing.T) {
 		t.Fatalf("equivalent identities created %d entries", got)
 	}
 	for i := 0; i < maxCacheEntries; i++ {
-		if _, _, err := service.Analyze(context.Background(), fmt.Sprint(i), path, source); err != nil {
+		if _, _, err := service.Analyze(context.Background(), fmt.Sprint(i), path, source, DefaultFolding); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if got := len(service.cache.entries); got != maxCacheEntries || service.cache.bytes > maxCacheBytes {
 		t.Fatalf("unbounded cache: %d entries, %d bytes", got, service.cache.bytes)
 	}
-	if _, _, err := service.Analyze(context.Background(), "hot", path, source); err != nil {
+	if _, _, err := service.Analyze(context.Background(), "hot", path, source, DefaultFolding); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(service.cache.entries); got != maxCacheEntries {
@@ -282,7 +282,7 @@ func TestConcurrentAnalyze(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		wg.Go(func() {
 			for j := 0; j < 3; j++ {
-				_, blocks, err := service.Analyze(context.Background(), fmt.Sprint(j%2), path, source)
+				_, blocks, err := service.Analyze(context.Background(), fmt.Sprint(j%2), path, source, DefaultFolding)
 				if err != nil || blocks[2].EndLine != 4 {
 					t.Errorf("concurrent analysis: %+v %v", blocks, err)
 				}

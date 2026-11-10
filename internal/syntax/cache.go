@@ -19,6 +19,7 @@ type cacheKey struct {
 	language *ts.Language
 	grammar  string
 	version  uint32
+	folding  Folding
 }
 
 type cacheEntry struct {

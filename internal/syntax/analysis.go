@@ -9,10 +9,14 @@ import (
 	ts "github.com/odvcencio/gotreesitter"
 )
 
-const (
-	minimumBodyLines    = 12
-	minimumCommentLines = 8
-)
+// Folding sets how long a declaration body or comment block must be before a summary omits it.
+type Folding struct {
+	BodyLines    int
+	CommentLines int
+}
+
+// DefaultFolding folds bodies of twelve and comment blocks of eight lines.
+var DefaultFolding = Folding{BodyLines: 12, CommentLines: 8}
 
 type lineIndex struct {
 	source []byte
@@ -85,7 +89,7 @@ type nodeFrame struct {
 	heading        int
 }
 
-func collect(ctx context.Context, name string, language *ts.Language, root *ts.Node, source []byte) (Summary, map[int]Block, error) {
+func collect(ctx context.Context, name string, language *ts.Language, root *ts.Node, source []byte, folding Folding) (Summary, map[int]Block, error) {
 	lines, err := indexLines(ctx, source)
 	if err != nil {
 		return Summary{}, nil, err
@@ -189,7 +193,7 @@ func collect(ctx context.Context, name string, language *ts.Language, root *ts.N
 				if bodyStart < len(source) && source[bodyStart] == '{' && bodyEnd > bodyStart && bodyEnd <= len(source) && source[bodyEnd-1] == '}' {
 					last--
 				}
-				if last-first+1 >= minimumBodyLines {
+				if last-first+1 >= folding.BodyLines {
 					folds[first]++
 					folds[last+1]--
 				}
@@ -211,8 +215,9 @@ func collect(ctx context.Context, name string, language *ts.Language, root *ts.N
 		if err := markdownBlocks(ctx, headings, faults, len(lines.starts), blocks, summary.ParseErrors); err != nil {
 			return Summary{}, nil, err
 		}
+		foldSections(headings, lines, folding.BodyLines, &summary, folds, retained)
 	}
-	foldComments(comments, folds)
+	foldComments(comments, folds, folding.CommentLines)
 	depth := int32(0)
 	for line := 1; line <= len(lines.starts); line++ {
 		if line%65536 == 0 {
@@ -263,7 +268,7 @@ func isDeclaration(kind string) bool {
 	return false
 }
 
-func foldComments(comments [][2]int, folds []int32) {
+func foldComments(comments [][2]int, folds []int32, minimum int) {
 	sort.Slice(comments, func(i, j int) bool { return comments[i][0] < comments[j][0] })
 	for i := 0; i < len(comments); {
 		first, last := comments[i][0], comments[i][1]
@@ -272,7 +277,7 @@ func foldComments(comments [][2]int, folds []int32) {
 			last = max(last, comments[i][1])
 			i++
 		}
-		if last-first+1 >= minimumCommentLines {
+		if last-first+1 >= minimum {
 			folds[first+1]++
 			folds[last]--
 		}
