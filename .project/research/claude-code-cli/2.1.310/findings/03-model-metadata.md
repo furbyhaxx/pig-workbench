@@ -14,9 +14,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/claude-code-cli/binary-re/findings/03-model-metadata.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 2
-      reason: "imported into pi-auth-plus"
-      changes: ["copied from pi-quotas@78268296fed62ba14601b8cb80f1ff45a5c04796:.project/research/claude-binary-re/findings/03-model-metadata.md"]
     - revision: 3
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/claude-code-cli/binary-re/findings/03-model-metadata.md", "type reset to research, id re-homed to RES-, provenance recorded"]

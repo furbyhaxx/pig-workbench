@@ -11,12 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "document creation"
-      changes: ["Recorded backend measurements and recommendations for D1, D2 and D7"]
-    - revision: 2
-      reason: "User approved the matrix as proposed, including HEIC with libheif"
-      changes: ["Recorded approval and set status to published"]
     - revision: 3
       reason: "Coverage checks: every required archive format, grammar size, HTML quality, cross-platform builds"
       changes: ["Added §5.1 archive coverage over 200+ libarchive/commons-compress fixtures and new archive backends", "Replaced the grammar-subset recommendation with measured size data", "Added §8 HTML quality and §9 platform coverage", "Listed the new dependencies that need approval"]

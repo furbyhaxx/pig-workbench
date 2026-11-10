@@ -11,40 +11,9 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes verified builtin replacement"
-      changes: ["Recorded how Workbench edit/write replace the host builtins"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for payload repair, recovery, leniency, streaming, path policy, notebooks and per-model mode"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Added the snapshots edit-tracking service for other extensions"]
-    - revision: 5
-      reason: "SPEC-0012 project model and URI namespace"
-      changes: ["artifact:// files carry hashline anchors through their backing file"]
-    - revision: 6
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
-      changes: ["Placeholders in snapshots and replacement text"]
-    - revision: 7
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 8
-      reason: "User decisions D5.b and D5.d (2026-11-03)"
-      changes: ["Tag collisions recover from the newest snapshot of the same resource", "No separate apply_patch edit mode"]
-    - revision: 9
-      reason: "External plan review: §3 still rejected same-tag ambiguity"
-      changes: ["§3 aligned with D5.b and G5.2"]
-    - revision: 10
-      reason: "Reconcile pig-web M5 for the contract-freeze review"
-      changes: ["Clarified trailing annotations do not invalidate an intact snapshot block", "Required final-content verification with both annotation handler orders"]
     - revision: 11
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; grammar, snapshots, commit and edit-tracking contracts frozen"]
-
 ---
 
 # 1. Authority and scope

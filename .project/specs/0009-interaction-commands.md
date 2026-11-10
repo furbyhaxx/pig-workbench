@@ -11,40 +11,9 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes measured dialogs, commands, flags and codemode observation"
-      changes: ["Bound RPC/print dialog behaviour to observed host semantics", "Recorded /tools registration and the --list-tools output blocker", "Recorded codemode child observation limits"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for ask_user, /answer and /tldr"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Answer history on by default with retention and purge (D9.c, provisional)", "Statusline segments/footer modes and external status segments (D9.d)", "Cancel returns cancelled (D9.b)"]
-    - revision: 5
-      reason: "SPEC-0012 project model and URI namespace"
-      changes: ["Inspection routes moved from harness:// (SPEC-0012 §5.3)"]
-    - revision: 6
-      reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
-      changes: ["Activity line above the editor", "statusSegment placement activity with count, severity, glyph and open target"]
-    - revision: 7
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
-      changes: ["ask_user question type secret", "Removed answer, tldr and history value masking; provider requests pass the SPEC-0013 boundary"]
-    - revision: 8
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 9
-      reason: "Path display conventions"
-      changes: ["Footer path segment styles and activity line location use SPEC-0003 §10"]
-    - revision: 10
-      reason: "System prompt commands (SPEC-0014)"
-      changes: ["/workbench prompt and /workbench skills"]
     - revision: 11
       reason: "User approved the contract freeze on 05.11.2026"
       changes: ["approved for Slice 1 implementation; ask_user state machine, modes and command routes frozen"]
-
 ---
 
 # 1. Scope and sources

@@ -11,18 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User split delivery into three slices: foundation, feature-complete, completion"
-      changes: ["Absorbed the functional scope of PLAN-0001 M2–M7 on top of PLAN-0002"]
-    - revision: 2
-      reason: "User defined foundation as everything fully working; this slice adds depth only"
-      changes: ["Work packages reduced to the depth column of PLAN-0002 §2", "Depth extends Slice 1 engines; it never replaces them"]
-    - revision: 3
-      reason: "External plan review (2026-11-03)"
-      changes: ["Dependencies split into parallel development and completion dependencies with interface owners", "W7 project conventions added", "Coordinator commands, other-live-session titles and --list-tools assigned", "G5.2 moved to Slice 1; builtin/workbench moved to Slice 1; A/B evidence per adapter", "Exit separates stock-host, fork-host and deferred rows"]
-    - revision: 4
-      reason: "User moved model-aware prompt evaluation to Slice 3"
-      changes: ["Model-family adapters (SPEC-0014 §6.3) moved from W5 to PLAN-0004 C6"]
     - revision: 5
       reason: "User decision 09.11.2026: host-level /etc/agents files, per remote host"
       changes: ["W3 supplies a remote HostReader so each SSH authority's /etc/agents/AGENTS.md and HOST.md replace the local copies per file name (SPEC-0007 §3.1)"]

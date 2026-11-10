@@ -11,12 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User split delivery into three slices: foundation, feature-complete, completion"
-      changes: ["Absorbed PLAN-0001 M0.5, the UI part of M7 and M8"]
-    - revision: 2
-      reason: "External plan review (2026-11-03)"
-      changes: ["C4 lists fork-host rows from PLAN-0002 §6", "C6 drops backend investigations already closed by the backend evaluation"]
     - revision: 3
       reason: "User: evaluate model-aware prompts in Slice 3, now that the harness research is complete"
       changes: ["New C6 model-aware prompts (SPEC-0014 §6.3) moved here from PLAN-0003 W5", "Performance/platforms and release gate renumbered C7, C8"]

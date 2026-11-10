@@ -11,39 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Define the public Workbench extension APIs before implementation"
-      changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 host probes measured bus ordering, cancellation and reload"
-      changes: ["Recorded observed bus semantics", "Added explicit cancel method and late-reply rule", "Made reload fire-and-forget with re-registration on load", "Replaced resolved M0 blockers with remaining host issues"]
-    - revision: 3
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Added location, secrets, status, snapshots, fetch and sessions capabilities and answered pig-web R1–R5"]
-    - revision: 4
-      reason: "SPEC-0012 project model and URI namespace; pig-web R6 and R8"
-      changes: ["Registration kind docs and scheme guides", "Diagnostics moved from harness:// to cfg://workbench/ and session://self/", "location carries the project ID", "Secret reference kind dotenvFile; core inventory covers auth.json through host resolution (R6)", "Dropped per-authority scopes (pig-web no longer needs R4)"]
-    - revision: 5
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
-      changes: ["Removed the secrets capability; R5/R6 superseded by SPEC-0013 detection"]
-    - revision: 6
-      reason: "User approved opt-in redaction for extension inference and owner-scoped context fields"
-      changes: ["Added secrets.redact with explicit shared-bus confidentiality limits", "Added context.fields.set through frameProducer registrations", "Kept child sessions without Workbench outside automatic protection"]
-    - revision: 7
-      reason: "Authoring API frozen with runnable compile tests; migration notes added"
-      changes: ["Added §6.1 implemented surface and §6.2 revision migration notes", "Recorded the api package compile-contract tests"]
-    - revision: 8
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; the authoring surface is frozen by api/contract_test.go"]
-    - revision: 9
-      reason: "Provider invalidation notifications (SPEC-0004 §8) needed a caller-side method"
-      changes: ["Added the additive resources.changed method; no existing wire shape changed"]
-    - revision: 10
-      reason: "Client cancellation needed a channel a busy request handler cannot block"
-      changes: ["Added the workbench:v1:cancel channel for explicit cancel envelopes; cancel on workbench:v1:request is still accepted", "Client sends cancel for every non-discover call that ends without a reply and keeps a correlated reply that arrived before an emit error"]
-    - revision: 11
-      reason: "Implement the provider-progress channel the protocol already named"
-      changes: ["Added ProviderProgress, DecodeProgress and ProviderRequest.ReportProgress", "Workbench keeps the newest correlated note per request and shows it in /workbench resources"]
     - revision: 12
       reason: "pig-web R9: the project identity the contract already promised was missing from the implemented location surfaces"
       changes: ["Added api.Location and api.LocationChange; discover, location.get and both sides of location.changed carry project {id, slug}, absent in the builtin global project", "No per-project partitioning: the project is a fact, not a scope", "component stays absent until detection reports one"]

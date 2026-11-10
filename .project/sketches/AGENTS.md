@@ -2,7 +2,7 @@ UI/UX designs and wireframes. Artifact type `sketch`; each topic uses `<slug>/RE
 
 - Distinguish static wireframes from runnable prototypes and observed live captures.
 - Include navigation, empty/error/cancelled states, width behavior and non-TUI equivalents.
-- Layouts require user review; link accepted designs from implementation plans/specifications.
+- Layouts require user review. Accepted: describe the design in the owning spec and delete the sketch. Dropped: delete it.
 - `workbench-ui/` — common shell, primary panels, responsive/mode conventions.
 - `extension-apis/` — contribution inspectors, frame styles, shared renderer states and resource providers.
 - `workflow-details/` — editing/reading recovery, class/pin selection, location/jobs, questionnaire notes, checkpoints and config conflicts.

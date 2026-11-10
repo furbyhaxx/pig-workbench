@@ -2,4 +2,5 @@ Measurements, probe runs and backend evaluations from this workspace. Artifact t
 
 - Every finding cites a file under its `evidence/`; keep probe sources and scenarios runnable, not just their output.
 - Redact credentials and replace home paths with `$HOME` before committing evidence; omit system prompts from captured requests.
-- Findings that change a contract go into the affected spec in the same change, or are listed as open spec work.
+- Findings that change a contract go into the affected spec in the same change, or become a backlog item.
+- Transient: once its findings are in a spec, plan or backlog item, delete the analysis with its evidence, with `Artifact-Deleted` trailers.

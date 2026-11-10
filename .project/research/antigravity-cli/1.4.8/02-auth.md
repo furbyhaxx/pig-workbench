@@ -13,9 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/02-auth.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:59:34+01:00"
-      note: "Initial analysis of agy 1.4.8."
     - revision: 2
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/02-auth.md", "type reset to research, id re-homed to RES-, provenance recorded"]

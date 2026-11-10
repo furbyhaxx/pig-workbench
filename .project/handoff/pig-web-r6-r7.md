@@ -11,12 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "pig-web consumed HO-workbench-answers and found two gaps it cannot close on its side"
-      changes: ["Stated R6 and R7 with context, options and pig-web's preferred answers"]
-    - revision: 2
-      reason: "pig-web decisions D6 (serve all read https://) and D7 (central KB) changed R7 and added R8 before this handoff was consumed"
-      changes: ["R7 rewritten for one catch-all backend", "Added R8 (project key in provider requests)", "Traps: per-authority scopes no longer needed; project-model draft wording"]
     - revision: 3
       reason: "Consumed by pig-workbench SPEC-0001 rev 4, SPEC-0004 rev 5, SPEC-0008 rev 5; reply HO-workbench-r6-r8 in pig-web"
       changes: ["Archived"]

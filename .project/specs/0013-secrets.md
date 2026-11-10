@@ -15,13 +15,6 @@ document:
       reason: "A secret.key with a wide mode refused every prompt although narrowing it is always safe"
       changes: ["A user-owned key file wider than 0600 is narrowed to 0600 and reported once; malformed, foreign-owned or non-regular keys are still refused"]
       migration: "None; the key bytes are never changed."
-    - revision: 8
-      reason: "A vault record the current key cannot decrypt made every request and prompt fail, and the refused prompt was lost"
-      changes: ["Undecryptable records are ignored and reported once, not fatal: their value is unknowable, so withholding protected nothing", "A refused prompt returns to the editor with a notice instead of vanishing", "Placeholder-hash mismatch of a readable record stays fatal (tampering)"]
-      migration: "No data migration; unreadable records stay in the vault untouched."
-    - revision: 7
-      reason: "Protect retained tool metadata, not only model-bound content"
-      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
 ---
 
 # 1. Purpose

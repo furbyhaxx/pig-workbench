@@ -13,15 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/08-integration-notes.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:59:34+01:00"
-      note: "Initial analysis of agy 1.4.8."
-    - revision: 2
-      at: "2026-10-27T10:18:00+01:00"
-      note: "Folded in the live captures: two limits per group, rolling resets, untouched buckets re-anchoring, cost-weighted fractions, and the revised observed-versus-read split. Open questions 1 closed, 2 and 3 narrowed."
-    - revision: 3
-      at: "2026-10-27T10:26:00+01:00"
-      note: "Added the observed inference request head (seven headers, Authorization Bearer) and the Clearcut telemetry hop. Open question 3 closed, 2 narrowed to the opt-out switch."
     - revision: 4
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/08-integration-notes.md", "type reset to research, id re-homed to RES-, provenance recorded"]

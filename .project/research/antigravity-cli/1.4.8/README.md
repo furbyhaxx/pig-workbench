@@ -13,15 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/README.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:59:34+01:00"
-      note: "Initial analysis of agy 1.4.8."
-    - revision: 2
-      at: "2026-10-27T10:22:00+01:00"
-      note: "Rewrote the quota, reset and credit findings around the live wire capture, and replaced the restraint note with what was actually issued."
-    - revision: 3
-      at: "2026-10-27T10:30:00+01:00"
-      note: "Recorded the single model turn and the proxy method that exposed the inference request head and the Clearcut hop."
     - revision: 4
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/README.md", "type reset to research, id re-homed to RES-, provenance recorded"]

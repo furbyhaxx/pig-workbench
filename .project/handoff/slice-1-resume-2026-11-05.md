@@ -11,15 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User requested a handover to continue implementation in a fresh session"
-      changes: ["Recorded incomplete Slice 1 state, preserved worktrees and dirty integration", "Recorded reproduced failure and concrete continuation sequence"]
-    - revision: 2
-      reason: "Continue from eeb3e27 and correct the direction of the pig-web dependency"
-      changes: ["Assigned real co-load to pig-web's gate and required the complete reference seam gate here", "Recorded service tests, reference-producer lock fix and blocked reload verification"]
-    - revision: 3
-      reason: "Resolved the reload blocker and restored real reload acceptance"
-      changes: ["Corrected the initial upstream-blocker inference to a Workbench status-context defect", "Recorded two successive reloads with six unique registrations and repeated/full passing gates"]
     - revision: 4
       reason: "Fix a dangling reference found by the artifact check"
       changes: ["Replaced a range that looked like a path with spec ids"]

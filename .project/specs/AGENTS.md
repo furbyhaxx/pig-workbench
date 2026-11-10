@@ -1,4 +1,7 @@
-Numbered specifications define public contracts and accepted design direction. Draft status means review is pending, not implemented.
+Numbered specifications define public contracts and accepted design direction. Status `draft` means review is pending; `published` means the user approved the revision and its contracts are frozen. Neither means implemented.
+
+- A spec states what is true now. When a decision or the implementation changes, overwrite the section in the same change; no "previously" or "superseded" text.
+- Do not cite transient artifacts (research, analyses, reviews, drafts, handoffs) in new text; copy the decided fact into the spec.
 
 - `0001-extension-services.md` — shared protocol; all other public APIs depend on it.
 - `0002-message-frames.md` — frame producers and context delivery.

@@ -11,52 +11,9 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes measured session and skill catalog access"
-      changes: ["Recorded that any extension can list all sessions with full text and set the Workbench boundary"]
-    - revision: 3
-      reason: "User removed session access restrictions"
-      changes: ["Replaced the session privacy boundary with plain catalog access", "Dropped cross-project session authorization from the trust matrix"]
-    - revision: 4
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for trust scope and concurrent saves"]
-    - revision: 5
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Catalog entries for statusline mode, answer history, edit mode rules, bash routing, fetch backends and sessions", "Column cap default 512"]
-    - revision: 6
-      reason: "SPEC-0012 project model and URI namespace; pig-web R6"
-      changes: ["Settings for projects, artifacts, guides, docs, broadcast and coordinator", "Project registry and docs cache storage", "Removed history.globalAccess (session access has no consent gate, history:// retired)"]
-    - revision: 7
-      reason: "DRAFT-0003 approved (activity line, Q1–Q5 as recommended; fullscreen is the target mode)"
-      changes: ["Activity line settings"]
-    - revision: 8
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
-      changes: ["Known-secret guard replaced by SPEC-0013", "Secrets settings and vault storage"]
-    - revision: 9
-      reason: "User decision: every Workbench config file is TOML; Secrets.toml as its own file"
-      changes: ["Config files are TOML (pig-workbench.toml, Secrets.toml) with kebab-case keys", "Round-trip-safe saves with tomledit", "Setting keys renamed to kebab-case"]
-    - revision: 10
-      reason: "User renamed the settings file"
-      changes: ["pig-workbench.toml renamed to Workbench.toml", "statusline.path-style in the catalog (SPEC-0003 §10)"]
-    - revision: 11
-      reason: "System prompt templates (SPEC-0014)"
-      changes: ["Template directories with trust", "prompt.*, context.*, skills.* settings"]
-    - revision: 12
-      reason: "Follow SPEC-0014: builtin/workbench default, no parity check, delivery auto"
-      changes: ["prompt.* defaults updated"]
-    - revision: 13
-      reason: "User approved opt-in redaction for trusted extension inference"
-      changes: ["Added user/runtime-only secrets.redact-owners grants; project settings cannot enable access"]
-    - revision: 14
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; Workbench.toml and Secrets.toml layering, trust and storage frozen"]
     - revision: 15
       reason: "User directive 08.11.2026: finished jobs wake the model; frames can wake"
       changes: ["jobs.wake-on-completion default is true", "Added frames.wake-budget (10 per producer-hour, user/runtime only; zero disables external wake)"]
-
 ---
 
 # 1. Scope and precedence

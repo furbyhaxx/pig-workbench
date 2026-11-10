@@ -14,9 +14,6 @@ document:
     - revision: 10
       reason: "pig-web R10: a declared search capability was accepted but never called"
       changes: ["Defined the search request and result (§5.1)", "grep and find dispatch to a provider that declares search; an unsupported answer falls back to the bounded walk and is reported", "Provider search results are validated against the searched root and bounded like local matches"]
-    - revision: 9
-      reason: "Implement safe contributed listing cursor bindings"
-      changes: ["Bound opaque tool cursor handles to registration/descriptor/resource identity without exposing backend payloads","Forwarded known listing revisions for consistent continuation","Verified resource mismatch, snapshot changes, reload expiry and bounded retention"]
 ---
 
 # 1. Purpose and architectural boundary

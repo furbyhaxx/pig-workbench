@@ -11,33 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes and approved backend matrix"
-      changes: ["Specified how builtin delegation honours the captured location", "Bound PTY and file-watch behaviour to the approved backends"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for secret guard, cd branch flow, worktrees, SSH config, remote shell and bash"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Secret guard includes extension-registered secret sources"]
-    - revision: 5
-      reason: "SPEC-0012 project model and URI namespace; pig-web R6"
-      changes: ["Worktree creation applies SPEC-0012 §4.3–4.5", "job:// tree with stdin and ctl files", "Core inventory resolves every auth.json entry through the host"]
-    - revision: 6
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
-      changes: ["G8.1 replaced by SPEC-0013 substitution and env injection", "Job logs keep raw output", "Removed display/log suppression of credentials", "G8.20 scheme commands in bash"]
-    - revision: 7
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 8
-      reason: "User approved the remaining five specifications on 07.11.2026"
-      changes: ["Approved the locations and jobs contract for Slice 1; implementation and acceptance remain separately tracked"]
-    - revision: 9
-      reason: "User directive 08.11.2026: a finished background job must wake the model"
-      changes: ["Completion frames publish with wake true by default; jobs.wake-on-completion = false keeps the notice for the next prompt", "Migration: the earlier default of no automatic turn is reversed; set the setting to false to keep it"]
     - revision: 10
       reason: "User report 09.11.2026: a job the model already waited on was announced again"
       changes: ["A job whose terminal state a tool result already showed the model (jobs wait, status or output) emits no completion frame, wake or user notice"]

@@ -16,3 +16,4 @@ Each has its own `AGENTS.md` with version ownership, verification commands, trap
 - Imported dossiers are snapshots, not maintained here. `imported_from:` names the upstream repository, commit and path; re-copy from upstream rather than editing. The only permitted local edits are path repairs that keep reproduction commands runnable.
 - Keep large regenerable inventories out of git. Keep the reproduction recipe, and the `.gitignore` beside the inventory.
 - Redact credentials and live tokens before committing evidence; mask home paths.
+- Research useful beyond this project belongs in the shared knowledge base (`host:/mnt/shared/knowledge-base`), not here. Once its decision is recorded in a spec or plan, delete the research.

@@ -13,12 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/05-quota.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:57:00+01:00"
-      note: "Initial extraction."
-    - revision: 2
-      at: "2026-10-27T10:12:00+01:00"
-      note: "Folded in observed live payloads: the five real buckets across three groups and two windows, proof that reset times are rolling rather than boundary-aligned, and the correction that availableCredits carries a threshold rather than a balance (2.3, 4.1)."
     - revision: 3
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/05-quota.md", "type reset to research, id re-homed to RES-, provenance recorded"]

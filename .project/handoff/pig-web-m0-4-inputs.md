@@ -11,13 +11,9 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "pig-web reviewed Workbench 2b50f5f..3c5cbb7 before the M0.4 freeze"
-      changes: ["Listed M1-M6 with context and pig-web's preferred answers"]
     - revision: 2
       reason: "Answered by HO-pig-web-m0-4-answers and archived"
       changes: ["Every M1–M6 row answered with probe evidence", "Superseded by .project/handoff/pig-web-m0-4-answers.md"]
-
 ---
 
 # Goal

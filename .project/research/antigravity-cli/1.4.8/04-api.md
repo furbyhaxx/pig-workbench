@@ -13,18 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/04-api.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:47:48+01:00"
-      note: "Initial extraction."
-    - revision: 2
-      at: "2026-10-27T09:52:10+01:00"
-      note: "Resolved the telemetry opt-out question: data_collection_optin exists at three layers plus two admin force fields (§9.4, open question 6)."
-    - revision: 3
-      at: "2026-10-27T10:16:00+01:00"
-      note: "Added the observed live header capture: exact User-Agent with its five parameters (including the release-side cl that differs from the build), the real response header set, the confirmation that the wire is protojson over an ESF front end, and the finding that no quota or rate-limit headers exist."
-    - revision: 4
-      at: "2026-10-27T10:24:00+01:00"
-      note: "Observed the inference call behind a local TLS proxy: Authorization is Bearer, the complete request head is seven headers, and every x-goog-* header the code suggested is absent. Also established that a turn sends Clearcut to play.googleapis.com and that aicode.googleapis.com serves fetchConfig. Closes open questions 5 and most of 2."
     - revision: 5
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/04-api.md", "type reset to research, id re-homed to RES-, provenance recorded"]

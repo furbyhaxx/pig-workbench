@@ -14,24 +14,6 @@ document:
     - revision: 62
       reason: "Record fixes for defects reported in live use after revision 61"
       changes: ["Vault, key-permission, instruction churn, nonce, model cutoff, renderer and project creation work with their evidence"]
-    - revision: 61
-      reason: "Record the in-repo closures after the review follow-up"
-      changes: ["activity.shortcut live", "Windows build fixed and measured under wine", "Fused blocker reproduced again", "Read allocation defect fixed"]
-    - revision: 60
-      reason: "User review: wake-capable frames, tuning, remaining local gaps and live frame and instruction evaluation"
-      changes: ["Recorded the live wake, tool-tuning, frame and instruction results", "Recorded the fork deadlock and nested-instruction withdrawal fixes", "Corrected stale not-done statements for the panels and live evaluation"]
-    - revision: 59
-      reason: "Close the SPEC-0003 §8 presentation anchors"
-      changes: ["Replaced the stale presentation ledger with final per-anchor evidence", "Added a preset/density/state/width matrix test and a foreign-tool-without-Workbench live test", "Named stock codemode child rows as the remaining host limit"]
-    - revision: 58
-      reason: "Close the protocol lifecycle anchors with fresh evidence"
-      changes: ["Marked deadline, cancel, drain, progress, strict replies, dormant replay and collaboration services PASS", "Kept fused Workbench and never-returning reload as named host limits"]
-    - revision: 57
-      reason: "User authorized live evaluation with deepseek/deepseek-flash"
-      changes: ["Ran the end-to-end workflow and the prompt A/B live", "Found and fixed builtin/workbench rendering as an empty skeleton", "Recorded both A/B rounds and the verdict"]
-    - revision: 56
-      reason: "User saw an empty Tool display panel they could not review"
-      changes: ["Explained the empty state and the hub count", "Tool display opens the editable settings panel when schemas exist and shows owner/tool per row", "Wired target-shortening", "Fixed the TUI test cleanup race and recorded the /tmp exhaustion cause"]
 ---
 
 # Scope and evidence

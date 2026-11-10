@@ -11,29 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "User asked for a Project type, agent:// addressing, a global coordinator and a URI overview, informed by oh-my-pi, nukii, nugent and agentd"
-      changes: ["Recorded prior art with sources, PiG storage facts, a Project model, agent:// grammar, coordinator model, URI map and open questions"]
-    - revision: 2
-      reason: "User feedback: configurable coordinator safeguards, schemes as pseudo-filesystems, .project/Project.toml on by default, builtin dot-project and AGENTS.md conventions, shared artifacts and worktree links, option B, components now, no revival design, no release labels"
-      changes:
-        - "Coordinator: every safeguard is a setting and can be disabled"
-        - "Replaced the URI map with a pseudo-filesystem model and per-scheme trees"
-        - "Project identity from .project/Project.toml first; fallbacks explained"
-        - "Added the builtin project conventions, project:// artifact tree shared across worktrees, and worktree links"
-        - "Session storage: option B, verified by ANA-2026-11-03-session-bucket-symlink-probe"
-        - "Components in scope; revival recorded as a later idea only"
-    - revision: 3
-      reason: "User decisions N0\u2013N6, docs:// scheme, first-touch scheme guides, question on storing artifacts in git refs"
-      changes:
-        - "Naming rule: singular schemes, root lists items, self = current; project:// lists projects; artifact:// = .project tree; out:// = spilled outputs; job://; skill:// only; history://, branch://, proc://, skills:// dropped"
-        - "by-id/by-name/by-project link directories for session://, agent:// and project://"
-        - "docs:// for PiG, Workbench and extension documentation and source; harness:// dissolved"
-        - "Progressive scheme guides injected as frames on first touch"
-        - "Analysed storing artifacts in git refs"
-    - revision: 4
-      reason: "Approved with Q1–Q3; superseded by SPEC-0012 and SPEC-0011 rev 2"
-      changes: ["Archived with successor pointers", "pig-web line corrected per HO-pig-web-r6-r7 traps"]
     - revision: 5
       reason: "Fix a dangling reference found by the artifact check"
       changes: ["Marked the agentd-ts spec path as a host path"]

@@ -1,4 +1,4 @@
 Undecided proposals and RFCs. Artifact type `draft`; status `sketch` or `draft`.
 
 - Distinguish source observations, recommendations and unverified integration assumptions.
-- Approval creates specifications or implementation plans; archive the proposal with successor pointers.
+- Decided: move the content into `../specs/` or `../plans/` and delete the draft in that commit, with `Artifact-Deleted` trailers. Dropped: delete it.

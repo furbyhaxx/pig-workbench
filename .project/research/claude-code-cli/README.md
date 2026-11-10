@@ -13,9 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/claude-code-cli"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      reason: "document creation"
-      changes: ["imported the pi-auth-plus claude-code-cli dossier unchanged apart from frontmatter re-homing"]
     - revision: 2
       reason: "2.1.317 harness-internals pass"
       changes: ["index now covers both versions and states that the 2.1.310 chapters were not re-verified against 2.1.317"]

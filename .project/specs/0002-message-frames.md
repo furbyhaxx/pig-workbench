@@ -11,36 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Define the public Workbench extension APIs before implementation"
-      changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes measured host delivery modes"
-      changes: ["Mapped delivery values to host mechanisms with observed ordering", "Specified idle behaviour, nextTurn branch guard and compaction re-projection", "Replaced host gates with resolved findings and remaining upstream issues"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for escaping, timestamps and sequences"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Added the message frame kind for inter-session messages"]
-    - revision: 5
-      reason: "SPEC-0012 project model and URI namespace"
-      changes: ["Scheme guide frames"]
-    - revision: 6
-      reason: "Context frames and prompt diffs (SPEC-0014)"
-      changes: ["Delivery beforePrompt: steer from before_agent_start, lands before the user prompt (P30)", "Context frames with refresh policies are a Workbench producer on this pipeline"]
-    - revision: 7
-      reason: "User approved owner-scoped fields on Workbench context frames"
-      changes: ["Linked typed contextFields registration and update contract", "Kept internal source ownership distinct from external data contributions"]
-    - revision: 8
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; ledger, delivery and trust semantics frozen"]
-    - revision: 9
-      reason: "User directive 08.11.2026: frames must be able to wake an idle model, as an explicit flag"
-      changes: ["Added publish field wake (default false), valid with nextBoundary only", "Removed the delivery value followUp: wake replaces it", "allowWake plus a per-producer hourly budget gate external wakes; Workbench's own sources wake by user setting", "Receipt reports wake outcome and duplicate publications", "Migration: a producer that sent delivery followUp now sends delivery nextBoundary with wake true; it was always denied before, so no working producer changes"]
-    - revision: 10
-      reason: "User report 09.11.2026: the nonce changed with every frame; it must be stable inside a session, its forks and branches"
-      changes: ["Nonce is one 8-digit uppercase hexadecimal value per session lineage, persisted as the custom entry pig-workbench.nonce and shared by every frame of every producer and branch", "Forks and tree branches copy entries, so they inherit it", "Migration: records stored before this revision keep the per-frame nonce they were written with and still restore; frames admitted after upgrade use the lineage nonce"]
     - revision: 11
       reason: "User report 09.11.2026: the first prompt delivered every context frame inside one session entry"
       changes: ["beforePrompt delivery sends one SendMessage per frame, so each frame is its own session entry, in ledger order, before the user prompt", "No wire, ledger or dedup change"]

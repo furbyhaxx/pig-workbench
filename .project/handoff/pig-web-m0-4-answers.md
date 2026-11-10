@@ -11,15 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Answer pig-web's M1–M6 before it corrects its specs against the freeze"
-      changes: ["Answered M1–M6 with probe evidence", "Named the three contracts pig-web must not assume", "Recorded the one open coverage gap (native custom resolver)"]
-    - revision: 2
-      reason: "Replace obsolete pre-implementation answers with current observed behavior"
-      changes: ["Documented conditional secrets and snapshots services", "Distinguished the reference seam gate from the downstream co-load", "Named outstanding freeze and acceptance blockers"]
-    - revision: 3
-      reason: "User approved the five remaining specifications"
-      changes: ["Recorded contract approval without claiming implementation or slice exit"]
     - revision: 4
       reason: "Wire declared provider mutations without new permission prompts"
       changes: ["Updated search and mutation support for consumers", "Linked the current full baseline evidence and retained the live-provider gate"]

@@ -11,12 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "Design extension-facing services and their user-visible surfaces"
-      changes: ["Added API flows, frame styles, renderer state gallery, contribution settings and provider wireframes"]
-    - revision: 2
-      reason: "SPEC-0012 scheme names"
-      changes: ["jobs:// → job://, skills:// → skill://, artifact:// continuation → out://"]
     - revision: 3
       reason: "Fix a dangling reference found by the artifact check"
       changes: ["Used a placeholder id in the instruction-diff example"]

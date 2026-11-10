@@ -11,21 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "User requested UI/UX designs and wireframes alongside implementation planning"
-      changes: ["Defined surface inventory, terminal wireframes, interaction and responsive contracts, and design acceptance gate"]
-    - revision: 2
-      reason: "Link detailed feature designs and finalize advisory questionnaire semantics"
-      changes: ["Added API/workflow companions and clarified that required questions never block submission"]
-    - revision: 3
-      reason: "SPEC-0012 scheme names"
-      changes: ["jobs:// → job://, skills:// → skill://, session://project → session:// with canonical session URIs"]
-    - revision: 4
-      reason: "DRAFT-0003 approved: activity line"
-      changes: ["§14 activity line wireframes at four widths"]
-    - revision: 5
-      reason: "Session titles and path display conventions"
-      changes: ["Session listing shows Title; title write example", "Path display examples per width and footer path styles (SPEC-0003 §10)"]
     - revision: 6
       reason: "System prompt inspector (SPEC-0014)"
       changes: ["Surface row and §13 wireframe for /workbench prompt"]

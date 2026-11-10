@@ -11,33 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User asked for templated system prompts that take over PiG's builtin, model-aware conditionals, nukii/nugent skill disclosure and context frames, and multiple instruction files per directory"
-      changes: ["Host facts from PiG source and SDK", "Template engine, files, sections, inputs, model families", "Delivery modes force and sections, parity check, epochs", "Context frames", "Progressive skill disclosure", "Settings, probes PR1–PR6, host request H-P1, acceptance, open decisions"]
-    - revision: 2
-      reason: "User correction on OpenAI behaviour; host limits made explicit"
-      changes: ["§6.3 example: OpenAI models over-apply security, not under-apply", "§3.3 raw sections only with force delivery", "§2 Anthropic OAuth identity block"]
-    - revision: 3
-      reason: "User: no verbatim copy of PiG's prompt; keep PiG's sections adapted to Workbench; host changes go to a personal PiG fork"
-      changes: ["builtin/pig and the parity check removed; builtin/workbench is the default and keeps PiG's sections with adapted content (§7)", "<docs> as docs:// URIs, new <resources> section, <cwd> holds the stable project root", "H-P1 becomes fork patch F-P1; no upstream filing", "Acceptance, probes, settings and decisions updated"]
-    - revision: 4
-      reason: "Probes PR1–PR6 ran; Q1–Q6 accepted by the user"
-      changes: ["§11 results, PR7/PR8 open, fork candidates F-P2/F-P3", "§2 facts from the probes", "§4.2 detect later handlers in before_provider_request", "§3.4 model.api and mid-conversation support from ModelRegistry.Find", "§7 mcp_servers placement", "§13 decisions accepted"]
-    - revision: 5
-      reason: "User: mid-epoch changes as framed messages instead of system prompt rewrites, for models without mid-conversation system messages"
-      changes: ["§4.3: system text changes only at epoch boundaries; tools, thinking, other extensions' sections and host options become frames", "§4.1: delivery auto (sections only for flagged models on the fork)", "PR7 replaced (tools frame mid-run); F-P2 dropped; Q3 updated"]
-    - revision: 6
-      reason: "Probes PR7 and PR8 ran"
-      changes: ["PR7 done: tools frames mid-run", "PR8 done: late sections read from the recorded system message and spliced in before_provider_request (§4.2)", "Fork candidate F-P4"]
-    - revision: 7
-      reason: "User approved owner-scoped contributions to session.model"
-      changes: ["Defined frameProducer contextFields and context.fields.set", "Specified knowledge_cutoff validation, model binding, collision and refresh behavior", "Preserved core ownership and data authority"]
-    - revision: 8
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; engine, delivery, context frames, conditionals and skills frozen"]
-    - revision: 9
-      reason: "User report 09.11.2026: session.model lacked the knowledge cutoff and any instruction about stale training data"
-      changes: ["session.model always carries training_data_notice: why the model's memory is stale and how to verify instead", "Workbench resolves knowledge_cutoff itself: setting models.knowledge-cutoffs, else a contributed explicit value, else a bundled models.dev snapshot (values attributed with the snapshot date); absent data is still omitted, never invented", "Workbench still does not fetch cutoff metadata at run time", "Migration: none; the frame gains two fields and is delivered once per session as before"]
     - revision: 10
       reason: "User decision 09.11.2026: a model without a models.dev cutoff gets an estimate"
       changes: ["When no setting, contributed value or explicit snapshot cutoff exists, Workbench shows an estimate of the model's earliest listed release date minus one year, basis estimated, source naming the release date and snapshot", "Models with neither cutoff nor release date still omit the field", "Migration: none; the frame field already allowed basis estimated; the generated snapshot gains a releases table"]

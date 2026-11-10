@@ -11,9 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "document creation"
-      changes: ["Inventoried 3,269 donor test titles, mapped them to the specs and listed gaps and divergences"]
     - revision: 2
       reason: "User decisions on D5.b and D5.d"
       changes: ["D5.b adopted, D5.d rejected"]

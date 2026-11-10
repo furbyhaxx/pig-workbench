@@ -11,27 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Define the public Workbench extension APIs before implementation"
-      changes: ["Initial contract, lifecycle, examples and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes measured renderer resolution and codemode rows"
-      changes: ["Recorded resolver caching, reload re-render and codemode child ownership", "Required registration before first render and history rendering from stored Details"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor density budgets, header fact sources and preview rules"]
-    - revision: 4
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Resolver reads the live registry at first use (pig-web R2)", "Typed table cells including uri (R3)"]
-    - revision: 5
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
-      changes: ["Call rendering no longer hides secret-bearing arguments"]
-    - revision: 6
-      reason: "User: adopt pi-workbench path display conventions"
-      changes: ["§10 path display: shortest of relative/absolute, ~, authorities, fish shortening, shell command display, styles", "G8.13 points to §10"]
-    - revision: 7
-      reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
-      changes: ["Child-row hook is a fork change"]
     - revision: 8
       reason: "User approved the remaining five specifications on 07.11.2026"
       changes: ["Approved the presentation contract for Slice 1; implementation and acceptance remain separately tracked"]

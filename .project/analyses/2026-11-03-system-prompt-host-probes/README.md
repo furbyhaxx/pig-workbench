@@ -11,9 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "User approved SPEC-0014 direction and asked to proceed with the host probes"
-      changes: ["Ran PR1–PR6 against pig 0.5.3+1.4.0 with a mock provider", "Catalog check for supportsMidConvoSystemMessages on PiG main@9b4efdd6"]
     - revision: 2
       reason: "User asked to run the open probes PR7 and PR8"
       changes: ["PR7: tools frame mid-run under force", "PR8: mcp_servers from a later handler; recorded-section read and payload splice", "Consequences and fork candidates updated"]

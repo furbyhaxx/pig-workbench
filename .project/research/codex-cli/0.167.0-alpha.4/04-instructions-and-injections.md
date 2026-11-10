@@ -11,9 +11,6 @@ document:
   created_by: "worker"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "document creation"
-      changes: ["catalogued source-defined context fragments and assembly"]
     - revision: 2
       reason: "close the last uncovered context module"
       changes: ["added the contextual_user_message reverse-mapping registry and its parse consequences", "recorded that the registry also runs during live notification filtering"]

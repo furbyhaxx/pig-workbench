@@ -11,12 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Phase A ledger rows required observed results instead of assumptions"
-      changes: ["Ran eight probes through real pig RPC/JSON runs with a scripted provider", "Recorded the one remaining coverage gap (native custom resolver)", "Added the runnable probes as integration tests"]
-    - revision: 2
-      reason: "Reload probe reported a cleanup defect"
-      changes: ["Recorded a reload finding and its consequence for shutdown-time cleanup"]
     - revision: 3
       reason: "Retraction: the reload probe was invalid, /reload cannot be driven over RPC"
       changes: ["Withdrew the session_shutdown and reload-cleanup claim", "Recorded reload as unverified with the reason and the remaining evidence gap"]

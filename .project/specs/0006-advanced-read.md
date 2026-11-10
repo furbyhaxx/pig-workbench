@@ -11,27 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "Backend matrix approved by the user; M0.2 probes verified builtin replacement"
-      changes: ["Bound adapters to the approved backends and listed remaining coverage checks", "Recorded builtin replacement and delegation behaviour"]
-    - revision: 3
-      reason: "Backend coverage checks completed"
-      changes: ["Updated syntax, archive and HTML rows from the coverage checks"]
-    - revision: 4
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for column cap, HTTP, grep, find, paths, SQLite, write and media"]
-    - revision: 5
-      reason: "pig-web harmonisation and user decisions"
-      changes: ["Allowed SQLite row writes (D6.a)", "Recorded deferred AST tools (D6.b)", "Pointed http(s) reads at fetch backends"]
-    - revision: 6
-      reason: "SPEC-0012 project model and URI namespace"
-      changes: ["Spilled outputs are out://; docs:// is immutable"]
-    - revision: 7
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
     - revision: 8
       reason: "User approved the remaining five specifications on 07.11.2026"
       changes: ["Approved the advanced-read contract for Slice 1; implementation and acceptance remain separately tracked"]

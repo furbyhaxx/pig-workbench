@@ -11,9 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "document creation"
-      changes: ["Recorded M0.2 probe results, open host blockers and seams not yet probed"]
     - revision: 2
       reason: "User asked to run the remaining M0.2 probes"
       changes: ["Added builtin override, location, idle delivery, stale delivery, compaction, resume, context-file suppression, catalogs, command/flag and dialog probes (P15-P30)", "Captured reload hang root cause (host stack)", "Updated implications, open items and upstream issues"]

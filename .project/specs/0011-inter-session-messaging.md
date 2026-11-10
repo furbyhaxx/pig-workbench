@@ -11,24 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User requested cross-project session discovery and bidirectional messaging that wakes idle sessions"
-      changes: ["Defined endpoint registry, local socket transport, message envelope, delivery and wake policy, loop guards, tool, commands and extension API"]
-    - revision: 2
-      reason: "Approved DRAFT-0002 rev 3: agents addressed as agent:// files, project IDs, omp-style receipts, broadcast and the coordinator"
-      changes: ["Project identity by SPEC-0012 project ID", "Agent interface moved from the sessions tool to the agent:// tree", "Receipts delivered/woken/queued/failed, unanswered-send tracking, waits", "Project broadcast", "Coordinator with configurable safeguards"]
-    - revision: 3
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013); donor secret guard removed"
-      changes: ["Bodies are not masked by the sender; the receiver's SPEC-0013 boundary applies"]
-    - revision: 4
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 5
-      reason: "Session titles are writable through session://<id>/title"
-      changes: ["lifecycle class includes setting another session's title"]
-    - revision: 6
-      reason: "Session titles are writable"
-      changes: ["Endpoint record follows title changes"]
     - revision: 8
       reason: "User approved the remaining five specifications on 07.11.2026"
       changes: ["Approved the messaging contract for Slice 1; implementation and acceptance remain separately tracked"]

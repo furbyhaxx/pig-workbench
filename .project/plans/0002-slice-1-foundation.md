@@ -14,18 +14,6 @@ document:
     - revision: 63
       reason: "Defects reported in live use and pig-web R9/R10, fixed after revision 62"
       changes: ["An unreadable vault record no longer blocks requests and a refused prompt returns to the editor (SPEC-0013 rev 8); an over-permissive owned secret.key is narrowed to 0600 (rev 9)", "pig-web R9 (project on every location surface, SPEC-0001 rev 12) and R10 (provider search dispatch, SPEC-0004 rev 10)", "Instruction churn on foreign-path touches fixed, one frame nonce per session lineage, session.model carries the knowledge cutoff and staleness guidance, call-row and snapshot-error defects fixed", "Project creation and joining: /workbench projects list|create|join|example, an interactive panel and a once-per-repository offer (SPEC-0012 rev 9), plus a commented Project.toml example"]
-    - revision: 62
-      reason: "Close the in-repo gaps named after revision 61"
-      changes: ["activity.shortcut applied and tested in a real TUI", "Module fixed to build on Windows; `just windows` cross-vets and runs 14 packages under wine", "Fused Piglet Binary blocker re-reproduced on PiG 0.7.0", "Read no longer allocates a line prefix per line past the page; the memory test now compares file sizes", "Live pins, capped BACKLOG diff and compaction runs; larger A/B; prompt.delivery auto serves builtin/workbench on stock PiG"]
-    - revision: 61
-      reason: "User review after the final report: job notices must wake, tuning and frame and instruction behavior needed live evidence, and local gaps needed closing"
-      changes: ["Frames carry wake=true/false (SPEC-0002 rev 9); finished jobs wake the model", "Tuned tool, parameter and error text against observed DeepSeek failures", "Closed jobs wait/kill/stream, redaction memoization, interactive panels and a real session replacement test", "Live frame and instruction evaluation found and fixed a fork deadlock and per-prompt nested-instruction withdrawal"]
-    - revision: 60
-      reason: "Close the local acceptance audit and record final gates and the live evaluation"
-      changes: ["Recorded the SPEC-0008, SPEC-0009, SPEC-0010, SPEC-0011 and SPEC-0013 audit results", "Added background-job completion notices", "Recorded green check, race and integration gates and named the remaining PARTIAL rows"]
-    - revision: 59
-      reason: "Protect retained tool metadata, not only model-bound content"
-      changes: ["Reproduced plaintext command/URI/structured metadata in actual session records", "Redact retained JSON keys and values and clear all fields atomically on failure", "Protect captured presentation updates and record passing full integration/check/race evidence", "Clarified the earlier assumption that non-provider Details needed no protection; existing session records are not rewritten"]
 ---
 
 # 1. Outcome

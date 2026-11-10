@@ -11,12 +11,6 @@ document:
   created_by: "orchestrator"
   updated_by: "orchestrator"
   changelog:
-    - revision: 1
-      reason: "User asked for an adapted version of the pi-workbench showcase status row above the editor"
-      changes: ["Recorded the showcase design, the PiG seams, a proposed design, contribution API, interaction and open decisions"]
-    - revision: 2
-      reason: "Approved with Q1–Q5 as recommended; superseded by SPEC-0009 rev 6 §9"
-      changes: ["Archived with successor pointer"]
     - revision: 3
       reason: "Fix a dangling reference found by the artifact check"
       changes: ["Marked the donor sketch path as a host path"]

@@ -11,37 +11,9 @@ document:
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Approved DRAFT-0002 rev 3 with decisions N0–N6 and Q1–Q3"
-      changes: ["Specified project model, identity, storage, conventions, artifact storage modes, naming rule, tool semantics, scheme trees, docs:// and guides"]
-    - revision: 2
-      reason: "Secrets redesigned after nukii-revived (SPEC-0013)"
-      changes: ["secret:// in the tree list"]
-    - revision: 3
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 4
-      reason: "User: agents read and change session titles through URIs"
-      changes: ["session://<id>/title read/write with per-target mechanism and permissions", "Title = PiG session name; by-name resolves titles", "Probes T1–T3"]
-    - revision: 5
-      reason: "Progressive skill disclosure and served prompt (SPEC-0014)"
-      changes: ["skill:// load through read, unload through ctl, loaded/ listing", "session://<id>/system-prompt", "docs://workbench/prompts"]
-    - revision: 6
-      reason: "Host changes go to a personal PiG fork (PLAN-0001 D13)"
-      changes: ["Session dedup by real path is a fork change"]
-    - revision: 7
-      reason: "Probes T1–T3 and the resumed-cwd question are answered (ANA-2026-11-05-slice-1-probes)"
-      changes: ["Titles: immediate visibility, empty name clears, persistence as session_info, branch-scoped precedence", "Resumed cwd through symlinked buckets follows the recorded session cwd"]
-    - revision: 8
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; project identity, storage adoption and the URI namespace frozen, with probe answers T1-T3 and the resumed-cwd result recorded"]
-    - revision: 9
-      reason: "Creation and joining were specified but had no interface"
-      changes: ["§3.3.1 defines the create/join operations, the commands, the TUI panel and the once-per-repository offer; recognition reads the pig.projectId marker before matching"]
     - revision: 10
       reason: "User report 09.11.2026: joining the project a checkout already declares looped on a raw file error"
       changes: ["§3.3.1: joining a project the checkout's Project.toml already declares writes nothing and succeeds; joining another project over an existing Project.toml is refused naming the declared project, for file and marker modes", "The panel keeps the typed value after a failed submit and shows the whole error", "Migration: none"]
-
 ---
 
 # 1. Scope

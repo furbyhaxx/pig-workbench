@@ -11,36 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining Workbench specification and design areas"
-      changes: ["Defined behavior, state, safety, examples, dependencies and acceptance criteria"]
-    - revision: 2
-      reason: "M0.2 probes verified host context-file control and projection timing"
-      changes: ["Specified structural suppression through systemPromptOptions.contextFiles", "Specified per-request projection via the context hook and resume detection"]
-    - revision: 3
-      reason: "M0.1 donor parity audit"
-      changes: ["Added donor parity rules for remote watching, watch modes, idle delivery and races"]
-    - revision: 4
-      reason: "SPEC-0012 project model and URI namespace"
-      changes: ["Class projectPrivate", "AGENTS.md reminder and BACKLOG.md pointer validation", "Pins through session://self/instructions", "Scheme guides follow the first-touch model"]
-    - revision: 5
-      reason: "All config files are TOML (SPEC-0010 §1)"
-      changes: ["Setting keys renamed to kebab-case"]
-    - revision: 6
-      reason: "Several instruction files per directory (SPEC-0014 §9)"
-      changes: ["Class field select = first | all", "Configuration example in TOML with kebab-case keys (SPEC-0010)", "Prompt engine owns the stable set when enabled"]
-    - revision: 7
-      reason: "User approved the remaining five specifications on 07.11.2026"
-      changes: ["Approved the ambient-context contract for Slice 1; implementation and acceptance remain separately tracked"]
-    - revision: 8
-      reason: "User decision 09.11.2026: host-level HOST.md and AGENTS.md under /etc/agents"
-      changes: ["§3.1 defines the host steering file (/etc/agents/AGENTS.md, one level above the user's) and the always-on host facts file (/etc/agents/HOST.md), their trust, delivery, remote override and settings", "Migration: none; absent files change nothing"]
-    - revision: 9
-      reason: "User decision 09.11.2026: group-writable host files must load"
-      changes: ["§3.1 refuses only world-writable files and directories (sticky directories exempt) and foreign owners; group-writable is accepted", "Migration: files previously refused as group-writable now load"]
-    - revision: 10
-      reason: "Linked worktrees below the checkout were refused as untrusted nested repositories"
-      changes: ["A linked worktree created from a checkout inside the project is part of that project, not a boundary; the claim is verified by the main checkout's back-link", "Identical bytes in a worktree deduplicate against the already selected file; a differing worktree file applies"]
     - revision: 11
       reason: "User decision 09.11.2026: the 'no longer applies' notice is noise"
       changes: ["A source that stops applying (out of scope, unpinned, deleted, host replaced) is withdrawn silently: no frame is sent and the delivered digest is kept, so the same bytes are not re-sent when it applies again", "Content that really leaves the context (compaction, branch change) is re-delivered through reconstruction as before", "Migration: the earlier explicit withdrawal notice is removed; a model may keep following the old text until the next delivery or compaction"]

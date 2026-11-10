@@ -13,18 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/tracking.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:59:34+01:00"
-      note: "Initial analysis of agy 1.4.8."
-    - revision: 2
-      at: "2026-10-27T10:20:00+01:00"
-      note: "Filled in the observed user agent and header surface, added the wire-capture verification row, and narrowed the static-only note to the inference path."
-    - revision: 3
-      at: "2026-10-27T10:28:00+01:00"
-      note: "Added the observed inference and telemetry request heads, including the Bearer scheme and the finding that the x-goog-* header set is not sent. Narrowed the static-only note to request bodies."
-    - revision: 4
-      at: "2026-10-27T13:08:00+01:00"
-      note: "families/google landed: pinned-in row filled, pi-auth-plus request heads captured on both runtimes, deliberate deltas listed, live-verification row added."
     - revision: 5
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/tracking.md", "type reset to research, id re-homed to RES-, provenance recorded"]

@@ -13,12 +13,6 @@ document:
   imported_from: "host:/mnt/Projects/furbyhaxx/pi-auth-plus@64be5931be6dcc7adade81ac136e6d02190a786e:.project/analyses/antigravity-cli/1.4.8/03-models.md"
   imported_at: "2026-11-03T11:23:00+01:00"
   changelog:
-    - revision: 1
-      at: "2026-10-27T09:59:34+01:00"
-      note: "Initial analysis of agy 1.4.8."
-    - revision: 2
-      at: "2026-10-27T10:14:00+01:00"
-      note: "Added the observed live catalogue: real context windows, output caps and thinking budgets for all 13 agent-facing models, server-reported apiProvider values, the 26-returned-vs-13-offered split, and the finding that an untouched bucket's resetTime re-anchors on every read."
     - revision: 3
       reason: "imported into pig-workbench"
       changes: ["copied as-is from .project/analyses/antigravity-cli/1.4.8/03-models.md", "type reset to research, id re-homed to RES-, provenance recorded"]

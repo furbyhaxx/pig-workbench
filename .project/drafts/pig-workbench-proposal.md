@@ -11,9 +11,6 @@ document:
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Initial research and proposal"
-      changes: ["Inspected reference implementations and staged PiG SDK; proposed adoption scope and delivery gates"]
     - revision: 2
       reason: "Restore full scope per user feedback"
       changes:
