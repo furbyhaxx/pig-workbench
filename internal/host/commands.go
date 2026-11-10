@@ -312,7 +312,7 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 	case "codemode":
 		return a.codemodeCommand(ctx, rest)
 	case "frames":
-		return a.framesCommand(ctx)
+		return a.framesCommand(ctx, rest)
 	case "instructions":
 		return a.instructionsCommand(ctx, rest)
 	case "ask":

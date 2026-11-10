@@ -98,6 +98,7 @@ func Catalog() []Definition {
 		choice("frames.role", "auto", DenyProject, "auto", "user", "developer", "system"),
 		choice("frames.display.style", "rail", AllowProject, "row", "rail", "card"),
 		choice("frames.display.default-visibility", "collapsed", AllowProject, "shown", "collapsed", "hidden"),
+		stringList("frames.display.sources", []string{}, AllowProject),
 		integer("jobs.timeout-seconds", 120, 0, 86400, DenyProject),
 		integer("jobs.yield-after-ms", 0, 0, 300000, DenyProject),
 		integer("jobs.termination-grace-ms", 2000, 0, 60000, DenyProject),
@@ -220,6 +221,9 @@ func Catalog() []Definition {
 		case "frames.display.default-visibility":
 			d.Application = "live"
 			d.Description = "collapsed shows one row per context frame, shown opens its body, hidden omits the row. Transcript only; the model receives every frame regardless."
+		case "frames.display.sources":
+			d.Application = "live"
+			d.Description = "Transcript visibility per frame source, each `shown|collapsed|hidden <source prefix>`; the longest matching prefix wins over the default. Manage with /workbench frames show|collapse|hide <source>."
 		case "frames.wake-budget":
 			d.Application = "live"
 			d.Description = "Maximum wakes per external frame producer per hour; over budget the frame is delivered without a turn. Zero disables external wake."

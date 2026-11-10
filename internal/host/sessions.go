@@ -144,6 +144,16 @@ func (s *session) fetchBackendDisabled(owner, key string) bool {
 	return slices.Contains(list, owner+"/"+key)
 }
 
+func (s *session) settingStrings(key string) []string {
+	if configuration, err := s.settings.Current(); err == nil {
+		if entry, ok := configuration.Get(key); ok {
+			list, _ := entry.Value.([]string)
+			return list
+		}
+	}
+	return nil
+}
+
 func (s *session) settingString(key, fallback string) string {
 	if configuration, err := s.settings.Current(); err == nil {
 		if entry, ok := configuration.Get(key); ok {

@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 18
+  revision: 19
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T14:18:54+01:00"
+  updated_at: "2026-11-10T14:28:25+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 18
-      reason: "Frame rows collapse by default (user, 10.11.2026)"
-      changes: ["frames.display.default-visibility defaults to collapsed; both display keys are consumed by the transcript rows"]
+    - revision: 19
+      reason: "frames.display.sources added"
+      changes: ["Per-source transcript visibility key"]
 ---
 
 # 1. Scope and precedence
@@ -90,6 +90,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | instructions.updates.context/self-edits | 3 / notice | user/project/runtime; safety baselines always persisted |
 | frames.role | auto | policy selects supported role; project cannot elevate authority |
 | frames.display.style/default-visibility | rail / collapsed | user/project/runtime; transcript only: `collapsed` one row per context frame, `shown` opens the body, `hidden` omits the row; style frames an opened body (rail, row, card) |
+| frames.display.sources | [] | user/project/runtime; transcript only: entries `shown|collapsed|hidden <source prefix>`, longest prefix wins over the default; edited by `/workbench frames show|collapse|hide <source>` |
 | jobs.timeout-seconds/yield-after-ms/termination-grace-ms | 120 / 0 / 2000 | user/runtime; timeout is foreground default, explicit background has no implicit deadline |
 | jobs.max-finished/log-bytes/session-log-bytes | 20 / 10485760 / 104857600 | user/runtime; rotation/gaps explicit |
 | jobs.wake-on-completion/raw-logs | true / false | user/runtime only |

@@ -36,12 +36,15 @@ type frameRow struct {
 	style string
 }
 
-// rowDisplay reads the transcript-only frame settings; delivery never depends on them.
-func (a *app) rowDisplay() (style, visibility string) {
+// rowDisplay reads the transcript-only frame settings for a source; delivery never depends on them.
+func (a *app) rowDisplay(source string) (style, visibility string) {
 	style, visibility = "rail", "collapsed"
 	if s, err := a.current(); err == nil {
 		style = s.settingString("frames.display.style", style)
 		visibility = s.settingString("frames.display.default-visibility", visibility)
+		if source != "" {
+			visibility = frameSourceVisibility(s.settingStrings("frames.display.sources"), source, visibility)
+		}
 	}
 	return style, visibility
 }
@@ -58,7 +61,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		}
 		row.pad = options.OutputPad
 		var visibility string
-		row.style, visibility = a.rowDisplay()
+		row.style, visibility = a.rowDisplay(row.label)
 		switch visibility {
 		case "hidden":
 			return []string{}, nil
@@ -74,7 +77,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		}
 		row := skillRow(text)
 		row.pad = options.OutputPad
-		row.style, _ = a.rowDisplay()
+		row.style, _ = a.rowDisplay("")
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 	ext.MessageRenderer("pig-workbench.ask", func(ctx sdk.Context, message map[string]any, options sdk.MessageRenderOptions, width int) ([]string, error) {
@@ -84,7 +87,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		}
 		row := askRow(text)
 		row.pad = options.OutputPad
-		row.style, _ = a.rowDisplay()
+		row.style, _ = a.rowDisplay("")
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 }

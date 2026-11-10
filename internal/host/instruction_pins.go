@@ -448,43 +448,6 @@ func (a *app) reloadInstructions() (string, error) {
 	return "Instruction views will be delivered again in full at the next boundary.", nil
 }
 
-// framesCommand lists the frames of this session's ledger.
-func (a *app) framesCommand(ctx sdk.Context) error {
-	s, err := a.current()
-	if err != nil {
-		return err
-	}
-	state := s.contextFrames
-	state.mu.Lock()
-	records := state.ledger.Snapshot()
-	state.mu.Unlock()
-	lines := make([]string, 0, len(records))
-	for _, raw := range records {
-		var record struct {
-			State string `json:"state"`
-			Frame struct {
-				Sequence uint64 `json:"sequence"`
-				Source   string `json:"source"`
-				Kind     string `json:"kind"`
-				Resource string `json:"resource"`
-			} `json:"frame"`
-		}
-		if json.Unmarshal(raw, &record) != nil {
-			continue
-		}
-		line := fmt.Sprintf("#%d %s %s [%s]", record.Frame.Sequence, record.Frame.Source, record.Frame.Kind, record.State)
-		if record.Frame.Resource != "" {
-			line += " " + record.Frame.Resource
-		}
-		lines = append(lines, line)
-	}
-	if len(lines) == 0 {
-		lines = append(lines, "No frames in this session.")
-	}
-	a.notify(ctx, strings.Join(lines, "\n"))
-	return nil
-}
-
 func (a *app) instructionsPanel(ctx sdk.Context) error {
 	s, err := a.current()
 	if err != nil {

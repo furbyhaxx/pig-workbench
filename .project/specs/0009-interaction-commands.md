@@ -5,15 +5,15 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T14:28:25+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 14
+      reason: "frames verbs implemented"
+      changes: ["/workbench frames route states its real verbs and targets"]
 ---
 
 # 1. Scope and sources
@@ -138,7 +138,7 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /workbench jobs [list|monitor|kill|write|settings] [id], /wb:jobs | Shared jobs service and policy |
 | /cd [path|--branch name|--reset], /wb:cd | Location service; TUI picker or status |
 | /remote [alias[:/path]|off|reload|add|config] | Host/location manager; per-alias show/note/shell/hide/unhide/rename |
-| /workbench frames [ls|show|hide|collapse] [target] | Frame inspection/display policy; not deletion from model context |
+| /workbench frames [ls [id\|#sequence] \| show\|collapse\|hide [source]] | `ls` lists the session's frames, with an id or sequence one frame's provenance and body. `show`, `collapse` and `hide` set the transcript visibility of all context frames or of one source prefix (`frames.display.default-visibility`, `frames.display.sources`, user scope); never deletion from model context |
 | /workbench instructions [ls|pin|unpin|reload|rules] | Applicability reasons, class/pin actions |
 | /workbench prompt [show|render --model <ref> [--tools …]|diff] | Template chain, family, delivery, parity, epoch, sections; preview without sending (SPEC-0014 §10) |
 | /workbench skills [ls|load|unload] [name] | Catalog with conditions, listed/hidden reason, loaded set, diagnostics (SPEC-0014 §8) |

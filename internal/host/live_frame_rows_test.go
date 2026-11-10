@@ -146,3 +146,43 @@ func TestLiveFrameVisibilityHidesOrOpensRowsWithoutChangingDelivery(t *testing.T
 		})
 	}
 }
+
+func TestLiveFramesVerbsInspectAndSetTranscriptVisibilityInRPC(t *testing.T) {
+	root := t.TempDir()
+	recorder := &requestRecorder{}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read")
+	fixture.send("p", "prompt", "say done")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	notice := func(id, command, want string) string {
+		fixture.send(id, "prompt", command)
+		event := fixture.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), want)
+		})
+		return fmt.Sprint(event["message"])
+	}
+	list := notice("ls", "/workbench frames ls", "session.date")
+	if !strings.Contains(list, "#1 ") || !strings.Contains(list, "[delivered]") {
+		t.Fatalf("listing lacks sequence and state:\n%s", list)
+	}
+	if one := notice("one", "/workbench frames ls #1", "state delivered"); !strings.Contains(one, "source ") || !strings.Contains(one, "digest ") {
+		t.Fatalf("frame view lacks provenance:\n%s", one)
+	}
+	notice("hide", "/workbench frames hide session.date", "Frames from session.date are now hidden")
+	if marked := notice("ls2", "/workbench frames ls", "session.date"); !strings.Contains(marked, "(hidden)") {
+		t.Fatalf("listing does not show the override:\n%s", marked)
+	}
+	saved, err := os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
+	if err != nil || !strings.Contains(string(saved), "hidden session.date") {
+		t.Fatalf("rule not saved: %v\n%s", err, saved)
+	}
+	fixture.send("p2", "prompt", "say done again")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" && len(recorder.bodies) >= 2 })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if !strings.Contains(recorder.bodies[0], "session.date") {
+		t.Fatal("the model must still receive the hidden source")
+	}
+}
