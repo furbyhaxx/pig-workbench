@@ -241,7 +241,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	thinking, _ := ctx.GetThinkingLevel()
 	modelFacts := modelContextFacts(model, thinking, configuration, contributedFields)
 	facts := []contextFact{
-		{source: "session.date", value: map[string]any{"date": time.Now().Format("2006-01-02"), "timezone": time.Now().Format("MST -07:00")}},
+		{source: "session.date", value: dateFacts(s.settingString("context.timezone", "system"), time.Now())},
 		{source: "session.environment", value: map[string]any{"os": runtime.GOOS, "architecture": runtime.GOARCH, "hostCwd": ctx.Cwd()}},
 		{source: "session.project", value: projectFacts},
 		{source: "session.location", value: locationSentence(current)},
@@ -674,6 +674,21 @@ const (
 	locationIntro        = "Working location: "
 	locationChangedIntro = "Working location changed from "
 )
+
+const dateUnavailable = "Date is unavailable."
+
+// dateFacts states today's date in the configured zone; an unknown zone yields no date instead of a guessed one.
+func dateFacts(zone string, now time.Time) any {
+	now = now.Local()
+	if zone != "" && zone != "system" {
+		location, err := time.LoadLocation(zone)
+		if err != nil {
+			return dateUnavailable
+		}
+		now = now.In(location)
+	}
+	return map[string]any{"date": now.Format("2006-01-02"), "timezone": now.Format("MST -07:00")}
+}
 
 // locationSentence states where plain paths resolve; a non-local authority prefixes the directory.
 func locationSentence(current location.Snapshot) string {

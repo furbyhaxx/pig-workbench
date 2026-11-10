@@ -1377,3 +1377,16 @@ func TestLiveSessionStartSweepsScratchLeftBehindPastTheRetention(t *testing.T) {
 		t.Fatalf("scratch within the retention was removed: %v", err)
 	}
 }
+
+func TestLiveDateFrameFollowsTheConfiguredTimezone(t *testing.T) {
+	step := func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "."}} }
+	_, requests := runScriptedRequests(t, t.TempDir(), "ls", "[context]\ntimezone = \"Pacific/Kiritimati\"\n", nil, step)
+	want := time.Now().In(time.FixedZone("", 14*3600)).Format("2006-01-02")
+	if all := strings.Join(requests, "\n"); !strings.Contains(all, "+14:00") || !strings.Contains(all, want) {
+		t.Fatalf("the date frame does not state %s in the +14:00 zone:\n%.2000s", want, all)
+	}
+	_, requests = runScriptedRequests(t, t.TempDir(), "ls", "[context]\ntimezone = \"Mars/Olympus\"\n", nil, step)
+	if all := strings.Join(requests, "\n"); !strings.Contains(all, "Date is unavailable.") {
+		t.Fatalf("an unknown zone must deliver no date:\n%.2000s", all)
+	}
+}

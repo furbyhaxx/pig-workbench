@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
@@ -178,12 +179,20 @@ func contextSummary(envelope frames.Envelope) string {
 		ActiveTools, Schemes, Skills                                                   []any
 	}
 	if json.Unmarshal([]byte(envelope.Body), &facts) != nil {
+		if envelope.Source == "session.date" {
+			return strings.TrimSpace(envelope.Body)
+		}
 		return ""
 	}
 	switch envelope.Source {
 	case "session.date":
-		zone, _, _ := strings.Cut(facts.Timezone, " ")
-		return strings.TrimSpace(facts.Date + " " + envelope.CreatedAt.Local().Format("15:04") + " " + zone)
+		zone, offset, _ := strings.Cut(facts.Timezone, " ")
+		clock := envelope.CreatedAt.Local()
+		// The frame states the zone the date was taken in; show the time in that zone too.
+		if in, err := time.Parse("-07:00", offset); err == nil {
+			clock = envelope.CreatedAt.In(in.Location())
+		}
+		return strings.TrimSpace(facts.Date + " " + clock.Format("15:04") + " " + zone)
 	case "session.environment":
 		return facts.OS + "/" + facts.Architecture
 	case "session.project":

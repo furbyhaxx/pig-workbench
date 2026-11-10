@@ -199,6 +199,9 @@ func Catalog() []Definition {
 		case "projects.offer-registration":
 			d.Application = "live"
 			d.Description = "Tell the user once per repository that no project recognises it and how to create or join one."
+		case "context.timezone":
+			d.Application = "live"
+			d.Description = "Time zone of the session.date frame: `system` or an IANA name such as Europe/Zurich. An unknown zone delivers `Date is unavailable.` instead of a guessed date."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."

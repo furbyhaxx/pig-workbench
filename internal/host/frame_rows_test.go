@@ -63,7 +63,7 @@ func TestAskRowListsEveryAnswerOnItsOwnLineWithoutExpansion(t *testing.T) {
 }
 
 func TestContextFramesSummarizeInPlainWords(t *testing.T) {
-	at := time.Date(2026, 11, 10, 13, 26, 0, 0, time.Local)
+	at := time.Date(2026, 11, 10, 12, 26, 0, 0, time.UTC)
 	for source, c := range map[string][2]string{
 		"session.date":         {`{"date":"2026-11-10","timezone":"CET +01:00"}`, "2026-11-10 13:26 CET"},
 		"session.environment":  {`{"architecture":"amd64","hostCwd":"/x","os":"linux"}`, "linux/amd64"},
@@ -74,6 +74,34 @@ func TestContextFramesSummarizeInPlainWords(t *testing.T) {
 		if got := contextSummary(frames.Envelope{Source: source, Body: c[0], CreatedAt: at}); got != c[1] {
 			t.Errorf("%s = %q, want %q", source, got, c[1])
 		}
+	}
+}
+
+func TestDateFrameUsesTheConfiguredZone(t *testing.T) {
+	// 23:30 UTC is already the next day in Tokyo and still the previous day in Honolulu.
+	now := time.Date(2026, 11, 10, 23, 30, 0, 0, time.UTC)
+	for zone, want := range map[string][2]string{
+		"Asia/Tokyo":       {"2026-11-11", "JST +09:00"},
+		"Pacific/Honolulu": {"2026-11-10", "HST -10:00"},
+		"UTC":              {"2026-11-10", "UTC +00:00"},
+	} {
+		facts, _ := dateFacts(zone, now).(map[string]any)
+		if facts["date"] != want[0] || facts["timezone"] != want[1] {
+			t.Errorf("%s: got %v, want %v", zone, facts, want)
+		}
+	}
+	if system, _ := dateFacts("system", now).(map[string]any); system["date"] != now.Local().Format("2006-01-02") {
+		t.Errorf("system zone: %v", system)
+	}
+	if got := dateFacts("Mars/Olympus", now); got != dateUnavailable {
+		t.Errorf("an unknown zone must give no date, got %v", got)
+	}
+	body := `{"date":"2026-11-11","timezone":"JST +09:00"}`
+	if got := contextSummary(frames.Envelope{Source: "session.date", Body: body, CreatedAt: now}); got != "2026-11-11 08:30 JST" {
+		t.Errorf("row = %q", got)
+	}
+	if got := contextSummary(frames.Envelope{Source: "session.date", Body: dateUnavailable, CreatedAt: now}); got != dateUnavailable {
+		t.Errorf("row for an unknown zone = %q", got)
 	}
 }
 

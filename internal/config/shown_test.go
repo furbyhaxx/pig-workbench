@@ -11,7 +11,6 @@ import (
 // pendingConsumers names shown keys that still wait for their consumer; it only shrinks and is empty at the Slice 1 exit.
 var pendingConsumers = []string{
 	"activity.replace-working-indicator",
-	"context.timezone",
 	"jobs.log-bytes",
 	"jobs.max-finished",
 	"jobs.raw-logs",

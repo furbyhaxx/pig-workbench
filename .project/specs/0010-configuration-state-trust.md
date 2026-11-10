@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 23
+  revision: 24
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:21:58+01:00"
+  updated_at: "2026-11-10T17:24:14+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 23
-      reason: "projects.offer-registration gained its consumer"
-      changes: ["§3: the offer key is consumed; projects.storage-links is gone, projects.session-storage is the one switch for symlinked buckets"]
+    - revision: 24
+      reason: "context.timezone gained its consumer"
+      changes: ["§3: context.timezone (system or an IANA name) is consumed by the session.date frame"]
 ---
 
 # 1. Scope and precedence
@@ -125,7 +125,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | activity.items | state, agents, messages, jobs, instructions, skills, location, contributed, coordinator; each `show: auto` | user/runtime; `always` pins, `never` hides |
 | prompt.enabled / template / delivery | true / builtin/workbench / auto | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |
 | prompt.families | builtin family table | user/runtime; user entries are matched first (SPEC-0014 §3.5) |
-| context.timezone / context.frames.<source> | system zone / date on, others per template | user/runtime (SPEC-0014 §5) |
+| context.timezone | system | user/runtime; `system` or an IANA zone name for the `session.date` frame (SPEC-0014 §4.3) |
 | skills.listing / listing-budget / conditions | prompt / 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |
 | activity.replace-working-indicator | false | user/runtime; enabling requires verified retry/compaction events |
 
