@@ -1,11 +1,13 @@
 package host
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -121,23 +123,69 @@ func lateSections(ctx sdk.Context, served string) string {
 	return b.String()
 }
 
-// promptState is the last builtin/workbench render and whether it was sent to the host.
-type promptState struct {
-	mu     sync.Mutex
-	text   string
-	epoch  string
-	err    string
-	forced bool
+const defaultPromptTemplate = "builtin/workbench"
+
+// renderPrompt renders the entry template from the builtin namespace, the user's
+// system-prompts directory and, while the host trusts the project, the project's.
+func renderPrompt(ctx sdk.Context, s *session, template string, options sdk.SystemPromptOptions) (string, error) {
+	roots := prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()}
+	if agent, err := sdk.AgentDir(); err == nil {
+		roots.UserRoot = filepath.Join(agent, "system-prompts")
+	}
+	if trusted, err := ctx.IsProjectTrusted(); err == nil && trusted {
+		if name, err := sdk.ConfigDirName(); err == nil {
+			roots.ProjectRoot, roots.TrustProject = filepath.Join(ctx.Cwd(), name, "system-prompts"), true
+		}
+	}
+	loader, err := prompt.NewFileSystemLoader(roots)
+	if err != nil {
+		return "", err
+	}
+	defer loader.Close()
+	engine, err := prompt.New(prompt.Options{Loader: loader})
+	if err != nil {
+		return "", err
+	}
+	data := promptData(s, options)
+	if model, err := ctx.GetModelInfo(); err == nil {
+		data.Model = prompt.Model{Provider: model.Provider, ID: model.ID, Name: model.Name, Reasoning: model.Reasoning, ContextWindow: model.ContextWindow, MaxOutput: model.MaxOutputTokens}
+	}
+	rendered, err := engine.Render(context.Background(), template, data)
+	if err != nil {
+		return "", err
+	}
+	return rendered.Text, nil
 }
 
-// set records one render attempt; a failed render keeps the previous text and epoch.
-func (p *promptState) set(rendered string, ok bool, renderErr string, forced bool) {
+// promptState is the last good render, its template and whether it was sent to the host.
+type promptState struct {
+	mu       sync.Mutex
+	text     string
+	epoch    string
+	template string
+	err      string
+	reported string
+	forced   bool
+}
+
+// set records one render attempt; a failed render keeps the previous text, template and epoch.
+// It reports whether this failure differs from the one last reported to the user.
+func (p *promptState) set(template, rendered string, ok bool, renderErr string, forced bool) (report bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.err, p.forced = renderErr, forced
 	if ok {
-		p.text, p.epoch = rendered, promptEpoch(rendered)
+		p.text, p.epoch, p.template = rendered, promptEpoch(rendered), template
 	}
+	report = renderErr != "" && renderErr != p.reported
+	p.reported = renderErr
+	return report
+}
+
+func (p *promptState) source() string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.template
 }
 
 func (p *promptState) get() (text, epoch, renderErr string, forced bool) {
@@ -155,10 +203,12 @@ func servedPrompt(ctx sdk.Context, s *session) ([]byte, error) {
 	text, epoch, renderErr, forced := s.prompt.get()
 	var b strings.Builder
 	switch {
+	case forced && text != "" && strings.HasPrefix(served, text) && renderErr != "":
+		fmt.Fprintf(&b, "source: %s (last good render; the current one failed: %s)\nepoch: %s\n", s.prompt.source(), renderErr, epoch)
 	case forced && text != "" && strings.HasPrefix(served, text):
-		fmt.Fprintf(&b, "source: builtin/workbench\nepoch: %s\n", epoch)
+		fmt.Fprintf(&b, "source: %s\nepoch: %s\n", s.prompt.source(), epoch)
 	case renderErr != "":
-		fmt.Fprintf(&b, "source: PiG (builtin/workbench failed to render: %s)\nepoch: %s\n", renderErr, promptEpoch(served))
+		fmt.Fprintf(&b, "source: PiG (the Workbench template failed to render: %s)\nepoch: %s\n", renderErr, promptEpoch(served))
 	default:
 		fmt.Fprintf(&b, "source: PiG (Workbench does not replace the prompt: prompt.enabled, prompt.delivery or instructions.enabled is off)\nepoch: %s\n", promptEpoch(served))
 	}
@@ -179,12 +229,15 @@ func promptEpoch(rendered string) string {
 	return hex.EncodeToString(sum[:8])
 }
 
-func applyPromptRender(enabled bool, rendered string, renderErr error, delivery string) (string, bool, string) {
+// applyPromptRender decides what to force: the render, or after a failure the last good render;
+// without one the host prompt stays. It never forces an empty or partial prompt.
+func applyPromptRender(enabled bool, rendered string, renderErr error, delivery, lastGood string) (string, bool, string) {
 	if !enabled {
 		return "", false, ""
 	}
 	if renderErr != nil {
-		return "", false, renderErr.Error()
+		text, ok := promptOverride(lastGood != "", delivery, lastGood)
+		return text, ok, renderErr.Error()
 	}
 	text, ok := promptOverride(true, delivery, rendered)
 	return text, ok, ""

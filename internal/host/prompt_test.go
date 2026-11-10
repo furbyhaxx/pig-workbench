@@ -77,11 +77,15 @@ func renderEpoch(t *testing.T, tools []string) string {
 }
 
 func TestRenderErrorDoesNotReplaceTheHostPrompt(t *testing.T) {
-	text, force, recorded := applyPromptRender(true, "", errPrompt, "force")
+	text, force, recorded := applyPromptRender(true, "", errPrompt, "force", "")
 	if force || text != "" || recorded == "" {
 		t.Fatalf("error path = %q %v %q", text, force, recorded)
 	}
-	text, force, recorded = applyPromptRender(true, "rendered", nil, "force")
+	text, force, recorded = applyPromptRender(true, "", errPrompt, "force", "last good")
+	if !force || text != "last good" || recorded == "" {
+		t.Fatalf("an error after a good render must keep that render and stay reported: %q %v %q", text, force, recorded)
+	}
+	text, force, recorded = applyPromptRender(true, "rendered", nil, "force", "last good")
 	if !force || text != "rendered" || recorded != "" {
 		t.Fatalf("success path = %q %v %q", text, force, recorded)
 	}

@@ -179,7 +179,7 @@ For a trusted project, Workbench selects root-level `*.md` personal notes from `
 - `session://self/frames/` — one entry per context frame of this session with its state, kind and source; `session://self/frames/<frameId>` shows that frame's provenance and body.
 - `session://self/instructions/` — the instruction files delivered in this session, each a link to its file with class, delivery state and pin origin, plus `ctl` (write `pin <path> [--class <id>]` or `unpin <path>`). Works in print and JSON mode.
 - `session://self/entries` — raw session entries, one JSON object per line.
-- `session://self/system-prompt` — the system prompt of the current epoch, preceded by its source (`builtin/workbench` or PiG), epoch, section sizes and byte count.
+- `session://self/system-prompt` — the system prompt of the current epoch, preceded by its source (the `prompt.template` that rendered it, or PiG), epoch, section sizes and byte count.
 - `cfg://workbench/status` — configuration readiness, revision and effective read policy.
 - `cfg://<group>/<key>` — one effective setting with its source scope and file.
 

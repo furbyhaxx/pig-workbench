@@ -273,12 +273,13 @@ func Catalog() []Definition {
 			d.Description = "Explicit trusted extension owners permitted to call secrets.redact."
 		case "prompt.enabled":
 			d.Application = "live"
-			d.Description = "Serve builtin/workbench in place of PiG's prompt when delivery is auto or force and instructions are enabled; false or a rendering failure retains PiG's prompt."
+			d.Description = "Serve the prompt.template render in place of PiG's prompt when delivery is auto or force and instructions are enabled; false or a rendering failure retains PiG's prompt."
 		case "prompt.delivery":
 			d.Application = "live"
 			d.Description = "auto resolves to force on stock PiG and replaces PiG's prompt with builtin/workbench; sections needs the fork host and retains PiG's prompt here. Disable takeover with prompt.enabled = false."
 		case "prompt.template":
-			d.Description = "Validated and displayed only; rendering currently always uses builtin/workbench."
+			d.Application = "live"
+			d.Description = "Entry template of the system prompt: builtin/workbench, or a file such as system.md in the agent directory's system-prompts/ or, in a trusted project, the project's. A template that fails to render keeps the last good render, else PiG's prompt, and is reported."
 		case "skills.listing":
 			d.Application = "live"
 			d.Description = "prompt keeps PiG's <skills> section in the Workbench system prompt; frame leaves it out and delivers the budgeted skill:// listing in the session.capabilities frame. The system prompt is only Workbench's when prompt delivery takes it over."

@@ -1390,3 +1390,46 @@ func TestLiveDateFrameFollowsTheConfiguredTimezone(t *testing.T) {
 		t.Fatalf("an unknown zone must deliver no date:\n%.2000s", all)
 	}
 }
+
+func TestLiveUserPromptTemplateIsServedAndAFailingOneKeepsPiGsPrompt(t *testing.T) {
+	read := func([]string) scriptedCall {
+		return scriptedCall{"read", map[string]any{"path": "session://self/system-prompt"}}
+	}
+	run := func(t *testing.T, template string) (string, string) {
+		root := t.TempDir()
+		dir := filepath.Join(root, "agent", "system-prompts")
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "system.md"), []byte(template), 0600); err != nil {
+			t.Fatal(err)
+		}
+		results, requests := runScriptedRequests(t, root, "read", "[prompt]\ntemplate = \"system.md\"\n", nil, read)
+		return strings.ReplaceAll(results[0], `\n`, "\n"), strings.Join(requests, "\n")
+	}
+	t.Run("served", func(t *testing.T) {
+		resource, requests := run(t, "USER-TEMPLATE-MARKER for {{ model.id }}.\n{% include \"builtin/workbench\" %}\n")
+		if !strings.Contains(resource, "source: system.md") || !strings.Contains(resource, "USER-TEMPLATE-MARKER for mock.") {
+			t.Fatalf("the resource does not show the user template: %.600s", resource)
+		}
+		if !strings.Contains(resource, "Workbench resources are reachable by URI") {
+			t.Fatalf("the included builtin template is missing: %.600s", resource)
+		}
+		if !strings.Contains(requests, "USER-TEMPLATE-MARKER for mock.") {
+			t.Fatal("the provider request does not carry the user template's prompt")
+		}
+	})
+	t.Run("failing", func(t *testing.T) {
+		resource, _ := run(t, "BROKEN-TEMPLATE-MARKER {% if %}\n")
+		header, served, _ := strings.Cut(resource, "bytes: ")
+		if !strings.Contains(header, "source: PiG (the Workbench template failed to render: system prompt template system.md") {
+			t.Fatalf("the failure is not reported with the template name: %.600s", resource)
+		}
+		if strings.Contains(served, "BROKEN-TEMPLATE-MARKER") {
+			t.Fatalf("a partial render of the failing template was served: %.300s", served)
+		}
+		if !strings.Contains(served, "<docs>") {
+			t.Fatalf("PiG's prompt is not in use after the failure: %.600s", resource)
+		}
+	})
+}

@@ -1,14 +1,12 @@
 package host
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
-	"github.com/furbyhaxx/pig-workbench/internal/prompt"
 )
 
 func (a *app) registerCommands(ext *sdk.Extension) {
@@ -256,35 +254,20 @@ func (a *app) promptCommand(ctx sdk.Context) error {
 	if err != nil {
 		return err
 	}
-	rendered, err := renderBuiltinPrompt(s, options)
+	template := s.settingString("prompt.template", defaultPromptTemplate)
+	rendered, err := renderPrompt(ctx, s, template, options)
 	if err != nil {
-		return err
+		return fmt.Errorf("render %s: %w", template, err)
 	}
 	if _, _, lastErr, _ := s.prompt.get(); lastErr != "" {
 		fmt.Fprintf(&b, "last error: %s\n", lastErr)
 	}
 	fmt.Fprintf(&b, "epoch: %s\n", promptEpoch(rendered))
-	b.WriteString("rendered builtin/workbench:\n")
+	fmt.Fprintf(&b, "rendered %s:\n", template)
 	b.WriteString(rendered)
-	b.WriteString("\ndelivery auto and force serve builtin/workbench; set prompt.enabled=false to keep PiG's prompt\n")
+	fmt.Fprintf(&b, "\ndelivery auto and force serve %s; set prompt.enabled=false to keep PiG's prompt\n", template)
 	a.notify(ctx, b.String())
 	return nil
-}
-
-func renderBuiltinPrompt(s *session, options sdk.SystemPromptOptions) (string, error) {
-	loader, err := prompt.NewFileSystemLoader(prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()})
-	if err != nil {
-		return "", err
-	}
-	engine, err := prompt.New(prompt.Options{Loader: loader})
-	if err != nil {
-		return "", err
-	}
-	rendered, err := engine.Render(context.Background(), "builtin/workbench", promptData(s, options))
-	if err != nil {
-		return "", err
-	}
-	return rendered.Text, nil
 }
 
 func (a *app) workbench(ctx sdk.Context, args string) error {

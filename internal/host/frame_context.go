@@ -499,9 +499,24 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 					promptEnabled, _ = entry.Value.(bool)
 				}
 			}
-			rendered, renderErr := renderBuiltinPrompt(s, decodePromptOptions(options))
-			text, force, recorded := applyPromptRender(promptEnabled, rendered, renderErr, deliveryMode)
-			s.prompt.set(rendered, renderErr == nil, recorded, force)
+			template := s.settingString("prompt.template", defaultPromptTemplate)
+			var rendered string
+			var renderErr error
+			if promptEnabled {
+				if rendered, renderErr = renderPrompt(ctx, s, template, decodePromptOptions(options)); renderErr != nil {
+					// The engine's message quotes template source; keep the report short.
+					renderErr = fmt.Errorf("system prompt template %s: %s", template, fitLine(strings.Join(strings.Fields(renderErr.Error()), " "), 400))
+				}
+			}
+			lastGood, _, _, _ := s.prompt.get()
+			text, force, recorded := applyPromptRender(promptEnabled, rendered, renderErr, deliveryMode, lastGood)
+			if s.prompt.set(template, rendered, promptEnabled && renderErr == nil, recorded, force) && ctx.HasUI() {
+				kept := "PiG's prompt stays in use."
+				if force {
+					kept = "The last good render stays in use."
+				}
+				ctx.Notify(recorded+". "+kept, "warning")
+			}
 			if force {
 				options["forceSystemPrompt"] = text
 			}
