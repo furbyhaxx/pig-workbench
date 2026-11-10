@@ -606,3 +606,51 @@ func TestForgedWorktreeClaimStaysABoundary(t *testing.T) {
 		t.Fatalf("a .git file without the main checkout's back-link must stay a boundary: %v", err)
 	}
 }
+
+func TestOuterRootExtendsTheAncestorChainAboveTheProject(t *testing.T) {
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	outer := write(t, base, "AGENTS.md", "outer rule\n")
+	write(t, base, "work/repo/.git/HEAD", "ref: refs/heads/main\n")
+	project := filepath.Join(base, "work", "repo")
+	rootFile := write(t, project, "AGENTS.md", "project rule\n")
+	nearest := write(t, project, "a/b/AGENTS.md", "nearest rule\n")
+	backlog := write(t, base, "work/BACKLOG.md", "- [B-1] outer item\n")
+	target := filepath.Join(project, "a", "b")
+
+	inside, err := Discover(context.Background(), target, nil, Options{ProjectRoot: project})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range inside.Files {
+		if file.Path == outer || file.Path == backlog {
+			t.Fatalf("without an outer root nothing above the project may load: %s", file.Path)
+		}
+	}
+
+	set, err := Discover(context.Background(), target, nil, Options{ProjectRoot: project, OuterRoot: base})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, file := range set.Files {
+		got[file.Path] = file.Trust
+	}
+	if got[outer] != "user" || got[backlog] != "user" || got[nearest] != "project" {
+		t.Fatalf("want the outer steering and backlog at user trust and the nearest file at project trust, got %v", got)
+	}
+	if got[rootFile] != "project" || set.Files[0].Path != outer {
+		t.Fatalf("ancestors must select every level, broadest first: %v", got)
+	}
+
+	spanning := []Class{{ID: "steering", Filenames: []string{"AGENTS.md"}, Placement: "root+nearest", Select: "first", Role: "instruction", MaxLines: 200, MaxBytes: 16384}}
+	set, err = Discover(context.Background(), target, spanning, Options{ProjectRoot: project, OuterRoot: base})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(set.Files) != 2 || set.Files[0].Path != outer || set.Files[1].Path != nearest {
+		t.Fatalf("root+nearest must select the broadest and the nearest file of the whole chain, got %v", set.Files)
+	}
+}

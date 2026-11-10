@@ -117,7 +117,7 @@ func sessionPrivateRoot(ctx sdk.Context, s *session) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, root, err := instructionFacts(ctx, current.Cwd, detected.Root, detected.ProjectID, false, func(dir string) bool { return trustAllows(s.settings, dir) })
+	_, root, err := instructionFacts(ctx, current.Cwd, detected.Root, detected.ProjectID, "", false, func(dir string) bool { return trustAllows(s.settings, dir) })
 	return root, err
 }
 

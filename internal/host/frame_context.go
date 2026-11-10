@@ -303,7 +303,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			}
 		}
 		for _, target := range targets {
-			selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, validating, func(dir string) bool { return trustAllows(s.settings, dir) })
+			selected, activePrivate, err := instructionFacts(ctx, target, root, projectID, outerBoundary(configuration, root), validating, func(dir string) bool { return trustAllows(s.settings, dir) })
 			if err != nil {
 				return nil, err
 			}

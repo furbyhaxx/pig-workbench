@@ -7,13 +7,23 @@ import (
 	"strings"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
 	"github.com/furbyhaxx/pig-workbench/internal/project"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
-func instructionFacts(ctx sdk.Context, target, root, projectID string, validate bool, allowNested func(dir string) bool) ([]contextFact, string, error) {
+// outerBoundary names the directory the ancestor chain extends to above the project root: the
+// filesystem root under instructions.boundary = "filesystem", nothing otherwise.
+func outerBoundary(configuration *config.Snapshot, root string) string {
+	if entry, ok := configuration.Get("instructions.boundary"); ok && entry.Value == "filesystem" {
+		return filepath.VolumeName(root) + string(os.PathSeparator)
+	}
+	return ""
+}
+
+func instructionFacts(ctx sdk.Context, target, root, projectID, outerRoot string, validate bool, allowNested func(dir string) bool) ([]contextFact, string, error) {
 	trusted, err := ctx.IsProjectTrusted()
 	if err != nil {
 		return nil, "", err
@@ -57,6 +67,7 @@ func instructionFacts(ctx sdk.Context, target, root, projectID string, validate 
 	opts := instructions.Options{ProjectRoot: root, UserRoots: []string{agent}}
 	if trusted {
 		opts.PrivateRoot = privateRoot
+		opts.OuterRoot = outerRoot
 	}
 	selected, err := instructions.Discover(requestContext{ctx}, target, nil, opts)
 	if err != nil {

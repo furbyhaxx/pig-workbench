@@ -206,6 +206,9 @@ func Catalog() []Definition {
 		case "instructions.updates.context":
 			d.Application = "live"
 			d.Description = "Context lines around instruction updates; full views are sent when a reconstructible diff is not smaller."
+		case "instructions.boundary":
+			d.Application = "live"
+			d.Description = "How far up instruction discovery ascends: project stops at the project root; filesystem also applies instruction files in the directories above it, up to the filesystem root, for trusted projects."
 		case "instructions.updates.self-edits":
 			d.Application = "live"
 			d.Description = "How a change the agent made itself to a delivered instruction file reaches it: a one-line notice, the same diff as an outside change, or nothing. Bytes the agent did not write always arrive as a diff."

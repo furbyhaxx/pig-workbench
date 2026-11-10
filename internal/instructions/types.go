@@ -27,7 +27,10 @@ type Class struct {
 // A zero MaxTotalBytes permits up to 4 MiB of source bytes per discovery.
 type Options struct {
 	ProjectRoot string
-	UserRoots   []string
+	// OuterRoot, when it lies above ProjectRoot, extends the ancestor chain up to it; files found
+	// there carry user trust. Nested-repository checks still apply only below ProjectRoot.
+	OuterRoot string
+	UserRoots []string
 	// PrivateRoot is a separately authorized project-private notes directory.
 	PrivateRoot   string
 	MaxTotalBytes int

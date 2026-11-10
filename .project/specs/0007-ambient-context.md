@@ -5,15 +5,15 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T14:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 14
+      reason: "instructions.boundary is wired with the two values the catalog offers"
+      changes: ["§3 boundary values are project and filesystem; the home value is removed", "§8 self-edit recognition by committed-bytes digest"]
 ---
 
 # 1. Purpose and inputs
@@ -99,9 +99,10 @@ Project classes can add bounded context within the trusted project; they cannot 
 
 A location supplies authority/host, cwd and project/worktree root. A touched file uses its containing directory; a directory target uses itself. Resolve symlinks/canonical identity for containment and retain display path separately. Nested repository boundaries stop inheritance from an enclosing checkout by default; a **linked worktree** of a checkout inside the project (`.git` file `gitdir: <main>/.git/worktrees/<name>`, confirmed by `<main>/.git/worktrees/<name>/gitdir` pointing back at it) is part of the project, needs no trust rule, applies its own files and drops a file whose bytes, class, role and trust equal one already selected; explicitly configured global/host steering remains additive.
 
-- project: current repository/worktree root, or captured origin if no repository exists.
-- home: ascend only to the resolved authority's home if target lies below it; otherwise project.
-- root: filesystem root, explicitly enabled by user, independently per local/remote authority.
+`instructions.boundary` (user and runtime scope only) selects how far up the chain ascends:
+
+- `project` (default): the current repository/worktree root, or the captured origin if no repository exists.
+- `filesystem`: the directories above the project root, up to the filesystem root, join the same ancestor chain, so placement (`ancestors`, `root+nearest`, `root`, `nearest`) is evaluated over the whole chain. Files above the project root carry user trust and are confined to their own scope; it applies to trusted projects only, and nested-repository checks still apply only below the project root.
 
 Global user steering and authorized host notes are separate broad scopes. Includes outside the boundary need explicit authorized roots; no glob escape via .., symlinks or host alias.
 
@@ -192,7 +193,7 @@ Agent self-edits:
 - notice: emit concise change acknowledgement; keep complete replacement view in persisted ledger for replay.
 - diff: emit the same reconstructible view diff as external edits.
 - silent: suppress redundant UI/model echo only when the authoring tool result supplied the actual applied change; persist ledger update.
-If auto-format/repair/backend transformation changed bytes the model did not author, use diff/full instead of pretending silent self-knowledge.
+A change is a self-edit only when the SHA-256 of the bytes the agent's `edit` or `write` committed equals the digest of the file as discovered; any other change (formatter, shell command, another writer) arrives as a diff. A self-edit notice does not trigger the before-tool barrier.
 
 Ledger is branch/context-epoch scoped, rebuilt from structured frame records. Equal bytes **and trust** plus compatible applicability permit SkipIdentical. Relocation references existing same-epoch content and updates scope without resending. Loaded/added/changed/selfEdit retain replacement view; removed/withdrawn remove applicability; pinned facts are independent of content frames. Do not advance delivered baseline on enqueue alone: use the delivery status available in SPEC-0002.
 

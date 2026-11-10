@@ -120,7 +120,7 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 			}
 			continue
 		}
-		err = d.scanScope(ctx, user, []string{user.root})
+		err = d.scanScope(ctx, func(int) scope { return user }, []string{user.root})
 		user.fs.Close()
 		if err != nil {
 			return Set{}, err
@@ -135,7 +135,29 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 			}
 		}
 	}
-	if err := d.scanScope(ctx, project, dirs); err != nil {
+	owner := func(int) scope { return project }
+	if opts.OuterRoot != "" && contains(opts.OuterRoot, filepath.Dir(project.root)) && project.root != filepath.Dir(project.root) {
+		outer, err := openScope(opts.OuterRoot, "user")
+		if err != nil {
+			return Set{}, fmt.Errorf("open outer boundary: %w", err)
+		}
+		defer outer.fs.Close()
+		var above []string
+		for dir := filepath.Dir(project.root); contains(outer.root, dir); dir = filepath.Dir(dir) {
+			above = append([]string{dir}, above...)
+			if dir == filepath.Dir(dir) {
+				break
+			}
+		}
+		dirs = append(above, dirs...)
+		owner = func(i int) scope {
+			if i < len(above) {
+				return outer
+			}
+			return project
+		}
+	}
+	if err := d.scanScope(ctx, owner, dirs); err != nil {
 		return Set{}, err
 	}
 	set := Set{Reasons: d.reasons}
@@ -335,9 +357,11 @@ func (d *discovery) inWorktree(path string) bool {
 	return false
 }
 
-func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) error {
+// scanScope selects over one ancestor chain; owner names the authorization scope of each directory.
+func (d *discovery) scanScope(ctx context.Context, owner func(int) scope, dirs []string) error {
 	candidates := make([][][]candidate, len(dirs))
 	for i, dir := range dirs {
+		scope := owner(i)
 		candidates[i] = make([][]candidate, len(d.classes))
 		for j, class := range d.classes {
 			if class.ID == "project-private" {
@@ -419,7 +443,7 @@ func (d *discovery) scanScope(ctx context.Context, scope scope, dirs []string) e
 					d.reasons = append(d.reasons, Reason{Class: class.ID, Path: candidate.path, DisplayPath: candidate.display, Status: "ignored", Detail: "excluded by placement"})
 					continue
 				}
-				if err := d.selectCandidate(ctx, scope, class, candidate); err != nil {
+				if err := d.selectCandidate(ctx, owner(i), class, candidate); err != nil {
 					return err
 				}
 			}

@@ -1132,3 +1132,39 @@ func TestLiveSelfEditedInstructionsFollowTheSelfEditsSetting(t *testing.T) {
 		})
 	}
 }
+
+func TestLiveInstructionBoundarySettingSelectsHowFarDiscoveryAscends(t *testing.T) {
+	for boundary, want := range map[string]bool{"project": false, "filesystem": true} {
+		t.Run(boundary, func(t *testing.T) {
+			root := t.TempDir()
+			work := filepath.Join(root, "outer", "repo")
+			instructionTree(t, work, map[string]string{".": "INSIDE-PROJECT-RULE applies."})
+			if err := os.WriteFile(filepath.Join(root, "outer", "AGENTS.md"), []byte("ABOVE-PROJECT-RULE applies.\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			agent := filepath.Join(root, "agent")
+			if err := os.MkdirAll(agent, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(agent, "Workbench.toml"), []byte("[instructions]\nboundary = \""+boundary+"\"\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			recorder := &requestRecorder{calls: []scriptedCall{{"read", map[string]any{"path": "x.txt"}}}}
+			server := recorder.serve(t)
+			defer server.Close()
+			writeFixtureProvider(t, agent, server.URL)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			runPigJSON(t, ctx, repoRoot(t), root, work, []string{"--tools", "read"}, "go")
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			last := recorder.bodies[len(recorder.bodies)-1]
+			if strings.Count(last, "INSIDE-PROJECT-RULE") != 1 {
+				t.Fatal("the project's own steering must arrive exactly once")
+			}
+			if got := strings.Contains(last, "ABOVE-PROJECT-RULE"); got != want {
+				t.Errorf("steering above the project delivered = %t, want %t", got, want)
+			}
+		})
+	}
+}
