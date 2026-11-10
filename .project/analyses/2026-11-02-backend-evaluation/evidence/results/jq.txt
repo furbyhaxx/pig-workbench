@@ -1,8 +1,0 @@
-.n                           [12345678901234567890]
-.f                           [1.10]
-.e                           [1e400]
-.items[] | select(.a > 1)    [{"a":2}]
-.n + 1                       [12345678901234567891]
-input                        compile error: input(s)/0 is not allowed
-env.HOME                     [null]
-$__loc__                     compile error: variable not defined: $__loc__

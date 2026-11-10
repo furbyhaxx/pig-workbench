@@ -1,2 +1,0 @@
-img.webp webp 400 566 <nil> <nil> (0,0)-(400,566) 1ms
-$HOME/go/pkg/mod/github.com/gen2brain/heic@v0.7.2/testdata/exif.heic heic 1346 1346 <nil> <nil> (0,0)-(1346,1346) 251ms

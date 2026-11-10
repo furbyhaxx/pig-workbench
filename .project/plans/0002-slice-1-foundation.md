@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 63
+  revision: 64
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-09T17:00:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 63
-      reason: "Defects reported in live use and pig-web R9/R10, fixed after revision 62"
-      changes: ["An unreadable vault record no longer blocks requests and a refused prompt returns to the editor (SPEC-0013 rev 8); an over-permissive owned secret.key is narrowed to 0600 (rev 9)", "pig-web R9 (project on every location surface, SPEC-0001 rev 12) and R10 (provider search dispatch, SPEC-0004 rev 10)", "Instruction churn on foreign-path touches fixed, one frame nonce per session lineage, session.model carries the knowledge cutoff and staleness guidance, call-row and snapshot-error defects fixed", "Project creation and joining: /workbench projects list|create|join|example, an interactive panel and a once-per-repository offer (SPEC-0012 rev 9), plus a commented Project.toml example"]
+    - revision: 64
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Outcome
@@ -84,7 +84,7 @@ Before freezing, reconcile every open decision, outstanding probe, dependency ap
 | SPEC-0005 §3 vs D5.b | contradiction | **Fixed** in SPEC-0005 rev 9. |
 | PLAN-0001 WB-25 still naming `builtin/pig` | contradiction | **Fixed** in PLAN-0001 rev 23. |
 | Slice 1 inventory of every ownership row | analysis | **Done.** ANA-2026-11-05-slice-1-inventory classifies each PLAN-0001 §9 Slice 1 row; no row is counted done without observed evidence. |
-| Phase A probe evidence | analysis | **Done.** ANA-2026-11-05-slice-1-probes with runnable cases in `internal/host/live_probes_test.go`. |
+| Phase A probe evidence | analysis | **Done.** Runnable cases in `internal/host/live_probes_test.go`; results are stated in SPEC-0011 §10 and SPEC-0012 §3.5 and §5.3.1. |
 
 ## A1. Freeze
 

@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 11
+  revision: 12
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 12
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Scope and references
@@ -30,7 +30,7 @@ WorkingLocation fields: authority (local or SSH endpoint identity), canonical cw
 
 Every tool captures one immutable location/config revision at admission. Relative paths/commands resolve there for the entire call, including nested work. Explicit file:/// and ssh:// URIs choose their own authority and never inherit a mismatched cwd. Do not call os.Chdir or mutate PiG host cwd.
 
-Delegation to host builtins ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P18): the `cwd` passed to `sdk.Create*ToolDefinition` is ignored whenever a context exists — host tools always use the session cwd. Local file tools therefore resolve relative paths to absolute paths under the captured location before delegating, and local `bash` sets `BashSpawnContext.Cwd` through `BashToolOptions.SpawnHook`. Both were verified directly and from codemode children; `ctx.Cwd()` stays the session cwd throughout.
+Delegation to host builtins (host probes (SPEC-0001 §9) P18): the `cwd` passed to `sdk.Create*ToolDefinition` is ignored whenever a context exists — host tools always use the session cwd. Local file tools therefore resolve relative paths to absolute paths under the captured location before delegating, and local `bash` sets `BashSpawnContext.Cwd` through `BashToolOptions.SpawnHook`. Both were verified directly and from codemode children; `ctx.Cwd()` stays the session cwd throughout.
 
 Default cwd/origin is host session cwd. Branch entries preserve location transitions; resume validates availability before activation. An unavailable stored location is displayed as unavailable and blocks relative execution until explicit reset/change. Do not silently execute locally after an SSH failure.
 
@@ -98,7 +98,7 @@ Process launch:
 4. Establish crash-cleanup supervisor before acknowledging background success.
 5. Drain stdout/stderr without deadlock, journal terminal facts, close descriptors and reap.
 
-Backends ([backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md) §6, approved): PTY jobs use `github.com/aymanbagabas/go-pty` (Ctrl-C, EOF, SIGWINCH verified); pipe jobs expose close-stdin and signal as distinct operations because control bytes on a pipe are only data. Host-delegated foreground `bash` already kills its child on caller abort (P17).
+Backends (approved 02.11.2026): PTY jobs use `github.com/aymanbagabas/go-pty` (Ctrl-C, EOF, SIGWINCH verified); pipe jobs expose close-stdin and signal as distinct operations because control bytes on a pipe are only data. Host-delegated foreground `bash` already kills its child on caller abort (P17).
 
 Hard timeout terminates owned process group with grace (default 2 s) then escalates. Normal cancellation has the same bounded cleanup. A process that daemonizes out of the group is an explicit platform/supervision gap to test; no unsupported universal “no orphans” claim.
 
@@ -163,7 +163,7 @@ POSIX local+SSH is the primary target. Windows requires job-object/process and p
 
 # 9. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench `core/*` at `bc7ce0e` and oh-my-pi `bash-*` tests. Normative.
+From the donor test audit of 02.11.2026, pi-workbench `core/*` at `bc7ce0e` and oh-my-pi `bash-*` tests. Normative.
 
 **Jobs and output**
 - **G8.1 Secrets** (SPEC-0013). Placeholders in command text, cwd, stdin writes and job input are substituted right before execution; the displayed and stored call keeps them. Secrets with an `env` name in the session's scope chain are injected into the environment of bash calls and jobs, local and SSH. Results go back through the SPEC-0013 boundary.

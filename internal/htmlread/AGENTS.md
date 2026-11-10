@@ -23,4 +23,4 @@ Static HTML to readable Markdown. No SDK, no network, no script execution and no
 - Layout-table cells render as adjacent text (`Left cellRight cell`); accepted residue, matching the benchmark.
 - `Document.Redirect` is a report. Following it, the redirect-hop limit and the `:raw` HTML view belong to the HTTP layer.
 
-Sources: `.project/specs/0006-advanced-read.md` HTML row, `.project/analyses/2026-11-02-backend-evaluation/README.md` §8 and `evidence/programs/htmlq/main.go`.
+Source: `.project/specs/0006-advanced-read.md` HTML row.

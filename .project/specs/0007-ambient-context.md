@@ -5,15 +5,15 @@ document:
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 13
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Purpose and inputs
@@ -184,6 +184,8 @@ Update auto: unified diff against previous **delivered view** when smaller and r
 
 Watch selected files and candidate directories for create/delete/rename/atomic replace; missing-candidate cache entries expire on directory change. Default debounce 100 ms. Bound watch count and scan work; if native watcher unavailable, reconcile at turn boundaries and relevant tool results. Remote auto uses an approved available watcher or on-turn stat/hash; no auto-install of remote tooling and no hidden new transport just to watch.
 
+Local backend: `github.com/fsnotify/fsnotify` with directory-level watches (approved 02.11.2026). Measured behaviour the watcher must handle: an in-place write reports WRITE; temp-file-plus-rename (most editors, `git checkout`) reports CREATE only; a vim backup-rename reports RENAME, CREATE, WRITE; delete reports REMOVE; a nested directory reports nothing unless it is watched itself. So: watch candidate directories, not files; treat CREATE as a change; add a watch for each new directory; cap watches per session. On macOS kqueue opens one descriptor per watched file and per file inside a watched directory, so the cap counts files and stays well under `kern.maxfilesperproc`. On Windows `ReadDirectoryChangesW` can drop events on buffer overflow; reconcile by stat.
+
 A check uses canonical URI and content digest, not only mtime/size. Coalesce repeated changes to the latest unsent view but preserve removals/trust changes. Discovery failures retain a visible stale/unavailable state and prevent safety-relevant mutation; they do not withdraw instructions as if absence were proven.
 
 Agent self-edits:
@@ -198,7 +200,7 @@ On compaction, invalidate diff bases and seen state; rebuild global/root/pins pl
 
 # 9. Trust, host integration and external notifications
 
-When the prompt engine is enabled (SPEC-0014 §9), Workbench owns the whole prompt: host `contextFiles` are cleared and the stable set is rendered by the template; the rest of this paragraph applies while `prompt.enabled = false`. Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. Verified mechanism ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P23): in every `before_agent_start`, remove exactly the owned paths from `data["systemPromptOptions"]["contextFiles"]`; the host re-renders the prompt without them. The edit is per prompt and must be repeated; never return a `systemPrompt` string (the value is a `*sdk.SystemPrompt`, and a string would replace the whole prompt). If another extension re-adds a suppressed path, report the conflict and keep both copies rather than fight over it.
+When the prompt engine is enabled (SPEC-0014 §9), Workbench owns the whole prompt: host `contextFiles` are cleared and the stable set is rendered by the template; the rest of this paragraph applies while `prompt.enabled = false`. Suppress only host project_context content that Workbench demonstrably owns and reproduces; do not string-replace arbitrary system prompt sections or discard unrelated context. Verified mechanism (host probes (SPEC-0001 §9) P23): in every `before_agent_start`, remove exactly the owned paths from `data["systemPromptOptions"]["contextFiles"]`; the host re-renders the prompt without them. The edit is per prompt and must be repeated; never return a `systemPrompt` string (the value is a `*sdk.SystemPrompt`, and a string would replace the whole prompt). If another extension re-adds a suppressed path, report the conflict and keep both copies rather than fight over it.
 
 Projection timing (P5, P21): instruction views and pins are appended by the `context` hook to every outgoing provider request, exactly once per request. The host does not persist them, compaction summary requests do not pass through the hook, and after compaction the hook sees `compactionSummary` plus kept messages — so the "rebuild after compaction" rule is satisfied by recomputing the projection on the next hook call. Resume (`--continue`) reports `session_start.reason = "startup"` (P22); Workbench detects resume by finding its own records on the restored branch, not by the reason. Disabling Workbench instructions restores host behavior at a safe boundary with visible reconciliation.
 
@@ -221,7 +223,7 @@ External claim/completion messages enter through registered frame producers with
 
 # 11. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench `instructions/*` at `bc7ce0e`. Normative.
+From the donor test audit of 02.11.2026, pi-workbench `instructions/*` at `bc7ce0e`. Normative.
 - **G7.1 Remote watching.** Detect an already-installed remote inotify tool once per host, otherwise fall back to on-turn checks. A forced native mode that fails names the host and the recovery step. The remote monitor exits on stdin EOF, restarts with backoff, and is torn down by abort with a process-group kill fallback. NUL-separated events are parsed across chunk boundaries.
 - **G7.2** `instructions.watch = auto|native|off`. `off` never rechecks remote host instructions on later prompts, withdraws remote ancestors on a local transition without remote reads, and still checks local changes.
 - **G7.3 Idle delivery.** Changes while idle coalesce to the latest view and are delivered at the next prompt. Idle compaction defers to the next prompt's full baseline. An unreachable restored host never blocks local deliveries; host connection failures are reported at the prompt.

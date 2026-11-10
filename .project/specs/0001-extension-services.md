@@ -5,15 +5,15 @@ document:
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 12 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 14
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location", "Host probe table P1–P30 added as §9"]
 ---
 
 # 1. Status, boundaries and terminology
@@ -29,7 +29,7 @@ Companions: [frames](0002-message-frames.md), [presentation](0003-tool-presentat
 - **Client:** optional Workbench adapter owned by another extension.
 - **Local API:** direct typed Go calls for bundled services. Shared-process packing does not authorize sharing globals between unrelated extensions.
 
-Observed runtime ([host integration probes](../analyses/2026-11-02-host-integration-probes/README.md) P1–P4, P13–P14): a reply emitted inside the receiver's listener reaches the caller's reply listener before the caller's Emit returns, both when packed and across processes. Aborting the caller's request returns its Emit with `host call events.emit cancelled with its parent request`, but the receiving listener keeps running and still emits its reply. A second Emit reaches a listener that is still busy.
+Observed runtime (host probes (§9) P1–P4, P13–P14): a reply emitted inside the receiver's listener reaches the caller's reply listener before the caller's Emit returns, both when packed and across processes. Aborting the caller's request returns its Emit with `host call events.emit cancelled with its parent request`, but the receiving listener keeps running and still emits its reply. A second Emit reaches a listener that is still busy.
 
 Verified source: staged SDK `event_bus.go`, `tool_renderer_resolvers.go`, `tool_renderers.go` under `host:/home/furbyhaxx/.pig/state/pigsdk/sdk-899c7964784a0050`; bundled `extension-api.md` and `runtime-cells.md`. PiG's bus carries JSON across Go realms, listeners finish before Emit returns, and listener errors are not application replies. These constraints determine this protocol.
 
@@ -226,3 +226,42 @@ Capabilities a client can request in `discover`, beyond `frames`, `presentation`
 | R8 project identity in requests | SPEC-0004 §4: `project` present when known, absent for `global` |
 | Edit tracking (dropped by pig-web) | Offered as the `snapshots` service (SPEC-0005 §10) |
 | `https://` reads (dropped by pig-web) | Offered as `fetchBackend` contributions: Workbench keeps routing, policy and paging; pig-web supplies content for the URLs it handles (SPEC-0004 §11) |
+
+# 9. Host facts from probes
+
+Observed on 02.11.2026 in an isolated PiG home with a scripted mock provider (no billed inference), against the staged SDK `sdk-899c7964784a0050`; packed and isolated-process producers both ran. Other specifications cite these rows by number. Secrets probes S1–S6 are in SPEC-0013 §9, prompt probes PR1–PR8 in SPEC-0014 §11. Kit views were not probed.
+
+| # | Seam | Observed |
+|---|---|---|
+| P1 | Bus request/reply, packed | Works synchronously: reply listener runs inside the receiver's Emit, before the caller's Emit returns |
+| P2 | Bus request/reply, isolated process | Same ordering across PIDs |
+| P3 | Caller abort during a pending Emit | Caller's Emit returns `host call events.emit cancelled with its parent request`; the **listener keeps running** to completion and its late reply is still delivered |
+| P4 | Explicit cancel message | A second Emit (`wb.cancel`) after abort reaches the busy listener (both packed and isolated); listener stops within one poll interval |
+| P5 | Frame delivery modes | See §3 |
+| P6 | Codemode child observation | Children emit `tool_execution_start/end` and `tool_call` with `parentToolCallId`; IDs are `call_0_0/1`… |
+| P7 | Blocked codemode child | `tool_call` block → no `tool_result` event, but `tool_execution_end` fires; script sees `{"status":"rejected","reason":{}}` — block reason lost |
+| P8 | Renderer resolver | Resolver claims foreign (`producer_echo`) and builtin (`read`) tools; render width = terminal − 2 (98 @100, 38 @40) |
+| P9 | Codemode nested rows | Codemode draws children itself; our resolver is **not** consulted for nested rows |
+| P10 | Dynamic renderer claim | Resolver result is cached per tool; changing the claim at runtime has no effect until `/reload` |
+| P11 | Claim after `/reload` | Resolver re-runs, history re-renders with new renderer; the historical call row received **empty args** (`map[]`) while the live row had args (observed in one run) |
+| P12 | Branch-scoped custom entries | `AppendEntry` entries follow the branch: tree navigation drops later entries, clone keeps the branch, `new_session` starts empty |
+| P13 | `ctx.Reload()` from a command | Factory re-invoked, call returns, branch state intact in 27/28 runs. **1/28 hang**: no `loaded`, no return, no RPC response; old instance kept serving commands; root cause in P29 |
+| P14 | Package globals across reload | Survive (same process); not a reset point |
+| P15 | Same-name override of `read`/`bash` | `RegisterTool` with the builtin's name replaces it (source = extension); wrapping `def.Execute` delegates to the host original without recursion, directly and from codemode children |
+| P16 | Update streaming through override | `tool_execution_update` events still flow (11 for a 3-tick bash) |
+| P17 | Cancellation through override | Abort cancels the delegated call (`host call builtinTool.execute cancelled…`), kills the shell child (no leftover process) and ends the row as error |
+| P18 | Location without host chdir | The factory `cwd` argument is ignored when a context exists (tools use the session cwd). Resolving relative paths before delegating (`read`) and `BashToolOptions.SpawnHook` setting `Cwd` (`bash`) work; `ctx.Cwd()` stays the session cwd |
+| P19 | Idle delivery | While idle, `steer`, `followUp` and unknown `deliverAs` values append a persisted custom message without starting a turn; `nextTurn` stays in an in-memory queue until the next prompt; `TriggerTurn: true` starts a turn; `SendUserMessage(…, "followUp")` starts a turn; an invalid `deliverAs` is not rejected |
+| P20 | Stale delivery after tree navigation | A `nextTurn` message queued before `NavigateTree` is delivered on the **new** branch; an idle `steer` stays on the old branch |
+| P21 | Compaction | `session_before_compact`/`session_compact` fire; summary requests do **not** pass through the `context` hook; afterwards the hook sees `compactionSummary` + kept messages, and the re-added ambient message appears exactly once per request. Custom entries survive on the branch. Small sessions fail with `Nothing to compact` (reported only via `OnError`/`compaction_end`) |
+| P22 | Resume (`--continue`) | `session_start.reason` is `startup`, not `resume`; branch, compaction and custom entries are restored; context files reload from the cwd |
+| P23 | Host context-file suppression | Removing a file from `data["systemPromptOptions"]["contextFiles"]` in `before_agent_start` removes it from the rendered system prompt for that prompt (must be repeated every prompt). Returning a `systemPrompt` string is the wrong lever: the value is a `*sdk.SystemPrompt` |
+| P24 | Session catalog | `SessionManagerList` (project) and `SessionManagerListAll` (all projects) work from any extension, including `--no-session` runs; entries include `allMessagesText` (full transcript text). `GetSessionFile` is nil in-memory while `GetSessionID` is set |
+| P25 | Skill/command catalog | `GetSystemPromptOptions().Skills` gives enabled skills with path, scope and `disableModelInvocation`; `GetCommands` lists extension and skill commands (not builtin), with source info; `IsProjectTrusted` and `ConfigHome` work |
+| P26 | `/tools` command | Registers without collision, appears in TUI autocomplete, runs in TUI and RPC; `GetAllTools` reports source and exposure per tool |
+| P27 | `--list-tools` flag | Parsed in every mode (`GetFlag` = true in `session_start`); `ctx.Shutdown()` there prevents the prompt. **No output channel in print/JSON mode**: `Notify` is dropped, extension stdout/stderr are not forwarded |
+| P28 | Dialogs | RPC emits `extension_ui_request` (select/input/confirm) and resumes on `extension_ui_response`; unanswered requests block indefinitely unless `DialogOptions.Timeout` is set. Print and JSON modes return `ok=false` / `confirm=false` immediately (`HasUI()=false`) — indistinguishable from a user cancel except via `HasUI` |
+| P29 | Reload hang root cause | 2/40 in a dedicated loop. Host goroutine blocks in `Host.Reload → stagePackedGo → startGoPackedCellOnce → acceptPackedExt → awaitConnection` with no deadline; the packed cell's re-dial gets `connection refused` on the old socket path, and the new instance's `events.on` fails |
+| P30 | Messages from `before_agent_start` | Returning `{"message": …}` adds a persisted custom message right after the user prompt; `SendMessage(steer)` from the same hook lands before the prompt |
+
+Print mode (P27): `pig -p "/tools"` and `pig -p --list-tools` run the extension code but produce no stdout in text mode and only the session header in JSON mode. A flag can change behaviour but cannot print a listing until the host has an output channel.

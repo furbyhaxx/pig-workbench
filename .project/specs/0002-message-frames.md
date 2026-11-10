@@ -5,15 +5,15 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 13
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Purpose and dependency
@@ -67,7 +67,7 @@ Required: `eventKey,kind,source,body`. Optional fields:
 
 EventKey deduplicates within (session, producer key, eventKey). Same key/same payload returns the existing receipt; same key/different payload is conflict. Dedup survives ordinary reload via persisted records. Fork scope is explicit: replayed facts are not re-published as new events.
 
-## Host delivery mapping (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P5, P19–P21, P30)
+## Host delivery mapping (observed, host probes (SPEC-0001 §9) P5, P19–P21, P30)
 
 | Delivery | Host mechanism | Running | Idle |
 |---|---|---|---|
@@ -175,5 +175,5 @@ Host findings: inclusion acknowledgement via the `context` hook, custom-role per
 
 # 9. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), nukular frame-ledger tests:
+From the donor test audit of 02.11.2026, nukular frame-ledger tests:
 - G2.1 Body and attribute escaping is injective: every hostile body (delimiters, nonce-like strings, whitespace runs) round-trips byte-exact through render → parse. Timestamps carry an explicit offset and may carry fractional seconds; invalid calendar dates and offsets are rejected. Concurrent sequence reservations share one strictly positive counter, and an exhausted counter fails; it never wraps or reuses a number. Untrusted frames always project as user-role content and are marked. Each wire kind has a golden fixture.

@@ -5,15 +5,15 @@ document:
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
   status: "published"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 9
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 8 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 10
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Scope and evidence
@@ -22,7 +22,7 @@ Specification for enhanced read/grep/find/ls. Depends on [resource providers](00
 
 Inspected donor contract: `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi/packages/coding-agent/src/prompts/tools/read.md`, `src/tools/read-selector.ts`, read.ts imports/dispatch surface and read-summary/json/sqlite/archive modules; nugent scheme ToolPath/Selector/Pager. The donor prompt and selector distinguish raw bare numbers and comma lists; Workbench adopts those precise semantics below rather than nugent's simpler onward-number interpretation.
 
-Backends are approved as proposed in the [backend evaluation](../analyses/2026-11-02-backend-evaluation/README.md) (user decision 2026-11-02, including HEIC via `gen2brain/heic` with embedded libheif/libde265 WASM and system libheif when present). Required capabilities and observable errors below remain the contract; the libraries are how they are met:
+Backends are approved as proposed in the backend evaluation of 02.11.2026 (user decision 2026-11-02, including HEIC via `gen2brain/heic` with embedded libheif/libde265 WASM and system libheif when present). Required capabilities and observable errors below remain the contract; the libraries are how they are met:
 
 | Adapter | Approved backend | Measured caveat Workbench must handle |
 |---|---|---|
@@ -38,7 +38,11 @@ Backends are approved as proposed in the [backend evaluation](../analyses/2026-1
 | HTML | `html-to-markdown/v2`; semantic main element first, `go-readability/v2` only as fallback | Resolve links against the page URL (not `WithDomain`), strip chrome and permalinks, layout tables as text, report script-only redirects |
 | Profiles | `google/pprof/profile` | — |
 
-Builtin replacement (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
+Rejected in the evaluation: `srwiley/oksvg` (drops `text`/`tspan`), `kdomanski/iso9660` (stack overflow on a crafted ISO, not recoverable), rizin for pseudocode (no decompiler without plugins). The `go-filesystems` readers are young packages: pin exact versions; each is small enough to vendor. The external 7-Zip fallback lists with `7zz l -slt` and reads members with `7zz e -so`; tool names differ per platform (`7z.exe`, `7zz`) and are resolved on `PATH`.
+
+Platforms: every backend, including the WASM PDF and SVG paths, builds with `CGO_ENABLED=0` for linux, darwin and windows on amd64 and arm64 (windows amd64 only). Runtime verification on macOS and Windows is open.
+
+Builtin replacement (observed, host probes (SPEC-0001 §9) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
 
 # 2. Read schema and parsing
 
@@ -151,7 +155,7 @@ Final support/backend matrix and adapter-specific query schemas must be approved
 
 # 9. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi read/grep/glob/fetch/sqlite/write tests at `553f0d1`. Normative.
+From the donor test audit of 02.11.2026, oh-my-pi read/grep/glob/fetch/sqlite/write tests at `553f0d1`. Normative.
 
 - **G6.1** Per-line column cap, `read.output-max-columns`, default 512. A cut line is marked partial and stays unseen until a raw read shows its tail (SPEC-0005 §3).
 - **G6.2 HTTP.**

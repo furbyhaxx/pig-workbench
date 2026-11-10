@@ -5,15 +5,15 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "published"
-  revision: 11
+  revision: 12
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 12
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Purpose and scope
@@ -341,7 +341,7 @@ Separate classes remain the tool when files need different placement, caps or ro
 | PR7 | `tools` frame mid-run under `force` | **Done:** lands after the activating tool's result, before the next model call; system text unchanged |
 | PR8 | `mcp_servers` from PiG's MCP extension | **Done:** its handler runs after Workbench, so the section is missing under plain `force`; recovered by the late-section splice (§4.2) |
 
-Evidence: [system prompt host probes](../analyses/2026-11-03-system-prompt-host-probes/README.md).
+Run 2026-11-03 in RPC, print and TUI with a scripted mock provider.
 
 Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 - **F-P1:** in `before_agent_start`, accept a complete ordered section list (preamble included, base sections deletable and reorderable) and record it as the session's system sections. Exposes a capability flag that Workbench checks.

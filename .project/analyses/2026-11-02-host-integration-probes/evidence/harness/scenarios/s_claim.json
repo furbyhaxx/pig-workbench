@@ -1,1 +1,0 @@
-[{"tools":[{"name":"bash","args":{"command":"echo first"}}]},{"text":"one"},{"tools":[{"name":"bash","args":{"command":"echo second"}}]},{"text":"two"}]

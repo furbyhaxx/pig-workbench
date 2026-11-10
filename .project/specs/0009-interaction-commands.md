@@ -5,15 +5,15 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 13
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Scope and sources
@@ -93,7 +93,7 @@ TUI: kit questionnaire, preview pane, tabs, notes and review.
 RPC: sequential native dialogs implement the same state; multi uses repeated choice/toggle plus Done, notes use editor, preview text is inspectable before choosing, and final confirm reviews answers. Distinguish cancelled/absent responses from empty text. No ctx.Custom call in RPC.
 Print/JSON: if no authorized remote bridge exists, return interactionUnavailable promptly. Do not wait on UI calls the host drops.
 
-Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
+Observed (host probes (SPEC-0001 §9) P28): RPC dialogs arrive as `extension_ui_request` (select/input/confirm) and resume on `extension_ui_response`; an unanswered request blocks forever, so every RPC dialog sets `DialogOptions.Timeout` from the ask settings and maps expiry to an explicit `timedOut` state rather than cancel. In print and JSON modes the host returns `ok=false` / `false` immediately, which looks exactly like a user cancel — Workbench checks `ctx.HasUI()` first and returns interactionUnavailable instead of calling dialogs. If bridge exists, bounded remote interaction is possible and is explicitly reported.
 
 Answer history (user decision D9.c, provisional): every questionnaire outcome (submitted, cancelled, pending, invalid) is also recorded outside the session, per project, as described in G9.8. It is **on by default** with retention `ask.history.retention-days` (default 90) and `/workbench ask history purge [--project|--all]`. It enables searching and reusing earlier answers across sessions. Drafts are never recorded. Secret answers are recorded as their placeholder.
 
@@ -190,7 +190,7 @@ No inference-dependent test may be reported live-verified without authorized exe
 
 # 11. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi `tools/ask` and pi-workbench `ask/*`, `tldr/*`. Normative unless listed as open in the audit.
+From the donor test audit of 02.11.2026, oh-my-pi `tools/ask` and pi-workbench `ask/*`, `tldr/*`. Normative.
 
 **ask_user**
 - **G9.1 Images in answers.** Custom answers and notes can carry images. They are returned after the text with numbered markers, renumbered per answer. An optional vision description (setting) can follow each image; a failed description keeps the answer and its images, and cancelled asks make no vision call.

@@ -1,3 +1,0 @@
-[{"tools":[{"name":"read","args":{"path":"plain.txt"}},{"name":"bash","args":{"command":"pwd; for i in 1 2 3; do echo tick$i; sleep 0.3; done"}}]},
- {"tools":[{"name":"codemode","args":{"code":"text(JSON.stringify(await tools.read({path:\"plain.txt\"}))); text(JSON.stringify(await tools.bash({command:\"pwd\"})));"}}]},
- {"text":"done"}]

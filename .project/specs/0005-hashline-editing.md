@@ -5,15 +5,15 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 13
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Authority and scope
@@ -22,7 +22,7 @@ Draft normative behavior for the full hashline engine, exact-text edit mode and 
 
 Verified donor surfaces: `host:/mnt/Projects/nukular/nukular-ai/.references/oh-my-pi/crates/pi-edit/prompts/hashline.md`, `src/modes/hashline/{types,parser,block,clipboard,recovery,mismatch,patcher,preview}.rs`, `src/store.rs` and `crates/pi-ast/src/block.rs`. The prompt/types were inspected for this specification; full parser/recovery fixtures remain the implementation parity oracle, not claimed as completely audited here. No new parser/hash/diff dependency is authorized by this document.
 
-Builtin replacement (observed, [probes](../analyses/2026-11-02-host-integration-probes/README.md) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
+Builtin replacement (observed, host probes (SPEC-0001 §9) P15–P17): registering a tool with a builtin's name replaces it for direct calls and codemode children, and `GetAllTools` reports Workbench as its source. A wrapper around `sdk.Create*ToolDefinition(...).Execute` delegates to the host implementation without recursion, keeps `tool_execution_update` streaming, and propagates caller abort (the delegated shell child is killed). The factory `cwd` is ignored; see SPEC-0008 for location handling.
 
 “Full” includes block editing, registers, cross-file patches, file operations, seen-line checks, stale-snapshot recovery, diagnostics, previews and loop protection. A range-only editor cannot satisfy this specification.
 
@@ -158,7 +158,7 @@ Open approval gates: syntax/grammar and diff/hash backend selection, model-assis
 
 # 9. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), oh-my-pi `crates/pi-edit` and `edit-*` tests at `553f0d1`. These rules are normative and carry the donor test names as fixture anchors.
+From the donor test audit of 02.11.2026, oh-my-pi `crates/pi-edit` and `edit-*` tests at `553f0d1`. These rules are normative and carry the donor test names as fixture anchors.
 
 **G5.1 Apply-time payload repair.** Each repair is reported as a warning:
 - Duplicated boundary lines echoed around a range replacement are dropped. An echo too short to fill the widened range is refused, with or without a parser.

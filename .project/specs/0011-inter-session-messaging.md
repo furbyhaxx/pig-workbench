@@ -5,15 +5,15 @@ document:
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
   status: "published"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 9
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 8 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 10
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Purpose and boundary
@@ -195,7 +195,7 @@ Fixed, because they are not friction but correctness: enabling stays a user acti
 # 10. Verification and host probes
 
 Required before claiming the feature works:
-- **Wake from a background goroutine.** Verified 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)) in RPC: `SendMessage` with `DeliverAs:"followUp"` and `TriggerTurn:true` from a goroutine using a Context retained from `session_start` starts a turn in an idle session and the wake text reaches the model. A wake scheduled during a running turn arrives at the next boundary of that same turn (steer). TUI and print modes share the same host path but were not captured separately.
+- **Wake from a background goroutine.** Verified 05.11.2026 (`internal/host/live_probes_test.go`) in RPC: `SendMessage` with `DeliverAs:"followUp"` and `TriggerTurn:true` from a goroutine using a Context retained from `session_start` starts a turn in an idle session and the wake text reaches the model. A wake scheduled during a running turn arrives at the next boundary of that same turn (steer). TUI and print modes share the same host path but were not captured separately.
 - **State tracking.** Verified 05.11.2026: `ctx.IsIdle` is false while a turn streams and true after an aborted turn settles, so endpoint records can be written from `agent_start`/`agent_end` without a second source of truth. Compaction transitions were not probed separately.
 - **Reload.** The listener is released and rebound without losing the endpoint ID. No second listener survives (P13, P14).
 

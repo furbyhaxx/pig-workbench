@@ -1,7 +1,0 @@
-ffmpeg version n9.0.2 Copyright (c) 2000-2026 the FFmpeg developers
-{"dur":"20.000000","streams":[{"codec_type":"video","codec_name":"h264","width":640,"height":360,"r_frame_rate":"25/1","nb_frames":"500"},{"codec_type":"audio","codec_name":"aac","width":null,"height":null,"r_frame_rate":"0/0","nb_frames":"863"}]}
-seek 12.5 -copyts:
-pts_time:12.52
-frame 412:
-pts_time:16.48
-seek past end (99s of 20s): exit=0 output_exists=no

@@ -1,1 +1,0 @@
-[[0.5, {"id": "p1", "type": "prompt", "message": "first"}], [2, {"id": "p2", "type": "prompt", "message": "second {{SECRET}}"}], [2, {"id": "t", "type": "prompt", "message": "/probe-tree-sum"}]]

@@ -1,5 +1,0 @@
-[{"tools":[{"name":"read","args":{"path":"inject-result.txt"}},{"name":"read","args":{"path":"inject-steer.txt"}},{"name":"read","args":{"path":"plain.txt"}}]},
- {"tools":[{"name":"read","args":{"path":"inject-context.txt"}}]},
- {"tools":[{"name":"read","args":{"path":"inject-next.txt"}}]},
- {"text":"turn one done"},
- {"text":"turn two done"}]

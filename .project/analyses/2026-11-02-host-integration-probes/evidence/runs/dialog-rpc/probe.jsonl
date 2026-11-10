@@ -1,9 +1,0 @@
-{"event": "session_start", "ext": "m0b", "flag": false, "flagErr": "<nil>", "hasUI": true, "kind": "event", "mode": "rpc", "pid": 1789931, "reason": "startup", "t": 1793639566.950405}
-{"contextFiles": ["/tmp/wb-probes/work/AGENTS.md"], "cwd": "/tmp/wb-probes/work", "err": "<nil>", "ext": "m0b", "kind": "prompt", "pid": 1789931, "skills": ["reverse-engineer-anything"], "t": 1793639567.432746}
-{"ext": "m0b", "kind": "context", "pid": 1789931, "roles": ["user"], "t": 1793639567.434489}
-{"err": "<nil>", "ext": "m0b", "hasUI": true, "kind": "dialog", "mode": "rpc", "ok": true, "pid": 1789931, "t": 1793639567.438753, "type": "select", "value": "beta"}
-{"err": "<nil>", "ext": "m0b", "kind": "dialog", "ok": true, "pid": 1789931, "t": 1793639567.439201, "type": "input", "value": "bob"}
-{"err": "<nil>", "ext": "m0b", "kind": "dialog", "pid": 1789931, "t": 1793639567.439704, "type": "confirm", "value": true}
-{"ext": "m0b", "kind": "context", "pid": 1789931, "roles": ["user", "assistant", "toolResult"], "t": 1793639567.440204}
-{"event": "agent_end", "ext": "m0b", "kind": "event", "pid": 1789931, "reason": null, "t": 1793639567.442206}
-{"event": "session_shutdown", "ext": "m0b", "kind": "event", "pid": 1789931, "reason": "quit", "t": 1793639571.931963}

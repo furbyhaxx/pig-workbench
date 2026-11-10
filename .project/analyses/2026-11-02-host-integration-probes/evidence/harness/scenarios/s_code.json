@@ -1,1 +1,0 @@
-[{"tools": [{"name": "codemode", "args": {"code": "const r = await Promise.allSettled([tools.producer_echo({text:\"nested\"}), tools.read({path:\"inject-steer.txt\"}), tools.producer_echo({text:\"blocked\", block:true})]);\ntext(JSON.stringify(r));"}}]}, {"text": "done"}]

@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 16
+  revision: 17
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 16
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 15 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 17
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Scope and precedence
@@ -199,7 +199,7 @@ Atomic state writes prevent torn JSON; append journals tolerate incomplete last 
 
 Secrets: [SPEC-0013](0013-secrets.md). Nothing here hides data from the user, the screen or local files.
 
-Session catalog ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P24–P25): `SessionManagerListAll` returns every project's sessions with `allMessagesText`, also in `--no-session` runs. Workbench exposes all of them through `session://` (SPEC-0004) without consent steps. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), not from a directory scan.
+Session catalog (host probes (SPEC-0001 §9) P24–P25): `SessionManagerListAll` returns every project's sessions with `allMessagesText`, also in `--no-session` runs. Workbench exposes all of them through `session://` (SPEC-0004) without consent steps. In-memory sessions have no file (`GetSessionFile` = nil) but do have an ID. Skills come from `GetSystemPromptOptions().Skills` (enabled set, path, scope, `disableModelInvocation`), not from a directory scan.
 
 Debug payload capture is off by default; opt-in evidence goes to a private local path with bounded retention, never to the stdout protocol stream.
 
@@ -225,7 +225,7 @@ Cross-cutting decisions requiring approval: final storage/retention defaults, ca
 
 # 10. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench settings tests. Normative.
+From the donor test audit of 02.11.2026, pi-workbench settings tests. Normative.
 - **G10.1** The project layer can never define trust rules; only the user and runtime layers can.
 - Saves re-read the file and are serialised, so concurrent disjoint saves both survive, including across processes. A symlinked config file stays a symlink and its target is updated.
 - Explicit `false`, `0` and `[]` override lower layers and are written back.

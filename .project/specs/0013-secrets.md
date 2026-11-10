@@ -5,15 +5,15 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "published"
-  revision: 10
+  revision: 11
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 10
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 9 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 11
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Purpose
@@ -62,7 +62,7 @@ Detection policy is `Secrets.toml` version 2 with nukii's schema (`version`, `[e
 
 ## 4.1 Hooks
 
-Verified in [probes S1–S6](../analyses/2026-11-03-secrets-host-probes/README.md).
+Verified by probes S1–S6 (§9).
 
 | Path into a provider request | Hook | Action |
 |---|---|---|
@@ -175,7 +175,7 @@ Detection policy lives in `Secrets.toml` (§2), not in `Workbench.toml`.
 
 # 9. Host probes
 
-Run 2026-11-03 against pig 0.5.3+1.4.0: [ANA-2026-11-03-secrets-host-probes](../analyses/2026-11-03-secrets-host-probes/README.md).
+Run 2026-11-03 against pig 0.5.3+1.4.0 in RPC mode with a scripted mock provider, no billed inference.
 
 | # | Probe | Result |
 |---|---|---|

@@ -5,15 +5,15 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "published"
-  revision: 11
+  revision: 12
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 12
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Scope
@@ -25,7 +25,7 @@ What Workbench provides for projects and for addressing everything it exposes. L
 | Fact | Source |
 |---|---|
 | Sessions in `~/.pig/agent/sessions/--<encoded cwd>--/`, append-only JSONL; bucket created at startup | `docs/sessions.md`, probe |
-| Symlinked buckets: writes, per-cwd listing and `--continue` work through them; `ListAll` lists each file once per symlink | [ANA session-bucket probe](../analyses/2026-11-03-session-bucket-symlink-probe/README.md) |
+| Symlinked buckets: writes, per-cwd listing and `--continue` work through them; `ListAll` lists each file once per symlink | probe, 03.11.2026 |
 | Extensions can create/open/fork/list sessions in any directory and switch to any file | SDK `session_manager_class.go`, `context.go` |
 | Own-session control: `SendUserMessage`, `SendMessage`, `Abort`, `IsIdle`, `WaitForIdle`, `Compact`, `SetModel`, `SetThinkingLevel`, `NewSession`, `Shutdown` | SDK `context.go` |
 | No hook to choose where the host creates its session file | SDK, absence |
@@ -111,10 +111,10 @@ Conflicts (two projects claim one directory, e.g. a fork sharing root commits) a
 
 ## 3.5 Session storage: symlinked buckets (option B)
 
-Every location's PiG bucket `sessions/--<encoded path>--` becomes a symlink to `projects/<id>/sessions/`. Verified in the [probe](../analyses/2026-11-03-session-bucket-symlink-probe/README.md): PiG writes, lists and continues through the symlink, so `/resume` in any checkout shows all sessions of the project.
+Every location's PiG bucket `sessions/--<encoded path>--` becomes a symlink to `projects/<id>/sessions/`. Verified by probe (03.11.2026): PiG writes, lists and continues through the symlink, so `/resume` in any checkout shows all sessions of the project.
 
 - **Adoption.** PiG creates the bucket as a real directory before extensions start. Workbench converts it at session start: move existing files into the project directory (rename on the same filesystem), replace the directory with the symlink. If another live session uses the same bucket (SPEC-0011 registry) or the filesystems differ, conversion waits for the next start and the reason is shown.
-- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; the PiG fork deduplicates by real path, PLAN-0001 D13). `--continue` may pick a session recorded in another checkout of the same project (by design of B). Probed 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)): the resumed session uses its **recorded** cwd, not the process cwd of the checkout that ran `--continue`, and reports its file through the current checkout's bucket symlink.
+- **Known host effects.** The all-projects listing shows each session once per location (Workbench catalogs deduplicate by session ID; the PiG fork deduplicates by real path, PLAN-0001 D13). `--continue` may pick a session recorded in another checkout of the same project (by design of B). Probed 05.11.2026 (`internal/host/live_probes_test.go`): the resumed session uses its **recorded** cwd, not the process cwd of the checkout that ran `--continue`, and reports its file through the current checkout's bucket symlink.
 - **Move and link.** A session has one home project and optional links. Moving rewrites nothing in the transcript; the file moves between project directories and links update.
 - **Undo.** `/workbench projects unlink-storage` replaces symlinks with real directories again.
 - **Windows.** Directory junctions instead of symlinks; untested.
@@ -143,7 +143,7 @@ SPEC-0007 already injects `AGENTS.md` and `BACKLOG.md` (ancestors, nearest, caps
 
 `artifact://<path>` resolves to `<main worktree>/.project/<path>` of the current component, whichever checkout the agent works in. All agents of a project read and write the same artifacts. `project://self/artifacts/` links to the **primary** component's tree, which holds artifacts spanning components; `project://<slug>/components/<c>/artifacts/` reaches any component. Rule for the bundled skill: component-specific artifacts go into this repository's tree, artifacts spanning components into the primary's. A primary not checked out on this host is reported as unavailable with its remote.
 
-On top of the URI, Workbench makes linked worktrees consistent ([verified](../analyses/2026-11-03-session-bucket-symlink-probe/README.md) §3): per-worktree sparse checkout excludes `.project/`, a `.project` symlink points to the main worktree's tree, `/.project` goes into the common `info/exclude`. The order matters (`sparse.expectFilesOutsideOfPatterns` first); Workbench does it when it creates a worktree and repairs existing ones on request.
+On top of the URI, Workbench makes linked worktrees consistent (verified by probe, 03.11.2026): per-worktree sparse checkout excludes `.project/`, a `.project` symlink points to the main worktree's tree, `/.project` goes into the common `info/exclude`. The order matters (`sparse.expectFilesOutsideOfPatterns` first); Workbench does it when it creates a worktree and repairs existing ones on request.
 
 Consequences to accept:
 - Artifacts are committed from the main worktree, on whatever branch it has checked out. Worktree branches never carry `.project/` changes and never conflict on them.
@@ -339,5 +339,4 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - URIs: every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds; links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
 - Guides: injected once per session and revision on first touch, re-injected after compaction, untrusted provider guides stay data.
 - `docs://harness/` follows the running build; source fetch only on first access, offline shows cache; extension docs confined to their roots.
-- Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes answered 05.11.2026 ([ANA](../analyses/2026-11-05-slice-1-probes/README.md)): **T1** `SetSessionName` is visible to `GetSessionName` and the replicated `SessionName()` without reload, and an empty name clears the title; **T2** the title is persisted as a `session_info` entry in the session file and survives `--continue`; **T3** `session_info` is branch-scoped — forking before a rename leaves the session unnamed, so `by-name/` resolves the active branch's latest entry and never an entry from an inactive branch.
-- Evidence for storage and worktree behaviour: [ANA-2026-11-03](../analyses/2026-11-03-session-bucket-symlink-probe/README.md).
+- Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes answered 05.11.2026 (`internal/host/live_probes_test.go`): **T1** `SetSessionName` is visible to `GetSessionName` and the replicated `SessionName()` without reload, and an empty name clears the title; **T2** the title is persisted as a `session_info` entry in the session file and survives `--continue`; **T3** `session_info` is branch-scoped — forking before a rename leaves the session unnamed, so `by-name/` resolves the active branch's latest entry and never an entry from an inactive branch.

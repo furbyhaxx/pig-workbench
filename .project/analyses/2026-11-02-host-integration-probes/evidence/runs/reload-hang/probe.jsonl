@@ -1,8 +1,0 @@
-{"cwd": "/tmp/wb-probes/work", "ext": "wb", "kind": "loaded", "pid": 1754217, "t": 1793636309.967129}
-{"event": "session_start", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1754217, "reason": "startup", "t": 1793636309.970635}
-{"cmd": "entry", "err": "<nil>", "ext": "wb", "kind": "command", "n": 1, "pid": 1754217, "t": 1793636310.448526}
-{"cmd": "reload-start", "ext": "wb", "kind": "command", "pid": 1754217, "t": 1793636310.948308}
-{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1754217, "reason": "reload", "t": 1793636310.948585}
-{"cmd": "branch", "custom": [{"label": "a", "n": 1}], "entries": 3, "err": "<nil>", "ext": "wb", "kind": "command", "pid": 1754217, "t": 1793636318.949099}
-{"cmd": "entry", "err": "<nil>", "ext": "wb", "kind": "command", "n": 2, "pid": 1754217, "t": 1793636319.45002}
-{"event": "session_shutdown", "ext": "wb", "keys": ["type", "reason"], "kind": "event", "pid": 1754217, "reason": "quit", "t": 1793636320.448867}

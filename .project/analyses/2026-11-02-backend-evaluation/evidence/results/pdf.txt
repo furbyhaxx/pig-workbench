@@ -1,5 +1,0 @@
-init 1.755s
-/usr/share/doc/speexdsp/manual.pdf pages=65 first-page-text="The Speex Codec Manual Version 1.2 Beta 3 Jean-Marc Valin December 8, 2007" render=true total=8ms heapMB=287
-/usr/share/doc/glm/manual.pdf pages=55 first-page-text="9/3/2018 1 / 55 GLM 0.9.9 Manual" render=true total=10ms heapMB=289
-/usr/share/doc/lirc/lirc.org/PCB.pdf pages=1 first-page-text="Details to make Advanced IR serial Interface using Stripboard (Trademark Veroboard) http:/" render=true total=28ms heapMB=290
-corrupt: 3: incorrect format

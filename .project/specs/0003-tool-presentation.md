@@ -5,15 +5,15 @@ document:
   title: "Tool presentation and renderer contribution API"
   description: "Semantic render models, lifecycle states, third-party settings and replay"
   status: "published"
-  revision: 9
+  revision: 10
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T10:50:00+01:00"
+  updated_at: "2026-11-10T11:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 9
-      reason: "Align with the dot-project standard"
-      changes: ["Status approved becomes published; the user approval of revision 8 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
+    - revision: 10
+      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
+      changes: ["Links to deleted analyses replaced by the fact or its new location"]
 ---
 
 # 1. Goal and verified host mechanisms
@@ -22,7 +22,7 @@ Let other extensions opt their tools into Workbench renderers and display settin
 
 Open probe: whether the host asks the resolver about historical tool names before extensions run `session_start` on resume; if it does, those names report `appliesAfterReload` as above.
 
-Verified SDK: `Extension.ToolRenderer` resolves tool renderers, including foreign tools, and `next()` preserves the next renderer. Its returned marker cannot be wrapped to call foreign rendering (SDK divergence D89). `SetToolRenderers` updates locally registered tools; it is not sufficient evidence for arbitrary foreign-tool takeover. Use the resolver to opt in registered contributions and return next() for others. CallView/ResultView are supported; a renderer error triggers host fallback. Observed ([probes](../analyses/2026-11-02-host-integration-probes/README.md) P8–P11): the resolver is called once per tool name and cached for the process; a later claim change has no effect until `/reload`, after which history re-renders with the new renderer. Render width is terminal width − 2. In one run a historical call row re-rendered after reload received empty args.
+Verified SDK: `Extension.ToolRenderer` resolves tool renderers, including foreign tools, and `next()` preserves the next renderer. Its returned marker cannot be wrapped to call foreign rendering (SDK divergence D89). `SetToolRenderers` updates locally registered tools; it is not sufficient evidence for arbitrary foreign-tool takeover. Use the resolver to opt in registered contributions and return next() for others. CallView/ResultView are supported; a renderer error triggers host fallback. Observed (host probes (SPEC-0001 §9) P8–P11): the resolver is called once per tool name and cached for the process; a later claim change has no effect until `/reload`, after which history re-renders with the new renderer. Render width is terminal width − 2. In one run a historical call row re-rendered after reload received empty args.
 
 # 2. Ownership and registration
 
@@ -149,7 +149,7 @@ Composite/codemode renderer uses the same child snapshots/presets. It must show 
 
 # 9. Donor parity (M0.1)
 
-From the [donor parity audit](../analyses/2026-11-02-donor-parity-audit/README.md), pi-workbench renderer tests. These are the defaults; settings can change them.
+From the donor test audit of 02.11.2026, pi-workbench renderer tests. These are the defaults; settings can change them.
 - G3.1 Normal density: bash shows the last 5 visual lines; codemode shows 10 script lines plus the configured output budget and hides the oldest successes behind a count; frame bodies show 40 lines with an exact overflow count. Compact groups runs of the same tool. Running, cancelled and failed rows are never hidden. Wrapped Unicode, whitespace-only and blank rows count as visual rows.
 - G3.2 Header numbers come from result metrics first, then arguments or the returned diff, and are never guessed (a read shows the range actually returned). Bash failures lead with the exit status. An error's first line goes in the header and the rest in the body. Empty or limited results warn; a silent zero-output success does not. Malformed numeric arguments are omitted on replay. Argument targets are stamped with the root they were resolved against, so a later `cd` does not rewrite old rows. Job rows keep the job ID at 40 columns.
 - G3.3 Running rows animate on one shared clock and release it when they settle. Queued and preparing rows are dimmed. Settled layouts are cached and invalidated by width, settings, theme or result changes.

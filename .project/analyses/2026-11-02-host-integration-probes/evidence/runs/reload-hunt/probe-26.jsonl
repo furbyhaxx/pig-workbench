@@ -1,9 +1,0 @@
-{"cwd":"/tmp/wb-probes/work","ext":"wb","kind":"loaded","pid":1792777,"t":1793639857.024881}
-{"event":"session_start","ext":"wb","keys":["reason","type"],"kind":"event","pid":1792777,"reason":"startup","t":1793639857.028194}
-{"cmd":"entry","err":"\u003cnil\u003e","ext":"wb","kind":"command","n":1,"pid":1792777,"t":1793639857.507727}
-{"cmd":"reload-start","ext":"wb","kind":"command","pid":1792777,"t":1793639858.00764}
-{"event":"session_shutdown","ext":"wb","keys":["type","reason"],"kind":"event","pid":1792777,"reason":"reload","t":1793639858.007938}
-{"err":"connection closed while waiting for events.on response","ext":"wb","kind":"bus","pid":1792777,"step":"subscribe-failed","t":1793639863.011861}
-{"err":"extension connection closed","ext":"wb","kind":"bus","pid":1792777,"step":"subscribe-failed","t":1793639863.011905}
-{"cmd":"reload-returned","err":"connection closed while waiting for reload response","ext":"wb","kind":"command","pid":1792777,"t":1793639863.01203}
-{"err":"connect to host: dial unix /run/user/1001/pig/h213750149/e-0.sock: connect: connection refused","ext":"producer","kind":"bus","pid":1792777,"step":"subscribe-failed","t":1793639863.012223}

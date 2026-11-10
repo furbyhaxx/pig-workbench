@@ -1,1 +1,0 @@
-{"i": 0, "t": 1793639312.2460136, "messages": [{"role": "system", "content": "<system prompt omitted>"}, {"role": "user", "content": [{"type": "text", "text": "go"}]}, {"role": "user", "content": [{"type": "text", "text": "[WB-AMBIENT]"}]}], "tools": ["read", "bash", "edit", "write", "probe_ask"]}

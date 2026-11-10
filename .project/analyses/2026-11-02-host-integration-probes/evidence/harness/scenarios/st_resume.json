@@ -1,6 +1,0 @@
-[[0.5,{"id":"b1","type":"prompt","message":"/probe-branch"}],
- [0.5,{"id":"p4","type":"prompt","message":"fourth"}],
- [1.5,{"id":"t1","type":"prompt","message":"/probe-tree-first"}],
- [1,{"id":"b2","type":"prompt","message":"/probe-branch"}],
- [0.5,{"id":"p5","type":"prompt","message":"fifth"}],
- [2,{"id":"m","type":"get_messages"}]]

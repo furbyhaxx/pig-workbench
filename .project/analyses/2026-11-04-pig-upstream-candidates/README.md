@@ -20,7 +20,7 @@ document:
 
 A consolidation, not a new probe run. Sources:
 
-- Analyses: [host integration probes](../2026-11-02-host-integration-probes/README.md) (P1–P30), [secrets probes](../2026-11-03-secrets-host-probes/README.md) (S1–S6), [system prompt probes](../2026-11-03-system-prompt-host-probes/README.md) (PR1–PR8), [session bucket symlink probe](../2026-11-03-session-bucket-symlink-probe/README.md), [donor parity audit](../2026-11-02-donor-parity-audit/README.md) §4–5.
+- Probe results: host probes P1–P30 (SPEC-0001 §9), secrets probes S1–S6 (SPEC-0013 §9), system prompt probes PR1–PR8 (SPEC-0014 §11), the session bucket symlink probe (SPEC-0012 §3.5) and the donor test audit of 02.11.2026.
 - Specs and plans that record host limits: SPEC-0002/0003/0009/0011/0012/0013/0014, PLAN-0001 D3/D12/D13, PLAN-0004 C4; pig-web's M0.4 input M4.
 - Sessions (one bucket, shared by `~/.pi` and `~/.pig`): design/probe session of 02.–03.11., research import, plan review, Slice 1 implementation, 81 subagent transcripts under `.workbench/agents/`, and 19 stray Pi-Bolt sessions. Excerpts and file names: [`evidence/sources.md`](evidence/sources.md).
 
