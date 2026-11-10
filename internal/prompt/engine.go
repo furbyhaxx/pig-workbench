@@ -160,6 +160,9 @@ func (e *Engine) run(state *renderState, name string, input *exec.Context) (Rend
 	case <-state.ctx.Done():
 		err := state.ctx.Err()
 		state.join()
+		// Loops, ranges and includes check the render state, so evaluation ends at its next step;
+		// waiting for it means an expired render leaves nothing running behind the caller.
+		<-finished
 		return Render{}, fmt.Errorf("render template %q: %w", name, err)
 	case outcome := <-finished:
 		expired := state.ctx.Err()

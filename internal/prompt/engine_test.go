@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -370,4 +371,18 @@ func TestConcurrentRenders(t *testing.T) {
 		})
 	}
 	wg.Wait()
+}
+
+func TestExpiredRenderHasJoinedItsEvaluation(t *testing.T) {
+	loader := memoryLoader{"endless": `{% for i in range(1000000000) %}{{ i }}{% endfor %}`}
+	engine := newTestEngine(t, loader, Options{Deadline: 20 * time.Millisecond, MaxOutputBytes: 1 << 20})
+	before := runtime.NumGoroutine()
+	for range 20 {
+		if _, err := engine.Render(context.Background(), "endless", Data{}); !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("render error %v, want deadline exceeded", err)
+		}
+		if after := runtime.NumGoroutine(); after > before {
+			t.Fatalf("%d goroutines after an expired render, %d before: evaluation is still running", after, before)
+		}
+	}
 }
