@@ -145,6 +145,9 @@ func (a *app) toolInstructions(ctx sdk.Context, data map[string]any) (any, error
 	}
 	input, _ := data["input"].(map[string]any)
 	paths := readCallTargets(input)
+	if dir, ok := input["cwd"].(string); ok && dir != "" && data["toolName"] == "bash" {
+		paths = append(paths, dir)
+	}
 	if patch, ok := input["hashline"].(string); ok && patch != "" {
 		if document, err := hashline.Parse(patch); err == nil && len(document.Sections) <= 32 {
 			for _, section := range document.Sections {

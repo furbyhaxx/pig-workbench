@@ -152,22 +152,17 @@ func jobFile(s *session, id, name string) ([]byte, error) {
 	s.jobMeta.mu.Unlock()
 	switch name {
 	case "status":
-		label := "running"
-		if !state.Running {
-			label = "exited"
-		}
-		if state.Cancelled {
-			label = "cancelled"
-		}
-		if meta.TimedOut {
-			label = "timedOut"
-		}
+		label := jobLabel(state, meta)
 		code := ""
 		if state.Exit != nil {
 			code = fmt.Sprintf(" exit=%d", state.Exit.Code)
 		}
 		runtime := time.Since(meta.Started).Truncate(time.Second)
-		return []byte(fmt.Sprintf("id: %s\nstate: %s%s\nruntime: %s\nerror: %s\n", id, label, code, runtime, state.Error)), nil
+		title := ""
+		if meta.Title != "" {
+			title = "title: " + meta.Title + "\n"
+		}
+		return []byte(fmt.Sprintf("id: %s\n%sstate: %s%s\nruntime: %s\nerror: %s\n", id, title, label, code, runtime, state.Error)), nil
 	case "cmdline":
 		return []byte(meta.Command + "\n"), nil
 	case "cwd":
@@ -242,11 +237,7 @@ func jobCatalog(s *session) string {
 		s.jobMeta.mu.Lock()
 		meta := s.jobMeta.values[state.ID]
 		s.jobMeta.mu.Unlock()
-		label := "running"
-		if !state.Running {
-			label = "exited"
-		}
-		_, _ = fmt.Fprintf(&b, "%s\t%s\t%s\n", state.ID, label, meta.Command)
+		_, _ = fmt.Fprintf(&b, "%s\t%s\t%s\n", state.ID, jobLabel(state, meta), meta.describe())
 	}
 	return b.String()
 }

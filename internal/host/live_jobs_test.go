@@ -509,3 +509,68 @@ func TestLiveJobsListReportsTypedRowsAndTheOmittedCount(t *testing.T) {
 		t.Errorf("running row must carry no exit facts: %+v", live)
 	}
 }
+
+// TestLiveBashCwdRunsThereOnceAndTitleNamesTheJob pins the SPEC-0008 §5 data parameters: cwd runs
+// one command in another directory and leaves the location alone, and title shows in job rows.
+func TestLiveBashCwdRunsThereOnceAndTitleNamesTheJob(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "file.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	resolved, _ := filepath.EvalSymlinks(root)
+	results := runScripted(t, root, "bash,jobs",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "pwd", "cwd": "sub", "title": "where am I"}}
+		},
+		func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": "pwd"}} },
+		func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "list"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "pwd", "cwd": "file.txt"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "pwd", "cwd": "job://"}}
+		},
+	)
+	if !strings.Contains(results[0], filepath.Join(resolved, "sub")+"\n") {
+		t.Errorf("cwd did not run the command there: %q", results[0])
+	}
+	if !strings.Contains(results[1], resolved+"\n") {
+		t.Errorf("the override changed the location: %q", results[1])
+	}
+	if !strings.Contains(results[2], `"title":"where am I"`) || !strings.Contains(results[2], `"cwd":"`+filepath.Join(resolved, "sub")+`"`) {
+		t.Errorf("the job row lacks its title or directory: %s", results[2])
+	}
+	if !strings.Contains(results[3], "not a directory") || !strings.Contains(results[4], "local directory") {
+		t.Errorf("a file or a scheme must be refused as cwd: %q / %q", results[3], results[4])
+	}
+}
+
+// TestLiveBashCwdLoadsThatDirectorysInstructions pins that a cwd override is a touched path: the
+// directory's AGENTS.md reaches the model with that call.
+func TestLiveBashCwdLoadsThatDirectorysInstructions(t *testing.T) {
+	root := t.TempDir()
+	for _, dir := range []string{".git", "pkg"} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, "pkg", "AGENTS.md"), []byte("PKG-CWD-RULE applies here.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, requests := runScriptedRequests(t, root, "bash", "", nil,
+		func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": "true"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "true", "cwd": "pkg"}}
+		},
+		func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": "true"}} },
+	)
+	if strings.Contains(requests[1], "PKG-CWD-RULE") {
+		t.Fatal("the nested rule arrived before anything touched pkg")
+	}
+	if !strings.Contains(requests[len(requests)-1], "PKG-CWD-RULE") {
+		t.Fatal("running a command in pkg did not deliver pkg/AGENTS.md")
+	}
+}

@@ -230,8 +230,14 @@ func grepFacts(args map[string]any, root string, width int) []string {
 
 func bashFacts(args map[string]any, _ string, _ int) []string {
 	facts := []string{}
+	if title := stringArg(args, "title"); title != "" {
+		facts = append(facts, oneLine(title, 80))
+	}
 	if command := stringArg(args, "command"); command != "" {
 		facts = append(facts, oneLine(command, 100))
+	}
+	if cwd := stringArg(args, "cwd"); cwd != "" {
+		facts = append(facts, "in "+oneLine(cwd, 60))
 	}
 	if background, _ := args["background"].(bool); background {
 		facts = append(facts, "background")

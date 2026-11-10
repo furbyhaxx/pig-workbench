@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -14,9 +15,11 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/jobs"
+	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
 type jobMetadata struct {
+	Title            string
 	Command, Cwd     string
 	LocationRevision uint64
 	Started          time.Time
@@ -26,13 +29,22 @@ type jobMetadata struct {
 	Waiters  int
 	Observed bool
 }
+
+// describe names the job for people: its title when it has one, with the command behind it.
+func (m jobMetadata) describe() string {
+	if m.Title == "" {
+		return m.Command
+	}
+	return m.Title + ": " + m.Command
+}
+
 type jobMetadataStore struct {
 	mu     sync.Mutex
 	values map[string]jobMetadata
 }
 
 func (a *app) registerJobs(ext *sdk.Extension) {
-	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay. timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap. Scheme paths work as file arguments: a standalone ls, cat, rm, mkdir, mv, cp or `word > path` acts on the resource itself, and other commands read a copy (for example `cat job://<id>/log | wc -l`); writes need a standalone form.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}}}, Execute: a.bash})
+	ext.RegisterTool(sdk.ToolDefinition{Name: "bash", Label: "bash", Description: "Run a local shell command in the captured Workbench location. Defaults: foreground, 120-second hard deadline, stdin closed. cwd runs this one command in another directory without changing the location; title names the job in listings. background returns a job ID immediately; yield_seconds promotes a still-running command after that delay. timeout_seconds=0 disables the deadline. interactive keeps stdin open for jobs write/eof. Cancellation terminates the owned process group. Output is bounded and reports its byte cursor and any eviction gap. Scheme paths work as file arguments: a standalone ls, cat, rm, mkdir, mv, cp or `word > path` acts on the resource itself, and other commands read a copy (for example `cat job://<id>/log | wc -l`); writes need a standalone form.", PromptSnippet: "Run shell commands with owned background jobs and bounded output.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"command"}, "properties": map[string]any{"command": map[string]any{"type": "string", "minLength": 1}, "background": map[string]any{"type": "boolean"}, "interactive": map[string]any{"type": "boolean"}, "yield_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 600}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 86400}, "title": map[string]any{"type": "string", "maxLength": 80, "description": "Short one-line name shown in job listings."}, "cwd": map[string]any{"type": "string", "description": "Directory for this command only; absolute or relative to the Workbench location."}}}, Execute: a.bash})
 	ext.RegisterTool(sdk.ToolDefinition{Name: "jobs", Label: "jobs", Description: "Inspect or control a session-owned shell job. action=list needs no id; status/output/wait/kill/write/eof require id. output uses a monotonic byte cursor; evicted bytes are reported. wait returns at exit by default; until=output returns when new bytes pass the cursor. wait is cancellable without killing a background job. kill terminates its process group; signal=INT|HUP|QUIT sends that signal instead and reports the observed state. stream=stdout|stderr reads one stream; its cursor counts only that stream's bytes. write sends exact text and eof closes stdin.", PromptSnippet: "Inspect, await, stop or send input to owned jobs.", Parameters: sdk.Schema{"type": "object", "additionalProperties": false, "required": []string{"action"}, "properties": map[string]any{"action": map[string]any{"type": "string", "enum": []string{"list", "status", "output", "wait", "kill", "write", "eof"}}, "id": map[string]any{"type": "string"}, "text": map[string]any{"type": "string"}, "cursor": map[string]any{"type": "integer", "minimum": 0}, "timeout_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": 3600}, "until": map[string]any{"type": "string", "enum": []string{"exit", "output"}}, "stream": map[string]any{"type": "string", "enum": []string{"combined", "stdout", "stderr"}}, "signal": map[string]any{"type": "string", "enum": []string{"TERM", "INT", "HUP", "QUIT", "KILL"}}}}, Execute: a.jobsTool})
 }
 
@@ -42,12 +54,17 @@ type bashParams struct {
 	Interactive bool     `json:"interactive"`
 	Yield       float64  `json:"yield_seconds"`
 	Timeout     *float64 `json:"timeout_seconds"`
+	Title       string   `json:"title"`
+	Cwd         string   `json:"cwd"`
 }
 
 func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	var input bashParams
 	if err := decode(params, &input); err != nil {
 		return nil, err
+	}
+	if len(input.Title) > 80 || strings.ContainsAny(input.Title, "\r\n") {
+		return nil, errors.New("title is one line of at most 80 characters")
 	}
 	if strings.TrimSpace(input.Command) == "" || input.Yield < 0 || input.Yield > 600 || input.Timeout != nil && (*input.Timeout < 0 || *input.Timeout > 86400) {
 		return nil, errors.New("invalid command or timeout")
@@ -62,6 +79,12 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		return nil, err
 	}
 	defer done()
+	if input.Cwd != "" {
+		// The override runs this one command elsewhere; the session location is untouched.
+		if location.Cwd, err = commandDir(location.Cwd, input.Cwd); err != nil {
+			return nil, err
+		}
+	}
 	work = withCapturedLocation(work, location)
 	configuration, err := s.settings.Current()
 	if err != nil {
@@ -107,7 +130,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 			delete(s.jobMeta.values, old)
 		}
 	}
-	s.jobMeta.values[id] = jobMetadata{Command: input.Command, Cwd: location.Cwd, LocationRevision: location.Revision, Started: time.Now()}
+	s.jobMeta.values[id] = jobMetadata{Title: input.Title, Command: input.Command, Cwd: location.Cwd, LocationRevision: location.Revision, Started: time.Now()}
 	s.jobMeta.mu.Unlock()
 	if timeout > 0 {
 		err := s.supervisor.Start(func(lifetime context.Context) {
@@ -401,7 +424,7 @@ type jobList struct {
 }
 
 func newJobFacts(state jobs.JobState, metadata jobMetadata) jobFacts {
-	facts := jobFacts{ID: state.ID, Command: metadata.Command, Cwd: metadata.Cwd, State: jobLabel(state, metadata), Running: state.Running, Error: state.Error}
+	facts := jobFacts{ID: state.ID, Title: metadata.Title, Command: metadata.Command, Cwd: metadata.Cwd, State: jobLabel(state, metadata), Running: state.Running, Error: state.Error}
 	if !metadata.Started.IsZero() {
 		facts.StartedAt = metadata.Started.Format(time.RFC3339)
 	}
@@ -415,6 +438,25 @@ func newJobFacts(state jobs.JobState, metadata jobMetadata) jobFacts {
 		}
 	}
 	return facts
+}
+
+// commandDir resolves a bash cwd override against base to an existing local directory.
+func commandDir(base, name string) (string, error) {
+	target, err := resource.ParsePath(base, name, "")
+	if err != nil {
+		return "", err
+	}
+	if target.Scheme != "file" {
+		return "", fmt.Errorf("cwd must be a local directory, not a %s:// resource", target.Scheme)
+	}
+	dir, err := filepath.EvalSymlinks(target.Path)
+	if err != nil {
+		return "", fmt.Errorf("cwd %s: %w", name, err)
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("cwd %s is not a directory", name)
+	}
+	return dir, nil
 }
 
 func jobLabel(state jobs.JobState, metadata jobMetadata) string {
@@ -443,7 +485,7 @@ func (s *session) jobRows() []jobRow {
 		if state.Exit != nil && !state.Running {
 			label += fmt.Sprintf(" (exit %d)", state.Exit.Code)
 		}
-		rows = append(rows, jobRow{id: state.ID, label: label, command: noticeText(metadata.Command, 0)})
+		rows = append(rows, jobRow{id: state.ID, label: label, command: noticeText(metadata.describe(), 0)})
 	}
 	return rows
 }
