@@ -139,7 +139,7 @@ func TestLiveSessionEndpointSettingsAtStartup(t *testing.T) {
 
 func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 	runtime := shortRuntime(t)
-	receiver := startLiveSession(t, runtime, nil)
+	receiver := startLiveSession(t, runtime, []scriptedCall{{"read", map[string]any{"path": "session://self/messages"}}})
 	records := waitForRecords(t, runtime, 1)
 	var receiverID string
 	var receiverRecord map[string]any
@@ -150,6 +150,7 @@ func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 	sender := startLiveSession(t, runtime, []scriptedCall{
 		{"ls", map[string]any{"path": "agent://"}},
 		{"write", map[string]any{"path": "agent://" + short + "/inbox", "content": "WAKE-TEXT-FROM-A: please look at the parser."}},
+		{"read", map[string]any{"path": "session://self/messages"}},
 	})
 	waitForRecords(t, runtime, 2)
 	sender.fixture.send("go", "prompt", "Talk to the other session.")
@@ -164,8 +165,14 @@ func TestLiveTwoSessionsDiscoverEachOtherAndAnIdleReceiverWakes(t *testing.T) {
 		t.Fatalf("the sender must see the synchronous receipt with the wake disposition: %.1500s", lastSender)
 	}
 	listing := sender.requests()[1]
-	if !strings.Contains(listing, short) {
-		t.Fatalf("ls agent:// must list the other live session: %v", toolResults(t, listing))
+	if !strings.Contains(listing, short) || !strings.Contains(listing, "  idle") {
+		t.Fatalf("ls agent:// must list the other live session with its state: %v", toolResults(t, listing))
+	}
+	if sent := waitForRequest(t, sender, " to "+short); !strings.Contains(sent, "WAKE-TEXT-FROM-A") {
+		t.Fatalf("session://self/messages lacks the sent message: %v", toolResults(t, sent))
+	}
+	if got := waitForRequest(t, receiver, " from "); !strings.Contains(got, "WAKE-TEXT-FROM-A") {
+		t.Fatalf("session://self/messages lacks the received message: %v", toolResults(t, got))
 	}
 
 	token, _ := receiverRecord["token"].(string)

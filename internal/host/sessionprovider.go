@@ -48,7 +48,7 @@ func splitSession(uri string) ([]string, error) {
 	return parts, nil
 }
 
-var sessionFiles = []string{"meta", "transcript", "entries", "title", "system-prompt"}
+var sessionFiles = []string{"meta", "transcript", "entries", "title", "system-prompt", "messages"}
 var storedSessionFiles = []string{"meta", "transcript", "entries", "title"}
 
 // sessionTarget is a parsed session:// URI: the session it names and the file below it.
@@ -360,6 +360,13 @@ func (p sessionProvider) render(ctx context.Context, session sdk.Context, name s
 			return []byte("\n"), nil
 		}
 		return []byte(*title + "\n"), nil
+	case "messages":
+		s, ok := p.source()
+		if !ok || s.endpoint == nil {
+			return nil, errors.New("session messaging is unavailable in this session")
+		}
+		text, err := s.endpoint.messagesText(ctx, "self")
+		return []byte(text), err
 	case "system-prompt":
 		s, ok := p.source()
 		if !ok {

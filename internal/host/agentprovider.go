@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
 	"github.com/furbyhaxx/pig-workbench/internal/messaging"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
@@ -96,14 +98,24 @@ func (p agentProvider) List(ctx context.Context, uri, cursor string, limit int) 
 	}
 	e.mu.Lock()
 	own := e.record.ProjectID
+	trust := make(map[string]string, len(records))
+	for _, record := range records {
+		switch {
+		case e.blocked[record.SessionID]:
+			trust[record.SessionID] = "blocked"
+		case e.trusted[record.SessionID]:
+			trust[record.SessionID] = "trusted"
+		}
+	}
 	e.mu.Unlock()
+	now := time.Now()
 	entries := []resource.Entry{{Name: "self", URI: "agent://self/", Kind: resource.EntryDir}}
 	for _, record := range records {
 		if own != "" && record.ProjectID != own {
 			continue
 		}
 		name := shortID(record.SessionID)
-		entries = append(entries, resource.Entry{Name: name, URI: "agent://" + name + "/", Kind: resource.EntryDir, Detail: fmt.Sprintf("%s  %s  %s  %s", record.SessionName, record.ProjectSlug, record.State, record.Cwd)})
+		entries = append(entries, resource.Entry{Name: name, URI: "agent://" + name + "/", Kind: resource.EntryDir, Detail: agentColumns(record, trust[record.SessionID], now)})
 	}
 	sort.SliceStable(entries[1:], func(i, j int) bool { return entries[1+i].Name < entries[1+j].Name })
 	return resource.PageEntries(entries, cursor, limit)
@@ -290,4 +302,15 @@ func receiptText(target string, receipt messaging.Receipt) string {
 		return "rejected by " + target + ": " + receipt.Reason
 	}
 	return fmt.Sprintf("accepted by %s (%s); message %s, conversation %s", target, receipt.Delivery, shortID(receipt.MessageID), shortID(receipt.ConversationID))
+}
+
+// agentColumns renders one peer row: title, project, cwd, state with idle time, model and trust state.
+// A fact the peer did not publish is left out, never guessed.
+func agentColumns(record endpoint.Record, trust string, now time.Time) string {
+	state := record.State
+	if state == "idle" && !record.StateSince.IsZero() && now.After(record.StateSince) {
+		state += " " + now.Sub(record.StateSince).Round(time.Second).String()
+	}
+	columns := []string{record.SessionName, record.ProjectSlug, record.Cwd, state, record.Model, trust}
+	return strings.Join(slices.DeleteFunc(columns, func(column string) bool { return column == "" }), "  ")
 }

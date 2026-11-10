@@ -3,6 +3,7 @@ package host
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/endpoint"
@@ -69,5 +70,15 @@ func TestSessionMessageSettingsAffectDelivery(t *testing.T) {
 	set("sessions.wake-budget", int64(1))
 	if !e.wakeAllowed(env, true, 8) || e.wakeAllowed(env, true, 8) {
 		t.Fatal("wake budget did not admit exactly one wake")
+	}
+}
+func TestAgentColumnsShowIdleTimeModelAndTrustAndOmitUnknownFacts(t *testing.T) {
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	full := endpoint.Record{SessionName: "parser", ProjectSlug: "wb", Cwd: "/w", State: "idle", StateSince: now.Add(-90 * time.Second), Model: "p/m"}
+	if got := agentColumns(full, "trusted", now); got != "parser  wb  /w  idle 1m30s  p/m  trusted" {
+		t.Fatalf("columns = %q", got)
+	}
+	if got := agentColumns(endpoint.Record{Cwd: "/w", State: "busy", StateSince: now.Add(-time.Minute)}, "", now); got != "/w  busy" {
+		t.Fatalf("columns = %q", got)
 	}
 }

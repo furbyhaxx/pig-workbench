@@ -29,6 +29,8 @@ Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 li
 
 Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.
 
+`ls agent://` shows each live session's title, project, cwd, state with idle time, model and trusted/blocked state; `session://self/messages` lists the inter-session messages this session sent and received.
+
 Every scheme, builtin or contributed, has a guide page at `docs://workbench/schemes/<scheme>`; `ls docs://workbench/schemes/` lists them. An empty container lists as `(empty)`.
 
 Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill://`, `job://`, a registered provider's directory) returns the same paged listing view a local directory does; a provider only needs to implement listing.

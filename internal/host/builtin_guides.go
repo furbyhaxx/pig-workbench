@@ -56,7 +56,7 @@ Workbench settings and status as JSON, read only.
 Sessions as trees.
 
 - ` + "`session://self/`" + ` is this session; ` + "`session://by-id/`" + ` lists stored sessions; ` + "`session://<id>/`" + ` addresses one.
-- Files: ` + "`meta`, `transcript`, `entries`, `title`, `system-prompt`" + `.
+- Files: ` + "`meta`, `transcript`, `entries`, `title`" + `; this session also has ` + "`system-prompt`" + ` and ` + "`messages`" + ` (inter-session messages, both directions).
 - ` + "`session://self/frames/`" + ` holds frame receipts; ` + "`session://self/instructions/`" + ` the delivered instruction files.
 - Writes: ` + "`title`" + ` sets the session title; ` + "`self/instructions/ctl`" + ` accepts ` + "`pin <path> [--class <id>]`" + ` and ` + "`unpin <path>`" + `.
 `,
@@ -80,7 +80,7 @@ Skills available to this session.
 
 Live sessions of this user on this machine.
 
-- ` + "`ls agent://`" + ` lists reachable sessions; ` + "`agent://self`" + ` is this one.
+- ` + "`ls agent://`" + ` lists reachable sessions with title, project, cwd, state and idle time, model and trusted/blocked; ` + "`agent://self`" + ` is this one.
 - ` + "`agent://<id>/status`" + ` and ` + "`agent://<id>/messages`" + ` are readable; ` + "`agent://self/inbox`" + ` shows received messages.
 - ` + "`write agent://<id>/inbox`" + ` sends a message. It can wake an idle session, so send only what the receiver should act on.
 `,
