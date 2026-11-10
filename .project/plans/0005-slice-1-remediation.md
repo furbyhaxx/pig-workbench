@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T09:40:00+01:00"
+  updated_at: "2026-11-10T10:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "User asked for a plan and task list after reviewing REV-2026-11-10-slice-1"
-      changes: ["Thirteen work areas with current state, change, tests and exit", "Recorded the user decisions of 10.11.2026 on C1, H4b, H4c, H5, M6, M9 and T3"]
+    - revision: 2
+      reason: "User decided the open points of revision 1"
+      changes: ["Unwired settings are hidden, not shown as planned", "Skills are delivered only as frames, with availability diffs", "operation.status stays reserved", ".project rules move to the dot-project standard"]
 ---
 
 # 1. Outcome
@@ -38,21 +38,20 @@ User decisions of 10.11.2026:
 | Topic | Decision |
 |---|---|
 | C1 | Fix the false refusals **and** make scheme paths usable in shell commands, including the `!` editor command |
-| H4b | Wire the inert settings now; do not hide them |
-| H4c | Delete unused code only where it is unneeded; wire it where it is needed |
+| H4b | Wire every setting whose feature exists. A setting without a consumer is not shown anywhere |
+| H4c | The four unused items are superseded by wired code and are deleted |
+| H5 | Skills are delivered **only as a frame**. A later change of availability emits a frame with only the difference: available now, no longer available |
+| M6 | `operation.status` stays a reserved name in SPEC-0001 until the first deferred operation exists |
 | M9 | Changing the `jobs` result envelope is approved |
 | T3 | Move the ten own tools onto the SPEC-0003 presentation path now |
+| Layouts | Frame rows, panel actions and the activity line each get a design with captures for review before implementation |
+| PLAN-0003 | `session://<id>/tree` and `messages` for stored sessions and `/workbench jobs monitor\|write` move there by revision |
+| `.project` rules | `.project/AGENTS.md` follows the `dot-project` standard: consumed artifacts are deleted with commit trailers, one changelog entry per file |
 
-Findings answered during planning:
+Background for two of them:
 
-- **H4c.** All four unused items are superseded, not missing wiring: `jobCatalog` by the paged `jobProvider.List`, `managerLogWriter` by `streamWriter`, `fetchRouter.list` and `statusBoard.list` by the contribution registry that `/workbench integrations` reads. They are deleted.
-- **H5.** Skills reach the model as a static `<skills>` section of the system prompt (`skills.listing = "prompt"`, the default) or inside the `session.capabilities` frame (`"frame"`). The template lists two groups: Workbench's own catalog with `skill://<name>` locations, and `host.skills` with file paths and "use the read tool". Only the first group has load state. The host list arrives in `before_agent_start` options, so no new host seam is needed: area F merges it into the catalog.
-- **M6.** No Workbench service admits deferred work today; every method answers within its request, and frames and snapshots have their own status methods. `operation.status` would have nothing to report. It stays a reserved name in SPEC-0001 until the first deferred operation exists. This is the one item not implemented; the user can overrule it.
-
-Open for the user:
-
-- Settings whose feature does not exist yet (`coordinator.*`, `tldr.*`, `answer.*`, `statusline.*`, `locations.*`, `read.query.*`, `ask.history.*`, `sessions.broadcast`, `edit.model-repair.enabled`, `docs.source-*`, `instructions.watch.remote`) cannot be wired. Area E marks them `planned` and shows them read-only with the slice that delivers them. Say so if they should be removed from the catalog instead.
-- `.project/AGENTS.md` archives superseded artifacts; the `dot-project` skill deletes them. Area M follows the project rule until decided.
+- **H4c.** `jobCatalog` is superseded by the paged `jobProvider.List`, `managerLogWriter` by `streamWriter`, `fetchRouter.list` and `statusBoard.list` by the contribution registry that `/workbench integrations` reads.
+- **H5.** Today the listing is a static `<skills>` section of the system prompt, or part of the `session.capabilities` frame when `skills.listing = "frame"`. The template lists Workbench's own catalog with `skill://<name>` locations and, separately, `host.skills` by file path without load state. The host list arrives in `before_agent_start` options, so no new host seam is needed.
 
 # 3. Do not
 
@@ -108,17 +107,25 @@ Tests: listings with 50 sessions, 50 peers and 50 skills page correctly.
 
 ## E. Settings
 
-Current: 65 of 100 catalog keys have `Application = "unavailable"` (`internal/config/catalog.go`).
+Current: 65 of 100 catalog keys have `Application = "unavailable"` (`internal/config/catalog.go`). They validate, save and are shown.
 
-Change: classify all 65 in a table in this plan (wired here, already consumed but mislabelled, feature not built). Wire each key whose feature exists, in the area that owns it; the groups not owned elsewhere (`read.*`, `edit.snapshot.*`, `guides.*`, `storage.*`, `projects.*`, `context.timezone`, `prompt.template`, `secrets.env-injection`, `activity.*`) are wired here. Keys of unbuilt features get `Application = "planned"` and are read-only in the panel with their slice. A test fails when a key is neither consumed nor `planned`.
+Change: classify all 65 in a table in this plan (wired here, already consumed but mislabelled, feature not built). Wire each key whose feature exists, in the area that owns it; the groups not owned elsewhere (`read.*`, `edit.snapshot.*`, `guides.*`, `storage.*`, `projects.*`, `context.timezone`, `prompt.template`, `secrets.env-injection`, `activity.*`) are wired here. A key whose feature is not built is **not shown**: absent from the settings panel, `/workbench settings catalog`, `cfg://` and the docs. A value for such a key in an existing `Workbench.toml` is preserved on save and ignored, as for any unknown key. A test fails when a shown key has no consumer.
 
 ## F. Skills
 
-Current: the catalog reads `<cwd>/.agents/skills` and `<cwd>/.pig/skills`; host skills are listed by file path without load state.
+Current: the catalog reads `<cwd>/.agents/skills` and `<cwd>/.pig/skills`; host skills are listed in the system prompt by file path without load state.
 
-Change: retain the host skill list from `before_agent_start`, merge it into the catalog by name (Workbench frontmatter reading on each `SKILL.md`), list every model-invocable skill as `skill://<name>`, and drop the second template loop. Wire `skills.listing-budget` and `skills.conditions`. Add `/workbench skills ls|load|unload`. Re-run the abandoned verification of conditions, nested skills and replay after compaction.
+Change:
 
-Tests: a user-level skill is listed as `skill://`, loads, unloads and replays after compaction; the listing budget ladder holds with 40 skills.
+1. **One catalog.** Retain the host skill list from `before_agent_start`, merge it by name with Workbench's frontmatter reading of each `SKILL.md`, and address every model-invocable skill as `skill://<name>`.
+2. **Frame only.** The `<skills>` block leaves the system prompt template. The listing is delivered as its own frame, source `session.skills`, within `skills.listing-budget`. The setting `skills.listing` is removed.
+3. **Diff frames.** When availability changes (a `when` condition starts or stops holding, a parent load reveals sub-skills, an unload withdraws them, a skill appears or disappears on disk), a frame carries only the difference: the entries available now and the names no longer available. No change, no frame.
+4. **After compaction** the full listing is delivered again, then diffs resume.
+5. SPEC-0014 §8.1 and §8.5 are revised; the prompt template loses its skills section in §7.
+
+Also: wire `skills.conditions`, add `/workbench skills ls|load|unload`, and re-run the abandoned verification of conditions, nested skills and replay after compaction.
+
+Tests: the rendered system prompt contains no skill listing; a user-level skill is listed in the frame as `skill://`, loads, unloads and replays; touching a file that satisfies a `when` emits one diff frame with that skill only; the budget ladder holds with 40 skills.
 
 ## G. Jobs and bash
 
@@ -154,14 +161,16 @@ Change: `syncDirectory`, `nonblockFlag`, atomic write and lock-file helpers live
 
 ## M. Documentation and artifacts
 
-Change: generate the settings reference in `docs/configuration.md` from the catalog; update README limitations, `docs/tools.md` and `docs/extension-services.md`; add `internal/modelknowledge/AGENTS.md` and complete `internal/AGENTS.md`; fix stale Progress text in PLAN-0001, PLAN-0002 and SPEC-0002 §1; record the stricter relocation rule in SPEC-0005; create `BACKLOG.md` and the backlog directory for anything left open; revise PLAN-0003 for the rows moved there.
+Change: generate the settings reference in `docs/configuration.md` from the shown catalog keys; update README limitations, `docs/tools.md` and `docs/extension-services.md`; add `internal/modelknowledge/AGENTS.md` and complete `internal/AGENTS.md`; fix stale Progress text in PLAN-0001, PLAN-0002 and SPEC-0002 §1; record the stricter relocation rule in SPEC-0005; revise PLAN-0003 for the rows moved there.
+
+`.project` moves to the `dot-project` standard: its `AGENTS.md` is already updated; the remaining migration is one changelog entry per artifact, the artifact check in `just check`, deletion of consumed handoffs and analyses with trailers, and `BACKLOG.md` with item files for anything left open.
 
 ## N. Exit
 
 1. `just check`, `just race` and `just integration` pass with the documented `TMPDIR`.
 2. The inventory is re-run at the fix commit, with the realistic-size cases added by this plan.
 3. PLAN-0002 §5 items 2 and 6 are done: progress table with test links, handoff to pig-web naming the exit commit.
-4. The review is handled by the superseding rule of `.project/AGENTS.md`.
+4. The review is deleted with `Artifact-Deleted` trailers once every finding is fixed or carried by a backlog item.
 
 # 5. Verification
 

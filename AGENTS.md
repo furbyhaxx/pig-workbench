@@ -8,7 +8,7 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 - `internal/` — feature packages; each gets its own AGENTS.md when created. `internal/host/` owns SDK adapters and composition.
 - `docs/` — human-facing product documentation; settings changes cross-update `docs/configuration.md`.
 - `api/` — public v1 protocol types; keep wire changes aligned with `.project/specs/0001-extension-services.md` and consumer fixtures.
-- `.project/` — development artifacts; never in `docs/`; committed. Load skill `dot-project` before writing one. Every Markdown artifact needs `document:` frontmatter (`.project/AGENTS.md`). Open work: `BACKLOG.md` pointers + `.project/backlog/`; live claims: project-scope `tasks`. Never put drift/TODOs in AGENTS.md.
+- `.project/` — development artifacts; never in `docs/`; committed. Load skill `dot-project` before writing, revising or deleting one. Only what currently applies or is planned stays; superseded artifacts are deleted with `Artifact-*` commit trailers, never archived. Do not read deleted artifacts from git history unless asked. Every Markdown artifact needs `document:` frontmatter (`.project/AGENTS.md`). Open work: `BACKLOG.md` pointers + `.project/backlog/`; live claims: project-scope `tasks`. Never put drift/TODOs in AGENTS.md.
 - `.tmp/` — generated modfile for direct `go` commands; git-ignored.
 
 ## Commands
