@@ -44,9 +44,6 @@ func (a *app) framesCommand(ctx sdk.Context, args string) error {
 	if err != nil {
 		return err
 	}
-	if verb == "list" {
-		verb = "ls"
-	}
 	switch verb {
 	case "", "ls":
 		if target != "" {

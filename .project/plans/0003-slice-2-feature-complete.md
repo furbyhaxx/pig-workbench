@@ -5,15 +5,15 @@ document:
   title: "Slice 2: full depth, every feature usable by agents"
   description: "Depth on the Slice 1 foundation: format adapters, remaining schemes, SSH, worktrees, PTY, donor-parity heuristics, project conventions, remaining instruction, interaction and messaging flows, with plain UI"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-10T17:05:00+01:00"
+  updated_at: "2026-11-11T00:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 8
-      reason: "User decision 10.11.2026: out:// had no producer and leaves Slice 1; it returns in Slice 2 with one"
-      changes: ["W4 owns out:// together with its producer"]
+    - revision: 9
+      reason: "Slice 1 remediation moved two command verbs here"
+      changes: ["W6 owns /workbench jobs monitor and jobs write"]
 ---
 
 # 1. Outcome
@@ -74,7 +74,7 @@ Remote instruction checks by on-turn stat/hash, external project notification in
 
 ## W6. Interaction and messaging depth (SPEC-0009 §4, §6–§7, §9; SPEC-0011 §9; WB-15/16/17/20)
 
-`ask_user` remote bridge, replay and answer history (D9.c); `/answer`, `/answer:again`, `/ask:replay`, `/ask-settings`; `/tldr` checkpoints; codemode call trees and replay; broadcast; the opt-in coordinator with `/workbench coordinator on|off` as the only way to grant it; titles of other live sessions under the `lifecycle` grant; `--list-tools` in TUI and RPC.
+`ask_user` remote bridge, replay and answer history (D9.c); `/answer`, `/answer:again`, `/ask:replay`, `/ask-settings`; `/tldr` checkpoints; codemode call trees and replay; broadcast; the opt-in coordinator with `/workbench coordinator on|off` as the only way to grant it; titles of other live sessions under the `lifecycle` grant; `--list-tools` in TUI and RPC; `/workbench jobs monitor` (a live view of one job) and `/workbench jobs write <id> <text>` (stdin from the command line; the `jobs` tool already writes).
 
 **Exit:** SPEC-0009 §10 and SPEC-0011 §10 remaining rows; ask submit/reject/cancel over the bridge; coordinator enabled only by user command, each class `policyDenied` until granted.
 

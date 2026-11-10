@@ -92,10 +92,12 @@ type app struct {
 	// forcePanels > 0 while a hub entry runs, so every result shows in a panel instead of a vanishing toast.
 	forcePanels atomic.Int32
 	hubTitle    atomic.Value
-	mu          sync.RWMutex
-	session     *session
-	initErr     error
-	syntax      *syntax.Service
+	// toolNames holds the tool names last seen, for /tools completions (a completion has no host context).
+	toolNames atomic.Value
+	mu        sync.RWMutex
+	session   *session
+	initErr   error
+	syntax    *syntax.Service
 	// shortcutKey is the activity shortcut registered at load; it changes only on the next load.
 	shortcutKey, shortcutNote string
 }

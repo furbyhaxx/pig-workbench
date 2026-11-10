@@ -11,6 +11,7 @@ import (
 func (a *app) hubItems(ctx sdk.Context, s *session) []hubItem {
 	tools := "Inspect tool schemas, owners and exposure"
 	if all, err := ctx.GetAllTools(); err == nil {
+		a.rememberTools(all)
 		tools = fmt.Sprintf("%d registered · inspect schemas, owners and exposure", len(all))
 	}
 	jobs := "Inspect, wait for and stop shell jobs"

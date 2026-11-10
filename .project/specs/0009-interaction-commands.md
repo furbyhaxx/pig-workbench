@@ -5,15 +5,15 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "published"
-  revision: 15
+  revision: 16
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:29:33+01:00"
+  updated_at: "2026-11-11T00:40:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 15
-      reason: "activity.replace-working-indicator is not a shown setting yet"
-      changes: ["§9: the setting joins the catalog with a verified state item"]
+    - revision: 16
+      reason: "Command routes follow the implementation: one alias table, short unknown-verb answer, prompt and tools verbs, companion completions"
+      changes: ["§8: jobs, prompt and tools rows, alias and completion rules; jobs monitor and write move to PLAN-0003 W6"]
 ---
 
 # 1. Scope and sources
@@ -135,12 +135,12 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /tools, /workbench tools [name] [--format text|json|markdown] | Searchable actual registry; full schema detail or formatted dump |
 | --list-tools | Print registry without starting inference, deterministic format; explicit format selection via associated flag. **Blocked on host:** the flag is parsed and `ctx.Shutdown()` in `session_start` prevents inference, but print/JSON mode has no channel for extension output (P27). Ship once the host provides one; until then the flag reports the limitation in TUI/RPC and `/tools` covers interactive use |
 | /workbench preview <compact|normal|full|all> [tool] | Retained/synthetic sample rendering only, no execution |
-| /workbench jobs [list|monitor|kill|write|settings] [id], /wb:jobs | Shared jobs service and policy |
+| /workbench jobs [ls \| <id> status\|output\|kill\|eof], /wb:jobs | Shared jobs service and policy; in the TUI `ls` opens the jobs panel. A live `monitor` view and `write` to stdin from the command line belong to PLAN-0003 W6 (the `jobs` tool already writes) |
 | /cd [path|--branch name|--reset], /wb:cd | Location service; TUI picker or status |
 | /remote [alias[:/path]|off|reload|add|config] | Host/location manager; per-alias show/note/shell/hide/unhide/rename |
 | /workbench frames [ls [id\|#sequence] \| show\|collapse\|hide [source]] | `ls` lists the session's frames, with an id or sequence one frame's provenance and body. `show`, `collapse` and `hide` set the transcript visibility of all context frames or of one source prefix (`frames.display.default-visibility`, `frames.display.sources`, user scope); never deletion from model context |
 | /workbench instructions [ls|pin|unpin|reload|rules] | Applicability reasons, class/pin actions |
-| /workbench prompt [show|render --model <ref> [--tools …]|diff] | Template chain, family, delivery, parity, epoch, sections; preview without sending (SPEC-0014 §10) |
+| /workbench prompt [show \| render [--model <provider>/<id>] [--tools <name,…>] \| diff] | `show`: settings, the prompt in use, epoch, last error and section sizes. `render`: the rendered text for this or another registered model and tool set, never sent. `diff`: the prompt in use against a fresh render (SPEC-0014 §10) |
 | /workbench skills [ls|load|unload] [name] | Catalog with conditions, listed/hidden reason, loaded set, diagnostics (SPEC-0014 §8) |
 | /workbench trust [ls|add|rm] | Workbench source trust rules; distinct from host /trust |
 | /workbench integrations [owner], /workbench resources [scheme] | Read-only contribution/capability inspection |
@@ -149,7 +149,7 @@ Primary /workbench; companion commands delegate to the same handlers. Parse once
 | /workbench statusline | Segment editor (status and activity items: order, pin, hide) and `segments`/`footer` mode switch; footer only by explicit user choice |
 | /workbench sessions [ls|send|trust|untrust|block|unblock|hide|show] | Live sessions and messages (SPEC-0011 §7) |
 
-Aliases list/ls, config/settings, rm/remove are canonicalized only where valid. Completion supplies argument-context choices from cached state; never blocks on remote enumeration. Entity actions revalidate IDs after selection. Commands do not inject model text except their explicitly stated frame/location/answer/checkpoint behaviors.
+Aliases `list`/`ls`, `remove`/`rm` and `config`/`settings` are canonicalized in the verb position only, never inside a path or message argument. An unknown verb answers in one line naming the closest verb. `/cd`, `/wb:cd`, `/tools` and `/wb:jobs` complete directories below the working location, tool names and job ids from one cached or single-directory lookup. Completion supplies argument-context choices from cached state; never blocks on remote enumeration. Entity actions revalidate IDs after selection. Commands do not inject model text except their explicitly stated frame/location/answer/checkpoint behaviors.
 
 Script-relevant state uses tools/resource APIs rather than interactive slash commands: jobs, cd, read `cfg://workbench/status`, `cfg://workbench/integrations/`, `session://self/instructions/`, `session://self/frames/`, `docs://workbench/schemes/`, write `cfg://ctl`, settings and control routes. No UI toast is the sole headless output.
 

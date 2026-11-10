@@ -517,7 +517,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			var rendered string
 			var renderErr error
 			if promptEnabled {
-				if rendered, renderErr = renderPrompt(ctx, s, template, decodePromptOptions(options)); renderErr != nil {
+				if rendered, renderErr = renderPrompt(ctx, s, template, decodePromptOptions(options), nil); renderErr != nil {
 					// The engine's message quotes template source; keep the report short.
 					renderErr = fmt.Errorf("system prompt template %s: %s", template, fitLine(strings.Join(strings.Fields(renderErr.Error()), " "), 400))
 				}

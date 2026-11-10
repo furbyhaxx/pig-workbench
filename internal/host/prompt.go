@@ -127,7 +127,8 @@ const defaultPromptTemplate = "builtin/workbench"
 
 // renderPrompt renders the entry template from the builtin namespace, the user's
 // system-prompts directory and, while the host trusts the project, the project's.
-func renderPrompt(ctx sdk.Context, s *session, template string, options sdk.SystemPromptOptions) (string, error) {
+// A nil model renders for the session's current one.
+func renderPrompt(ctx sdk.Context, s *session, template string, options sdk.SystemPromptOptions, model *prompt.Model) (string, error) {
 	roots := prompt.FileSystemOptions{Builtin: prompt.BuiltinFS()}
 	if agent, err := sdk.AgentDir(); err == nil {
 		roots.UserRoot = filepath.Join(agent, "system-prompts")
@@ -147,7 +148,9 @@ func renderPrompt(ctx sdk.Context, s *session, template string, options sdk.Syst
 		return "", err
 	}
 	data := promptData(s, options)
-	if model, err := ctx.GetModelInfo(); err == nil {
+	if model != nil {
+		data.Model = *model
+	} else if model, err := ctx.GetModelInfo(); err == nil {
 		data.Model = prompt.Model{Provider: model.Provider, ID: model.ID, Name: model.Name, Reasoning: model.Reasoning, ContextWindow: model.ContextWindow, MaxOutput: model.MaxOutputTokens}
 	}
 	rendered, err := engine.Render(context.Background(), template, data)
@@ -212,14 +215,7 @@ func servedPrompt(ctx sdk.Context, s *session) ([]byte, error) {
 	default:
 		fmt.Fprintf(&b, "source: PiG (Workbench does not replace the prompt: prompt.enabled, prompt.delivery or instructions.enabled is off)\nepoch: %s\n", promptEpoch(served))
 	}
-	for _, name := range prompt.RequiredSections {
-		opening, closing := "<"+name+">", "</"+name+">"
-		if start := strings.Index(served, opening); start >= 0 {
-			if end := strings.Index(served[start:], closing); end >= 0 {
-				fmt.Fprintf(&b, "section: %s %d bytes\n", name, end+len(closing))
-			}
-		}
-	}
+	b.WriteString(promptSectionSizes(served))
 	fmt.Fprintf(&b, "bytes: %d\n\n%s\n", len(served), strings.TrimRight(served, "\n"))
 	return []byte(b.String()), nil
 }
@@ -292,4 +288,18 @@ func promptData(s *session, options sdk.SystemPromptOptions) prompt.Data {
 		}
 	}
 	return data
+}
+
+// promptSectionSizes lists each required section found in text with its size.
+func promptSectionSizes(text string) string {
+	var b strings.Builder
+	for _, name := range prompt.RequiredSections {
+		opening, closing := "<"+name+">", "</"+name+">"
+		if start := strings.Index(text, opening); start >= 0 {
+			if end := strings.Index(text[start:], closing); end >= 0 {
+				fmt.Fprintf(&b, "section: %s %d bytes\n", name, end+len(closing))
+			}
+		}
+	}
+	return b.String()
 }

@@ -165,5 +165,5 @@ func (a *app) projectsCommand(ctx sdk.Context, args string) error {
 		a.notify(ctx, text+" The running session keeps writing to its file; PiG lists it again after the next resume.")
 		return nil
 	}
-	return errors.New("usage: /workbench projects [status | list | create <slug> [name] | join <id|slug> [file|marker] [component] | example | unlink-storage]")
+	return errors.New("usage: /workbench projects [status | ls | create <slug> [name] | join <id|slug> [file|marker] [component] | example | unlink-storage]")
 }

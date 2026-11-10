@@ -82,7 +82,7 @@ The same operations work in RPC and print mode as plain commands; each takes eff
 
 | Command | Effect |
 |---|---|
-| `/workbench projects list` | Registered projects and the one recognised here |
+| `/workbench projects ls` | Registered projects and the one recognised here |
 | `/workbench projects create <slug> [name]` | Create a project at this repository |
 | `/workbench projects join <id\|slug> [file\|marker] [component]` | Join this repository to a registered project (`file` is the default) |
 | `/workbench projects example` | Print the commented `Project.toml` above |

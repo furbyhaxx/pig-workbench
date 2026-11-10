@@ -49,7 +49,7 @@ func (s *session) resolveProject(ref string) (project.Entry, error) {
 			return entry, nil
 		}
 	}
-	return project.Entry{}, fmt.Errorf("no registered project %q; see /workbench projects list", ref)
+	return project.Entry{}, fmt.Errorf("no registered project %q; see /workbench projects ls", ref)
 }
 
 func (s *session) listProjects() (string, error) {
@@ -74,11 +74,11 @@ func (s *session) listProjects() (string, error) {
 	return out.String(), nil
 }
 
-// projectsManage handles list, create, join and example; handled is false for other verbs.
+// projectsManage handles ls, create, join and example; handled is false for other verbs.
 func (s *session) projectsManage(ctx context.Context, verb, rest string) (text string, handled bool, err error) {
 	fields := strings.Fields(rest)
 	switch verb {
-	case "list":
+	case "ls":
 		text, err = s.listProjects()
 	case "example":
 		text = project.ExampleDocument

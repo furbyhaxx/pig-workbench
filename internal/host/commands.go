@@ -1,7 +1,9 @@
 package host
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -17,13 +19,15 @@ func (a *app) registerCommands(ext *sdk.Extension) {
 		Handler:                a.workbench,
 	})
 	for _, name := range []string{"cd", "wb:cd"} {
-		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", Handler: a.cdCommand})
+		ext.RegisterCommand(name, sdk.CommandOptions{Description: "Inspect or change the Workbench local working location.", GetArgumentCompletions: a.cdCompletions, Handler: a.cdCommand})
 	}
 	key, note := activityShortcutKey()
 	a.shortcutKey, a.shortcutNote = key, note
 	ext.Shortcut(key, "Show what Workbench is doing and how to inspect it.", a.activityShortcut)
-	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", Handler: a.toolsCommand})
-	ext.RegisterCommand("wb:jobs", sdk.CommandOptions{Description: "Inspect or control Workbench jobs.", Handler: a.jobsCommand})
+	ext.RegisterCommand("tools", sdk.CommandOptions{Description: "List actual active and available tool schemas.", GetArgumentCompletions: a.toolsCompletions, Handler: a.toolsCommand})
+	ext.RegisterCommand("wb:jobs", sdk.CommandOptions{Description: "Inspect or control Workbench jobs.", GetArgumentCompletions: a.jobsCompletions, Handler: func(ctx sdk.Context, args string) error {
+		return a.jobsCommand(ctx, canonicalSubverb(args))
+	}})
 }
 
 func (a *app) show(ctx sdk.Context) error {
@@ -61,49 +65,101 @@ func (a *app) cdCommand(ctx sdk.Context, args string) error {
 	return nil
 }
 
+const toolsUsage = "usage: /workbench tools [name] [--format text|json|markdown]"
+
+// toolRow is one tool as the tools view and its JSON format report it.
+type toolRow struct {
+	Name        string          `json:"name"`
+	Active      bool            `json:"active"`
+	Description string          `json:"description"`
+	Parameters  json.RawMessage `json:"parameters,omitempty"`
+}
+
 func (a *app) toolsCommand(ctx sdk.Context, args string) error {
+	filter, format := "", "text"
+	fields := strings.Fields(args)
+	for i := 0; i < len(fields); i++ {
+		switch {
+		case fields[i] == "--format" && i+1 < len(fields):
+			i++
+			format = fields[i]
+		case strings.HasPrefix(fields[i], "--") || filter != "":
+			return errors.New(toolsUsage)
+		default:
+			filter = fields[i]
+		}
+	}
+	if format != "text" && format != "json" && format != "markdown" {
+		return errors.New(toolsUsage)
+	}
 	tools, err := ctx.GetAllTools()
 	if err != nil {
 		return err
 	}
+	a.rememberTools(tools)
 	active, err := ctx.GetActiveTools()
 	if err != nil {
 		return err
 	}
-	enabled := make(map[string]bool, len(active))
-	for _, name := range active {
-		enabled[name] = true
-	}
-	var lines []string
-	filter := strings.TrimSpace(args)
+	var rows []toolRow
 	for _, tool := range tools {
 		if filter != "" && tool.Name != filter {
 			continue
 		}
+		row := toolRow{Name: tool.Name, Active: slices.Contains(active, tool.Name), Description: tool.Description}
+		// The list stays one line per tool; schemas appear for one tool or a machine format.
+		if filter != "" || format == "json" {
+			row.Parameters = tool.Parameters
+		}
+		rows = append(rows, row)
+	}
+	if filter != "" && len(rows) == 0 {
+		names, _ := a.toolNames.Load().([]string)
+		return fmt.Errorf("no tool named %q; tools: %s", noticeText(oneLine(filter, 40), 0), strings.Join(names, ", "))
+	}
+	text, err := formatTools(rows, format)
+	if err != nil {
+		return err
+	}
+	a.present(ctx, "Workbench › Tools", text)
+	return nil
+}
+
+func formatTools(rows []toolRow, format string) (string, error) {
+	if format == "json" {
+		encoded, err := json.MarshalIndent(rows, "", "  ")
+		return string(encoded), err
+	}
+	var b strings.Builder
+	for i, row := range rows {
 		state := "inactive"
-		if enabled[tool.Name] {
+		if row.Active {
 			state = "active"
 		}
-		line := tool.Name + " [" + state + "] " + tool.Description
-		if filter != "" {
-			schema, err := json.MarshalIndent(tool.Parameters, "", "  ")
-			if err != nil {
-				return err
+		schema := ""
+		if row.Parameters != nil {
+			var indented bytes.Buffer
+			if err := json.Indent(&indented, row.Parameters, "", "  "); err != nil {
+				return "", err
 			}
-			line += "\n" + string(schema)
+			schema = indented.String()
 		}
-		lines = append(lines, line)
-	}
-	if filter != "" && len(lines) == 0 {
-		names := make([]string, len(tools))
-		for i, tool := range tools {
-			names[i] = tool.Name
+		if i > 0 {
+			b.WriteByte('\n')
 		}
-		ctx.Notify(noticeText(fmt.Sprintf("No tool named %q. Tools: %s. Settings and other views start from /workbench.", filter, strings.Join(names, ", ")), 0), "warning")
-		return nil
+		if format == "markdown" {
+			fmt.Fprintf(&b, "## %s\n\n%s. %s\n", row.Name, state, row.Description)
+			if schema != "" {
+				fmt.Fprintf(&b, "\n```json\n%s\n```\n", schema)
+			}
+			continue
+		}
+		fmt.Fprintf(&b, "%s [%s] %s", row.Name, state, row.Description)
+		if schema != "" {
+			b.WriteString("\n" + schema)
+		}
 	}
-	a.present(ctx, "Workbench › Tools", strings.Join(lines, "\n"))
-	return nil
+	return b.String(), nil
 }
 
 // notify shows short text as a toast and anything longer in a scrollable panel when the TUI is available.
@@ -164,13 +220,13 @@ func (a *app) jobsCommand(ctx sdk.Context, args string) error {
 	switch len(fields) {
 	case 0:
 	case 1:
-		if fields[0] != "list" {
-			return fmt.Errorf("usage: /workbench jobs [list | <id> status|output|kill|eof]")
+		if fields[0] != "ls" {
+			return fmt.Errorf("usage: /workbench jobs [ls | <id> status|output|kill|eof]")
 		}
 	case 2:
 		params = map[string]any{"action": fields[1], "id": fields[0]}
 	default:
-		return fmt.Errorf("usage: /workbench jobs [list | <id> status|output|kill|eof]")
+		return fmt.Errorf("usage: /workbench jobs [ls | <id> status|output|kill|eof]")
 	}
 	if params["action"] == "list" {
 		s, err := a.current()
@@ -288,46 +344,12 @@ func (a *app) skillsCommand(ctx sdk.Context, args string) error {
 	return nil
 }
 
-func (a *app) promptCommand(ctx sdk.Context) error {
-	s, err := a.current()
-	if err != nil {
-		return err
-	}
-	configuration, err := s.settings.Current()
-	if err != nil {
-		return err
-	}
-	var b strings.Builder
-	for _, key := range []string{"prompt.enabled", "prompt.template", "prompt.delivery"} {
-		entry, ok := configuration.Get(key)
-		if !ok {
-			fmt.Fprintf(&b, "%s: unavailable\n", key)
-			continue
-		}
-		fmt.Fprintf(&b, "%s: %v\n", key, entry.Value)
-	}
-	options, err := ctx.GetSystemPromptOptions()
-	if err != nil {
-		return err
-	}
-	template := s.settingString("prompt.template", defaultPromptTemplate)
-	rendered, err := renderPrompt(ctx, s, template, options)
-	if err != nil {
-		return fmt.Errorf("render %s: %w", template, err)
-	}
-	if _, _, lastErr, _ := s.prompt.get(); lastErr != "" {
-		fmt.Fprintf(&b, "last error: %s\n", lastErr)
-	}
-	fmt.Fprintf(&b, "epoch: %s\n", promptEpoch(rendered))
-	fmt.Fprintf(&b, "rendered %s:\n", template)
-	b.WriteString(rendered)
-	fmt.Fprintf(&b, "\ndelivery auto and force serve %s; set prompt.enabled=false to keep PiG's prompt\n", template)
-	a.notify(ctx, b.String())
-	return nil
-}
-
 func (a *app) workbench(ctx sdk.Context, args string) error {
 	verb, rest, _ := strings.Cut(strings.TrimSpace(args), " ")
+	verb = canonicalVerb(verb)
+	if subverbFamilies[verb] {
+		rest = canonicalSubverb(rest)
+	}
 	switch verb {
 	case "":
 		if panelsAvailable(ctx) {
@@ -347,7 +369,7 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 	case "skills":
 		return a.skillsCommand(ctx, rest)
 	case "prompt":
-		return a.promptCommand(ctx)
+		return a.promptCommand(ctx, rest)
 	case "codemode":
 		return a.codemodeCommand(ctx, rest)
 	case "frames":
@@ -367,6 +389,6 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 	case "trust":
 		return a.trustCommand(ctx, rest)
 	default:
-		return fmt.Errorf("usage: /workbench show | tools | cd [path|--reset] | jobs [list|<id> status|output|kill|eof] | skills | prompt | codemode [call id] | frames | instructions [pin|unpin|ls|rules|reload] | ask [show|resume|discard] | trust [ls|add|rm] | projects [status|list|create|join|example|unlink-storage] | sessions [ls|send|trust|untrust|block|unblock|hide|show] | integrations [owner] | resources [scheme] | settings [show|catalog|reload|set|reset]")
+		return errors.New(unknownVerb(verb))
 	}
 }

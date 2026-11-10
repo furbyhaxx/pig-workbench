@@ -1,12 +1,14 @@
 package host
 
 import (
+	"encoding/json"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
 
 	"context"
+	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 	"github.com/furbyhaxx/pig-workbench/internal/config"
 	"github.com/furbyhaxx/pig-workbench/internal/lifecycle"
@@ -114,5 +116,60 @@ func TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb(t *testing.T) {
 	items, _ = completeWorkbench("skills load ", []string{"skills load rust", "skills unload toml"}, config.Catalog())
 	if len(items) != 1 || items[0].Value != "skills load rust" {
 		t.Fatalf("skill names = %+v", items)
+	}
+}
+
+func TestAliasesRewriteOnlyTheVerbPosition(t *testing.T) {
+	for input, want := range map[string]string{"list": "ls", "remove /tmp/list": "rm /tmp/list", "send list remove": "send list remove", "  list x": "ls x", "": ""} {
+		if got := canonicalSubverb(input); got != want {
+			t.Errorf("canonicalSubverb(%q) = %q, want %q", input, got, want)
+		}
+	}
+	if canonicalVerb("config") != "settings" || canonicalVerb("show") != "show" {
+		t.Error("config must resolve to settings and nothing else change")
+	}
+}
+
+func TestUnknownVerbIsOneShortLineWithTheClosestVerb(t *testing.T) {
+	for verb, want := range map[string]string{"framez": "did you mean frames?", "inst": "did you mean instructions?", "setings": "did you mean settings?", "zzzzzz": "run /workbench for the list"} {
+		got := unknownVerb(verb)
+		if !strings.HasSuffix(got, want) || strings.Contains(got, "\n") || len(got) > 100 {
+			t.Errorf("unknownVerb(%q) = %q", verb, got)
+		}
+	}
+	if got := unknownVerb(strings.Repeat("x", 500) + "\x1b[31m"); len(got) > 100 || strings.Contains(got, "\x1b") {
+		t.Errorf("hostile verb is echoed unbounded: %q", got)
+	}
+}
+
+func TestCompanionCommandsCompleteTheirArguments(t *testing.T) {
+	a := &app{}
+	a.rememberTools([]sdk.ToolInfo{{Name: "read"}, {Name: "grep"}, {Name: "recall"}})
+	items, _ := a.toolsCompletions("re")
+	if len(items) != 2 || items[0].Value != "read" || items[1].Value != "recall" {
+		t.Errorf("tool completions: %+v", items)
+	}
+	if items, _ := a.jobsCompletions(""); len(items) != 1 || items[0].Value != "ls" {
+		t.Errorf("job completions without a session: %+v", items)
+	}
+	if items, err := a.cdCompletions(""); err != nil || items != nil {
+		t.Errorf("cd completions without a session must be empty: %+v %v", items, err)
+	}
+}
+
+func TestToolFormatsCarryTheSameRows(t *testing.T) {
+	rows := []toolRow{{Name: "read", Active: true, Description: "Read text."}, {Name: "x", Description: "Other.", Parameters: json.RawMessage(`{"type":"object"}`)}}
+	text, err := formatTools(rows, "text")
+	if err != nil || text != "read [active] Read text.\nx [inactive] Other.\n{\n  \"type\": \"object\"\n}" {
+		t.Errorf("text: %q %v", text, err)
+	}
+	markdown, _ := formatTools(rows, "markdown")
+	if !strings.Contains(markdown, "## read\n\nactive. Read text.\n") || !strings.Contains(markdown, "```json\n{\n  \"type\": \"object\"\n}\n```") {
+		t.Errorf("markdown: %q", markdown)
+	}
+	encoded, _ := formatTools(rows, "json")
+	var decoded []toolRow
+	if err := json.Unmarshal([]byte(encoded), &decoded); err != nil || len(decoded) != 2 || !decoded[0].Active || decoded[1].Name != "x" {
+		t.Errorf("json: %q %v", encoded, err)
 	}
 }
