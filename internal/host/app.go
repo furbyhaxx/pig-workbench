@@ -115,6 +115,7 @@ type hostRequestKey struct{}
 // Register wires session lifecycle and the implemented tools and commands.
 func Register(ext *sdk.Extension) {
 	a := &app{syntax: syntax.New(), extEvents: ext.Events(), editTextMode: editModeDefault}
+	a.registerMessageRenderers(ext)
 	ext.OnSessionStart(a.start)
 	ext.OnSessionShutdown(a.shutdown)
 	ext.OnEvent(sdk.EventSessionTree, a.restore)

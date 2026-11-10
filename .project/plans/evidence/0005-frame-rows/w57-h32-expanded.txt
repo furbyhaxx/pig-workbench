@@ -1,0 +1,32 @@
+ │     "out",
+ │     "session",
+ │     "skill"
+ │   ]
+ │ }
+ └ info · trusted data · seq 6 · 10.11.2026 11:08 · deli…
+
+ ◆ instructions.steering · Instructions from: AGENTS.md
+ │ Instructions from:
+ │ $HOME/.cache/pig-workbench-test-tmp/work/Tes
+ │ tLiveFramesRenderAsRowsNotEnvelopes3603745854/001/AGEN
+ │ TS.md
+ │ ## AGENTS.md [project, instruction]
+ │ # Fixture
+ │
+ │ - Keep rows short.
+ │ - Never print envelopes.
+ └ instruction · trusted instruction · seq 7 · 10.11.202…
+
+
+ hello
+
+
+ done
+
+ Tool output: expanded
+
+─────────────────────────────────────────────────────────
+
+─────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRen...
+17.6%/32k (auto)                                     mock

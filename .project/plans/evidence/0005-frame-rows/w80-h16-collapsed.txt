@@ -1,0 +1,16 @@
+
+ ◆ instructions.steering · Instructions from: AGENTS.… · 6 lines · ctrl+o expand
+
+
+ hello
+
+
+ done
+
+ Tool output: collapsed
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes36...
+17.6%/32k (auto)                                                            mock

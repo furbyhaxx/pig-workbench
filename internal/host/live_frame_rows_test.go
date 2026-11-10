@@ -1,0 +1,53 @@
+//go:build integration
+
+package host
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+// WB_CAPTURE_DIR, when set, receives the collapsed and expanded transcript at each review size.
+func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("# Fixture\n\n- Keep rows short.\n- Never print envelopes.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := startTUI(t, root)
+	s.typeText("hello")
+	s.keys("Enter")
+	s.waitFor("session.date", 20*time.Second)
+	time.Sleep(2 * time.Second)
+	out := os.Getenv("WB_CAPTURE_DIR")
+	home, _ := os.UserHomeDir()
+	redact := strings.NewReplacer(root, "$ROOT", home, "$HOME")
+	for _, size := range [][2]int{{36, 32}, {57, 32}, {80, 32}, {140, 32}, {80, 16}} {
+		s.tmux("resize-window", "-t", "wb", "-x", fmt.Sprint(size[0]), "-y", fmt.Sprint(size[1]))
+		time.Sleep(time.Second)
+		collapsed := s.history()
+		if strings.Contains(collapsed, "<system-") || strings.Contains(collapsed, "[pig-workbench.context]") {
+			t.Fatalf("%dx%d: a frame is shown as its envelope:\n%s", size[0], size[1], collapsed)
+		}
+		if !strings.Contains(collapsed, "◆ instructions.steering") {
+			t.Fatalf("%dx%d: no frame row:\n%s", size[0], size[1], collapsed)
+		}
+		s.keys("C-o")
+		time.Sleep(time.Second)
+		expanded := s.history()
+		s.keys("C-o")
+		if !strings.Contains(expanded, "│ ") || !strings.Contains(expanded, "└ ") {
+			t.Fatalf("%dx%d: expansion shows no body or provenance:\n%s", size[0], size[1], expanded)
+		}
+		if out != "" {
+			for name, text := range map[string]string{"collapsed": collapsed, "expanded": expanded} {
+				if err := os.WriteFile(filepath.Join(out, fmt.Sprintf("w%d-h%d-%s.txt", size[0], size[1], name)), []byte(redact.Replace(text)), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+	}
+}

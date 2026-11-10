@@ -1,6 +1,9 @@
 package frames
 
-import "time"
+import (
+	"sort"
+	"time"
+)
 
 // DeliveryScope identifies the branch leaf and context epoch a delivery belongs to.
 type DeliveryScope struct {
@@ -98,4 +101,17 @@ func (s *Session) expireLocked(now time.Time) {
 			s.retireLocked(record, stateExpired)
 		}
 	}
+}
+
+// Describe returns the frame admitted under sequence with its current state, without its body.
+func (s *Session) Describe(sequence int64) (Frame, string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	i := sort.Search(len(s.records), func(i int) bool { return s.records[i].Frame.Sequence >= sequence })
+	if i == len(s.records) || s.records[i].Frame.Sequence != sequence {
+		return Frame{}, "", false
+	}
+	frame := s.records[i].Frame
+	frame.Body = ""
+	return frame, s.records[i].State, true
 }

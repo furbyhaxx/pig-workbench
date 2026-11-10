@@ -1,0 +1,32 @@
+
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+ i session.date · date 2026-11-10, timezone CET +01:00 · 4 lines · ctrl+o expand
+
+ i session.environment · architecture amd64, hostCwd … · 5 lines · ctrl+o expand
+
+ i session.project · id global, name Global, recogniz… · 7 lines · ctrl+o expand
+
+ i session.location · authority local, available true… · 9 lines · ctrl+o expand
+
+ i session.model · contextWindow 32000, id mock, maxO… · 9 lines · ctrl+o expand
+
+ i session.capabilities · activeTools 10, editMode h… · 29 lines · ctrl+o expand
+
+ ◆ instructions.steering · Instructions from: AGENTS.… · 6 lines · ctrl+o expand
+
+
+ hello
+
+
+ done
+
+ Tool output: collapsed
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes36...
+17.6%/32k (auto)                                                            mock

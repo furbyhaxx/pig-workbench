@@ -1,0 +1,32 @@
+ │     "skill"
+ │   ]
+ │ }
+ └ info · trusted data · seq 6 · 10…
+
+ ◆ instructions.steering · Instruct…
+ │ Instructions from:
+ │ $HOME/.cache/pig-workbe
+ │ nch-test-tmp/work/TestLiveFramesR
+ │ enderAsRowsNotEnvelopes3603745854
+ │ /001/AGENTS.md
+ │ ## AGENTS.md [project,
+ │ instruction]
+ │ # Fixture
+ │
+ │ - Keep rows short.
+ │ - Never print envelopes.
+ └ instruction · trusted instructio…
+
+
+ hello
+
+
+ done
+
+ Tool output: expanded
+
+────────────────────────────────────
+
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+17.6%/32k (auto)                mock
