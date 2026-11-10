@@ -313,8 +313,9 @@ func (a *app) currentFrameScope(host sdk.Context, s *session, state *contextFram
 }
 
 type frameRecord struct {
-	State string       `json:"state"`
-	Frame frames.Frame `json:"frame"`
+	State       string       `json:"state"`
+	Frame       frames.Frame `json:"frame"`
+	BodyDropped bool         `json:"bodyDropped"`
 }
 
 func ownedFrames(s *session, producer frameProducer) []frameRecord {
@@ -382,6 +383,10 @@ func (a *app) framesQuery(s *session, request api.Request) (any, *api.Error) {
 					for !utf8.ValidString(body) {
 						body = body[:len(body)-1]
 					}
+				}
+				if record.BodyDropped {
+					// The ledger keeps old history by digest only; the session entry still holds the text.
+					return map[string]any{"frame": record.Frame, "state": record.State, "body": "", "bodyComplete": false, "bodyDropped": true}, nil
 				}
 				return map[string]any{"frame": record.Frame, "state": record.State, "body": body, "bodyComplete": complete}, nil
 			case "frames.cancel":

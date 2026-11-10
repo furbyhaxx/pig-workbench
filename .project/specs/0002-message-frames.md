@@ -5,15 +5,15 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T12:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 14
+      reason: "History counted against the pending body bound, so a long session lost frame delivery"
+      changes: ["§4 separates the pending bounds from a history bound: delivered and other non-pending frames never block admission, and the oldest lose their body in memory while digest and receipt stay", "§8 gains the long-session scenario"]
 ---
 
 # 1. Purpose and dependency
@@ -42,7 +42,7 @@ Service methods:
 - `frames.status`: frameId → admitted/pending/delivered/cancelled/failed with reason.
 - `frames.cancel`: frameId → cancel only an undelivered frame owned by caller.
 - `frames.list`: branch scope + filters/cursor → bounded records.
-- `frames.get`: frameId → stored record, bounded body page and delivery state.
+- `frames.get`: frameId → stored record, bounded body page and delivery state. `bodyDropped: true` with an empty body means the history bound of §4 removed the text from memory.
 - `context.fields.set`: registrationId + model-bound typed contribution → acceptance (SPEC-0014 §5.1); it does not itself acknowledge frame delivery.
 
 Workbench's own source `workbench.guide.<scheme>` delivers first-touch scheme guides (SPEC-0012 §5.5) as kind `instruction`. A guide contributed by another extension keeps data authority unless the user trusts that provider.
@@ -115,7 +115,17 @@ Admission acknowledgement is returned only after persistence succeeds (or in-mem
 
 When idle, an ordinary nextBoundary frame waits for the next prompt; only `wake: true` starts a turn (§3). During a run it uses the next safe context boundary after the current tool batch. Branch-scoped publications are cancelled/not delivered to a different branch after navigation. Session-scoped notices remain pending but must be re-evaluated for applicability. A stale producer binding gets staleGeneration.
 
-Coalesce only undelivered info/notice updates explicitly sharing a key. Preserve all errors and instruction transitions or compute a verifiably equivalent latest baseline. Queue overflow returns busy; do not silently drop frames. Default 256 pending frames/session and 2 MiB aggregate body memory, backed by bounded durable records.
+Coalesce only undelivered info/notice updates explicitly sharing a key. Preserve all errors and instruction transitions or compute a verifiably equivalent latest baseline. Queue overflow returns busy; do not silently drop frames.
+
+Bounds per session:
+
+| Bound | Value | When reached |
+|---|---|---|
+| Pending frames | 256 | Admission fails with `busy`; nothing is dropped |
+| Pending body memory | 2 MiB | Admission fails with `busy`; nothing is dropped |
+| History body memory (delivered, cancelled, failed, expired, superseded) | 2 MiB | The oldest history records lose their body in memory |
+
+History never counts against the pending bounds, so no number of delivered frames stops admission. A record without its body keeps frame ID, sequence, state, receipt and content digest; a repeated publication under its event key is matched by digest and answers the original receipt or `conflict`. The durable session entry written at admission and at each state change still holds the full body; a resumed session loads every stored record and applies the history bound afterwards. Inspection reports such a body as no longer in memory and never as empty.
 
 # 5. Instruction changes, caps and compaction
 
@@ -170,6 +180,7 @@ Wireframes and action/state behavior: [SKETCH-0002](../sketches/extension-apis/R
 | Source unload/reload | Retained history renderable; active instructions reconciled |
 | Host lacks outgoing-request acknowledgement | queuedToHost visible; no false delivered state |
 | Multiple simultaneous producers | Stable sequence, bounded queue, no starvation by progress spam |
+| 1000 delivered frames of 8 KiB, then a publication; the same session resumed | Admitted both times; no frame delivered twice |
 
 Host findings: inclusion acknowledgement via the `context` hook, custom-role persistence and branch behaviour are probed (see mapping above). Native system/developer role projection remains unverified and stays unadvertised. Upstream issue: queued `nextTurn` crosses branches (P20).
 
