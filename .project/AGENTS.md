@@ -7,6 +7,7 @@ Development artifacts; committed, never shipped or placed in `docs/`. Load skill
 - `research/` — imported third-party dossiers and prior art, version-keyed and snapshot-only; rules in `research/AGENTS.md`.
 - `sketches/` — UI/UX designs, wireframes and capture evidence; rules in `sketches/AGENTS.md`.
 - `handoff/` — resume briefs and cross-repository requests; rules in `handoff/AGENTS.md`.
+- `reviews/` — dated ranked findings on a range, slice or diff with gate evidence; rules in `reviews/AGENTS.md`.
 - Every Markdown artifact needs `document:` frontmatter: type, id, title, description, status, revision, created_at, updated_at, created_by, updated_by, changelog. Quote YAML strings; timestamps use Europe/Zurich offsets.
 - Revisions increment revision, update updated_* and append changelog; never rewrite earlier entries.
 - Sources outside this repository use `host:/absolute/path`. Evidence belongs beside its artifact in `evidence/`; redact secrets.
