@@ -53,6 +53,10 @@ func builtinSnapshot(tool string, params map[string]any, result sdk.ToolResult, 
 	if complete, ok := details["complete"].(bool); ok {
 		snapshot.Complete = &complete
 	}
+	if blocks, ok := details[presentationBlocksKey].([]presentation.Block); ok {
+		snapshot.Blocks = blocks
+	}
+	delete(details, presentationBlocksKey)
 	if fill := builtinSnapshots[tool]; fill != nil {
 		fill(&snapshot, params, result, details)
 	}
@@ -78,6 +82,36 @@ var builtinSnapshots = map[string]snapshotFill{
 	"find": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
 		setTarget(s, []string{stringArg(params, "path")})
 		countMetric(s, "entries", detailLen(details, "entries"))
+	},
+	"write": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
+		setTarget(s, []string{stringArg(params, "path")})
+		if bytes := detailInt(details, "bytes"); bytes > 0 {
+			s.Metrics = append(s.Metrics, presentation.Metric{ID: "bytes", Value: float64(bytes), Unit: presentation.UnitBytes})
+		}
+	},
+	"edit": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
+		setTarget(s, editCallTargets(params))
+		added, removed := 0, 0
+		for _, block := range s.Blocks {
+			if block.Diff == nil {
+				continue
+			}
+			for _, hunk := range block.Diff.Hunks {
+				for _, line := range hunk.Lines {
+					switch line.Kind {
+					case presentation.HunkAdd:
+						added++
+					case presentation.HunkRemove:
+						removed++
+					}
+				}
+			}
+		}
+		countMetric(s, "added", added)
+		countMetric(s, "removed", removed)
+		if partial, _ := details["partial"].(bool); partial {
+			s.Summary = "some files did not change"
+		}
 	},
 	"grep": func(s *presentation.Snapshot, params map[string]any, _ sdk.ToolResult, details map[string]any) {
 		setTarget(s, []string{stringArg(params, "path")})

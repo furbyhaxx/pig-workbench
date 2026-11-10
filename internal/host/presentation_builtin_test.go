@@ -1,10 +1,12 @@
 package host
 
 import (
+	"strings"
 	"testing"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
+	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
@@ -75,5 +77,48 @@ func TestReadAndSearchSnapshotsCarryOutcomeTargetAndMetrics(t *testing.T) {
 		if entries, _ := snapshotMetric(snapshot, "entries"); entries != 1 || snapshot.Target != nil {
 			t.Errorf("%s snapshot: %+v", tool, snapshot)
 		}
+	}
+}
+
+func TestEditAndWriteSnapshotsCarryDiffBlocks(t *testing.T) {
+	old := "one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n"
+	next := "one\ntwo\nthree\nfour\nFIVE\nfive and a half\nsix\nseven\neight\n"
+	effects := []fileedit.Effect{{Path: "/w/a.go", Bytes: []byte(next)}, {Path: "/w/gone.go", Delete: true}, {Path: "/w/kept.go", Bytes: []byte("x")}}
+	outcomes := []fileedit.Outcome{{Path: "/w/a.go", BeforeRevision: "r1", AfterRevision: "r2", Committed: true}, {Path: "/w/gone.go", BeforeRevision: "r3", Committed: true}, {Path: "/w/kept.go"}}
+	details := map[string]any{"partial": false, presentationBlocksKey: editDiffBlocks(effects, [][]byte{[]byte(old), nil, []byte("x")}, outcomes)}
+	edit := builtinSnapshotOf(t, "edit", map[string]any{"path": "a.go", "edits": []any{}}, sdk.ToolResult{Content: "Edit batch committed.\n", Details: details})
+	if _, leaked := details[presentationBlocksKey]; leaked {
+		t.Error("the staging key stayed in Details")
+	}
+	if len(edit.Blocks) != 2 || edit.Blocks[1].Diff.Operation != presentation.DiffDelete || edit.Blocks[1].Diff.After != nil {
+		t.Fatalf("edit blocks: %+v", edit.Blocks)
+	}
+	update := edit.Blocks[0].Diff
+	if update.Operation != presentation.DiffUpdate || update.Before.Revision != "r1" || update.After.Revision != "r2" || len(update.Hunks) != 1 {
+		t.Fatalf("update block: %+v", update)
+	}
+	hunk := update.Hunks[0]
+	if hunk.OldStart != 2 || hunk.NewStart != 2 || hunk.OldLines != 7 || hunk.NewLines != 8 {
+		t.Errorf("hunk coordinates are not source lines: %+v", hunk)
+	}
+	added, _ := snapshotMetric(edit, "added")
+	removed, _ := snapshotMetric(edit, "removed")
+	if added != 2 || removed != 1 {
+		t.Errorf("added %v removed %v", added, removed)
+	}
+	if hunks := diffHunks("a\x00b\n", "a\x1b[31mb\nc\n"); len(hunks) != 1 || strings.ContainsAny(hunks[0].Lines[0].Text, "\x00\x1b") {
+		t.Errorf("control bytes reached a hunk line: %+v", hunks)
+	}
+	if hunks := diffHunks(strings.Repeat("a\n", maxDiffWindowLines+5), strings.Repeat("b\n", maxDiffWindowLines+5)); hunks != nil {
+		t.Error("an oversized change was diffed")
+	}
+
+	created := builtinSnapshotOf(t, "write", map[string]any{"path": "new.txt"}, sdk.ToolResult{Content: "Wrote", Details: map[string]any{"bytes": 12, presentationBlocksKey: []presentation.Block{writeDiffBlock("/w/new.txt", "", "r9", true)}}})
+	if bytes, _ := snapshotMetric(created, "bytes"); bytes != 12 || len(created.Blocks) != 1 || created.Blocks[0].Diff.Operation != presentation.DiffCreate || created.Blocks[0].Diff.Before != nil {
+		t.Errorf("write snapshot: %+v", created)
+	}
+	replaced := writeDiffBlock("/w/new.txt", "r9", "r10", false).Diff
+	if replaced.Operation != presentation.DiffUpdate || replaced.Before.Revision != "r9" || replaced.After.Revision != "r10" {
+		t.Errorf("replacement block: %+v", replaced)
 	}
 }

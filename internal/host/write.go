@@ -17,6 +17,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 )
 
@@ -183,7 +184,7 @@ func (a *app) write(ctx sdk.Context, params map[string]any) (any, error) {
 	s.contextFrames.recordAuthored(canonical, []byte(input.Content))
 	receipt := fmt.Sprintf("Wrote %d bytes to %s\nRevision: %s", len(input.Content), target.URI, revision)
 	s.rememberWritten(ctx.ToolCallID(), epoch, target, []byte(input.Content), receipt)
-	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision}}, nil
+	return sdk.ToolResult{Content: receipt, Details: map[string]any{"uri": target.URI, "revision": revision, "bytes": len(input.Content), "created": existing == nil, "previousRevision": previous, "locationRevision": captured.Revision, presentationBlocksKey: []presentation.Block{writeDiffBlock(target.Path, previous, revision, existing == nil)}}}, nil
 }
 
 // writeScratch writes one file into the session's private local:// scratch.
@@ -275,4 +276,11 @@ func short(revision string) string {
 		return revision[:12]
 	}
 	return revision
+}
+
+func writeDiffBlock(path, previous, revision string, created bool) presentation.Block {
+	if created {
+		return diffBlock(presentation.DiffCreate, nil, fileIdentity(path, revision), nil, nil)
+	}
+	return diffBlock(presentation.DiffUpdate, fileIdentity(path, previous), fileIdentity(path, revision), nil, nil)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/fileedit"
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"github.com/furbyhaxx/pig-workbench/internal/hashline"
+	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/syntax"
 )
@@ -121,6 +122,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	var effects []fileedit.Effect
 	var effectURIs []string
+	var befores [][]byte
 	var plan hashline.BatchPlan
 	if tagged {
 		document, err := hashline.Parse(input.Hashline)
@@ -198,6 +200,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			sourceURI := sources[effect.Path].URI
 			staged := fileedit.Effect{Path: paths[sourceURI], Revision: effect.BeforeRevision, Bytes: effect.Bytes, Delete: effect.Delete}
 			effectURIs = append(effectURIs, sourceURI)
+			befores = append(befores, currentSources[effect.Path].Raw)
 			if effect.Delete {
 				staged.Bytes = nil
 			}
@@ -223,6 +226,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			after = []byte{}
 		}
 		effects = []fileedit.Effect{{Path: target.Path, Revision: hashline.SourceRevision(source), Bytes: after}}
+		befores = [][]byte{source}
 	}
 	registerBytes := 0
 	proposed := make(map[string]hashline.Register, len(s.editState.registers)+len(plan.Registers))
@@ -278,6 +282,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			}
 		}
 	}
+	blocks := editDiffBlocks(effects, befores, outcomes)
 	var content strings.Builder
 	if commitErr != nil {
 		content.WriteString("Edit batch incomplete. Landed changes were not rolled back.\n")
@@ -340,7 +345,7 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 		remainingLines -= strings.Count(page.Content, "\n") + 2
 		s.rememberRead(ctx.ToolCallID(), epoch, target, page)
 	}
-	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"changed": changed, "outcomes": outcomes, "partial": commitErr != nil, "locationRevision": captured.Revision}, IsError: commitErr != nil}, nil
+	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"changed": changed, "outcomes": outcomes, "partial": commitErr != nil, "locationRevision": captured.Revision, presentationBlocksKey: blocks}, IsError: commitErr != nil}, nil
 }
 
 func currentSourceContext(work context.Context, s *session, callID, cwd, epoch string, relocation *hashline.RelocationError, raw []byte) string {
@@ -416,4 +421,29 @@ func readEditSource(ctx context.Context, path string) ([]byte, error) {
 		}
 	}
 	return []byte(output.String()), nil
+}
+
+// editDiffBlocks describes each committed effect; the block budget keeps the first files and drops the rest.
+func editDiffBlocks(effects []fileedit.Effect, befores [][]byte, outcomes []fileedit.Outcome) []presentation.Block {
+	var blocks []presentation.Block
+	for index, outcome := range outcomes {
+		if !outcome.Committed || index >= len(effects) || len(blocks) == presentation.MaxBlocks {
+			continue
+		}
+		effect := effects[index]
+		before := fileIdentity(outcome.Path, outcome.BeforeRevision)
+		var old []byte
+		if index < len(befores) {
+			old = befores[index]
+		}
+		switch {
+		case effect.Delete:
+			blocks = append(blocks, diffBlock(presentation.DiffDelete, before, nil, nil, nil))
+		case effect.MoveTo != "":
+			blocks = append(blocks, diffBlock(presentation.DiffMove, before, fileIdentity(outcome.Destination, outcome.AfterRevision), old, effect.Bytes))
+		default:
+			blocks = append(blocks, diffBlock(presentation.DiffUpdate, before, fileIdentity(outcome.Path, outcome.AfterRevision), old, effect.Bytes))
+		}
+	}
+	return blocks
 }
