@@ -290,6 +290,9 @@ func TestLiveServiceDiscoveryRPC(t *testing.T) {
 	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
 	f := startRPC(t, root, "--model", "workbench-fixture/mock")
 	first := f.probe("first")
+	if first["workbenchVersion"] != workbenchVersion {
+		t.Fatalf("discover reported version %v, want %s", first["workbenchVersion"], workbenchVersion)
+	}
 	f.send("persist", "prompt", "Initialize persisted fixture.")
 	f.wait(func(record map[string]any) bool { return record["type"] == "agent_settled" })
 	f.command("cd", "/cd next")

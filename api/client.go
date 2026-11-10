@@ -215,9 +215,9 @@ func (c *Client) exchange(ctx sdk.Context, request Request) ([]Reply, bool, erro
 		c.mu.Unlock()
 		return nil, false, ErrClosed
 	}
-	if len(c.pending) >= 8 {
+	if len(c.pending) >= MaxInFlight {
 		c.mu.Unlock()
-		return nil, false, &Error{Code: "busy", Message: "client has 8 in-flight requests", Retryable: true, Outcome: "notApplied"}
+		return nil, false, &Error{Code: "busy", Message: fmt.Sprintf("client has %d in-flight requests", MaxInFlight), Retryable: true, Outcome: "notApplied"}
 	}
 	pending := &pendingCall{session: request.SessionID, generation: request.Generation, discover: request.Method == "discover"}
 	c.pending[request.ID] = pending

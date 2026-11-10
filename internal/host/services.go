@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -53,8 +54,8 @@ func (a *app) service(ctx sdk.Context, value any) error {
 		}
 		if _, exists := s.requests[key]; exists {
 			reply.Error = &api.Error{Code: "conflict", Message: "request ID is already in flight"}
-		} else if ownerCount >= 8 {
-			reply.Error = &api.Error{Code: "busy", Message: "owner has 8 in-flight requests", Retryable: true}
+		} else if ownerCount >= api.MaxInFlight {
+			reply.Error = &api.Error{Code: "busy", Message: fmt.Sprintf("owner has %d in-flight requests", api.MaxInFlight), Retryable: true}
 		} else {
 			s.requests[key] = activeRequest{owner: request.From.Owner, cancel: cancel}
 		}
@@ -96,7 +97,7 @@ func (a *app) dispatchService(ctx context.Context, host sdk.Context, s *session,
 				return nil, &api.Error{Code: "unsupported", Field: "params.capabilities", Message: "one or more requested capabilities are unavailable"}
 			}
 		}
-		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: "development", Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: capabilities, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
+		result := api.Discovery{Major: 1, Minor: 0, WorkbenchVersion: workbenchVersion, Instance: s.generation, SessionID: s.id, Generation: s.generation, Capabilities: capabilities, Limits: api.Limits{ControlBytes: api.ControlBytes, PageBytes: 51200, PageLines: 2000, InFlightPerOwner: 8}}
 		if slices.Contains(params.Capabilities, "location") {
 			current := s.apiLocation(ctx, s.location.Current())
 			result.Location = &current

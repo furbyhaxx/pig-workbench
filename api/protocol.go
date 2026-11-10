@@ -28,6 +28,10 @@ const EventChannel = "workbench:v1:event"
 // ControlBytes is the maximum encoded control envelope size.
 const ControlBytes = 65536
 
+// MaxInFlight bounds one owner's concurrent requests in each direction: client requests to
+// Workbench and Workbench's provider operations to that owner.
+const MaxInFlight = 8
+
 // Identity identifies one runtime incarnation of a stable extension owner.
 type Identity struct {
 	Owner    string `json:"owner"`

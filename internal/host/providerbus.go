@@ -24,9 +24,6 @@ func (e *providerError) Error() string {
 	return "provider failed: " + e.protocol.Code + ": " + e.protocol.Message
 }
 
-// maxProviderInFlight is SPEC-0001 §4's per-owner bound on concurrent provider operations.
-const maxProviderInFlight = 8
-
 // providerDrainBound caps how long a withdrawal waits for cooperative operations to stop.
 const providerDrainBound = 5 * time.Second
 
@@ -148,8 +145,8 @@ func (b *providerBus) reopen(registrationID string) {
 func (b *providerBus) admit(owner string) (func(), error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.inFlight[owner] >= maxProviderInFlight {
-		return nil, &providerError{protocol: &api.Error{Code: "busy", Message: fmt.Sprintf("provider %q has %d operations in flight", owner, maxProviderInFlight), Retryable: true, Outcome: "notApplied"}}
+	if b.inFlight[owner] >= api.MaxInFlight {
+		return nil, &providerError{protocol: &api.Error{Code: "busy", Message: fmt.Sprintf("provider %q has %d operations in flight", owner, api.MaxInFlight), Retryable: true, Outcome: "notApplied"}}
 	}
 	b.inFlight[owner]++
 	var once sync.Once

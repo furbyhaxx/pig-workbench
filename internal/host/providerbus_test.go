@@ -36,7 +36,7 @@ func TestProviderBusRejectsMalformedReplyBranches(t *testing.T) {
 func TestProviderBusAdmissionIsBoundedPerOwnerAndReleasedOnce(t *testing.T) {
 	bus := newProviderBus("session", "generation", nil)
 	var releases []func()
-	for range maxProviderInFlight {
+	for range api.MaxInFlight {
 		release, err := bus.admit("alpha")
 		if err != nil {
 			t.Fatal(err)
@@ -68,7 +68,7 @@ func TestProviderBusAdmissionIsBoundedPerOwnerAndReleasedOnce(t *testing.T) {
 
 func TestProviderCallFailsBeforeEmitWhenOwnerIsAtItsLimit(t *testing.T) {
 	bus := newProviderBus("session", "generation", func() (sdk.Context, bool) { t.Fatal("emit reached despite the limit"); return sdk.Context{}, false })
-	for range maxProviderInFlight {
+	for range api.MaxInFlight {
 		if _, err := bus.admit("alpha"); err != nil {
 			t.Fatal(err)
 		}

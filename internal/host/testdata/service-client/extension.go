@@ -239,7 +239,7 @@ func Extension() *sdk.Extension {
 		if err != nil {
 			return err
 		}
-		output, err := json.Marshal(map[string]any{"fixture": "passed", "generation": endpoint.Generation, "sessionId": session, "location": location, "stale": protocol.Code, "limits": endpoint.Limits})
+		output, err := json.Marshal(map[string]any{"fixture": "passed", "generation": endpoint.Generation, "workbenchVersion": endpoint.WorkbenchVersion, "sessionId": session, "location": location, "stale": protocol.Code, "limits": endpoint.Limits})
 		if err != nil {
 			return err
 		}
