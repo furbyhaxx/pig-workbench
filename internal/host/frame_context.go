@@ -212,7 +212,8 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	if s.producers != nil {
 		contributedFields = s.producers.modelFields(modelBinding{Provider: model.Provider, ID: model.ID})
 	}
-	modelFacts := modelContextFacts(model, configuration, contributedFields)
+	thinking, _ := ctx.GetThinkingLevel()
+	modelFacts := modelContextFacts(model, thinking, configuration, contributedFields)
 	facts := []contextFact{
 		{source: "session.date", value: map[string]any{"date": time.Now().Format("2006-01-02"), "timezone": time.Now().Format("MST -07:00")}},
 		{source: "session.environment", value: map[string]any{"os": runtime.GOOS, "architecture": runtime.GOARCH, "hostCwd": ctx.Cwd()}},
@@ -628,8 +629,12 @@ func instructionDiff(fact contextFact, previous, current string, context int) st
 // models.dev snapshot, else an estimate labelled "estimated" (release date minus one year); when no
 // release date is known either it is omitted. Nothing here depends on today's
 // date, so the frame stays unchanged between days.
-func modelContextFacts(model *sdk.ModelInfo, configuration *config.Snapshot, contributed []contributedFields) map[string]any {
-	facts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name, "reasoning": model.Reasoning}
+// modelContextFacts states the thinking level only for a model that reasons; "off" is a level.
+func modelContextFacts(model *sdk.ModelInfo, thinking string, configuration *config.Snapshot, contributed []contributedFields) map[string]any {
+	facts := map[string]any{"provider": model.Provider, "id": model.ID, "name": model.Name}
+	if model.Reasoning && thinking != "" {
+		facts["thinking"] = thinking
+	}
 	if model.ContextWindow > 0 {
 		facts["contextWindow"] = model.ContextWindow
 	}

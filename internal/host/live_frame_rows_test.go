@@ -59,3 +59,17 @@ func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
 		}
 	}
 }
+
+func TestLiveModelRowStatesTheThinkingLevel(t *testing.T) {
+	tuiModel = "mock-reasoning"
+	t.Cleanup(func() { tuiModel = "mock" })
+	s := startTUI(t, t.TempDir())
+	s.typeText("hello")
+	s.keys("Enter")
+	screen := s.waitFor("session.model · workbench-fixture/mock-reasoning:", 20*time.Second)
+	for _, line := range strings.Split(screen, "\n") {
+		if strings.Contains(line, "session.model") {
+			t.Log(strings.TrimSpace(line))
+		}
+	}
+}

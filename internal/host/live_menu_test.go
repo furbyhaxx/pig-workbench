@@ -28,6 +28,9 @@ type tuiSession struct {
 	recorder *requestRecorder
 }
 
+// tuiModel is the fixture model the next TUI starts with.
+var tuiModel = "mock"
+
 func startTUI(t *testing.T, root string, fixtures ...string) *tuiSession {
 	t.Helper()
 	return startTUIScripted(t, root, nil, fixtures...)
@@ -49,7 +52,7 @@ func startTUIScripted(t *testing.T, root string, calls []scriptedCall, fixtures 
 	for _, fixture := range fixtures {
 		command = append(command, "-e", filepath.Join(repoRoot(t), "internal/host/testdata", fixture))
 	}
-	s.tmux(append(command, "--model", "workbench-fixture/mock")...)
+	s.tmux(append(command, "--model", "workbench-fixture/"+tuiModel)...)
 	stopTUI(t, s.socket, "wb")
 	s.waitFor("0.0%/32k", 20*time.Second)
 	return s

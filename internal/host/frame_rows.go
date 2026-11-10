@@ -140,10 +140,9 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 // contextSummary states what a session context frame says in the words a person would use.
 func contextSummary(envelope frames.Envelope) string {
 	var facts struct {
-		Date, Timezone, OS, Architecture, Name, Slug, ID, Provider, EditMode string
-		Reasoning                                                            bool
-		ContextWindow                                                        int
-		ActiveTools, Schemes, Skills                                         []any
+		Date, Timezone, OS, Architecture, Name, Slug, ID, Provider, EditMode, Thinking string
+		ContextWindow                                                                  int
+		ActiveTools, Schemes, Skills                                                   []any
 	}
 	if json.Unmarshal([]byte(envelope.Body), &facts) != nil {
 		return ""
@@ -165,8 +164,8 @@ func contextSummary(envelope frames.Envelope) string {
 		return name + " (" + id + ")"
 	case "session.model":
 		model := facts.Provider + "/" + facts.ID
-		if facts.Reasoning {
-			model += " · reasoning"
+		if facts.Thinking != "" {
+			model += ":" + facts.Thinking
 		}
 		if facts.ContextWindow >= 1000 {
 			model += fmt.Sprintf(" · %dk context", facts.ContextWindow/1000)
