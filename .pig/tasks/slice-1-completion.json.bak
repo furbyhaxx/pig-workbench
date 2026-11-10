@@ -1,0 +1,1322 @@
+{
+  "slug": "slice-1-completion",
+  "title": "Finish all Slice 1 foundation, integration and acceptance evidence",
+  "createdAt": "2026-11-05T12:54:44.072Z",
+  "updatedAt": "2026-11-06T14:13:58.863Z",
+  "claim": null,
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Reconcile the preserved checkpoint and pending implementations",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:06:19.979Z",
+      "startedAt": "2026-11-05T12:54:49.109Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 1.3.4 is blocked",
+          "on": "1.3.4",
+          "at": "2026-11-05T13:37:57.678Z",
+          "resumedAt": "2026-11-05T16:02:40.869Z"
+        }
+      ],
+      "report": {
+        "outcome": "Reconciled the preserved checkpoint: prompt-limit regression fixed, dirty edit/write/location/frame changes verified and committed, retained worktrees proven fully integrated, and the Slice 1 inventory committed (777f56f). The remaining work is now the ordered phase backlog in ANA-2026-11-05-slice-1-inventory."
+      },
+      "endedAt": "2026-11-05T16:06:19.979Z"
+    },
+    {
+      "id": "1.1",
+      "title": "Correct and verify the prompt-loader limit regression",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:55:58.207Z",
+      "startedAt": "2026-11-05T12:54:49.109Z",
+      "report": {
+        "outcome": "The 256 KiB prompt-loader contract is consistently implemented, documented and tested; all packages touched by the preserved dirty checkpoint pass their race-enabled unit checks."
+      },
+      "endedAt": "2026-11-05T12:55:58.207Z"
+    },
+    {
+      "id": "1.1.1",
+      "title": "Reproduce the stale 1 MiB assertion and update only the test to 256 KiB",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:55:24.663Z",
+      "startedAt": "2026-11-05T12:54:49.109Z",
+      "report": {
+        "outcome": "Reproduced the stale assertion (`exceeds 1048576 bytes` versus production `262144`) and updated only the test expectation and failure label to the specified 256 KiB contract. The focused race test now passes.",
+        "decisions": [
+          "Kept production at 256 KiB — the handoff, package guidance and specification agree; the test was stale."
+        ]
+      },
+      "endedAt": "2026-11-05T12:55:24.663Z"
+    },
+    {
+      "id": "1.1.2",
+      "title": "Run prompt plus dirty host/hashline/location/resource checks",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:55:52.304Z",
+      "startedAt": "2026-11-05T12:55:29.426Z",
+      "report": {
+        "outcome": "The dirty host, location, hashline, resource and prompt packages all pass `go test -race -modfile=.tmp/go.mod` after the assertion fix."
+      },
+      "endedAt": "2026-11-05T12:55:52.304Z"
+    },
+    {
+      "id": "1.2",
+      "title": "Review and integrate the dirty edit/write/location/frame changes",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:20:30.994Z",
+      "startedAt": "2026-11-05T12:56:07.246Z",
+      "report": {
+        "outcome": "The preserved dirty integration is verified, one create-race defect is fixed, and the work is committed as 1665d7d with live edit/write integration passing."
+      },
+      "endedAt": "2026-11-05T13:20:30.994Z"
+    },
+    {
+      "id": "1.2.1",
+      "title": "Inspect exact diffs, preserve unrelated .pi and analysis files, and verify public edit/write behavior",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:20:02.643Z",
+      "startedAt": "2026-11-05T12:56:07.246Z",
+      "report": {
+        "outcome": "Reviewed the full dirty diff, preserved `.pi/` and the upstream analysis, formatted and verified all touched packages. Found and fixed a create-only write race: the old rename could overwrite a file that appeared after the existence check; `fileedit.Create` now uses atomic no-replace publication and reports landed/durability-uncertain outcomes. Race tests pass; committed as 1665d7d.",
+        "decisions": [
+          "Commit the coupled location/edit/write changes together — app registration and test helpers make them non-independent builds."
+        ]
+      },
+      "endedAt": "2026-11-05T13:20:02.643Z"
+    },
+    {
+      "id": "1.2.2",
+      "title": "Run live read/edit/write/ask/jobs integration and commit coherent explicit-path units",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:20:30.993Z",
+      "startedAt": "2026-11-05T13:20:05.054Z",
+      "report": {
+        "outcome": "`just integration` passed all captured host integration tests, including the live read/edit/write fixture; the coherent source was committed explicitly."
+      },
+      "endedAt": "2026-11-05T13:20:30.993Z"
+    },
+    {
+      "id": "1.3",
+      "title": "Review, verify and integrate the retained completed worktrees",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:06:15.505Z",
+      "startedAt": "2026-11-05T13:20:30.994Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 1.3.4 is blocked",
+          "on": "1.3.4",
+          "at": "2026-11-05T13:37:57.678Z",
+          "resumedAt": "2026-11-05T16:05:48.164Z"
+        }
+      ],
+      "report": {
+        "outcome": "Verified all retained worktree content is present on dev: internal/htmlread and internal/secrets/guard* are byte-identical, and internal/presentation on dev is a superset (adds descriptor.go/test). No worktree has unintegrated content; the remaining dirty entries are those same already-integrated files.",
+        "decisions": [
+          "Compared retained worktree content to dev by file diff instead of by branch ancestry — branches were cherry-picked and adapted, so ancestry does not prove integration.",
+          "Left the worktree directories in place; they hold no unique work and deleting them is not required to close the task."
+        ]
+      },
+      "endedAt": "2026-11-05T16:06:15.505Z"
+    },
+    {
+      "id": "1.3.1",
+      "title": "Integrate staged-ending provenance and relocation into current-source edit/seen recovery",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:26:57.431Z",
+      "startedAt": "2026-11-05T13:20:30.994Z",
+      "report": {
+        "outcome": "Integrated staged-line provenance and relocation, then wired exact current-source observation into the public batch path. Drift authorizes in the model's original coordinates, relocates through unique anchor windows, refuses absent/ambiguous targets and REM, returns bounded current tagged context, and carries authored plus delivered seen intervals into the post-commit snapshot. Live drift integration passes.",
+        "decisions": [
+          "Relocation lives in PlanBatch after block/register resolution — unresolved syntax blocks cannot be relocated correctly.",
+          "Drift drops prior seen mapping except authored lines — we have no diff-level provenance yet; this is fail-safe, not full donor seen remapping."
+        ],
+        "open": [
+          "Diff-based seen remapping of unchanged lines across external drift is not implemented; only authored lines and delivered post-edit views are carried."
+        ]
+      },
+      "endedAt": "2026-11-05T13:26:57.431Z"
+    },
+    {
+      "id": "1.3.2",
+      "title": "Integrate secret payload guards after captured-shape and detector-gap fixes",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:29:52.127Z",
+      "startedAt": "2026-11-05T13:27:01.632Z",
+      "report": {
+        "outcome": "Integrated the fail-closed payload guard engine and fixed the known placeholder-embedding fail-open: larger credentials containing or overlapping canonical markers are now redacted as a whole, while only shorter values wholly inside a marker stay shielded. Race tests pass for the full secrets package.",
+        "decisions": [
+          "Integrate the guard engine but do not yet enable a provider/tool secret boundary — host wiring and real captured payload coverage belong to Phase I."
+        ],
+        "open": [
+          "Guard shapes are still partly derived from declared host structs rather than captured live provider requests; wiring the general boundary before capture would be dishonest."
+        ]
+      },
+      "endedAt": "2026-11-05T13:29:52.127Z"
+    },
+    {
+      "id": "1.3.3",
+      "title": "Integrate HTML reader with current dependency checks, notices and HTTP routing",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:36:27.910Z",
+      "startedAt": "2026-11-05T13:29:56.223Z",
+      "report": {
+        "outcome": "Rechecked both libraries as current tagged releases with active upstreams and no supersession notice, added license notices and the runtime dependencies, integrated `internal/htmlread`, and wired bounded `http(s)://` providers into the read router. HTML defaults to readable Markdown, `:raw` keeps the document, redirects/charsets/cycles/credentials/binary media are enforced, and a live agent read test passes.",
+        "decisions": [
+          "Keep the static provider independent of fetch-backend registration — backend dispatch belongs to Phase D/C and must not be advertised before it exists.",
+          "Fixed builtin body/render ceilings at 4 MiB for now; moving them into the settings catalog is part of the remaining configuration foundation."
+        ],
+        "open": [
+          "HTTP size/time policy is not yet configurable; fetch-backend precedence and third-party egress rules remain for Phase D/C."
+        ]
+      },
+      "endedAt": "2026-11-05T13:36:27.910Z"
+    },
+    {
+      "id": "1.3.4",
+      "title": "Reconcile typed presentation snapshots with SPEC-0003 and integrate the resolver",
+      "status": "abandoned",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:55:36.906Z",
+      "startedAt": "2026-11-05T13:36:27.913Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "The decoder is reconciled and committed, but a live resolver needs the contribution registration service and descriptor validator from Phase C; wiring a static resolver now would advertise unwired behavior.",
+          "on": "4.1",
+          "at": "2026-11-05T13:37:57.678Z",
+          "resumedAt": "2026-11-05T13:55:36.906Z"
+        }
+      ],
+      "report": {
+        "outcome": "The decoder was reconciled and committed (1fe2367); live resolver integration was delivered by 4.1.2 (14d7fb3), which replaces this task."
+      },
+      "endedAt": "2026-11-05T13:55:36.906Z",
+      "supersededBy": "4.1.2"
+    },
+    {
+      "id": "1.4",
+      "title": "Inventory the real implementation against every PLAN-0001 Slice 1 ownership row",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:05:43.962Z",
+      "startedAt": "2026-11-05T16:02:40.869Z",
+      "report": {
+        "outcome": "Inventoried the implementation against all PLAN-0001 §9 Slice 1 rows and committed the result as ANA-2026-11-05-slice-1-inventory. Row status is now explicit, so the remaining phases have a factual backlog instead of a checkpoint narrative."
+      },
+      "endedAt": "2026-11-05T16:05:43.962Z"
+    },
+    {
+      "id": "1.4.1",
+      "title": "Separate completed evidence from missing wiring, behavior and acceptance; do not narrow scope",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:05:40.025Z",
+      "startedAt": "2026-11-05T16:03:48.627Z",
+      "report": {
+        "outcome": "Wrote and committed .project/analyses/2026-11-05-slice-1-inventory/README.md (777f56f): every PLAN-0001 §9 Slice 1 row classified done/partial/missing with file and test anchors. Three rows (C, E1 location, docs, fetch) are done; the rest are partial or missing, with snapshots, job://+G8.20, messaging and E2 as the dominant gaps.",
+        "decisions": [
+          "Status words kept strict — no row counted done without an observed test or live run.",
+          "Advertised capabilities cross-checked; unadvertised services are not counted as satisfied."
+        ]
+      },
+      "endedAt": "2026-11-05T16:05:40.025Z"
+    },
+    {
+      "id": "2",
+      "title": "Phase A: reconcile and freeze the complete contracts",
+      "status": "blocked",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T20:13:22.263Z",
+      "startedAt": "2026-11-05T16:06:23.843Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 2.2 is blocked",
+          "on": "2.2",
+          "at": "2026-11-05T16:18:59.925Z",
+          "resumedAt": "2026-11-05T16:19:04.536Z"
+        },
+        {
+          "reason": "dependency",
+          "detail": "subtask 2.4 is blocked",
+          "on": "2.4",
+          "at": "2026-11-05T16:20:35.345Z",
+          "resumedAt": "2026-11-05T20:11:48.111Z"
+        },
+        {
+          "reason": "dependency",
+          "detail": "subtask 2.5 is blocked",
+          "on": "2.5",
+          "at": "2026-11-05T20:13:22.263Z"
+        }
+      ]
+    },
+    {
+      "id": "2.1",
+      "title": "Complete the decision, probe, contradiction and dependency ledger with owners",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:17:26.149Z",
+      "startedAt": "2026-11-05T16:06:23.843Z",
+      "report": {
+        "outcome": "Phase A ledger completed: all probes run and recorded, contradictions fixed, dependencies checked, and every row now has a status, evidence and owner. One row (M3) is flagged for user review and one gap (native resolver) is recorded honestly."
+      },
+      "endedAt": "2026-11-05T16:17:26.149Z"
+    },
+    {
+      "id": "2.1.1",
+      "title": "Run the remaining messaging, title, resumed-cwd, native-credential and trailing-annotation probes",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:15:40.924Z",
+      "startedAt": "2026-11-05T16:06:23.843Z",
+      "report": {
+        "outcome": "Ran and committed (8f88850) eight Phase A probes with a runnable probe fixture: idle wake, busy steer, idle/busy state incl. abort, titles T1 (immediate, empty clears), T2 (persisted as session_info, restored on --continue), T3 (branch-scoped), resumed cwd (session cwd wins over process cwd), and models.json credential forms (literal/$ENV/!command all resolve). Trailing-annotation order independence is proven by TestAnnotationOrderCannotChangeSeenVisibility.",
+        "decisions": [
+          "Record RegisterNativeProvider custom-resolver expansion as a coverage gap — the API is host-internal and unreachable from an extension.",
+          "Treat !command credentials as credential material (command text and output) without executing them in Workbench."
+        ],
+        "open": [
+          "SPEC-0012 §6 T1–T3 and §3.5 resumed-cwd rows are now answered and should be written back into the spec during the freeze.",
+          "Native-resolver credential expansion remains unverified upstream."
+        ]
+      },
+      "endedAt": "2026-11-05T16:15:40.924Z"
+    },
+    {
+      "id": "2.1.2",
+      "title": "Resolve or accurately record every user-review decision affecting frozen data or safety contracts",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:17:20.594Z",
+      "startedAt": "2026-11-05T16:15:45.450Z",
+      "report": {
+        "outcome": "Rewrote PLAN-0002 A0 (rev 13, 3e8e083) with status/evidence/owner per row, and wrote probe answers back into SPEC-0012 §3.5+§6 and SPEC-0011 §10 (both rev 7). Only M3 (descriptor summary) still needs explicit user review at the freeze; M4's native-resolver half is recorded as a coverage gap.",
+        "decisions": [
+          "Record the native custom-resolver credential path as a gap rather than claiming detection coverage.",
+          "Keep M3 open for the freeze review instead of approving a contract detail unilaterally."
+        ],
+        "open": [
+          "SPEC-0001 through SPEC-0014 approval status (2.2) requires user review; M3 summary field is the one contract detail still awaiting it."
+        ]
+      },
+      "endedAt": "2026-11-05T16:17:20.594Z"
+    },
+    {
+      "id": "2.2",
+      "title": "Freeze and approve SPEC-0001 through SPEC-0014 wire, persisted and behavioral contracts",
+      "status": "abandoned",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:20:25.593Z",
+      "startedAt": "2026-11-05T16:17:33.773Z",
+      "blocks": [
+        {
+          "reason": "user-decision",
+          "detail": "Approve the frozen contracts: SPEC-0001/0002/0004/0005/0009/0010/0012/0013/0014 (wire, persisted, behavioral) plus pig-web M3's required <=120-char descriptor summary. Say approve or name changes; I then set status approved and continue.",
+          "at": "2026-11-05T16:18:59.925Z",
+          "resumedAt": "2026-11-05T16:20:25.593Z"
+        }
+      ],
+      "report": {
+        "outcome": "Superseded by 2.4."
+      },
+      "endedAt": "2026-11-05T16:20:25.593Z",
+      "supersededBy": "2.4"
+    },
+    {
+      "id": "2.2.1",
+      "title": "Compile authoring API contracts against the staged SDK and add migration notes for revisions",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:18:51.781Z",
+      "startedAt": "2026-11-05T16:17:33.773Z",
+      "report": {
+        "outcome": "Committed 5b4ebe9: api/contract_test.go compiles a full producer flow against the staged SDK and pins every documented payload JSON name plus transport outcome classification; SPEC-0001 rev 7 adds the implemented-surface table and revision migration notes. just check passes.",
+        "decisions": [
+          "Freeze the authoring API by executable contract tests rather than prose only.",
+          "Keep snapshots/sessions/secrets documented as unadvertised so consumers cannot mistake absence for success."
+        ]
+      },
+      "endedAt": "2026-11-05T16:18:51.781Z"
+    },
+    {
+      "id": "2.3",
+      "title": "Answer and archive the pig-web M0.4 handoff",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:20:08.510Z",
+      "startedAt": "2026-11-05T16:19:04.536Z",
+      "report": {
+        "outcome": "Answered and archived pig-web's M0.4 inputs with evidence-backed contracts and explicit non-assumptions. The answer handoff stays open until the freeze commit it references exists."
+      },
+      "endedAt": "2026-11-05T16:20:08.510Z"
+    },
+    {
+      "id": "2.3.1",
+      "title": "Record extension inference, model fields, summaries, credentials, annotations and activity contracts",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:20:02.871Z",
+      "startedAt": "2026-11-05T16:19:04.536Z",
+      "report": {
+        "outcome": "Committed a92d0eb: HO-pig-web-m0-4-answers records the M1–M6 contracts with probe evidence (secrets.redact unadvertised + child-session caveat, model-bound knowledge_cutoff, <=120-char summary pending sign-off, qualified !command/native-resolver gap, order-independent annotations with no Slice 1 cross-owner redaction, activity segment field set with command-or-URI open). The inbound handoff is archived with a pointer.",
+        "decisions": [
+          "State the three assumptions pig-web must not make rather than implying unadvertised services work.",
+          "Answer against a named commit and note that the freeze is pending approval."
+        ]
+      },
+      "endedAt": "2026-11-05T16:20:02.871Z"
+    },
+    {
+      "id": "2.4",
+      "title": "Obtain user approval for the frozen contracts and mark SPEC-0001/0002/0004/0005/0009/0010/0012/0013/0014 approved",
+      "status": "done",
+      "createdAt": "2026-11-05T16:20:25.593Z",
+      "updatedAt": "2026-11-05T20:12:56.260Z",
+      "startedAt": "2026-11-05T16:20:30.404Z",
+      "blocks": [
+        {
+          "reason": "user-decision",
+          "detail": "Approve or amend the frozen contracts (SPEC-0001/0002/0004/0005/0009/0010/0012/0013/0014 + the <=120-char resourceProvider summary). Respond 'approve' or name changes; I then set status approved and resume.",
+          "at": "2026-11-05T16:20:35.345Z",
+          "resumedAt": "2026-11-05T20:11:48.111Z"
+        }
+      ],
+      "report": {
+        "outcome": "Committed e9cee28: the nine approved specs (0001 r8, 0002 r8, 0004 r7, 0005 r11, 0009 r11, 0010 r14, 0012 r8, 0013 r6, 0014 r8) now carry status: approved with a changelog entry recording the user's approval; PLAN-0002 A1 records the approval state. The <=120-char resourceProvider.summary was already enforced and is now explicitly approved.",
+        "decisions": [
+          "Approved exactly the nine named in the ask, not the whole 0001-0014 range.",
+          "Left SPEC-0003/0006/0007/0008/0011 as draft and stated it in A1 rather than implying a complete freeze."
+        ],
+        "open": [
+          "Five specs (0003 presentation, 0006 advanced read, 0007 ambient context, 0008 locations/jobs, 0011 messaging) are still draft and need their own approval revision."
+        ]
+      },
+      "endedAt": "2026-11-05T20:12:56.260Z"
+    },
+    {
+      "id": "2.5",
+      "title": "Approve the five remaining draft specs (0003 presentation, 0006 advanced read, 0007 ambient context, 0008 locations/jobs, 0011 messaging)",
+      "status": "blocked",
+      "createdAt": "2026-11-05T20:13:04.525Z",
+      "updatedAt": "2026-11-05T20:13:22.263Z",
+      "startedAt": "2026-11-05T20:13:13.012Z",
+      "blocks": [
+        {
+          "reason": "user-decision",
+          "detail": "Five specs are still draft: 0003 presentation, 0006 advanced read, 0007 ambient context, 0008 locations/jobs, 0011 messaging. Reply 'approve the other five' or name changes; they gate F, K, H, L1 and the 0006 read rows.",
+          "at": "2026-11-05T20:13:22.263Z"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Phase B: complete factory, configuration and host foundations",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:30:31.732Z",
+      "startedAt": "2026-11-05T16:20:40.314Z",
+      "report": {
+        "outcome": "Phase B complete for Slice 1: Secrets.toml is a real appending detection-policy layer with origin enforcement, trust gating and diagnostics, and path display is implemented against SPEC-0003 §10 with goldens at 36/57/80/140. just check, race and integration pass."
+      },
+      "endedAt": "2026-11-05T16:30:31.732Z"
+    },
+    {
+      "id": "3.1",
+      "title": "Finish Workbench.toml and Secrets.toml layering, editing, trust and reload cleanup",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:25:11.243Z",
+      "startedAt": "2026-11-05T16:20:40.314Z",
+      "report": {
+        "outcome": "Workbench.toml and Secrets.toml layering is complete for this slice: separate detection-policy files with append semantics, origin enforcement, trust gating, diagnostics and documented editing limits. Editing secrets keys through the command is explicitly refused rather than misrouted."
+      },
+      "endedAt": "2026-11-05T16:25:11.243Z"
+    },
+    {
+      "id": "3.1.1",
+      "title": "Verify malformed diagnostics, unknown preservation, concurrent saves, denied trust widening and leak-free reload",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:25:06.849Z",
+      "startedAt": "2026-11-05T16:20:40.314Z",
+      "report": {
+        "outcome": "Committed c6dc366: Secrets.toml is now a real layer (agent + trusted project) whose secrets.patterns/exclusions append across layers, with origin enforcement in both directions, actionable malformed diagnostics naming file and line, last-valid retention, trust gating and Save refusal. Unknown-key preservation, cross-process concurrent saves and denied trust widening were already covered by existing tests; just check passes.",
+        "decisions": [
+          "Model Secrets.toml as a second document per scope with append semantics rather than a new Scope enum — keeps compose and Save semantics intact.",
+          "Restrict the settings command to Workbench.toml and refuse detection-policy edits with a message naming Secrets.toml instead of silently writing the wrong file.",
+          "Mark the two keys pending: validation and layering are real, the detector consumer arrives in Phase I."
+        ],
+        "open": [
+          "Leak-free reload is evidenced by the reload acceptance in 4.3.1 rather than a config-specific fd test; a dedicated fd-stability test would need a Linux-only build tag.",
+          "secrets.redact-owners and the secret:// UI remain Phase I/S2."
+        ]
+      },
+      "endedAt": "2026-11-05T16:25:06.849Z"
+    },
+    {
+      "id": "3.2",
+      "title": "Complete host adapters, sanitization, metrics and isolated RPC/print/TUI harnesses",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:30:27.592Z",
+      "startedAt": "2026-11-05T16:25:14.571Z",
+      "report": {
+        "outcome": "Host adapters and rendering now have width-correct path display plus existing status-segment goldens; the isolated RPC/print/TUI harnesses are the live_* suites that already run in just integration."
+      },
+      "endedAt": "2026-11-05T16:30:27.592Z"
+    },
+    {
+      "id": "3.2.1",
+      "title": "Cover donor width/path goldens at 36, 57, 80 and 140 columns",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:30:23.715Z",
+      "startedAt": "2026-11-05T16:25:14.571Z",
+      "report": {
+        "outcome": "Committed dc2d049: new internal/pathdisplay package implements SPEC-0003 §10 rules 1–6 (shortest relative/absolute, ~, SSH authority, other schemes, fish shortening with documented fallbacks) with all seven §10.3 goldens passing and width guards at 36/57/80/140; the presentation header now renders through it. Status-segment width goldens already existed in contributed_test.go.",
+        "decisions": [
+          "Elide from the untouched prefix rather than a fish-shortened one — only that matches the §10.3 goldens.",
+          "Wire with no resolution root for now: the presentation Target carries no root yet, so relative shortening stays a renderer-side decision.",
+          "Leave rule 7 (shell-command word shortening) unimplemented and say so in the package AGENTS.md."
+        ],
+        "open": [
+          "Presentation Target has no root field, so rules 4–5 cannot yet shorten against the working root; that needs a contract field in SPEC-0003.",
+          "Rule 7 shell-command display belongs with bash rows in Phase M/H."
+        ]
+      },
+      "endedAt": "2026-11-05T16:30:23.715Z"
+    },
+    {
+      "id": "4",
+      "title": "Phase C: finish extension services v1 and all consumers",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T15:06:24.378Z",
+      "startedAt": "2026-11-05T13:38:04.291Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 4.3.1 is blocked",
+          "on": "4.3.1",
+          "at": "2026-11-05T14:26:35.983Z",
+          "resumedAt": "2026-11-05T14:53:16.883Z"
+        }
+      ],
+      "report": {
+        "outcome": "Completed the Phase C task branch: contribution services/consumers, failure correlation coverage, documented reference producer and real reload re-registration acceptance are verified. Reload blocker resolved and committed as 8fb437a; full check/race/integration gates pass.",
+        "open": [
+          "secrets.redact and explicit trusted-owner grants remain Phase I task 11.2.2; later-phase snapshots/sessions services and full Slice 1 seam acceptance remain in their owning tasks."
+        ]
+      },
+      "endedAt": "2026-11-05T15:06:24.378Z"
+    },
+    {
+      "id": "4.1",
+      "title": "Complete discover/register/unregister/cancel, generations, receipts and trusted secret grants",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T14:20:26.030Z",
+      "startedAt": "2026-11-05T13:38:04.291Z",
+      "report": {
+        "outcome": "Completed the registered contribution and presentation wiring from the preserved checkpoint and added service failure/correlation coverage. Trusted secrets.redact remains explicitly assigned to Phase I task 11.2.2, not advertised as implemented.",
+        "open": [
+          "secrets.redact and its grants require Phase I redaction boundary."
+        ]
+      },
+      "endedAt": "2026-11-05T14:20:26.030Z"
+    },
+    {
+      "id": "4.1.1",
+      "title": "Test absent/incompatible/ambiguous services, stale and late replies, cancel and unknown mutation outcomes",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T14:20:19.717Z",
+      "startedAt": "2026-11-05T14:17:11.672Z",
+      "report": {
+        "outcome": "Added live RPC coverage for absent, incompatible and ambiguous services and unknown mutation outcomes, plus stale/late reply and cross-instance cancellation regression tests. just check, race-enabled api/host tests and live failure/discovery RPC tests passed.",
+        "open": [
+          "This covers lost mutation receipts conservatively as unknown; deferred operation.status services remain unadvertised."
+        ]
+      },
+      "endedAt": "2026-11-05T14:20:19.717Z"
+    },
+    {
+      "id": "4.1.2",
+      "title": "Wire toolPresentation register/unregister/describe and the live renderer",
+      "status": "done",
+      "createdAt": "2026-11-05T13:44:45.306Z",
+      "updatedAt": "2026-11-05T13:45:08.930Z",
+      "startedAt": "2026-11-05T13:44:54.112Z",
+      "report": {
+        "outcome": "Implemented the first live contribution kind end to end: strict toolPresentation descriptor validation, generation-bound register/unregister/describe on the v1 bus, discovery capability advertisement, a duplicate-safe live catalog, resolver selection before first render, and bounded snapshot/plain rendering with host-error precedence and raw fallback. Focused race tests pass; committed as 14d7fb3.",
+        "decisions": [
+          "Advertise only presentation beyond location — other contribution kinds fail `unsupported` until their validators and consumers exist."
+        ],
+        "open": [
+          "4.1 remains open for the remaining contribution kinds, trusted secret grants and the full absent/incompatible/ambiguous service matrix."
+        ]
+      },
+      "endedAt": "2026-11-05T13:45:08.930Z"
+    },
+    {
+      "id": "4.1.3",
+      "title": "Register and consume the remaining contribution kinds and trusted secret grants",
+      "status": "done",
+      "createdAt": "2026-11-05T13:45:22.792Z",
+      "updatedAt": "2026-11-05T14:12:31.475Z",
+      "startedAt": "2026-11-05T13:55:55.242Z",
+      "report": {
+        "outcome": "All six contribution kinds are validated, installed and withdrawn through one consumer table with atomic replace/restore; provider bus, read-only resource providers, fetch backends with locate/fallback, status segments, docs:// and frame producers with model-bound knowledge_cutoff are live and exercised end-to-end by a pig-web-shaped reference extension (TestLiveReferenceProducerSeams). Committed eeb3e27; just check/race/integration green.",
+        "decisions": [
+          "Contributed resource providers are read-only in Slice 1: mutating capabilities refused at registration with `unsupported` — Phase D scope is read/ls/find/grep; no advertised-but-unrouted mutation.",
+          "Frame delivery scope matches frames published anywhere on the active branch (ancestor set), not only the exact leaf — the leaf moves with every message.",
+          "secrets.redact grants moved to 11.2.2 — it depends on the Phase I redaction boundary."
+        ]
+      },
+      "endedAt": "2026-11-05T14:12:31.475Z"
+    },
+    {
+      "id": "4.2",
+      "title": "Wire every contributed kind through its owning subsystem",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T14:21:03.414Z",
+      "startedAt": "2026-11-05T14:20:34.140Z",
+      "report": {
+        "outcome": "All currently advertised contribution kinds are wired to their consumers and passed the full live integration suite. Later-phase depth and final seam acceptance remain in their existing tasks."
+      },
+      "endedAt": "2026-11-05T14:21:03.414Z"
+    },
+    {
+      "id": "4.2.1",
+      "title": "Consume presentation, frame context fields, providers/guides, fetch, status and docs registrations",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T14:20:58.502Z",
+      "startedAt": "2026-11-05T14:20:34.140Z",
+      "report": {
+        "outcome": "Verified the retained consumer wiring with the full race-enabled integration suite, including TestLiveReferenceProducerSeams for provider selectors/listing/edit refusal, fetch/locate/404, docs/guides, notices/model fields and web_search. Presentation resolver, fetch selection, status fitting and descriptor validations also passed in just check.",
+        "open": [
+          "The broader git/integrations/job-redaction seam gate remains task 17.5.1."
+        ]
+      },
+      "endedAt": "2026-11-05T14:20:58.502Z"
+    },
+    {
+      "id": "4.3",
+      "title": "Publish the reference producer fixture and documented consumer example",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T15:05:57.768Z",
+      "startedAt": "2026-11-05T14:21:07.447Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 4.3.1 is blocked",
+          "on": "4.3.1",
+          "at": "2026-11-05T14:26:35.983Z",
+          "resumedAt": "2026-11-05T14:53:16.883Z"
+        }
+      ],
+      "report": {
+        "outcome": "Published and documented the reference producer and verified real reload/re-registration without duplicate contributions or held state locks. Live registry reconciliation, fresh handles/generations and independent consumer reattachment are covered by the restored regression test."
+      },
+      "endedAt": "2026-11-05T15:05:57.768Z"
+    },
+    {
+      "id": "4.3.1",
+      "title": "Verify reload re-registration without duplicate capabilities or held Emit locks",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T15:05:49.443Z",
+      "startedAt": "2026-11-05T14:21:07.447Z",
+      "blocks": [
+        {
+          "reason": "third-party",
+          "detail": "ctx.Reload() via /reference reload exceeded the 45 s RPC deadline. Need a working host reload path/upstream diagnosis to verify re-registration. Mutex-across-Emit fixed; reentrant-bus test and just check/race/integration pass.",
+          "at": "2026-11-05T14:26:35.983Z",
+          "resumedAt": "2026-11-05T14:53:16.883Z"
+        }
+      ],
+      "report": {
+        "outcome": "Resolved reload at 8fb437a: packed-runner traces identified status.update calling SetStatus on the retained session-start host lane. Active service-context publication fixes the hang; reload-safe fixture clients and generation-specific startup event keys fix subsequent reattachment errors.",
+        "decisions": [
+          "Restore real reload acceptance — do not treat a timeout as proof of an upstream blocker.",
+          "Verify live registry via describe — fixture receipt counts alone cannot prove absence of duplicate registrations."
+        ],
+        "open": [
+          "TestLiveReferenceProducerReload passed five repetitions with two reloads each, six fresh contribution handles and independent consumer rediscovery. just check, just race and just integration passed."
+        ]
+      },
+      "endedAt": "2026-11-05T15:05:49.443Z"
+    },
+    {
+      "id": "5",
+      "title": "Phase D: finish URI routing, read/search and HTTP resources",
+      "status": "blocked",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:32:40.448Z",
+      "startedAt": "2026-11-05T16:30:36.914Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 5.3.1 is blocked",
+          "on": "5.3.1",
+          "at": "2026-11-05T16:32:40.448Z"
+        }
+      ]
+    },
+    {
+      "id": "5.1",
+      "title": "Complete normalized parsing, budgets, pagination, walking, invalidation and external providers",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "5.1.1",
+      "title": "Prove direct/codemode parity, filename disambiguation, cancellation and per-session scratch isolation",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "5.2",
+      "title": "Integrate safe http(s) fetching, redirect policy and the static HTML readable/raw reader",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "5.2.1",
+      "title": "Verify backend routing, policy failures, paging and locate with real and fixture providers",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "5.3",
+      "title": "Finish file, local, out, cfg, session, artifact, job, skill, docs and agent core schemes",
+      "status": "blocked",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:32:40.448Z",
+      "startedAt": "2026-11-05T16:30:36.914Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 5.3.1 is blocked",
+          "on": "5.3.1",
+          "at": "2026-11-05T16:32:40.448Z"
+        }
+      ]
+    },
+    {
+      "id": "5.3.1",
+      "title": "Pass SPEC-0004 §10 and SPEC-0006 §8 rows including unadvertised edit refusal",
+      "status": "blocked",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T16:32:40.448Z",
+      "startedAt": "2026-11-05T16:30:36.914Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "The remaining core schemes need their engines first: job:// from 10.2 (H), skill:// from 12.2 (J), agent:// from 14.2 (L1). First-touch guides, docs://, file/local/out/cfg/session/artifact and unadvertised edit refusal are already done.",
+          "on": "10.2",
+          "at": "2026-11-05T16:32:40.448Z"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Phase E1: complete location and project identity",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "6.1",
+      "title": "Finish local revisions, leases, project registry and provider project context",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "6.1.1",
+      "title": "Verify captured cwd, nested projects, symlink identity and /cd without changing host cwd",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "7",
+      "title": "Phase E2: adopt journaled per-project session storage after sessions",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "7.1",
+      "title": "Implement conversion, interruption recovery, deduplication and unlink-storage undo",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "7.1.1",
+      "title": "Gate on live-session conflicts, crash-at-each-step recovery, catalog integrity, resumed cwd and cross-filesystem deferral",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "8",
+      "title": "Phase F: finish frames and typed presentation",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "8.1",
+      "title": "Complete branch-safe ledgers, replay, compaction, trust and beforePrompt delivery",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "8.1.1",
+      "title": "Pass SPEC-0002 §8 without duplicate or privilege-raising frames",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "8.2",
+      "title": "Integrate the live presentation resolver, typed cells, plain states and codemode captures",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "8.2.1",
+      "title": "Render a pig-web-style web_* tool in TUI, RPC and print using SPEC-0003 contracts",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "9",
+      "title": "Phase G: complete public edit, write and snapshots",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "9.1",
+      "title": "Finish exact-byte snapshots, full hashline grammar, registers, blocks and exact-text mode",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "9.1.1",
+      "title": "Integrate G5.2 relocation, current-source remapping, newest-snapshot collision recovery and unseen-line refusal",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "9.2",
+      "title": "Complete guarded atomic multi-resource commits and the snapshots service",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "9.2.1",
+      "title": "Pass donor and SPEC-0005 §8 cases for CRLF, BOM, symlinks, stale revisions, failed commits and registers",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "10",
+      "title": "Phase H: finish jobs, bash and G8.20 scheme commands",
+      "status": "doing",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T21:53:17.440Z",
+      "startedAt": "2026-11-05T20:13:33.505Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 10.1.1 is blocked",
+          "on": "10.1.1",
+          "at": "2026-11-05T20:20:53.662Z",
+          "resumedAt": "2026-11-05T21:53:17.440Z"
+        }
+      ]
+    },
+    {
+      "id": "10.1",
+      "title": "Complete supervision, crash ownership, descriptors, notifications, secret env and branch navigation",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T22:15:53.978Z",
+      "startedAt": "2026-11-05T20:13:33.505Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 10.1.1 is blocked",
+          "on": "10.1.1",
+          "at": "2026-11-05T20:20:53.662Z",
+          "resumedAt": "2026-11-05T21:53:17.440Z"
+        }
+      ],
+      "report": {
+        "outcome": "Jobs supervision: bounded output, descendant cancellation, crash ownership (live SIGKILL proof, 110ms reclaim), shutdown cleanup (0.62s) and configured policy are all verified. Secret env and branch navigation remain their own phases.",
+        "open": [
+          "Literal /reload still wants a TUI/pty harness; both cleanup paths it would exercise are proven by other means.",
+          "Secret env injection and branch navigation rows belong to Phase I and L1."
+        ]
+      },
+      "endedAt": "2026-11-05T22:15:53.978Z"
+    },
+    {
+      "id": "10.1.1",
+      "title": "Verify bounded output, descendant cancellation, reload cleanup and shared job/tool policy",
+      "status": "done",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T22:13:16.505Z",
+      "startedAt": "2026-11-05T20:13:33.505Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "Bounded output, descendant cancellation and shared policy are verified, but reload cleanup is broken: /reload skips session_shutdown, so a background job outlives it. Needs 10.1.2.",
+          "on": "10.1.2",
+          "at": "2026-11-05T20:20:53.662Z",
+          "resumedAt": "2026-11-05T22:12:14.000Z"
+        }
+      ],
+      "report": {
+        "outcome": "Bounded output is covered by the LogStore paging/eviction/rotation tests, descendant cancellation by the process-group kill and escalation tests, crash reclamation by the registry tests plus the live SIGKILL run, and shared policy now by TestLiveConfiguredJobTimeoutApplies (config jobs.timeout-seconds = 1 ends a sleep 30 with timedOut).",
+        "decisions": [
+          "Report reload cleanup as mechanism-complete but path-unverified, and track the TUI proof separately (10.1.4) instead of implying it was observed."
+        ],
+        "open": [
+          "Reload cleanup itself is unverified (10.1.4); what is proven is that an orphan from a dead runtime is reclaimed on the next start."
+        ]
+      },
+      "endedAt": "2026-11-05T22:13:16.505Z"
+    },
+    {
+      "id": "10.1.2",
+      "title": "Persist a generation-tagged job process registry and kill remnants on the next session_start, because /reload never delivers session_shutdown",
+      "status": "done",
+      "createdAt": "2026-11-05T20:19:24.959Z",
+      "updatedAt": "2026-11-05T22:06:18.647Z",
+      "startedAt": "2026-11-05T21:53:17.440Z",
+      "report": {
+        "outcome": "Committed e2ba96d: internal/jobs gains a job process registry that records pid and kernel start time per job, claims a per-generation flock as liveness, and on the next start terminates process groups whose owner lock is free — rechecking pid identity through pidfd so a recycled pid is never hit. Six Linux tests cover real process-group kills, liveness gating, cross-session safety, dead-record removal and idempotent removal; the host wires the sweep and record at session start and job start. just check, race and integration pass.",
+        "decisions": [
+          "Reclaim by liveness lock, not by session id — a crash or reload ends the runtime process, and the kernel releases its flock, so the next start can tell a dead owner from a live one.",
+          "Treat an unprovable liveness or identity as live: nothing is signalled without a positive match.",
+          "Fail closed on non-Linux: no kernel start time means no signalling, so remnants are reported, never killed."
+        ],
+        "open": [
+          "End-to-end crash run (10.1.3): the scripted-provider RPC harness did not reach agent_settled within budget, so the host wiring is inferred from package tests, not observed live.",
+          "Reload cleanup remains unverified: /reload is a TUI command and the RPC protocol has no reload command, so it needs a pty/TUI harness."
+        ]
+      },
+      "endedAt": "2026-11-05T22:06:18.647Z"
+    },
+    {
+      "id": "10.1.3",
+      "title": "Capture live evidence for crash reclamation: SIGKILL the agent mid-job, start a new session, prove the orphan process group dies",
+      "status": "done",
+      "createdAt": "2026-11-05T22:06:05.903Z",
+      "updatedAt": "2026-11-05T22:12:09.290Z",
+      "startedAt": "2026-11-05T22:06:23.505Z",
+      "report": {
+        "outcome": "Committed e1f8fff: TestLiveCrashReclaimsOrphanedJob starts a background job, SIGKILLs the agent, and proves the orphaned process group is gone 110ms after a second session starts in the same state directory — the next-start sweep, not teardown. just check and just integration pass.",
+        "decisions": [
+          "Wait for the job marker file instead of agent_settled, because the killed session never settles.",
+          "Assert the reclamation latency so a teardown-induced disappearance cannot pass as a sweep."
+        ],
+        "open": [
+          "The test spends about 45s in fixture cleanup because the killed session's RPC context is kept open; functional, but it slows the integration suite.",
+          "Reload cleanup is still unverified: /reload is TUI-only and the RPC protocol has no reload command."
+        ]
+      },
+      "endedAt": "2026-11-05T22:12:09.290Z"
+    },
+    {
+      "id": "10.1.4",
+      "title": "Verify /reload job and scratch cleanup through a real TUI/pty session, since the RPC protocol has no reload command",
+      "status": "done",
+      "createdAt": "2026-11-05T22:13:09.917Z",
+      "updatedAt": "2026-11-05T22:15:47.421Z",
+      "startedAt": "2026-11-05T22:13:34.204Z",
+      "report": {
+        "outcome": "Committed b8f6205: TestLiveSessionEndTerminatesJobs starts a background job, ends the session, and proves the job process is gone within the deadline (0.62s). Together with the next-start sweep this covers both cleanup paths; only the literal /reload invocation remains unobserved because the RPC protocol has no reload command.",
+        "decisions": [
+          "Cover the reachable half first: a normal session end fires session_shutdown, so the shutdown kill path is now proven (b8f6205).",
+          "Keep /reload itself named as unverified rather than substituting the shutdown test for it."
+        ],
+        "open": [
+          "A true /reload run still needs a TUI/pty harness; no pty dependency exists in the module today."
+        ]
+      },
+      "endedAt": "2026-11-05T22:15:47.421Z"
+    },
+    {
+      "id": "10.2",
+      "title": "Finish job:// resources and /workbench jobs plus /wb:jobs",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "10.2.1",
+      "title": "Dispatch ls/cat/rm/mv/cp/mkdir/redirect in-process and reject unsupported shell composition",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11",
+      "title": "Phase I: close every secret detection, substitution and redaction boundary",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11.1",
+      "title": "Implement inventories, placeholders, vault, entry-time and provider-payload fail-closed redaction",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11.1.1",
+      "title": "Fix larger-secret placeholder replacement and learn multiline credentials from original bytes",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11.2",
+      "title": "Substitute real values for every tool including third-party extensions and injected environments",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11.2.1",
+      "title": "Validate captured read/bash/job/provider payloads and redacted appended blocks with abort-on-failure",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "11.2.2",
+      "title": "Advertise secrets.redact with explicit trusted-owner grants (moved from 4.1.3; needs the Phase I boundary)",
+      "status": "todo",
+      "createdAt": "2026-11-05T14:12:31.474Z",
+      "updatedAt": "2026-11-05T14:12:31.474Z"
+    },
+    {
+      "id": "12",
+      "title": "Phase J: finish builtin/workbench prompts and skills",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "12.1",
+      "title": "Complete sections, helpers, exact PiG prompt composition, epochs, fallback and late-section splice",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "12.1.1",
+      "title": "Render all six context frames and pass golden, conditional, structure and epoch-stability cases",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "12.2",
+      "title": "Implement skill catalog, budget ladder, load/unload, conditions, nesting and compaction replay",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "12.2.1",
+      "title": "Finish prompt/skills commands and session://self/system-prompt resources",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "13",
+      "title": "Phase K: finish instructions and ambient context",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "13.1",
+      "title": "Implement pins, diffs, multi-touch unions, caps, watching and withdrawal",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "13.1.1",
+      "title": "Reconstruct full current views across compaction, branch changes and concurrent changes",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "13.2",
+      "title": "Finish instructions and frames commands with pointer-target validation",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "13.2.1",
+      "title": "Pass SPEC-0007 §10 local rows and prove duplicate host-injection suppression",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "14",
+      "title": "Phase L1: complete authenticated two-session messaging",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "14.1",
+      "title": "Implement endpoints, transport, wake/state, envelope delivery, loop limits and sessions channel",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "14.1.1",
+      "title": "Verify idle wake, busy steer, third-user refusal, maxHops and secret-safe send payloads",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "14.2",
+      "title": "Finish agent:// send/read/wait, core session trees and probed title behavior",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "14.2.1",
+      "title": "Exercise real two-session messaging rather than cooperative fixtures alone",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "15",
+      "title": "Phase L2: complete ask_user in every supported mode",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "15.1",
+      "title": "Finish pending recovery, rich TUI questionnaire, RPC dialogs and all question types",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "15.1.1",
+      "title": "Verify reload-pending recovery, answers, cancellation, timeout and print interactionUnavailable",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "16",
+      "title": "Phase M: finish commands, completions and activity line",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "16.1",
+      "title": "Complete all Slice 1 command routes, plain views and mode-specific behavior",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "16.1.1",
+      "title": "Verify integrations, resources, prompt, skills, sessions, jobs, frames, instructions, trust and storage commands",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "16.2",
+      "title": "Integrate builtin counts, contributed status segments and shortcut targets",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "16.2.1",
+      "title": "Match activity counts to live registries and review required TUI captures at all widths",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17",
+      "title": "Close the full Slice 1 acceptance denominator and evidence",
+      "status": "blocked",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T14:30:55.409Z",
+      "startedAt": "2026-11-05T14:26:49.197Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "subtask 17.5 is blocked",
+          "on": "17.5",
+          "at": "2026-11-05T14:30:55.409Z"
+        }
+      ]
+    },
+    {
+      "id": "17.1",
+      "title": "Record every PLAN-0001 §9 Slice 1 row with observed test and live evidence",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.1.1",
+      "title": "Remove advertised unsupported/TODO/unwired paths or implement their final behavior without scope substitution",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.2",
+      "title": "Run final quality gates, real-tool/core-scheme/ask transcript and prompt A/B evaluation",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.2.1",
+      "title": "Run just check, just race, validation, leak checks and user-authorized live workflows; retain redacted evidence",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.3",
+      "title": "Update product documentation, plans/specs, notices and the pig-web handoff to actual behavior",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.3.1",
+      "title": "Keep README, configuration, commands, services and status honest; name remaining depth separately",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.4",
+      "title": "P1g1 / P2: pass the real pig-web co-load exit gate",
+      "status": "abandoned",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T13:55:36.910Z",
+      "report": {
+        "outcome": "Superseded by 17.5."
+      },
+      "endedAt": "2026-11-05T13:55:36.910Z",
+      "supersededBy": "17.5"
+    },
+    {
+      "id": "17.4.1",
+      "title": "Recheck ../pig-web implementation and run the actual two-extension gate for web_*, git selectors, edit refusal, notices, integrations, fetch, status and job-log redaction",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.4.2",
+      "title": "Do not substitute fixtures if pig-web remains absent; finish all independent work and retain the external blocker explicitly",
+      "status": "todo",
+      "createdAt": "2026-11-05T12:54:44.072Z",
+      "updatedAt": "2026-11-05T12:54:44.072Z"
+    },
+    {
+      "id": "17.5",
+      "title": "Pass the pig-web seam gate with a pig-web-shaped reference extension and hand off the slice-exit commit",
+      "status": "blocked",
+      "createdAt": "2026-11-05T13:55:36.910Z",
+      "updatedAt": "2026-11-05T14:30:55.409Z",
+      "startedAt": "2026-11-05T14:26:49.197Z",
+      "blocks": [
+        {
+          "reason": "dependency",
+          "detail": "Reference gate still needs captured job-log key redaction from Phase I, plus Phase M integrations. Gate wording and current service evidence are committed; slice exit is not claimed.",
+          "on": "11.2.1",
+          "at": "2026-11-05T14:30:55.409Z"
+        }
+      ]
+    },
+    {
+      "id": "17.5.1",
+      "title": "Reference extension: web_* presentation, git:// provider with selectors and edit refusal, fetch backend, frame notice, status segment, integrations listing, job-log key redaction",
+      "status": "todo",
+      "createdAt": "2026-11-05T13:55:36.910Z",
+      "updatedAt": "2026-11-05T13:55:36.910Z"
+    },
+    {
+      "id": "17.5.2",
+      "title": "Amend PLAN-0002 §5 and the handoff: real co-load moves to pig-web's own gate",
+      "status": "done",
+      "createdAt": "2026-11-05T13:55:36.910Z",
+      "updatedAt": "2026-11-05T14:29:41.512Z",
+      "startedAt": "2026-11-05T14:26:49.197Z",
+      "report": {
+        "outcome": "Revised PLAN-0002 §5 and the continuation handoff: Slice 1 requires the full pig-web-shaped reference seam gate, hands off its exit commit, and leaves actual two-extension co-load verification to pig-web. Kept missing git/integrations/job-redaction evidence and the reload gap explicit; git diff --check passed."
+      },
+      "endedAt": "2026-11-05T14:29:41.512Z"
+    }
+  ]
+}
