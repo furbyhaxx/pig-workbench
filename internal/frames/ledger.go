@@ -25,6 +25,8 @@ type storedRecord struct {
 	ExpiresAt      *time.Time `json:"expiresAt,omitempty"`
 	State          string     `json:"state"`
 	Receipt        Receipt    `json:"receipt"`
+	// BodyDropped marks a terminal record whose body left memory; the digest still identifies it.
+	BodyDropped bool `json:"bodyDropped,omitempty"`
 }
 
 type eventKey struct {
@@ -53,7 +55,10 @@ type Session struct {
 	pending   map[coalesceKey]*storedRecord
 	byID      map[string]*storedRecord
 	count     int
-	bodySize  int
+	// bodySize counts pending bodies, historySize the bodies of records that left pending.
+	bodySize    int
+	historySize int
+	trimmed     int
 }
 
 // Ledger admits frames in an immutable producer and branch context.
@@ -161,7 +166,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	s.expireLocked(now)
 	event := eventKey{producer: l.context.ProducerPrefix, event: p.EventKey}
 	if existing := s.events[event]; existing != nil {
-		if !samePublish(existing.publish(), p) || !l.sameBranch(existing.Frame.BranchLeaf) || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
+		if !existing.matches(p) || !l.sameBranch(existing.Frame.BranchLeaf) || existing.Frame.Epoch != l.context.Epoch || existing.Trusted != l.context.Trusted || existing.Authority != l.context.Authority {
 			return Receipt{}, ErrConflict
 		}
 		duplicate := existing.Receipt
@@ -182,7 +187,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 		return Receipt{}, fmt.Errorf("%w: pending frame capacity", ErrLimitExceeded)
 	}
 	if len(p.Body) > maxBodyMemory-s.bodySize {
-		return Receipt{}, fmt.Errorf("%w: retained body memory", ErrLimitExceeded)
+		return Receipt{}, fmt.Errorf("%w: pending body memory", ErrLimitExceeded)
 	}
 	if s.sequence >= 1<<53-1 {
 		return Receipt{}, ErrSequenceExhausted
@@ -208,6 +213,7 @@ func (l *Ledger) Admit(p Publish) (Receipt, error) {
 	if previous != nil {
 		previous.State = stateSuperseded
 		s.count--
+		s.toHistoryLocked(previous)
 	}
 	s.sequence = frame.Sequence
 	s.records = append(s.records, record)
@@ -249,7 +255,7 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 	pending := make(map[coalesceKey]*storedRecord)
 	byID := make(map[string]*storedRecord, len(snapshot))
 	var sequence int64
-	var count, bodySize int
+	var count, bodySize, historySize int
 	for i, raw := range snapshot {
 		if !utf8.Valid(raw) || !json.Valid(raw) {
 			return fmt.Errorf("%w: record %d is not valid JSON", ErrInvalidSnapshot, i)
@@ -269,15 +275,22 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 		if err != nil || !samePublish(normalized, p) || !validContext(ctx) || !ownsSource(ctx, p.Source) {
 			return fmt.Errorf("%w: record %d has an invalid publication", ErrInvalidSnapshot, i)
 		}
-		if !ValidNonce(record.Frame.Nonce) || record.Frame != makeFrame(ctx, p, record.Frame.Sequence, record.Frame.CreatedAt, record.Frame.Nonce) || record.Receipt != makeReceipt(record.Frame) {
+		expected := makeFrame(ctx, p, record.Frame.Sequence, record.Frame.CreatedAt, record.Frame.Nonce)
+		if record.BodyDropped {
+			if record.State == statePending || p.Body != "" || !validDigest(record.Frame.ContentDigest) {
+				return fmt.Errorf("%w: record %d dropped its body inconsistently", ErrInvalidSnapshot, i)
+			}
+			expected.ContentDigest = record.Frame.ContentDigest
+		}
+		if !ValidNonce(record.Frame.Nonce) || record.Frame != expected || record.Receipt != makeReceipt(record.Frame) {
 			return fmt.Errorf("%w: record %d has inconsistent provenance", ErrInvalidSnapshot, i)
 		}
 		event := eventKey{producer: ctx.ProducerPrefix, event: p.EventKey}
 		if events[event] != nil {
 			return fmt.Errorf("%w: record %d repeats an event key", ErrInvalidSnapshot, i)
 		}
-		if len(p.Body) > maxBodyMemory-bodySize {
-			return fmt.Errorf("%w: body memory bound", ErrInvalidSnapshot)
+		if record.State == statePending && len(p.Body) > maxBodyMemory-bodySize {
+			return fmt.Errorf("%w: pending body memory bound", ErrInvalidSnapshot)
 		}
 		key, eligible := coalesceFor(ctx, p)
 		switch record.State {
@@ -305,7 +318,11 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 			return fmt.Errorf("%w: record %d has an unsupported state", ErrInvalidSnapshot, i)
 		}
 		sequence = record.Frame.Sequence
-		bodySize += len(p.Body)
+		if record.State == statePending {
+			bodySize += len(p.Body)
+		} else {
+			historySize += len(p.Body)
+		}
 		records = append(records, &record)
 		events[event] = &record
 		byID[record.Frame.FrameID] = &record
@@ -327,7 +344,60 @@ func (s *Session) Restore(snapshot []json.RawMessage) error {
 	s.sequence = sequence
 	s.count = count
 	s.bodySize = bodySize
+	s.historySize = historySize
+	s.trimmed = 0
+	s.trimHistoryLocked()
 	return nil
+}
+
+// matches reports whether p repeats this record's publication; a dropped body is compared by digest.
+func (r *storedRecord) matches(p Publish) bool {
+	stored := r.publish()
+	if r.BodyDropped {
+		digest := sha256.Sum256([]byte(p.Body))
+		if r.Frame.ContentDigest != "sha256:"+hex.EncodeToString(digest[:]) {
+			return false
+		}
+		p.Body = ""
+	}
+	return samePublish(stored, p)
+}
+
+// toHistoryLocked moves the body of a record that just left pending from the pending bound to history.
+func (s *Session) toHistoryLocked(record *storedRecord) {
+	s.bodySize -= len(record.Frame.Body)
+	s.historySize += len(record.Frame.Body)
+	s.trimHistoryLocked()
+}
+
+// trimHistoryLocked drops the oldest non-pending bodies until history fits its bound.
+// The session entries the host persisted still hold those bodies.
+func (s *Session) trimHistoryLocked() {
+	advance := true
+	for i := s.trimmed; i < len(s.records) && s.historySize > maxHistoryMemory; i++ {
+		record := s.records[i]
+		if record.State == statePending {
+			advance = false
+			continue
+		}
+		if !record.BodyDropped {
+			s.historySize -= len(record.Frame.Body)
+			record.Frame.Body = ""
+			record.BodyDropped = true
+		}
+		if advance {
+			s.trimmed = i + 1
+		}
+	}
+}
+
+func validDigest(digest string) bool {
+	hash, ok := strings.CutPrefix(digest, "sha256:")
+	if !ok || len(hash) != sha256.Size*2 {
+		return false
+	}
+	_, err := hex.DecodeString(hash)
+	return err == nil
 }
 
 func (r *storedRecord) publish() Publish {

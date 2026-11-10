@@ -11,16 +11,18 @@ import (
 )
 
 const (
-	maxBodyBytes    = 32 * 1024
-	maxPending      = 256
-	maxBodyMemory   = 2 * 1024 * 1024
-	schemaVersion   = 1
-	statePending    = "pending"
-	stateSuperseded = "superseded"
-	stateDelivered  = "delivered"
-	stateCancelled  = "cancelled"
-	stateFailed     = "failed"
-	stateExpired    = "expired"
+	maxBodyBytes  = 32 * 1024
+	maxPending    = 256
+	maxBodyMemory = 2 * 1024 * 1024
+	// maxHistoryMemory bounds the bodies kept for records that are no longer pending.
+	maxHistoryMemory = 2 * 1024 * 1024
+	schemaVersion    = 1
+	statePending     = "pending"
+	stateSuperseded  = "superseded"
+	stateDelivered   = "delivered"
+	stateCancelled   = "cancelled"
+	stateFailed      = "failed"
+	stateExpired     = "expired"
 )
 
 var (

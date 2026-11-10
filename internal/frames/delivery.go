@@ -89,6 +89,7 @@ func (s *Session) retireLocked(record *storedRecord, next string) {
 	if key, eligible := coalesceFor(ctx, record.publish()); eligible && s.pending[key] == record {
 		delete(s.pending, key)
 	}
+	s.toHistoryLocked(record)
 }
 
 func (s *Session) expireLocked(now time.Time) {

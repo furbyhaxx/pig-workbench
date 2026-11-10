@@ -1,10 +1,13 @@
 package frames
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -356,4 +359,110 @@ func states(records []testRecord) []string {
 		names[i] = record.State
 	}
 	return names
+}
+
+func TestDeliveredHistoryNeverBlocksAdmission(t *testing.T) {
+	s := testSession()
+	l := testLedger(s)
+	body := strings.Repeat("x", 8*1024)
+	var first Receipt
+	for i := 0; i < 1000; i++ {
+		p := testPublish(fmt.Sprint(i))
+		p.Body = body
+		receipt, err := l.Admit(p)
+		if err != nil {
+			t.Fatalf("admission %d: %v", i, err)
+		}
+		if i == 0 {
+			first = receipt
+		}
+		if err := s.MarkDelivered(testScope(), []string{receipt.FrameID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := l.Admit(testPublish("after")); err != nil {
+		t.Fatalf("admission after 1000 delivered frames: %v", err)
+	}
+
+	records := snapshotRecords(t, s)
+	oldest, newest := records[0], records[999]
+	digest := sha256.Sum256([]byte(body))
+	if oldest.Frame.Body != "" || oldest.Frame.ContentDigest != "sha256:"+hex.EncodeToString(digest[:]) || oldest.State != stateDelivered {
+		t.Fatalf("oldest delivered record = %+v, want digest without body", oldest)
+	}
+	if newest.Frame.Body != body {
+		t.Fatal("the newest delivered record lost its body")
+	}
+	kept := 0
+	for _, record := range records {
+		kept += len(record.Frame.Body)
+	}
+	if kept > maxHistoryMemory+maxBodyMemory {
+		t.Fatalf("retained %d body bytes", kept)
+	}
+
+	again := testPublish("0")
+	again.Body = body
+	if receipt, err := l.Admit(again); err != nil || receipt != repeated(first) {
+		t.Fatalf("repeat of a dropped body = %+v, %v", receipt, err)
+	}
+	again.Body = "different"
+	if _, err := l.Admit(again); !errors.Is(err, ErrConflict) {
+		t.Fatalf("changed body under a dropped record's event key = %v", err)
+	}
+
+	restored := testSession()
+	if err := restored.Restore(s.Snapshot()); err != nil {
+		t.Fatalf("restore with dropped bodies: %v", err)
+	}
+	if !reflect.DeepEqual(s.Snapshot(), restored.Snapshot()) {
+		t.Fatal("restore changed records with dropped bodies")
+	}
+}
+
+func TestRestoreAcceptsHistoryBeyondThePendingBound(t *testing.T) {
+	// Records as sessions persisted them before bodies were dropped: every body present.
+	source := testSession()
+	l := testLedger(source)
+	var full []json.RawMessage
+	for i := 0; i < 400; i++ {
+		p := testPublish(fmt.Sprint(i))
+		p.Body = strings.Repeat("y", 8*1024)
+		receipt, err := l.Admit(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := source.MarkDelivered(testScope(), []string{receipt.FrameID}); err != nil {
+			t.Fatal(err)
+		}
+		snapshot := source.Snapshot()
+		full = append(full, snapshot[len(snapshot)-1])
+	}
+	restored := testSession()
+	if err := restored.Restore(full); err != nil {
+		t.Fatalf("restore of 3.2 MiB delivered history: %v", err)
+	}
+	if _, err := restored.Ledger(l.Context()).Admit(testPublish("after")); err != nil {
+		t.Fatalf("admission after restore: %v", err)
+	}
+	if records := snapshotRecords(t, restored); records[0].Frame.Body != "" || records[399].Frame.Body == "" {
+		t.Fatal("restore did not trim the oldest history bodies only")
+	}
+}
+
+func TestRestoreRejectsAPendingRecordWithoutItsBody(t *testing.T) {
+	s := testSession()
+	if _, err := testLedger(s).Admit(testPublish("one")); err != nil {
+		t.Fatal(err)
+	}
+	var record map[string]any
+	if err := json.Unmarshal(s.Snapshot()[0], &record); err != nil {
+		t.Fatal(err)
+	}
+	record["bodyDropped"] = true
+	record["frame"].(map[string]any)["body"] = ""
+	raw, _ := json.Marshal(record)
+	if err := testSession().Restore([]json.RawMessage{raw}); !errors.Is(err, ErrInvalidSnapshot) {
+		t.Fatalf("pending record without body = %v", err)
+	}
 }
