@@ -6,12 +6,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 	"unicode/utf8"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+
 	"github.com/furbyhaxx/pig-workbench/internal/ask"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 const presentationDetailsKey = "workbenchPresentation"
@@ -133,12 +134,7 @@ func setTarget(s *presentation.Snapshot, targets []string) {
 	if len(targets) == 0 || targets[0] == "" {
 		return
 	}
-	value := strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f {
-			return -1
-		}
-		return r
-	}, targets[0])
+	value := textclean.StripControl(targets[0])
 	if value == "" {
 		return
 	}
@@ -256,12 +252,7 @@ func outputTail(output string) string {
 	if len(lines) > jobTailLines {
 		lines = lines[len(lines)-jobTailLines:]
 	}
-	return strings.Map(func(r rune) rune {
-		if r != '\n' && r != '\t' && unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, strings.Join(lines, "\n"))
+	return textclean.StripControl(strings.Join(lines, "\n"), '\n', '\t')
 }
 
 // askSnapshot maps the ask result to its outcome and lists each answer by question label, in the form's order.

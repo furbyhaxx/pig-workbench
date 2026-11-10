@@ -3,11 +3,11 @@ package host
 import (
 	"strconv"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 
 	"github.com/furbyhaxx/pig-workbench/internal/instructions"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 const (
@@ -102,12 +102,7 @@ func hunkRange(field, sign string) (int, int, bool) {
 }
 
 func diffLineText(text string) string {
-	text = strings.Map(func(r rune) rune {
-		if r != '\t' && unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, text)
+	text = textclean.StripControl(text, '\t')
 	if len(text) <= maxDiffLineBytes {
 		return text
 	}

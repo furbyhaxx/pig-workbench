@@ -16,6 +16,7 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/contribution"
 	"github.com/furbyhaxx/pig-workbench/internal/location"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 // contributedProvider routes one scheme to a registered resourceProvider owner.
@@ -82,12 +83,7 @@ func providerFailure(scheme string, err error) error {
 }
 
 func sanitizeProviderText(text string) string {
-	cleaned := strings.Map(func(r rune) rune {
-		if r < 32 || r == 127 {
-			return ' '
-		}
-		return r
-	}, text)
+	cleaned := textclean.SpaceControl(text)
 	if len(cleaned) > 300 {
 		cleaned = cleaned[:300] + "…"
 	}

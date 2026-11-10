@@ -10,6 +10,8 @@ import (
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 func (a *app) registerCommands(ext *sdk.Extension) {
@@ -191,18 +193,7 @@ func toast(ctx sdk.Context, text string) {
 
 func noticeText(text string, width int) string {
 	text = tui.StripTerminalSequences(text)
-	text = strings.Map(func(r rune) rune {
-		if r == '\n' {
-			return r
-		}
-		if r == '\t' {
-			return ' '
-		}
-		if r < 32 || r >= 127 && r <= 159 {
-			return -1
-		}
-		return r
-	}, text)
+	text = textclean.StripControl(strings.ReplaceAll(text, "\t", " "), '\n')
 	if width > 0 {
 		lines := strings.Split(text, "\n")
 		for i, line := range lines {

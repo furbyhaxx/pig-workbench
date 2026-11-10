@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unicode"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
+
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 const maxTitleRunes = 200
@@ -111,13 +112,7 @@ func renderStored(ctx context.Context, host sdk.Context, info sdk.SessionInfo, n
 
 // cleanTitle makes a title one line without control characters, at most 200 characters.
 func cleanTitle(value string) string {
-	var out []rune
-	for _, r := range strings.TrimSpace(value) {
-		if unicode.IsControl(r) {
-			r = ' '
-		}
-		out = append(out, r)
-	}
+	out := []rune(textclean.SpaceControl(strings.TrimSpace(value)))
 	if len(out) > maxTitleRunes {
 		out = out[:maxTitleRunes]
 	}

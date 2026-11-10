@@ -7,6 +7,7 @@ Feature packages keep domain logic independent of the SDK; `host/` adapts contex
 - `location/` — immutable local locations, mutation leases and transactional transitions.
 - `resource/` — ToolPath selectors, provider router (file/local/out) and bounded source paging.
 - `search/` — bounded grep and glob walking with honest completeness.
+- `textclean/` — control-character stripping shared by `host` and `resource`.
 - `syntax/` — tree-sitter summaries and block spans (bounded cache, byte-confident coordinates).
 - `hashline/` — byte model, XXH32 tags, tagged rendering and ending-safe restore.
 - `frames/` — session-wide frame ledger: dedup, bounds, replay, per-producer views.

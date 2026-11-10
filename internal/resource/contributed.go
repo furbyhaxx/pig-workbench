@@ -8,8 +8,9 @@ import (
 	"io"
 	"regexp"
 	"slices"
-	"unicode"
 	"unicode/utf8"
+
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 // ErrInvalidDescriptor reports a resourceProvider descriptor outside SPEC-0004 §2.
@@ -194,13 +195,5 @@ func ParseProviderDescriptor(data []byte) (ProviderDescriptor, error) {
 }
 
 func plainLine(value string, maxBytes int) bool {
-	if len(value) > maxBytes || !utf8.ValidString(value) {
-		return false
-	}
-	for _, r := range value {
-		if unicode.IsControl(r) {
-			return false
-		}
-	}
-	return true
+	return len(value) <= maxBytes && utf8.ValidString(value) && !textclean.HasControl(value)
 }

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+
 	"github.com/furbyhaxx/pig-workbench/internal/pathdisplay"
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
+	"github.com/furbyhaxx/pig-workbench/internal/textclean"
 )
 
 func renderPresentationCall(entry presentationRegistration, args map[string]any, render sdk.ToolRenderContext, root string, width int, shorten bool) []string {
@@ -490,15 +491,7 @@ func fitPresentationLines(lines []string, width, limit int) []string {
 	fitted := make([]string, len(lines))
 	for i, line := range lines {
 		cleaned := tui.StripTerminalSequences(line)
-		cleaned = strings.Map(func(r rune) rune {
-			if r == '\t' {
-				return ' '
-			}
-			if unicode.IsControl(r) {
-				return -1
-			}
-			return r
-		}, cleaned)
+		cleaned = textclean.StripControl(strings.ReplaceAll(cleaned, "\t", " "))
 		fitted[i] = tui.StripTerminalSequences(tui.TruncateToWidth(cleaned, width, "…", false))
 	}
 	return fitted
