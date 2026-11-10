@@ -328,19 +328,27 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 		ctx.Notify(noticeText("Retained display schemas were not restored: "+err.Error(), 0), "warning")
 	}
 	current = s
-	a.mu.Lock()
-	a.session = s
-	a.initErr = nil
-	a.mu.Unlock()
-	a.startEndpoint(ctx, s)
-	a.adoptSessionStorage(ctx, s)
-	a.startActivity(ctx, s)
+	a.publish(s, func() {
+		a.startEndpoint(ctx, s)
+		a.adoptSessionStorage(ctx, s)
+		a.startActivity(ctx, s)
+	})
 	a.offerProject(ctx, s)
 	announcePendingAsk(ctx)
 	if err := ctx.Events().Emit(api.EventChannel, api.Event{Version: 1, SessionID: s.id, Generation: s.generation, EventID: s.generation + ":ready", Type: "ready", Data: map[string]any{"capabilities": advertisedCapabilities}}); err != nil {
 		ctx.Notify("Workbench ready event failed; clients can discover on demand.", "warning")
 	}
 	return nil, nil
+}
+
+// publish makes the session visible to handlers. wire assigns the fields handlers read without a
+// lock (endpoint, activity) and must finish first: nothing may write them after publication.
+func (a *app) publish(s *session, wire func()) {
+	wire()
+	a.mu.Lock()
+	a.session = s
+	a.initErr = nil
+	a.mu.Unlock()
 }
 
 func (a *app) fail(err error) error { a.mu.Lock(); a.initErr = err; a.mu.Unlock(); return err }

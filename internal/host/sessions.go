@@ -217,12 +217,13 @@ func (a *app) newEndpoint(ctx sdk.Context, s *session) (*sessionEndpoint, error)
 	now := time.Now()
 	e.record = endpoint.Record{SchemaVersion: 1, SessionID: s.id, Token: e.token, PID: os.Getpid(), StartedAt: now, HeartbeatAt: now, State: "idle", Endpoint: e.id, Discoverable: !e.hidden}
 	e.refresh(ctx)
-	if err := registry.Register(requestContext{ctx}, e.record); err != nil {
-		return nil, err
-	}
+	// Listen before registering: a peer that finds the record must find the socket.
 	server, err := messaging.Listen(filepath.Join(dir, e.id+".sock"), e.token, e)
 	if err != nil {
-		_ = registry.Unregister(context.Background(), s.id, e.token)
+		return nil, err
+	}
+	if err := registry.Register(requestContext{ctx}, e.record); err != nil {
+		server.Close()
 		return nil, err
 	}
 	e.server = server
