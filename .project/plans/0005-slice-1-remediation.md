@@ -18,7 +18,7 @@ document:
 
 # 1. Outcome
 
-Every finding of [REV-2026-11-10-slice-1](../reviews/2026-11-10-slice-1/README.md) is fixed, or moved to PLAN-0003 by an explicit plan revision. After this plan [PLAN-0002](0002-slice-1-foundation.md) §5 can exit: all three gates are green, the inventory is re-run at the fix commit, and the handoff to pig-web names that commit.
+Every finding of [REV-2026-11-10-slice-1](../reviews/2026-11-10-slice-1/report.md) is fixed, or moved to PLAN-0003 by an explicit plan revision. After this plan [PLAN-0002](0002-slice-1-foundation.md) §5 can exit: all three gates are green, the inventory is re-run at the fix commit, and the handoff to pig-web names that commit.
 
 This plan adds no feature beyond what the specifications already assign to Slice 1, with one approved extension: scheme paths as arguments of ordinary shell commands (area A).
 
