@@ -35,6 +35,7 @@ type secretsBoundary struct {
 	degraded    string
 	keyRepaired string
 	gaps        []string
+	envSeen     map[string]string
 }
 
 func newSecretsBoundary(settings *config.Manager, agentDir string, projectPath func() string, trusted func() bool, cwd func() string) *secretsBoundary {
@@ -67,7 +68,7 @@ func (b *secretsBoundary) Guard() (guard *secrets.Detector, enabled bool, err er
 	if err != nil {
 		return nil, true, err
 	}
-	b.detector, b.vault, b.names, b.learned, b.noticed = detector, vault, names, "", ""
+	b.detector, b.vault, b.names, b.learned, b.noticed, b.envSeen = detector, vault, names, "", "", nil
 	if err := b.learnLocked(); err != nil {
 		b.detector = nil
 		return nil, true, err
@@ -103,6 +104,38 @@ func (b *secretsBoundary) learnLocked() error {
 		}
 	}
 	b.learned = cwd
+	return nil
+}
+
+// LearnReferenced stores the secrets of every env file a tool call names before the call runs,
+// so its result is redacted on the way back (SPEC-0013 §2). A file is parsed again only after it changed.
+func (b *secretsBoundary) LearnReferenced(cwd string, input map[string]any) error {
+	files := referencedEnvFiles(cwd, b.home, input)
+	if len(files) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.detector == nil {
+		return nil
+	}
+	for _, file := range files {
+		info, err := os.Stat(file)
+		if err != nil {
+			continue
+		}
+		stamp := fmt.Sprintf("%d/%d", info.Size(), info.ModTime().UnixNano())
+		if b.envSeen[file] == stamp {
+			continue
+		}
+		if err := learnEnvFile(b.detector, b.names, file); err != nil {
+			return err
+		}
+		if b.envSeen == nil || len(b.envSeen) >= 1024 {
+			b.envSeen = make(map[string]string)
+		}
+		b.envSeen[file] = stamp
+	}
 	return nil
 }
 

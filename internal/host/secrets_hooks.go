@@ -315,5 +315,9 @@ func (a *app) substituteCall(ctx sdk.Context, data map[string]any) (any, error) 
 	for key, value := range substituted {
 		input[key] = value
 	}
+	if err := s.secrets.LearnReferenced(s.location.Current().Cwd, input); err != nil {
+		s.secrets.withhold(ctx, err)
+		return map[string]any{"block": true, "reason": "The secrets boundary is unavailable, so this call was not run."}, nil
+	}
 	return nil, nil
 }

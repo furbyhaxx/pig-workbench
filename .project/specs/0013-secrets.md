@@ -5,15 +5,15 @@ document:
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
   status: "published"
-  revision: 11
+  revision: 12
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T20:20:56+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 12
+      reason: "Define which files count as referenced env files and the bounds of that scan"
+      changes: ["§2: referenced env files are named `.env*` or `*.env` files or those inside a named directory, within 256 words and 16 files per call"]
 ---
 
 # 1. Purpose
@@ -30,7 +30,7 @@ Source design: `host:/mnt/Projects/nukular/nukii-revived/.project/specs/secrets/
 
 Secrets are found, never listed by hand:
 - **Token shapes:** built-in high-confidence patterns (GitHub, GitLab, Anthropic, OpenAI, Slack, AWS access keys, JWTs, PEM private keys, …) plus user `patterns` (`name` + exactly one of `regex`, `prefix`, `suffix`, with `min-length` ≥ 8 for prefix/suffix).
-- **Environment values** whose variable **name** matches an `[env] names` glob (case-insensitive; default `*KEY*`, `*SECRET*`, `*TOKEN*`, `*PASSWORD*`, `*PASS`, `*AUTH*`, `*CREDENTIAL*`, `*PRIVATE*`): the process environment, `~/.env`, `.env*` files from the session cwd up to the repository root, and any env file a tool call references (loaded before the call runs, so its values are already known when the result comes back).
+- **Environment values** whose variable **name** matches an `[env] names` glob (case-insensitive; default `*KEY*`, `*SECRET*`, `*TOKEN*`, `*PASSWORD*`, `*PASS`, `*AUTH*`, `*CREDENTIAL*`, `*PRIVATE*`): the process environment, `~/.env`, `.env*` files from the session cwd up to the repository root, and any env file a tool call references (loaded before the call runs, so its values are already known when the result comes back). A referenced env file is a call argument or shell word naming an existing `.env*` or `*.env` file, or the `.env*` files directly inside a named directory; at most 256 words and 16 files of 1 MiB are examined per call, and a path the shell builds at run time is not seen.
 - **PiG credentials:** every `auth.json` entry, resolved through the host (`ModelRuntime.ListCredentials`, `ModelRegistry.GetProviderAuth`), with expansion verified for models.json and `RegisterProvider` key-only registrations (probe S6). `RegisterNativeProvider` with a custom resolver may return literal `!command` strings; S6 does not establish expansion there. Workbench never executes credential command strings itself or learns the literal command as though it were the resolved secret. Native-resolver coverage needs a separate probe; an unresolved inventory entry is reported as a coverage gap, not complete detection.
 - **URL passwords** in `scheme://user:password@host`.
 - **Explicit:** `write secret://…`, `ask_user` secret questions, `/workbench secrets add`.

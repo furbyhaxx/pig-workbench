@@ -100,6 +100,137 @@ func envFiles(home, cwd string) []string {
 	return files
 }
 
+const (
+	maxReferencedEnvFiles = 16
+	maxReferencedWords    = 256
+)
+
+// envShaped reports whether a file name is an env file: `.env`, `.env.local`, `.envrc`, `prod.env`.
+func envShaped(name string) bool {
+	base := filepath.Base(name)
+	return strings.HasPrefix(base, ".env") || strings.HasSuffix(base, ".env")
+}
+
+// referencedEnvFiles lists the env files a tool call names: an env-shaped file itself, and the
+// `.env*` files directly inside a named directory. Words are the call's string arguments and,
+// for text with spaces such as a shell command, its shell words. Both counts are bounded.
+func referencedEnvFiles(cwd, home string, input map[string]any) []string {
+	if dir, ok := input["cwd"].(string); ok && dir != "" {
+		cwd = resolveWord(cwd, home, dir)
+	}
+	var words []string
+	var collect func(value any, depth int)
+	collect = func(value any, depth int) {
+		if depth > 4 || len(words) >= maxReferencedWords {
+			return
+		}
+		switch typed := value.(type) {
+		case string:
+			// A path argument may contain spaces; a command is also split into its words.
+			if len(typed) <= 4096 && !strings.Contains(typed, "\n") {
+				words = append(words, typed)
+			}
+			words = append(words, shellishWords(typed)...)
+		case []any:
+			for _, item := range typed {
+				collect(item, depth+1)
+			}
+		case map[string]any:
+			keys := make([]string, 0, len(typed))
+			for key := range typed {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				collect(typed[key], depth+1)
+			}
+		}
+	}
+	collect(input, 0)
+	if len(words) > maxReferencedWords {
+		words = words[:maxReferencedWords]
+	}
+	var files []string
+	seen := make(map[string]bool)
+	add := func(file string) {
+		if !seen[file] && len(files) < maxReferencedEnvFiles {
+			seen[file] = true
+			files = append(files, file)
+		}
+	}
+	for _, word := range words {
+		word = strings.TrimPrefix(word, "file://")
+		if strings.Contains(word, "://") {
+			continue
+		}
+		candidates := []string{word}
+		// A read selector such as `.env:1-20` follows the last colon.
+		if cut := strings.LastIndexByte(word, ':'); cut > 0 {
+			candidates = append(candidates, word[:cut])
+		}
+		for _, candidate := range candidates {
+			file := resolveWord(cwd, home, candidate)
+			info, err := os.Stat(file)
+			if err != nil {
+				continue
+			}
+			if info.Mode().IsRegular() && envShaped(file) {
+				add(file)
+			} else if info.IsDir() {
+				matches, _ := filepath.Glob(filepath.Join(file, ".env*"))
+				sort.Strings(matches)
+				for _, match := range matches {
+					add(match)
+				}
+			}
+			break
+		}
+	}
+	return files
+}
+
+// shellishWords splits text at spaces and shell operators and keeps quoted text together.
+// It is a word finder for detection, not a shell parser.
+func shellishWords(text string) []string {
+	var words []string
+	var word strings.Builder
+	flush := func() {
+		if word.Len() > 0 {
+			words = append(words, word.String())
+			word.Reset()
+		}
+	}
+	var quote rune
+	for _, r := range text {
+		switch {
+		case quote != 0:
+			if r == quote {
+				quote = 0
+			} else {
+				word.WriteRune(r)
+			}
+		case r == '\'' || r == '"':
+			quote = r
+		case r == ' ' || r == '\t' || r == '\n' || strings.ContainsRune(";|&<>()=`", r):
+			flush()
+		default:
+			word.WriteRune(r)
+		}
+	}
+	flush()
+	return words
+}
+
+func resolveWord(cwd, home, word string) string {
+	if word == "~" || strings.HasPrefix(word, "~/") {
+		return filepath.Join(home, strings.TrimPrefix(word, "~"))
+	}
+	if filepath.IsAbs(word) {
+		return filepath.Clean(word)
+	}
+	return filepath.Join(cwd, word)
+}
+
 func readEnvFile(file string) (map[string]string, bool) {
 	handle, _, err := fileio.OpenRegular(file)
 	if err != nil {
@@ -125,15 +256,23 @@ func learnEnvironment(detector *secrets.Detector, matcher nameMatcher, environ [
 		}
 	}
 	for _, file := range envFiles(home, cwd) {
-		values, ok := readEnvFile(file)
-		if !ok {
-			continue
+		if err := learnEnvFile(detector, matcher, file); err != nil {
+			return err
 		}
-		for name, value := range values {
-			if matcher.secret(name) {
-				if err := detector.Learn([]byte(value), "token", "env-file"); err != nil {
-					return err
-				}
+	}
+	return nil
+}
+
+// learnEnvFile stores the secret-named values of one env file; an unreadable file is skipped.
+func learnEnvFile(detector *secrets.Detector, matcher nameMatcher, file string) error {
+	values, ok := readEnvFile(file)
+	if !ok {
+		return nil
+	}
+	for name, value := range values {
+		if matcher.secret(name) {
+			if err := detector.Learn([]byte(value), "token", "env-file"); err != nil {
+				return err
 			}
 		}
 	}

@@ -526,3 +526,45 @@ func TestLiveForkKeepsTheSessionFrameNonce(t *testing.T) {
 		t.Fatalf("frames carry %d distinct nonces across a fork, want one: %v", len(nonces), nonces)
 	}
 }
+
+// An env file outside the cwd chain is learned before the call that names it runs, so the
+// result of that very call already carries placeholders (SPEC-0013 §2).
+func TestLiveReferencedEnvFileOutsideTheCwdChainIsRedacted(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	readValue := "plainvalue-" + strings.Repeat("r3Ad", 6)
+	shellValue := "plainvalue-" + strings.Repeat("sH3l", 6)
+	if err := os.WriteFile(filepath.Join(outside, ".env"), []byte("API_KEY="+readValue+"\nMODE=fast\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outside, "deploy.env"), []byte("export DEPLOY_TOKEN='"+shellValue+"'\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": filepath.Join(outside, ".env")}},
+		{"bash", map[string]any{"command": "cat " + filepath.Join(outside, "deploy.env")}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	fixture := startRPCWithExtensions(t, root, true, nil, "--model", "workbench-fixture/mock", "--tools", "read,bash")
+	fixture.send("script", "prompt", "read the env files")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.bodies) != 3 {
+		t.Fatalf("got %d provider requests, want 3", len(recorder.bodies))
+	}
+	for i, body := range recorder.bodies {
+		if strings.Contains(body, readValue) || strings.Contains(body, shellValue) {
+			t.Fatalf("request %d carries an env-file value in plaintext", i)
+		}
+	}
+	last := recorder.bodies[len(recorder.bodies)-1]
+	if !strings.Contains(last, "API_KEY=red-sec-") || !strings.Contains(last, "MODE=fast") {
+		t.Fatalf("the read result should show a placeholder for API_KEY and keep MODE: %s", last)
+	}
+	if !strings.Contains(last, "DEPLOY_TOKEN='red-sec-") {
+		t.Fatalf("the bash result should show a placeholder for DEPLOY_TOKEN: %s", last)
+	}
+}

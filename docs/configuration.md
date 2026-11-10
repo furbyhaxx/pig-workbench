@@ -39,6 +39,8 @@ max-lines = 400
 
 `secrets.env-injection` (default `true`) sets vault secrets that carry an environment name as real values in the environment of `bash` calls and jobs; their output still reaches the model as placeholders. With `false` those variables are not set. The host process environment is never changed.
 
+Secret-named values are learned from the process environment, `~/.env`, the `.env*` files from the repository root down to the session directory, and any env file a tool call names (`.env*` or `*.env`, or the `.env*` files directly inside a named directory) before that call runs. At most 16 files of 1 MiB each are examined per call; a path built by the shell at run time is not seen.
+
 `jobs.wake-on-completion` (default `true`) lets a finished background job start a turn on an idle session, and `frames.wake-budget` (default 10 per producer and hour; zero disables it) bounds how often a frame producer registered with `allowWake` may do the same. Both are user/runtime settings.
 
 The other `jobs.*` settings are user or runtime scope and take effect with the next `bash` call, without a reload:
