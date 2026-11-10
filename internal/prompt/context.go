@@ -52,8 +52,6 @@ func templateContext(data Data) *exec.Context {
 		OS:               data.Host.OS,
 		Shell:            data.Host.Shell,
 	}
-	skills := data.Skills
-	skills.Items = slices.Clone(skills.Items)
 	workbench := data.Workbench
 	workbench.Schemes = slices.Clone(workbench.Schemes)
 	return exec.NewContext(map[string]any{
@@ -61,7 +59,6 @@ func templateContext(data Data) *exec.Context {
 		"tools":        tools,
 		"host":         host,
 		"instructions": slices.Clone(data.Instructions),
-		"skills":       skills,
 		"workbench":    workbench,
 		"project_root": data.ProjectRoot,
 	})

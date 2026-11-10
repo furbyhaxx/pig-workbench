@@ -263,12 +263,10 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		if fact.source == "session.capabilities" {
 			capabilities := fact.value.(map[string]any)
 			capabilities["editMode"] = editMode
-			if s.settingString("skills.listing", "prompt") == "frame" {
-				if listed, _, err := s.listedSkills(); err == nil && len(listed) > 0 {
-					capabilities["skills"] = listed
-				}
-			}
 		}
+	}
+	if listed, _, err := s.listedSkills(); err == nil {
+		facts = append(facts, contextFact{source: "session.skills", value: skillsListing(listed)})
 	}
 	enabled, _ := configuration.Get("instructions.enabled")
 	validate, _ := configuration.Get("instructions.backlog.validate-pointers")
@@ -388,6 +386,9 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 		if state.last[key] == digest {
 			continue
 		}
+		if _, held := state.views[key]; len(body) == 0 && !held {
+			continue
+		}
 		prefix, _, _ := strings.Cut(fact.source, ".")
 		kind, authority := fact.kind, fact.authority
 		if kind == "" {
@@ -425,6 +426,13 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 				was, _, _ := strings.Cut(strings.TrimPrefix(previous, locationIntro), "; ")
 				now, rest, _ := strings.Cut(strings.TrimPrefix(fullBody, locationIntro), "; ")
 				body, kind = []byte(locationChangedIntro+was+" to "+now+"; "+strings.Replace(rest, "cwd resolve", "cwd now resolve", 1)), "notice"
+			} else if fact.source == "session.skills" {
+				change := skillsChange(previous, fullBody)
+				if change == "" {
+					state.views[key], state.last[key] = fullBody, digest
+					continue
+				}
+				body, kind = []byte(change), "notice"
 			} else if change := factChange(fact.source, previous, fullBody); change != "" {
 				body, kind = []byte(change), "notice"
 			}
@@ -484,6 +492,9 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 	}
 	if options, ok := data["systemPromptOptions"].(map[string]any); ok {
 		s.skills.setHost(decodePromptOptions(options).Skills)
+		// The session.skills frame is the only listing: PiG's own prompt must not list skills by file path beside it.
+		options["skills"] = []any{}
+		result["systemPromptOptions"] = options
 	}
 	if enabled.Value == true {
 		if options, ok := data["systemPromptOptions"].(map[string]any); ok {

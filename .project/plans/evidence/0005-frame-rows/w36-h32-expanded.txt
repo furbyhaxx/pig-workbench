@@ -1,12 +1,12 @@
- │     "https",
- │     "job",
- │     "local",
- │     "out",
- │     "session",
- │     "skill"
- │   ]
- │ }
- └ info · trusted data · seq 6 · 10…
+ │ discriminated unions and branded
+ │ types, project and workspace
+ │ layout, package.json/versioning
+ │ discipline, preferred packages,
+ │ testing with bun test,
+ │ performance, and the required
+ │ quality gates (format, lint,
+ │ typecheck, test).
+ └ info · trusted data · seq 7 · 10…
 
  ◆ instructions.steering · AGENTS.m…
  │ ## AGENTS.md [project,
@@ -29,4 +29,4 @@
 
 ────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/w...
-17.3%/32k (auto)                mock
+16.5%/32k (auto)                mock

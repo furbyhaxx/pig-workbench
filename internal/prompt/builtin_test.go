@@ -26,7 +26,7 @@ func TestBuiltinWorkbenchRendersRequiredSections(t *testing.T) {
 			}
 		}
 	}
-	for _, tag := range []string{"<tools>", "<rules>", "<resources>", "<docs>", "<project_context>", "<skills>", "<cwd>"} {
+	for _, tag := range []string{"<tools>", "<rules>", "<resources>", "<docs>", "<project_context>", "<cwd>"} {
 		if !strings.Contains(rendered.Text, tag) {
 			t.Fatalf("missing %s in %s", tag, rendered.Text)
 		}
@@ -66,7 +66,7 @@ func TestBuiltinWorkbenchCarriesHostInputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"- read: Read files", "- edit: Edit files", "- Read before editing", "- PROMPT-GUIDELINE", "Be concise", "tagged {hashline} batches", "docs://, file://", "<name>alpha</name>", "/skills/alpha/SKILL.md"} {
+	for _, want := range []string{"- read: Read files", "- edit: Edit files", "- Read before editing", "- PROMPT-GUIDELINE", "Be concise", "tagged {hashline} batches", "docs://, file://"} {
 		if !strings.Contains(rendered.Text, want) {
 			t.Errorf("missing %q in:\n%s", want, rendered.Text)
 		}
@@ -86,7 +86,7 @@ func TestBuiltinWorkbenchCarriesHostInputs(t *testing.T) {
 	}
 }
 
-func TestBuiltinWorkbenchLeavesTheSkillsSectionOutForFrameListing(t *testing.T) {
+func TestBuiltinWorkbenchNeverListsSkills(t *testing.T) {
 	loader, err := NewFileSystemLoader(FileSystemOptions{Builtin: BuiltinFS()})
 	if err != nil {
 		t.Fatal(err)
@@ -95,14 +95,14 @@ func TestBuiltinWorkbenchLeavesTheSkillsSectionOutForFrameListing(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	host := Host{Skills: []HostSkill{{Name: "alpha", Description: "d", FilePath: "/s/alpha/SKILL.md"}}}
-	for listing, want := range map[string]bool{"prompt": true, "": true, "frame": false} {
-		rendered, err := engine.Render(context.Background(), "builtin/workbench", Data{ProjectRoot: "/work", Host: host, Skills: SkillCatalog{Listing: listing}})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := strings.Contains(rendered.Text, "<skills>") || strings.Contains(rendered.Text, "/s/alpha/SKILL.md"); got != want {
-			t.Errorf("listing %q: skills section present=%v, want %v", listing, got, want)
+	host := Host{Skills: []HostSkill{{Name: "alpha", Description: "routing text", FilePath: "/s/alpha/SKILL.md"}}}
+	rendered, err := engine.Render(context.Background(), "builtin/workbench", Data{ProjectRoot: "/work", Host: host})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, listed := range []string{"<skills>", "alpha", "routing text", "SKILL.md"} {
+		if strings.Contains(rendered.Text, listed) {
+			t.Errorf("the system prompt carries %q; skills are listed by the session.skills frame only", listed)
 		}
 	}
 }

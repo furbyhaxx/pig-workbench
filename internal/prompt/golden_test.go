@@ -19,7 +19,7 @@ func TestFixtureSectionOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"tools", "rules", "resources", "docs", "project_context", "skills", "cwd"}
+	want := []string{"tools", "rules", "resources", "docs", "project_context", "cwd"}
 	for _, name := range []string{"f-default", "f-append", "f-hidden", "f-noread", "f-skills", "f-system"} {
 		data := fixtureData(t, filepath.Join(root, name+"-options.json"))
 		rendered, err := engine.Render(context.Background(), "builtin/workbench", data)
@@ -29,7 +29,7 @@ func TestFixtureSectionOrder(t *testing.T) {
 		got := sectionOrder(rendered.Text)
 		expect := want
 		if name == "f-append" {
-			expect = []string{"tools", "rules", "resources", "docs", "addendum", "project_context", "skills", "cwd"}
+			expect = []string{"tools", "rules", "resources", "docs", "addendum", "project_context", "cwd"}
 		}
 		if stringsJoin(got) != stringsJoin(expect) {
 			t.Fatalf("%s order = %v, want %v\n%s", name, got, expect, rendered.Text)

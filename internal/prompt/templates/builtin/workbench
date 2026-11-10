@@ -53,29 +53,6 @@ Registered documentation is read at docs://.
 {% endfor %}
 </project_context>
 {% endblock %}
-{% block skills %}{% if skills.listing != "frame" %}
-<skills>
-{% if skills.items or host.skills %}
-Use the read tool to load a skill's file when the task matches its description.
-<available_skills>
-{% for item in skills.items %}
-  <skill>
-    <name>{{ item.name }}</name>
-    <description>{{ item.description }}</description>
-    <location>{{ item.location }}</location>
-  </skill>
-{% endfor %}
-{% for item in host.skills %}{% if not item.disable_model_invocation %}
-  <skill>
-    <name>{{ item.name }}</name>
-    <description>{{ item.description }}</description>
-    <location>{{ item.file_path }}</location>
-  </skill>
-{% endif %}{% endfor %}
-</available_skills>
-{% endif %}
-</skills>
-{% endif %}{% endblock %}
 {% block cwd %}
 <cwd>
 {{ project_root }}

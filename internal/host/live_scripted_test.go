@@ -1166,34 +1166,34 @@ func TestLiveAutoLoadSkillIsDeliveredOnceAndStaysDeclinedAfterUnload(t *testing.
 	}
 }
 
-// TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt covers skills.listing: with frame the
-// Workbench prompt has no <skills> section and the listing rides the capabilities frame.
-func TestLiveSkillsListingFrameMovesTheListingOutOfThePrompt(t *testing.T) {
-	setup := func(t *testing.T) string {
+// TestLiveSkillsAreListedOnlyByTheSkillsFrame: neither Workbench's prompt nor PiG's own lists skills;
+// the session.skills frame names each one by its skill:// location.
+func TestLiveSkillsAreListedOnlyByTheSkillsFrame(t *testing.T) {
+	read := func([]string) scriptedCall {
+		return scriptedCall{tool: "read", args: map[string]any{"path": "skill://alpha"}}
+	}
+	for name, config := range map[string]string{"workbench prompt": "[prompt]\ndelivery = 'force'\n", "PiG prompt": "[prompt]\nenabled = false\n"} {
 		root := t.TempDir()
-		dir := filepath.Join(root, ".agents", "skills", "alpha")
+		dir := filepath.Join(root, "agent", "skills", "alpha")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: alpha\ndescription: routing text\n---\nbody\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		return root
-	}
-	read := func([]string) scriptedCall {
-		return scriptedCall{tool: "read", args: map[string]any{"path": "skill://alpha"}}
-	}
-	run := func(listing string) string {
-		_, requests := runScriptedRequests(t, setup(t), "read", "[prompt]\ndelivery = 'force'\n[skills]\nlisting = '"+listing+"'\n", nil, read)
-		return strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`).Replace(requests[0])
-	}
-	prompt := run("prompt")
-	if !strings.Contains(prompt, "<skills>") || strings.Contains(prompt, `"location": "skill://alpha"`) {
-		t.Fatalf("prompt listing must keep <skills> and leave the frame without a listing:\n%s", prompt)
-	}
-	frame := run("frame")
-	if strings.Contains(frame, "<skills>") || !strings.Contains(frame, `"location": "skill://alpha"`) || !strings.Contains(frame, "routing text") {
-		t.Fatalf("frame listing must drop <skills> and carry the skill in session.capabilities:\n%s", frame)
+		_, requests := runScriptedRequests(t, root, "read", config, nil, read)
+		request := strings.NewReplacer(`\u003c`, "<", `\u003e`, ">", `\"`, `"`).Replace(requests[0])
+		for _, listed := range []string{"<skills>", "<available_skills>", filepath.Join(dir, "SKILL.md")} {
+			if strings.Contains(request, listed) {
+				t.Fatalf("%s: the request carries %q; the frame is the only skill listing:\n%s", name, listed, request)
+			}
+		}
+		if !strings.Contains(request, `src="session.skills"`) || !strings.Contains(request, "- skill://alpha: routing text") {
+			t.Fatalf("%s: no session.skills frame lists skill://alpha:\n%s", name, request)
+		}
+		if strings.Count(request, "- skill://alpha") != 1 {
+			t.Fatalf("%s: the skill is listed more than once:\n%s", name, request)
+		}
 	}
 }
 

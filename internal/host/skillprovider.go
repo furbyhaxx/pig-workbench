@@ -25,6 +25,8 @@ type skillState struct {
 	touched  []string
 	roots    func() []string
 	host     []skills.Source
+	stamp    string
+	cached   skills.Catalog
 	persist  func(loaded, declined []string) error
 }
 
@@ -52,7 +54,24 @@ func (s *skillState) catalog() (skills.Catalog, error) {
 	s.mu.Lock()
 	host := slices.Clone(s.host)
 	s.mu.Unlock()
-	return skills.Build(host, s.roots())
+	// Every prompt and tool boundary asks for the listing; files are read again only after one changed.
+	roots := s.roots()
+	stamp := strings.Join(roots, "\n") + "\n" + skills.Stamp(host, roots)
+	s.mu.Lock()
+	if s.stamp == stamp && stamp != "" {
+		cached := s.cached
+		s.mu.Unlock()
+		return cached, nil
+	}
+	s.mu.Unlock()
+	catalog, err := skills.Build(host, roots)
+	if err != nil {
+		return catalog, err
+	}
+	s.mu.Lock()
+	s.stamp, s.cached = stamp, catalog
+	s.mu.Unlock()
+	return catalog, nil
 }
 
 type skillProvider struct{ source func() (*session, bool) }

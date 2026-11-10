@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -34,6 +35,34 @@ type Source struct {
 	Name        string
 	Description string
 	File        string
+}
+
+// Stamp identifies the files Build would read by path, size and modification time, without reading them.
+// Two equal stamps mean Build returns the same catalog.
+func Stamp(sources []Source, roots []string) string {
+	var b strings.Builder
+	note := func(path string) {
+		if info, err := os.Stat(path); err == nil {
+			b.WriteString(path + "|" + info.ModTime().String() + "|" + strconv.FormatInt(info.Size(), 10) + "\n")
+		}
+	}
+	for _, source := range sources {
+		b.WriteString(source.Name + "|" + source.Description + "|")
+		note(source.File)
+		children, _ := filepath.Glob(filepath.Join(filepath.Dir(source.File), "skills", "*", "SKILL.md"))
+		for _, child := range children {
+			note(child)
+		}
+	}
+	for _, root := range roots {
+		_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr == nil && !entry.IsDir() && entry.Name() == "SKILL.md" {
+				note(path)
+			}
+			return nil
+		})
+	}
+	return b.String()
 }
 
 // Scan walks each root for SKILL.md. A skills/ child of a skill is a nested skill.

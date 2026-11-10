@@ -1,9 +1,7 @@
-
-
  Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
  -g extended-keys on` to ~/.tmux.conf and restart tmux.
 
- i session.date · 2026-11-10 13:59 CET · 4 lines · ctrl+o expand
+ i session.date · 2026-11-10 17:39 CET · 4 lines · ctrl+o expand
 
  i session.environment · linux/amd64 · 5 lines · ctrl+o expand
 
@@ -13,7 +11,9 @@
 
  i session.model · workbench-fixture/mock · 32k conte… · 8 lines · ctrl+o expand
 
- i session.capabilities · 10 tools, 12 schemes, hashline edits · 29 lines
+ i session.capabilities · 10 tools, 11 schemes, hashline edits · 28 lines
+
+ i session.skills · 9 skills · 9 lines · ctrl+o expand
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes84...
-17.3%/32k (auto)                                                            mock
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes27...
+16.5%/32k (auto)                                                            mock

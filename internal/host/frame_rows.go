@@ -146,6 +146,9 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 		if strings.HasPrefix(first, locationChangedIntro) {
 			row.facts = append(row.facts, "changed")
 		}
+	case envelope.Source == "session.skills":
+		row.body = row.body[1:]
+		row.facts = []string{skillsRowSummary(first, row.body)}
 	case strings.HasPrefix(first, factChangeIntro):
 		row.body = row.body[1:]
 		row.facts = []string{fmt.Sprintf("%d changes", len(row.body))}
@@ -176,7 +179,7 @@ func contextSummary(envelope frames.Envelope) string {
 	var facts struct {
 		Date, Timezone, OS, Architecture, Name, Slug, ID, Provider, EditMode, Thinking string
 		ContextWindow                                                                  int
-		ActiveTools, Schemes, Skills                                                   []any
+		ActiveTools, Schemes                                                           []any
 	}
 	if json.Unmarshal([]byte(envelope.Body), &facts) != nil {
 		if envelope.Source == "session.date" {
@@ -215,9 +218,6 @@ func contextSummary(envelope frames.Envelope) string {
 		return model
 	case "session.capabilities":
 		parts := []string{fmt.Sprintf("%d tools", len(facts.ActiveTools)), fmt.Sprintf("%d schemes", len(facts.Schemes))}
-		if len(facts.Skills) > 0 {
-			parts = append(parts, fmt.Sprintf("%d skills", len(facts.Skills)))
-		}
 		if facts.EditMode != "" {
 			parts = append(parts, facts.EditMode+" edits")
 		}

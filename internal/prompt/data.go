@@ -7,7 +7,6 @@ type Data struct {
 	Tools        Tools
 	Host         Host
 	Instructions []Instruction
-	Skills       SkillCatalog
 	Workbench    Workbench
 	ProjectRoot  string
 }
@@ -81,21 +80,6 @@ type Instruction struct {
 	DisplayPath string `jinja:"display_path"`
 	Role        string `jinja:"role"`
 	Content     string `jinja:"content"`
-}
-
-// SkillCatalog contains the Workbench skills and their listing policy.
-type SkillCatalog struct {
-	Items   []Skill `jinja:"items"`
-	Listing string  `jinja:"listing"`
-}
-
-// Skill contains metadata for one Workbench skill.
-type Skill struct {
-	Name        string `jinja:"name"`
-	Description string `jinja:"description"`
-	Location    string `jinja:"location"`
-	Source      string `jinja:"source"`
-	Bundle      string `jinja:"bundle"`
 }
 
 // Workbench contains prompt-relevant feature settings.

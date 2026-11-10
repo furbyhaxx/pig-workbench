@@ -17,6 +17,13 @@ func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("# Fixture\n\n- Keep rows short.\n- Never print envelopes.\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	skill := filepath.Join(root, "agent", "skills", "row-fixture")
+	if err := os.MkdirAll(skill, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skill, "SKILL.md"), []byte("---\nname: row-fixture\ndescription: a skill for the row capture\n---\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	s := startTUI(t, root)
 	s.typeText("hello")
 	s.keys("Enter")
@@ -31,6 +38,9 @@ func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
 		collapsed := s.history()
 		if strings.Contains(collapsed, "<system-") || strings.Contains(collapsed, "[pig-workbench.context]") {
 			t.Fatalf("%dx%d: a frame is shown as its envelope:\n%s", size[0], size[1], collapsed)
+		}
+		if size[1] >= 32 && (!strings.Contains(collapsed, "i session.skills · ") || strings.Contains(collapsed, "- skill://")) {
+			t.Fatalf("%dx%d: the skill listing is not one collapsed row with its count:\n%s", size[0], size[1], collapsed)
 		}
 		if !strings.Contains(collapsed, "◆ instructions.steering") {
 			t.Fatalf("%dx%d: no frame row:\n%s", size[0], size[1], collapsed)

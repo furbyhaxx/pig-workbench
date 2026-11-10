@@ -1,13 +1,13 @@
- │     "http",
- │     "https",
- │     "job",
- │     "local",
- │     "out",
- │     "session",
- │     "skill"
- │   ]
- │ }
- └ info · trusted data · seq 6 · 10.11.2026 13:59 · deli…
+ │ - skill://typescript: Conventions, guidelines, and
+ │ best practices for writing and maintaining TypeScript
+ │ on Bun: maximally strict compiler and lint settings,
+ │ parse-don't-validate boundaries, typed errors and
+ │ Result values, discriminated unions and branded types,
+ │ project and workspace layout, package.json/versioning
+ │ discipline, preferred packages, testing with bun test,
+ │ performance, and the required quality gates (format,
+ │ lint, typecheck, test).
+ └ info · trusted data · seq 7 · 10.11.2026 17:39 · deli…
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines
  │ ## AGENTS.md [project, instruction]
@@ -15,7 +15,7 @@
  │
  │ - Keep rows short.
  │ - Never print envelopes.
- └ instruction · trusted instruction · seq 7 · 10.11.202…
+ └ instruction · trusted instruction · seq 8 · 10.11.202…
 
 
  hello
@@ -29,4 +29,4 @@
 
 ─────────────────────────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRen...
-17.3%/32k (auto)                                     mock
+16.5%/32k (auto)                                     mock

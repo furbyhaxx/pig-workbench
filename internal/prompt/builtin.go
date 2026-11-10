@@ -18,4 +18,4 @@ func BuiltinFS() fs.FS {
 }
 
 // RequiredSections are the blocks builtin/workbench must keep.
-var RequiredSections = []string{"preamble", "tools", "rules", "resources", "docs", "addendum", "project_context", "skills", "cwd"}
+var RequiredSections = []string{"preamble", "tools", "rules", "resources", "docs", "addendum", "project_context", "cwd"}

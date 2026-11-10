@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
+	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
 
 func TestSkillReadLoadsAndUnloadDeclines(t *testing.T) {
@@ -70,5 +71,44 @@ func TestUnloadWithdrawsRevealedSubSkills(t *testing.T) {
 	}
 	if !current.skills.declined["alpha"] || current.skills.declined["beta"] {
 		t.Fatalf("only the explicitly unloaded skill is declined: %v", current.skills.declined)
+	}
+}
+
+func TestSkillsChangeNamesOnlyWhatBecameAvailableOrWentAway(t *testing.T) {
+	list := func(names ...string) string {
+		var listed []skills.Listed
+		for _, name := range names {
+			listed = append(listed, skills.Listed{Name: name, Description: "about " + name, Location: "skill://" + name})
+		}
+		return skillsListing(listed)
+	}
+	if got := skillsListing(nil); got != "" {
+		t.Fatalf("an empty catalog has no listing, got %q", got)
+	}
+	held := list("alpha", "beta")
+	if !strings.Contains(held, "- skill://alpha: about alpha") || !strings.HasPrefix(held, skillsListingIntro) {
+		t.Fatalf("listing = %q", held)
+	}
+	if change := skillsChange(held, strings.Replace(held, "about beta", "", 1)); change != "" {
+		t.Fatalf("a shortened description is no availability change, got %q", change)
+	}
+	change := skillsChange(held, list("beta", "gamma"))
+	want := skillsChangeIntro + "\nAvailable now:\n- skill://gamma: about gamma\nNo longer available:\n- skill://alpha"
+	if change != want {
+		t.Fatalf("change = %q, want %q", change, want)
+	}
+	if strings.Contains(change, "beta") {
+		t.Fatal("an unchanged skill must not be named again")
+	}
+	if gone := skillsChange(held, ""); gone != skillsChangeIntro+"\nNo longer available:\n- skill://alpha\n- skill://beta" {
+		t.Fatalf("withdrawal of every skill = %q", gone)
+	}
+	lines := bodyLines(change)
+	if got := skillsRowSummary(lines[0], lines[1:]); got != "+gamma, -alpha" {
+		t.Fatalf("change row = %q", got)
+	}
+	lines = bodyLines(held)
+	if got := skillsRowSummary(lines[0], lines[1:]); got != "2 skills" {
+		t.Fatalf("listing row = %q", got)
 	}
 }

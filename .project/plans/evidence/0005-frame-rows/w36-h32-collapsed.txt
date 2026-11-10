@@ -1,11 +1,9 @@
-
- Warning: tmux extended-keys is
  off. Modified Enter keys may not
  work. Add `set -g extended-keys
  on` to ~/.tmux.conf and restart
  tmux.
 
- i session.date · 2026-11-10 13:59 …
+ i session.date · 2026-11-10 17:39 …
 
  i session.environment · linux/amd64
 
@@ -16,6 +14,8 @@
  i session.model · workbench-fixtur…
 
  i session.capabilities · 10 tools,…
+
+ i session.skills · 9 skills
 
  ◆ instructions.steering · AGENTS.m…
 
@@ -29,4 +29,4 @@
 
 ────────────────────────────────────
 ~/.cache/pig-workbench-test-tmp/w...
-17.3%/32k (auto)                mock
+16.5%/32k (auto)                mock

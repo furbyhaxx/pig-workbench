@@ -69,7 +69,7 @@ func TestContextFramesSummarizeInPlainWords(t *testing.T) {
 		"session.environment":  {`{"architecture":"amd64","hostCwd":"/x","os":"linux"}`, "linux/amd64"},
 		"session.project":      {`{"id":"global","name":"Global","slug":"global","root":"/x"}`, "Global (global)"},
 		"session.model":        {`{"provider":"claude","id":"fable","thinking":"high","contextWindow":425000}`, "claude/fable:high · 425k context"},
-		"session.capabilities": {`{"activeTools":["a","b"],"schemes":["file"],"skills":[{"name":"x"}],"editMode":"hashline"}`, "2 tools, 1 schemes, 1 skills, hashline edits"},
+		"session.capabilities": {`{"activeTools":["a","b"],"schemes":["file"],"editMode":"hashline"}`, "2 tools, 1 schemes, hashline edits"},
 	} {
 		if got := contextSummary(frames.Envelope{Source: source, Body: c[0], CreatedAt: at}); got != c[1] {
 			t.Errorf("%s = %q, want %q", source, got, c[1])
