@@ -52,7 +52,8 @@ func TestLiveFramesRenderAsRowsNotEnvelopes(t *testing.T) {
 		if size[0] >= 57 && !strings.Contains(collapsed, "AGENTS.md · loaded") {
 			t.Fatalf("%dx%d: the instruction row does not name its file and state:\n%s", size[0], size[1], collapsed)
 		}
-		if !strings.Contains(expanded, "│ ") || !strings.Contains(expanded, "└ ") {
+		// At 16 rows only the provenance line of the last frame fits above the user message.
+		if (size[1] >= 32 && !strings.Contains(expanded, "│ ")) || !strings.Contains(expanded, "└ ") {
 			t.Fatalf("%dx%d: expansion shows no body or provenance:\n%s", size[0], size[1], expanded)
 		}
 		if out != "" && size == [2]int{80, 32} {
