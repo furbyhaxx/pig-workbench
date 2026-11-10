@@ -28,7 +28,6 @@ var pendingConsumers = []string{
 	"projects.offer-registration",
 	"projects.storage-links",
 	"prompt.template",
-	"read.output-max-columns",
 	"read.summarize.min-body-lines",
 	"read.summarize.min-comment-lines",
 	"read.summarize.prose",

@@ -24,6 +24,8 @@ import (
 type Budget struct {
 	Bytes int
 	Lines int
+	// Columns caps each displayed line in characters; zero means no cap. Raw selections are never capped.
+	Columns int
 }
 
 // Page contains exact source coverage and honest completeness facts.
@@ -114,6 +116,7 @@ func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, o
 	exhausted := false
 	selectedCount := 0
 	shownCount := 0
+	cappedCount := 0
 	for _, r := range ranges {
 		selectedCount += r.End - r.Start + 1
 	}
@@ -176,6 +179,11 @@ func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, o
 							kept = bytes.TrimSuffix(kept, []byte{'\n'})
 							kept = bytes.TrimSuffix(kept, []byte{'\r'})
 						}
+						capped := false
+						if cut := columnCut(kept, budget.Columns); whole && !target.Selection.Raw && cut < len(kept) {
+							kept = append(kept[:cut:cut], fmt.Sprintf("… (+%d bytes)", len(kept)-cut)...)
+							capped = true
+						}
 						extra := 0
 						if !target.Selection.Raw {
 							extra = 1
@@ -195,7 +203,10 @@ func readOpened(ctx context.Context, target Target, budget Budget, f *os.File, o
 							body.WriteByte('\n')
 						}
 						appendSpan(&page.ShownRanges, line)
-						if whole {
+						if whole && capped {
+							shownCount++
+							cappedCount++
+						} else if whole {
 							appendSpan(&page.FullyShownRanges, line)
 							shownCount++
 						} else {
@@ -229,10 +240,22 @@ finished:
 		page.SelectionComplete = true
 	}
 	footer := ""
+	if cappedCount > 0 {
+		// A capped view never stands for the full source.
+		page.ResourceComplete = false
+		if page.Truncation == "" {
+			page.Truncation = "columns"
+		}
+		noun := "lines"
+		if cappedCount == 1 {
+			noun = "line"
+		}
+		footer = fmt.Sprintf("\n… %d %s cut at %d columns and not editable; selector :N:raw shows a whole line", cappedCount, noun, budget.Columns)
+	}
 	if !page.SelectionComplete {
 		suffix := continuationSelection(ranges, next, target.Selection.Raw)
 		page.Continuation = page.CanonicalURI + suffix
-		footer = "\n… incomplete; continue with selector " + suffix + " on the same resource"
+		footer += "\n… incomplete; continue with selector " + suffix + " on the same resource"
 		if page.Truncation == "partialLine" {
 			footer += " (partial line repeated; increase byte budget to progress)"
 		}
@@ -338,4 +361,20 @@ func displayText(s string) string {
 		}
 		return r
 	}, s)
+}
+
+// columnCut returns the byte length of the first limit characters of line, or its whole length when it fits.
+func columnCut(line []byte, limit int) int {
+	if limit <= 0 || len(line) <= limit {
+		return len(line)
+	}
+	cut := 0
+	for range limit {
+		_, size := utf8.DecodeRune(line[cut:])
+		cut += size
+		if cut >= len(line) {
+			return len(line)
+		}
+	}
+	return cut
 }

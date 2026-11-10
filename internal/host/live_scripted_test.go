@@ -1299,3 +1299,32 @@ func TestLiveSkillLineSelectorReadsTheRangeWithoutLoadingTheSkill(t *testing.T) 
 		t.Errorf("ranged read after loading = %s", results[3])
 	}
 }
+
+func TestLiveReadCutsLongLinesAtTheConfiguredColumnsAndARawReadMakesThemEditable(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "wide.txt")
+	if err := os.WriteFile(path, []byte("short\n"+strings.Repeat("x", 300)+"\nlast\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	edit := func(prior []string) scriptedCall {
+		return scriptedCall{"edit", map[string]any{"hashline": "[wide.txt#" + tagOf(t, prior[0]) + "]\nPUT 2.=2:\n+replaced\n"}}
+	}
+	results := runScriptedConfig(t, root, "read,edit", "\n[read]\noutput-max-columns = 40\n",
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "wide.txt"}} },
+		edit,
+		func([]string) scriptedCall { return scriptedCall{"read", map[string]any{"path": "wide.txt:2:raw"}} },
+		edit,
+	)
+	if !strings.Contains(results[0], "2:"+strings.Repeat("x", 40)+"… (+260 bytes)") || !strings.Contains(results[0], "1 line cut at 40 columns") {
+		t.Fatalf("read did not cut the long line:\n%s", results[0])
+	}
+	if !strings.Contains(results[1], "not seen") {
+		t.Fatalf("a cut line was editable: %s", results[1])
+	}
+	if !strings.Contains(results[2], strings.Repeat("x", 300)) {
+		t.Fatalf("raw read is cut:\n%s", results[2])
+	}
+	if got := readFile(t, path); got != "short\nreplaced\nlast\n" {
+		t.Fatalf("edit after the raw read: %q\n%s", got, results[3])
+	}
+}

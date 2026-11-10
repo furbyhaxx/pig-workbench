@@ -65,6 +65,7 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
 		{"bash-routing", []string{"bash.route-to-tools"}, TestLiveBashLeavesSchemePathsToTheShellWhenRoutingIsOff},
 		{"read-concurrency", []string{"read.concurrency"}, TestLiveMultiReadFetchesWithTheConfiguredConcurrencyInInputOrder},
+		{"read-columns", []string{"read.output-max-columns"}, TestLiveReadCutsLongLinesAtTheConfiguredColumnsAndARawReadMakesThemEditable},
 		{"frame-visibility", []string{"frames.display.default-visibility"}, TestLiveFrameVisibilityHidesOrOpensRowsWithoutChangingDelivery},
 		{"frame-sources", []string{"frames.display.sources"}, TestLiveFramesVerbsInspectAndSetTranscriptVisibilityInRPC},
 		{"frame-style", []string{"frames.display.style"}, TestFrameRowStylesChangeOnlyTheBodyFraming},

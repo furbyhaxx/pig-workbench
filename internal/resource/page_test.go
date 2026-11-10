@@ -88,7 +88,7 @@ func TestSpecialFileAndCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ReadFile(context.Background(), target, Budget{4096, 100}); err == nil {
+	if _, err := ReadFile(context.Background(), target, Budget{Bytes: 4096, Lines: 100}); err == nil {
 		t.Fatal("read device")
 	}
 	path := filepath.Join(t.TempDir(), "file")
@@ -101,7 +101,7 @@ func TestSpecialFileAndCancellation(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := ReadFile(ctx, target, Budget{4096, 100}); err == nil {
+	if _, err := ReadFile(ctx, target, Budget{Bytes: 4096, Lines: 100}); err == nil {
 		t.Fatal("ignored cancellation")
 	}
 }
@@ -182,5 +182,37 @@ func TestDirectoryReadIsAStableListing(t *testing.T) {
 	}
 	if !partial.Facts.SelectionComplete || partial.Facts.ResourceComplete {
 		t.Fatalf("directory tail facts wrong: %+v", partial.Facts)
+	}
+}
+
+func TestColumnCapCutsTheDisplayedLineAndLeavesItUnseen(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "wide.txt")
+	if err := os.WriteFile(path, []byte("short\n"+strings.Repeat("é", 40)+"\nlast\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	target, err := ParsePath(filepath.Dir(path), path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := ReadFile(context.Background(), target, Budget{Bytes: 4096, Lines: 100, Columns: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(p.Content, "2:"+strings.Repeat("é", 10)+"… (+60 bytes)\n3:last") {
+		t.Fatalf("line is not cut at ten characters with its omitted bytes:\n%s", p.Content)
+	}
+	if !reflect.DeepEqual(p.FullyShownRanges, []Range{{1, 1}, {3, 3}}) || !reflect.DeepEqual(p.ShownRanges, []Range{{1, 3}}) {
+		t.Fatalf("coverage shown=%v fully=%v", p.ShownRanges, p.FullyShownRanges)
+	}
+	if !p.SelectionComplete || p.ResourceComplete || p.Truncation != "columns" || p.Continuation != "" {
+		t.Fatalf("completeness facts: %+v", p)
+	}
+	raw, err := ParsePath(filepath.Dir(path), path, "2:raw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	whole, err := ReadFile(context.Background(), raw, Budget{Bytes: 4096, Lines: 100, Columns: 10})
+	if err != nil || !strings.Contains(whole.Content, strings.Repeat("é", 40)) || !reflect.DeepEqual(whole.FullyShownRanges, []Range{{2, 2}}) {
+		t.Fatalf("raw read is capped or not seen: %v %+v", err, whole)
 	}
 }

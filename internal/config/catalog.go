@@ -143,6 +143,9 @@ func Catalog() []Definition {
 		case "read.loop-hint-after":
 			d.Application = "live"
 			d.Description = "Add a repetition hint after this many identical canonical/revision/view/selection reads; source remains present."
+		case "read.output-max-columns":
+			d.Application = "live"
+			d.Description = "Characters shown per line in a read; a longer line is cut with its omitted byte count, cannot be edited until read whole, and a :raw selector shows it uncut."
 		case "read.concurrency":
 			d.Application = "live"
 			d.Description = "How many targets of one multi-read are fetched at the same time; results keep input order and share one budget. 1 reads serially."

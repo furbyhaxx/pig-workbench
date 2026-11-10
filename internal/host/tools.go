@@ -144,7 +144,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	threshold := intValue(configuration, "read.loop-hint-after", 3)
 	policy := configuration.Read()
-	budget := resource.Budget{Bytes: policy.MaxBytes, Lines: policy.MaxLines}
+	budget := resource.Budget{Bytes: policy.MaxBytes, Lines: policy.MaxLines, Columns: intValue(configuration, "read.output-max-columns", 512)}
 	var content strings.Builder
 	facts := make([]any, 0, len(targets))
 	complete := true
@@ -160,7 +160,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	readTarget := func(ctx context.Context, i int, available resource.Budget) (resource.ReadResult, error) {
 		target := targets[i]
-		return s.router.Read(ctx, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, resource.Budget{Bytes: available.Bytes - readHintReserve - reserves[i], Lines: available.Lines})
+		return s.router.Read(ctx, resource.Target{Requested: target.Requested, URI: target.URI, Scheme: target.Scheme, Path: target.Path, Selection: target.Selection}, resource.Budget{Bytes: available.Bytes - readHintReserve - reserves[i], Lines: available.Lines, Columns: available.Columns})
 	}
 	whole := budget
 	ahead := startReadAhead(work, policy.Concurrency, len(targets), func(ctx context.Context, i int) (resource.ReadResult, error) {
