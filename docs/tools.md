@@ -33,7 +33,7 @@ Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill
 
 `http(s)://` reads can use a registered fetch backend or the builtin static reader. In the builtin reader, HTML is converted to readable Markdown by default, while `:raw` keeps the decoded document. Credentials in URLs, bare hosts without an explicit `/`, non-http(s) redirects and redirect cycles are refused; redirects are reauthorized per hop within an 8-hop limit. Charset metadata is decoded, bodies and rendered output are capped at 4 MiB, binary media is refused, and page facts name the handler, content type, final URI and notices. Scripts are never executed and meta/script redirects are reported, not followed.
 
-`artifact://specs/0001-x.md` resolves to the nearest `.project/` directory above the session's project root, so every worktree and subdirectory of a project sees the same artifact tree without absolute paths. Paths cannot escape it, and a working location with no artifact tree reports not-found.
+Listing an artifact directory shows each artifact's id, title, status and revision from its frontmatter. `artifact://specs/0001-x.md` resolves to the nearest `.project/` directory above the session's project root, so every worktree and subdirectory of a project sees the same artifact tree without absolute paths. Paths cannot escape it, and a working location with no artifact tree reports not-found.
 
 Reading a **directory** returns a stable listing view instead of an error: `dir/` for subdirectories, `name (N bytes)` for files, `name -> target` for links, directories first then lexical order. A single range or a tail pages the listing (`:10-20`, `:-5`); multiple ranges and `:raw` are refused because a listing is not source text.
 

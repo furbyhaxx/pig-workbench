@@ -1,10 +1,13 @@
 package host
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/furbyhaxx/pig-workbench/internal/location"
@@ -101,6 +104,7 @@ func (p artifactProvider) List(ctx context.Context, uri, cursor string, limit in
 	}
 	for index, entry := range listing.Entries {
 		listing.Entries[index].URI = artifactURI(uri, entry.Name)
+		listing.Entries[index].Detail = artifactColumns(filepath.Join(path, entry.Name), entry.Kind)
 	}
 	return listing, nil
 }
@@ -116,4 +120,70 @@ func (p artifactProvider) Read(ctx context.Context, request resource.ReadRequest
 	}
 	page.Facts.CanonicalURI = request.URI
 	return page, nil
+}
+
+// artifactDocuments are the files that carry a directory artifact's frontmatter, in lookup order.
+var artifactDocuments = []string{"README.md", "plan.md", "spec.md", "report.md"}
+
+// artifactColumns returns "id · title · status · rev N" from an artifact's document frontmatter, or "" without one.
+func artifactColumns(path string, kind resource.EntryKind) string {
+	candidates := []string{path}
+	if kind == resource.EntryDir {
+		candidates = candidates[:0]
+		for _, name := range artifactDocuments {
+			candidates = append(candidates, filepath.Join(path, name))
+		}
+	} else if !strings.HasSuffix(path, ".md") {
+		return ""
+	}
+	for _, candidate := range candidates {
+		if columns := frontmatterColumns(candidate); columns != "" {
+			return columns
+		}
+	}
+	return ""
+}
+
+func frontmatterColumns(path string) string {
+	info, err := os.Lstat(path)
+	if err != nil || !info.Mode().IsRegular() {
+		return ""
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(io.LimitReader(file, 8<<10))
+	if !scanner.Scan() || strings.TrimRight(scanner.Text(), "\r") != "---" {
+		return ""
+	}
+	fields := map[string]string{}
+	inDocument := false
+	for scanner.Scan() {
+		line := strings.TrimRight(scanner.Text(), "\r")
+		if line == "---" {
+			break
+		}
+		if !strings.HasPrefix(line, " ") {
+			inDocument = strings.TrimSpace(line) == "document:"
+			continue
+		}
+		key, value, ok := strings.Cut(strings.TrimPrefix(line, "  "), ":")
+		if !inDocument || !ok || strings.HasPrefix(key, " ") {
+			continue
+		}
+		switch key {
+		case "id", "title", "status", "revision":
+			fields[key] = strings.Trim(strings.TrimSpace(value), `"'`)
+		}
+	}
+	if fields["id"] == "" && fields["title"] == "" {
+		return ""
+	}
+	parts := []string{fields["id"], fields["title"], fields["status"]}
+	if fields["revision"] != "" {
+		parts = append(parts, "rev "+fields["revision"])
+	}
+	return strings.Join(slices.DeleteFunc(parts, func(part string) bool { return part == "" }), " · ")
 }

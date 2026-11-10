@@ -142,7 +142,7 @@ func TestArtifactProviderResolvesProjectTree(t *testing.T) {
 	if err := os.MkdirAll(tree, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(tree, "0001-a.md"), []byte("---\ntype: spec\n---\nbody\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(tree, "0001-a.md"), []byte("---\ndocument:\n  type: \"spec\"\n  id: \"SPEC-0001\"\n  title: \"A: contract\"\n  status: \"published\"\n  revision: 3\n  changelog:\n    - revision: 3\n      title: \"nested\"\n---\nbody\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	nested := filepath.Join(repo, "cmd", "tool")
@@ -170,6 +170,9 @@ func TestArtifactProviderResolvesProjectTree(t *testing.T) {
 	}
 	if len(listing.Entries) != 1 || listing.Entries[0].URI != "artifact://specs/0001-a.md" {
 		t.Fatalf("listing URIs not rebased: %+v", listing.Entries)
+	}
+	if got := listing.Entries[0].Detail; got != "SPEC-0001 · A: contract · published · rev 3" {
+		t.Fatalf("artifact columns = %q", got)
 	}
 	if _, err := provider.Read(context.Background(), resource.ReadRequest{URI: "artifact://../escape", Requested: "x", Budget: resource.Budget{Bytes: 4096, Lines: 100}}); err == nil {
 		t.Fatal("path traversal accepted")
