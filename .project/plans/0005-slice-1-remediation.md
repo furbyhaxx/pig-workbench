@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 3
+  revision: 4
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T10:55:00+01:00"
+  updated_at: "2026-11-10T14:21:02+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 3
-      reason: "The dot-project migration was done ahead of the plan at the user's request"
-      changes: ["Area M no longer carries the migration; only backlog items for leftovers remain"]
+    - revision: 4
+      reason: "frames.role cannot be wired on stock PiG"
+      changes: ["frames.role is hidden with area E; it returns with PLAN-0004 C4"]
 ---
 
 # 1. Outcome
@@ -85,7 +85,9 @@ Tests: every command refused during the review now runs (`curl` on a URL, `grep`
 
 Current: `bodySize` in `internal/frames/ledger.go` counts every record ever admitted against 2 MiB. No message renderer is registered. `frames.deliveryChanged` is never emitted. `frames.role` and `frames.display.*` are inert.
 
-Change: limit pending bodies only and keep a bounded history of terminal records (receipt and digest kept, body dropped past the cap), with a restore path for existing sessions; register renderers for `pig-workbench.context`, `pig-workbench.skill` and `pig-workbench.ask` showing one row per frame per SPEC-0002 §7; honour `frames.display.style`, `frames.display.default-visibility` and `frames.role`; emit `frames.deliveryChanged`; serve `session://self/frames` and `/workbench frames ls|show|hide|collapse`.
+Change: limit pending bodies only and keep a bounded history of terminal records (receipt and digest kept, body dropped past the cap), with a restore path for existing sessions; register renderers for `pig-workbench.context`, `pig-workbench.skill` and `pig-workbench.ask` showing one row per frame per SPEC-0002 §7; honour `frames.display.style` and `frames.display.default-visibility`; emit `frames.deliveryChanged`; serve `session://self/frames` and `/workbench frames ls|show|hide|collapse`.
+
+`frames.role` is not shown (area E): stock PiG delivers frames only through the custom-message route, and no verified host capability projects them as native system or developer messages (SPEC-0002 §6). The key returns with the fork-host `sections` delivery in PLAN-0004 C4.
 
 Tests: 1000 delivered 8 KiB frames, then an admit succeeds; a resumed over-limit ledger loads; a live capture shows one row per frame.
 
