@@ -32,6 +32,18 @@ type frameRow struct {
 	pad        int
 	// open shows the body without expansion; diff tones added and removed lines.
 	open, diff bool
+	// style is frames.display.style: rail (default), row or card.
+	style string
+}
+
+// rowDisplay reads the transcript-only frame settings; delivery never depends on them.
+func (a *app) rowDisplay() (style, visibility string) {
+	style, visibility = "rail", "collapsed"
+	if s, err := a.current(); err == nil {
+		style = s.settingString("frames.display.style", style)
+		visibility = s.settingString("frames.display.default-visibility", visibility)
+	}
+	return style, visibility
 }
 
 func (a *app) registerMessageRenderers(ext *sdk.Extension) {
@@ -45,6 +57,14 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 			return nil, err
 		}
 		row.pad = options.OutputPad
+		var visibility string
+		row.style, visibility = a.rowDisplay()
+		switch visibility {
+		case "hidden":
+			return []string{}, nil
+		case "shown":
+			row.open = true
+		}
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 	ext.MessageRenderer("pig-workbench.skill", func(ctx sdk.Context, message map[string]any, options sdk.MessageRenderOptions, width int) ([]string, error) {
@@ -54,6 +74,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		}
 		row := skillRow(text)
 		row.pad = options.OutputPad
+		row.style, _ = a.rowDisplay()
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 	ext.MessageRenderer("pig-workbench.ask", func(ctx sdk.Context, message map[string]any, options sdk.MessageRenderOptions, width int) ([]string, error) {
@@ -63,6 +84,7 @@ func (a *app) registerMessageRenderers(ext *sdk.Extension) {
 		}
 		row := askRow(text)
 		row.pad = options.OutputPad
+		row.style, _ = a.rowDisplay()
 		return row.render(ctx.UITheme().Fg, options.Expanded, width), nil
 	})
 }
@@ -310,9 +332,12 @@ func (r frameRow) render(paint painter, expanded bool, width int) []string {
 		shown = shown[:frameRowBodyLines]
 	}
 	rail := paint("dim", "│")
+	if r.style == "row" {
+		rail = " "
+	}
 	for _, line := range shown {
 		if line == "" {
-			lines = append(lines, margin+rail)
+			lines = append(lines, strings.TrimRight(margin+rail, " "))
 			continue
 		}
 		tone := "toolOutput"
@@ -332,6 +357,8 @@ func (r frameRow) render(paint painter, expanded bool, width int) []string {
 	}
 	if r.provenance != "" && expanded {
 		lines = append(lines, margin+paint("dim", tui.TruncateToWidth("└ "+r.provenance, width, "…", false)))
+	} else if r.style == "card" {
+		lines = append(lines, margin+paint("dim", "└"+strings.Repeat("─", min(width-1, 24))))
 	}
 	return lines
 }

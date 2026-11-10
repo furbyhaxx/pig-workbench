@@ -114,3 +114,35 @@ func TestLiveCdSendsTheLocationChangeAsOneSentence(t *testing.T) {
 		t.Fatalf("the request lacks the location sentence or its change:\n%s", last)
 	}
 }
+
+func TestLiveFrameVisibilityHidesOrOpensRowsWithoutChangingDelivery(t *testing.T) {
+	for visibility, check := range map[string]func(string) bool{
+		"hidden": func(screen string) bool { return !strings.Contains(screen, "session.date") },
+		"shown":  func(screen string) bool { return strings.Contains(screen, "│   \"editMode\"") },
+	} {
+		t.Run(visibility, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.MkdirAll(filepath.Join(root, "agent"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(root, "agent", "Workbench.toml"), []byte("[frames.display]\ndefault-visibility = '"+visibility+"'\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			s := startTUI(t, root)
+			s.typeText("hello")
+			s.keys("Enter")
+			s.waitFor("done", 20*time.Second)
+			time.Sleep(time.Second)
+			screen := s.history()
+			if !check(screen) || strings.Contains(screen, "<system-") {
+				t.Fatalf("visibility %s:\n%s", visibility, screen)
+			}
+			s.recorder.mu.Lock()
+			request := strings.Join(s.recorder.bodies, "\n")
+			s.recorder.mu.Unlock()
+			if !strings.Contains(request, "session.date") {
+				t.Fatalf("visibility %s changed delivery: the provider request has no date frame", visibility)
+			}
+		})
+	}
+}

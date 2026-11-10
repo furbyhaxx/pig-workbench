@@ -88,3 +88,26 @@ func TestSkillMessageRendersOneRowWithItsBodyBehindExpansion(t *testing.T) {
 		t.Fatalf("expanded skill row = %q", open)
 	}
 }
+
+func TestFrameRowStylesChangeOnlyTheBodyFraming(t *testing.T) {
+	plain := func(_, text string) string { return text }
+	row := frameRow{glyph: "i", label: "session.date", facts: []string{"today"}, body: []string{"a", "b"}, open: true}
+	rail := row.render(plain, false, 60)
+	row.style = "row"
+	bare := row.render(plain, false, 60)
+	row.style = "card"
+	card := row.render(plain, false, 60)
+	if rail[0] != bare[0] || rail[0] != card[0] {
+		t.Fatalf("headers differ: %q %q %q", rail[0], bare[0], card[0])
+	}
+	if rail[1] != "│ a" || bare[1] != "  a" || len(card) != len(rail)+1 || !strings.HasPrefix(card[len(card)-1], "└─") {
+		t.Fatalf("rail=%q row=%q card=%q", rail, bare, card)
+	}
+	for _, lines := range [][]string{rail, bare, card} {
+		for _, line := range lines {
+			if tui.VisibleWidth(line) > 60 {
+				t.Fatalf("line overflows: %q", line)
+			}
+		}
+	}
+}

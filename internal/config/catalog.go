@@ -97,7 +97,7 @@ func Catalog() []Definition {
 		integer("frames.wake-budget", 10, 0, 1000, DenyProject),
 		choice("frames.role", "auto", DenyProject, "auto", "user", "developer", "system"),
 		choice("frames.display.style", "rail", AllowProject, "row", "rail", "card"),
-		choice("frames.display.default-visibility", "shown", AllowProject, "shown", "collapsed", "hidden"),
+		choice("frames.display.default-visibility", "collapsed", AllowProject, "shown", "collapsed", "hidden"),
 		integer("jobs.timeout-seconds", 120, 0, 86400, DenyProject),
 		integer("jobs.yield-after-ms", 0, 0, 300000, DenyProject),
 		integer("jobs.termination-grace-ms", 2000, 0, 60000, DenyProject),
@@ -214,6 +214,12 @@ func Catalog() []Definition {
 		case "fetch.disabled-backends":
 			d.Application = "live"
 			d.Description = "Fetch backends (owner/key, as listed by /workbench integrations) that read https:// skips; the builtin reader serves those URLs. The backend's own tools keep working."
+		case "frames.display.style":
+			d.Application = "live"
+			d.Description = "How an opened frame body is framed in the transcript: rail (line at the left), row (indent only) or card (rail with a closing rule). Transcript only; delivery is unchanged."
+		case "frames.display.default-visibility":
+			d.Application = "live"
+			d.Description = "collapsed shows one row per context frame, shown opens its body, hidden omits the row. Transcript only; the model receives every frame regardless."
 		case "frames.wake-budget":
 			d.Application = "live"
 			d.Description = "Maximum wakes per external frame producer per hour; over budget the frame is delivered without a turn. Zero disables external wake."
