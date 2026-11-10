@@ -63,6 +63,24 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 	if err != nil {
 		return nil, err
 	}
+	ledger, lineageNonce, err := ledgerFromEntries(entries, id)
+	if err != nil {
+		return nil, err
+	}
+	// Forks and tree branches copy session entries, so one persisted nonce marks the whole lineage.
+	if lineageNonce == "" {
+		lineageNonce = ledger.Nonce()
+		if err := ctx.AppendEntry(frameNonceEntry, map[string]any{"schemaVersion": 1, "nonce": lineageNonce}); err != nil {
+			return nil, err
+		}
+	} else if err := ledger.SetNonce(lineageNonce); err != nil {
+		return nil, err
+	}
+	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView), wakes: messaging.NewLimiter()}, nil
+}
+
+// ledgerFromEntries rebuilds the ledger from the newest stored record of each frame and returns the lineage nonce, if one was stored.
+func ledgerFromEntries(entries []json.RawMessage, id string) (*frames.Session, string, error) {
 	latest := make(map[string]json.RawMessage)
 	lineageNonce := ""
 	for _, raw := range entries {
@@ -72,7 +90,7 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 			Data       json.RawMessage `json:"data"`
 		}
 		if err := json.Unmarshal(raw, &entry); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		if entry.Type == "custom" && entry.CustomType == frameNonceEntry && lineageNonce == "" {
 			var stored struct {
@@ -90,7 +108,7 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 			Frame frames.Frame `json:"frame"`
 		}
 		if err := json.Unmarshal(entry.Data, &record); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		if record.Frame.SessionID == id && record.Frame.FrameID != "" {
 			latest[record.Frame.FrameID] = entry.Data
@@ -110,18 +128,9 @@ func restoreFrameLedger(ctx sdk.Context, id string) (*contextFrameState, error) 
 	})
 	ledger := frames.NewSession(id)
 	if err := ledger.Restore(records); err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	// Forks and tree branches copy session entries, so one persisted nonce marks the whole lineage.
-	if lineageNonce == "" {
-		lineageNonce = ledger.Nonce()
-		if err := ctx.AppendEntry(frameNonceEntry, map[string]any{"schemaVersion": 1, "nonce": lineageNonce}); err != nil {
-			return nil, err
-		}
-	} else if err := ledger.SetNonce(lineageNonce); err != nil {
-		return nil, err
-	}
-	return &contextFrameState{ledger: ledger, last: make(map[string]string), views: make(map[string]string), staged: make(map[string]stagedView), wakes: messaging.NewLimiter()}, nil
+	return ledger, lineageNonce, nil
 }
 
 type contextFact struct {
