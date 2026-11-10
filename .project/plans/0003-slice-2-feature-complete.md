@@ -5,15 +5,15 @@ document:
   title: "Slice 2: full depth, every feature usable by agents"
   description: "Depth on the Slice 1 foundation: format adapters, remaining schemes, SSH, worktrees, PTY, donor-parity heuristics, project conventions, remaining instruction, interaction and messaging flows, with plain UI"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-10T15:10:00+01:00"
+  updated_at: "2026-11-10T16:31:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 6
-      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
-      changes: ["W5 checks remote instruction files on turn; no watcher"]
+    - revision: 7
+      reason: "User decision 10.11.2026: the session entry tree and the messages of stored sessions are depth, not foundation"
+      changes: ["W4 owns session://<id>/tree and session://<id>/messages for stored sessions"]
 ---
 
 # 1. Outcome
@@ -62,7 +62,7 @@ SSH backend for the location, resource and job abstractions; `ssh://`; remote ed
 
 ## W4. Remaining schemes (SPEC-0012 §5.3–§5.4, SPEC-0013 §6, WB-07/10/24)
 
-`project://`, `conflict://` with its registry, `secret://` (with `rm`/`mv` through the Slice 1 G8.20 bridge) and `/workbench secrets`, `session://by-project/` and `by-name/`, cross-session search, `docs://` PiG source checkout.
+`project://`, `conflict://` with its registry, `secret://` (with `rm`/`mv` through the Slice 1 G8.20 bridge) and `/workbench secrets`, `session://by-project/` and `by-name/`, `session://<id>/tree` (entry tree with branches and labels, own and stored sessions), `session://<id>/messages` for stored sessions (the own session has it since Slice 1), cross-session search, `docs://` PiG source checkout.
 
 **Exit:** SPEC-0012 §6 and SPEC-0013 §11 rows for these schemes; read/list/search/control tests with pagination; false-positive removal through `mv … secret://.not-a-secret/` with the approval states of SPEC-0013 §6; no credential exposure or trust widening through project config.
 

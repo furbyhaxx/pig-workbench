@@ -5,15 +5,15 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 27
+  revision: 28
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-10T15:10:00+01:00"
+  updated_at: "2026-11-10T16:31:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 27
-      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
-      changes: ["§9 row 0007 §2–§8 and M6 name boundary change detection, not watchers"]
+    - revision: 28
+      reason: "User decision 10.11.2026: the session entry tree and the messages of stored sessions are depth, not foundation"
+      changes: ["§9 row 0012 §5.3 rest gains the session entry tree and stored-session messages"]
 ---
 
 # 1. Outcome and authority
@@ -412,7 +412,7 @@ Authoritative assignment of every specification section to a slice and phase. Sl
 | 0012 §4.3–§4.5 | Shared artifact tree, worktree links, artifact storage modes | S2 W3 | SPEC-0012 §6 |
 | 0012 §5.1–§5.2, §5.5 | Naming rule, tool semantics, first-touch guides | S1 D | SPEC-0012 §6 |
 | 0012 §5.3 core | `session://` self/`<id>`/`by-id/`, own and stored titles, `agent://`, `skill://`, `cfg://`, `job://`, `artifact://`, `out://`, `local://` | S1 D, H, J, L1 | SPEC-0012 §6 |
-| 0012 §5.3 rest | `project://`, `conflict://`, `by-project/`, `by-name/`, search | S2 W4 | SPEC-0012 §6 |
+| 0012 §5.3 rest | `project://`, `conflict://`, `by-project/`, `by-name/`, search, `session://<id>/tree`, `messages` of stored sessions | S2 W4 | SPEC-0012 §6 |
 | 0012 §5.3 titles of live sessions | Other live sessions under coordinator `lifecycle` | S2 W6 | SPEC-0012 §6 |
 | 0012 §5.4 | `docs://` registered docs (S1 C, D); PiG source (S2 W4) | as listed | SPEC-0012 §6 |
 | 0013 §2–§5, §7 | Detection, vault, boundary, env injection, ask secret | S1 I | SPEC-0013 §11 |

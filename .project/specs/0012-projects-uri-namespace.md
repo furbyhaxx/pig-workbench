@@ -5,15 +5,15 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T16:31:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 13
+      reason: "Slice ownership of the session tree entries and the name-authority selector rule"
+      changes: ["§6 names the slice of session tree and messages", "§5.3 states the selector rule for name-only URIs and the artifact and agent listing columns"]
 ---
 
 # 1. Scope
@@ -181,7 +181,7 @@ Every scheme is a tree, like `/proc` and `/sys`. The builtin tools work on it as
 | Tool | On a scheme |
 |---|---|
 | `ls` | Directory entries with typed columns (`ls job://` = jobs with state, runtime, command) |
-| `read` | File content; selectors `:N`, `:A-B`, `:-N`, `:raw` |
+| `read` | File content; selectors `:N`, `:A-B`, `:-N`, `:raw`. The authority of `skill`, `session`, `job`, `agent`, `docs`, `cfg`, `artifact`, `local` and `out` is a name, never host:port, so a selector also works without a path (`skill://name:10-40`); a ranged `skill://` read shows the text without loading the skill. An `http(s)` origin without a path reads `/`, and its colon is always a port |
 | `find` / glob | Walk the tree by name pattern (`find session://by-name -name '*parser*'` finds sessions by title) |
 | `grep` | Search file contents across the tree (`grep -r timeout job://*/log`) |
 | `write` | Write a file: content, a message, a setting, or a command to a control file |
@@ -199,7 +199,7 @@ Files and locations:
 ```text
 path | file:///abs | ssh://host/abs      real files (local or remote), all tools
 local://                                 per-session scratch directory
-out://<n>                                spilled large tool outputs, immutable
+out://<n>                                spilled large tool outputs, immutable; ls lists them oldest first
 conflict://<n>/{ours,theirs,base,resolved}   merge conflict hunks; write resolved
 http(s)://…                              web content via static reader or fetch backend; read only
 <file>:<table>:<key>, <archive>/<inner>  adapters inside real paths (SPEC-0006)
@@ -237,7 +237,7 @@ session://<id>/
   transcript                             current branch as Markdown, paged
   tree                                   entry tree with branches and labels
   entries/<entryId>
-  messages                               inter-session messages recorded in this session
+  messages                               inter-session messages recorded in this session, both directions
   frames/<frameId>                       frames delivered in this session
   instructions/                          instruction files selected for this session, with reasons; ctl: pin/unpin
 session://by-id/<id> → session://<id>    all sessions of all projects
@@ -262,7 +262,7 @@ The title is PiG's session name; `by-name/` resolves it, listings show it as `Ti
 Agents (canonical `agent://<id>`, `<id>` = session short ID):
 
 ```text
-agent://                                 live agents of the current project
+agent://                                 live agents of the current project; columns: title, project, cwd, state with idle time, model, trusted/blocked (unknown facts omitted)
 agent://self → agent://<id>
 agent://<id>/
   status                                 state, idle time, model, activity, pending ask
@@ -336,7 +336,7 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - Worktrees: creating a worktree applies sparse checkout, `.project` symlink, exclude and `[worktrees] links` in the verified order; `git status` stays clean; repair command fixes worktrees made outside Workbench.
 - `branch` storage: migration in both directions; artifact commits carry `Code-Commit`.
 - Conventions: frontmatter and `BACKLOG.md` pointer validation report problems without blocking writes.
-- URIs: every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds; links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
+- URIs (Slice 1, PLAN-0002 D): every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds, except the entries owned by Slice 2 (PLAN-0003 W4): `project://`, `conflict://`, `session://by-project/` and `by-name/`, `session://<id>/tree`, and `messages` of a stored session (`session://self/messages` is Slice 1); links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
 - Guides: injected once per session and revision on first touch, re-injected after compaction, untrusted provider guides stay data.
 - `docs://harness/` follows the running build; source fetch only on first access, offline shows cache; extension docs confined to their roots.
 - Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes answered 05.11.2026 (`internal/host/live_probes_test.go`): **T1** `SetSessionName` is visible to `GetSessionName` and the replicated `SessionName()` without reload, and an empty name clears the title; **T2** the title is persisted as a `session_info` entry in the session file and survives `--continue`; **T3** `session_info` is branch-scoped — forking before a rename leaves the session unnamed, so `by-name/` resolves the active branch's latest entry and never an entry from an inactive branch.
