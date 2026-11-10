@@ -1557,3 +1557,50 @@ func TestLiveSkillConditionsOffListsEverySkillAndAutoLoadsNone(t *testing.T) {
 		t.Fatalf("with conditions off every skill is listed and none auto-loads:\n%s", off)
 	}
 }
+
+// TestLiveHostSkillLoadsOnceAndUnloadSendsTheStopFrame covers SPEC-0014 §8.2 for a skill PiG discovered:
+// the first read returns the body and its directory, a repeated read a short note, the loaded set names
+// it, and unload removes it and tells the model in a frame to stop applying it.
+func TestLiveHostSkillLoadsOnceAndUnloadSendsTheStopFrame(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "agent", "skills", "user-wide")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: user-wide\ndescription: from the agent directory\n---\nHOST-SKILL-BODY\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	call := func(tool string, args map[string]any) func([]string) scriptedCall {
+		return func([]string) scriptedCall { return scriptedCall{tool: tool, args: args} }
+	}
+	load := call("read", map[string]any{"path": "skill://user-wide"})
+	loaded := call("ls", map[string]any{"path": "skill://loaded/"})
+	unload := call("write", map[string]any{"path": "skill://user-wide/ctl", "content": "unload"})
+	results, requests := runScriptedRequests(t, root, "read,ls,write", "", nil, load, load, loaded, unload, loaded, unload)
+	if len(results) != 6 {
+		t.Fatalf("results = %q", results)
+	}
+	if !strings.Contains(results[0], "HOST-SKILL-BODY") || !strings.Contains(results[0], "resolve relative paths against "+dir) {
+		t.Fatalf("first load must return the body and its directory:\n%s", results[0])
+	}
+	if strings.Contains(results[1], "HOST-SKILL-BODY") || !strings.Contains(results[1], "already loaded") {
+		t.Fatalf("a repeated load must return a short note:\n%s", results[1])
+	}
+	if !strings.Contains(results[2], "user-wide") {
+		t.Fatalf("the loaded set must name the skill:\n%s", results[2])
+	}
+	if !strings.Contains(results[3], "skill unloaded") || strings.Contains(results[4], "user-wide") {
+		t.Fatalf("unload must empty the loaded set:\n%s\n%s", results[3], results[4])
+	}
+	if strings.Contains(results[5], "skill unloaded") {
+		t.Fatalf("unloading a skill that is not loaded must fail:\n%s", results[5])
+	}
+	last := requests[len(requests)-1]
+	const stop = "Skills unloaded; stop applying them: user-wide"
+	if got := strings.Count(last, stop); got != 1 || !strings.Contains(last, `src=\"workbench.skills\"`) {
+		t.Fatalf("the stop frame must reach the model once as a workbench.skills frame, got %d:\n%s", got, last)
+	}
+	if strings.Contains(requests[3], stop) {
+		t.Fatal("the stop frame was sent before the unload")
+	}
+}

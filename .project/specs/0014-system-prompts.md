@@ -5,15 +5,15 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-10T17:55:00+01:00"
+  updated_at: "2026-11-10T18:00:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "User: skills are delivered only as a frame; availability changes are diff frames"
-      changes: ["§5, §8.1, §8.5: the session.skills frame is the only skill listing; a change names only the skills that became or stopped being available", "§3, §7: builtin/workbench has no skills section and the template has no skills input", "§10: the skills.listing setting is removed"]
+    - revision: 15
+      reason: "Skill notices are ledger frames like every other frame"
+      changes: ["§8.2, §8.3, §8.5: unload, auto-load and the post-compaction pointers are workbench.skills notice frames with instruction authority"]
 ---
 
 # 1. Purpose and scope
@@ -279,7 +279,7 @@ Through `skill://` (SPEC-0012 §5.3), no new tool:
 | Action | Operation |
 |---|---|
 | Load | `read skill://<name>`: body without frontmatter, its directory, and "resolve relative paths against this directory". Recorded as loaded in the session |
-| Unload | `write skill://<name>/ctl` with `unload`: loaded state removed, revealed sub-skills withdrawn (and unloaded), a frame says to stop applying it |
+| Unload | `write skill://<name>/ctl` with `unload`: loaded state removed, revealed sub-skills withdrawn (and unloaded), a `workbench.skills` notice frame says to stop applying it |
 | Loaded set | `ls skill://loaded/` |
 
 Repeated load returns a short note. Loaded state is stored in the session (custom entry `pig-workbench.skills`), so it survives restart, forks and reload.
@@ -298,7 +298,7 @@ auto_load:       # trigger: holds → body delivered without a load
 ```
 
 - All listed kinds must hold; within a kind any entry. Globs resolve against the repository root (cwd outside a repository); one bounded, gitignore-aware walk per pattern set, cached until location or patterns change.
-- Auto-load delivers the body once as a frame (`skills:auto:<name>`, capped at 2000 lines / 50 KiB with a pointer to the file). Unloading an auto-loaded skill marks it declined for the session; an explicit load clears the mark.
+- Auto-load delivers the body once as a `workbench.skills` notice frame (capped at 2000 lines / 50 KiB with a pointer to the file). Unloading an auto-loaded skill marks it declined for the session; an explicit load clears the mark.
 - An invalid `when` lists the skill unconditionally and reports it in `/workbench skills`; an invalid `auto_load` is ignored and reported. Diagnostics never reach the model.
 
 ## 8.4 Nested skills
@@ -307,7 +307,7 @@ auto_load:       # trigger: holds → body delivered without a load
 
 ## 8.5 After compaction
 
-The whole current listing comes back once with the boundary commit of `session.skills`; changes after it are diffs again. Loaded skills come back within a replay budget: explicit loads newest first as pointers ("loaded earlier; read before relying on it"), then auto-loads; a skill used before compaction is never presented as a fresh instruction.
+The whole current listing comes back once with the boundary commit of `session.skills`; changes after it are diffs again. Loaded skills come back within a replay budget: explicit loads newest first as pointers in one `workbench.skills` notice frame ("loaded earlier; read before relying on it"), then auto-loads; a skill used before compaction is never presented as a fresh instruction.
 
 # 9. Several instruction files per directory
 

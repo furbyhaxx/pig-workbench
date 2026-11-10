@@ -9,9 +9,11 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 
+	"github.com/furbyhaxx/pig-workbench/internal/frames"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
 	"github.com/furbyhaxx/pig-workbench/internal/skills"
 )
@@ -360,7 +362,18 @@ func (s *session) visibleSkills(catalog skills.Catalog, loaded map[string]bool) 
 	return skills.Visible(catalog, s.location.Current().Cwd, loaded)
 }
 
-func (s *session) deliverAutoSkills(ctx sdk.Context) {
+// skillFrame delivers one skill notice as a trusted Workbench frame; key keeps repeated events apart.
+func (a *app) skillFrame(ctx sdk.Context, s *session, key, title, body string) {
+	publish := frames.Publish{EventKey: fmt.Sprintf("skills/%s/%d", key, time.Now().UnixNano()), Kind: "notice", Source: "workbench.skills", Title: title, Body: body, Delivery: "nextBoundary", DataTrust: "trusted"}
+	receipt, frame, failure := a.admitFrame(ctx, s, "workbench", "instruction", true, publish)
+	if failure != nil || receipt.Duplicate {
+		return
+	}
+	// A failed send leaves the frame pending for the next boundary hook.
+	_, _ = a.deliverFrame(ctx, s, frame, false)
+}
+
+func (a *app) deliverAutoSkills(ctx sdk.Context, s *session) {
 	if s == nil || s.skills == nil || !s.settingBool("skills.conditions", true) {
 		return
 	}
@@ -390,7 +403,7 @@ func (s *session) deliverAutoSkills(ctx sdk.Context) {
 		if len(body) > 50<<10 {
 			body = body[:50<<10] + "\n… truncated; read skill://" + skill.Name + "\n"
 		}
-		_ = ctx.SendMessage("pig-workbench.skill", "skill "+skill.Name+" auto-loaded\n"+body, false, sdk.SendMessageOptions{})
+		a.skillFrame(ctx, s, "auto/"+skill.Name, "skill "+skill.Name+" auto-loaded", "skill "+skill.Name+" auto-loaded\n"+body)
 		s.skills.save()
 	}
 }
@@ -398,7 +411,7 @@ func (s *session) deliverAutoSkills(ctx sdk.Context) {
 const skillReplayBudget = 20
 
 // replaySkills tells the model, after compaction, which skills it loaded earlier, newest first, as pointers.
-func (s *session) replaySkills(ctx sdk.Context) {
+func (a *app) replayLoadedSkills(ctx sdk.Context, s *session) {
 	if s == nil || s.skills == nil {
 		return
 	}
@@ -420,12 +433,12 @@ func (s *session) replaySkills(ctx sdk.Context) {
 	for _, name := range names {
 		text.WriteString("- skill://" + name + "\n")
 	}
-	_ = ctx.SendMessage("pig-workbench.skill", text.String(), false, sdk.SendMessageOptions{})
+	a.skillFrame(ctx, s, "replay", fmt.Sprintf("%d loaded earlier", len(names)), text.String())
 }
 
 func (a *app) replaySkills(ctx sdk.Context, _ map[string]any) (any, error) {
 	if s, err := a.current(); err == nil {
-		s.replaySkills(ctx)
+		a.replayLoadedSkills(ctx, s)
 	}
 	return nil, nil
 }

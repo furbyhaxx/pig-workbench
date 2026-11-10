@@ -86,7 +86,7 @@ Tests: every command refused during the review now runs (`curl` on a URL, `grep`
 
 Current: `bodySize` in `internal/frames/ledger.go` counts every record ever admitted against 2 MiB. No message renderer is registered. `frames.deliveryChanged` is never emitted. `frames.role` and `frames.display.*` are inert.
 
-Change: limit pending bodies only and keep a bounded history of terminal records (receipt and digest kept, body dropped past the cap), with a restore path for existing sessions; register renderers for `pig-workbench.context`, `pig-workbench.skill` and `pig-workbench.ask` showing one row per frame per SPEC-0002 §7; honour `frames.display.style` and `frames.display.default-visibility`; emit `frames.deliveryChanged`; serve `session://self/frames` and `/workbench frames ls|show|hide|collapse`.
+Change: limit pending bodies only and keep a bounded history of terminal records (receipt and digest kept, body dropped past the cap), with a restore path for existing sessions; register renderers for `pig-workbench.context` and `pig-workbench.ask` (skill notices are `workbench.skills` frames on the context type) showing one row per frame per SPEC-0002 §7; honour `frames.display.style` and `frames.display.default-visibility`; emit `frames.deliveryChanged`; serve `session://self/frames` and `/workbench frames ls|show|hide|collapse`.
 
 `frames.role` is not shown (area E): stock PiG delivers frames only through the custom-message route, and no verified host capability projects them as native system or developer messages (SPEC-0002 §6). The key returns with the fork-host `sections` delivery in PLAN-0004 C4.
 

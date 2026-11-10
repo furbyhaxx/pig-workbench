@@ -215,7 +215,7 @@ func (a *app) writeControl(ctx sdk.Context, work context.Context, s *session, ta
 		if err != nil {
 			return sdk.ToolResult{}, err
 		}
-		_ = ctx.SendMessage("pig-workbench.skill", "skills unloaded, stop applying them: "+strings.Join(withdrawn, ", ")+"\n", false, sdk.SendMessageOptions{})
+		a.skillFrame(ctx, s, "unload/"+withdrawn[0], "unloaded "+strings.Join(withdrawn, ", "), "Skills unloaded; stop applying them: "+strings.Join(withdrawn, ", ")+"\n")
 		return sdk.ToolResult{Content: "skill unloaded\n", Details: map[string]any{"uri": target.URI, "withdrawn": withdrawn}}, nil
 	case "agent":
 		message, receipt, err := a.agentWrite(work, s, target.URI, content)

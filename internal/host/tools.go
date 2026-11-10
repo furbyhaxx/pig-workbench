@@ -246,7 +246,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	// One failed target in a multi-read must not mark the whole result as an
 	// error: the successful content is still valid and useful to the model.
 	allFailed := failedCount == len(targets)
-	s.deliverAutoSkills(ctx)
+	a.deliverAutoSkills(ctx, s)
 	return sdk.ToolResult{
 		Content: content.String(),
 		Details: map[string]any{
