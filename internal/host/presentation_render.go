@@ -12,9 +12,11 @@ import (
 	"github.com/furbyhaxx/pig-workbench/internal/presentation"
 )
 
-func renderPresentationCall(descriptor presentation.Descriptor, args map[string]any, render sdk.ToolRenderContext, root string, width int, shorten bool) []string {
-	parts := []string{descriptor.Label}
-	if target, ok := firstArgumentField(args, descriptor.CallFields, root, width, shorten); ok {
+func renderPresentationCall(entry presentationRegistration, args map[string]any, render sdk.ToolRenderContext, root string, width int, shorten bool) []string {
+	parts := []string{entry.descriptor.Label}
+	if entry.builtin != nil {
+		parts = append(parts, entry.builtin.facts(args, root, width)...)
+	} else if target, ok := firstArgumentField(args, entry.descriptor.CallFields, root, width, shorten); ok {
 		parts = append(parts, target)
 	} else if len(args) == 0 {
 		parts = append(parts, "arguments not retained")
@@ -38,8 +40,34 @@ func rawPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRe
 	return fitPresentationLines(lines, width, 40)
 }
 
-func renderPresentationResult(descriptor presentation.Descriptor, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay, record presentationRecord, root string) []string {
+const expandedBodyLines = 80
+
+// builtinPendingResult renders an own tool's result that has no snapshot yet: output still streaming, or a call the host failed before the tool returned one.
+func builtinPendingResult(descriptor presentation.Descriptor, builtin *builtinPresentation, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, preview int) []string {
+	status := string(presentation.OutcomeSucceeded)
+	switch {
+	case render.IsError:
+		status = string(presentation.OutcomeFailed)
+		preview = max(preview, 6)
+	case options.IsPartial || render.IsPartial:
+		status = string(presentation.PhaseRunning)
+	}
+	if options.Expanded {
+		preview = expandedBodyLines
+	}
+	parts := []string{descriptor.Label, status}
+	if render.DurationMs != nil {
+		parts = append(parts, "time "+formatMetric(presentation.Metric{Value: float64(*render.DurationMs), Unit: presentation.UnitMilliseconds}))
+	}
+	lines := append([]string{strings.Join(parts, " · ")}, previewBody(resultLines(result.Content), builtin.body, preview)...)
+	return fitPresentationLines(lines, width, preview+4)
+}
+
+func renderPresentationResult(descriptor presentation.Descriptor, builtin *builtinPresentation, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int, display effectiveDisplay, record presentationRecord, root string) []string {
 	if !record.valid {
+		if builtin != nil {
+			return builtinPendingResult(descriptor, builtin, result, options, render, width, descriptor.DefaultDisplay.PreviewLines)
+		}
 		diagnostic := ""
 		if result.Details != nil {
 			diagnostic = "presentation unavailable; showing raw result"
@@ -54,6 +82,12 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 		}
 	}
 	snapshot.Metrics = metrics
+	mode := bodyHead
+	if builtin != nil {
+		// The call row above an own tool's result already names the target.
+		snapshot.Target = nil
+		mode = builtin.body
+	}
 	lines := []string{presentationHeader(descriptor, snapshot, render.IsError, width, root, render.DurationMs, display.shorten)}
 	preview := descriptor.DefaultDisplay.PreviewLines
 	switch descriptor.DefaultDisplay.Density {
@@ -64,22 +98,30 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 			preview = max(preview, 40)
 		}
 	}
+	if builtin != nil && render.IsError {
+		preview = max(preview, 6)
+	}
 	if options.Expanded {
-		preview = max(preview, 80)
+		preview = max(preview, expandedBodyLines)
+	}
+	if snapshot.Summary != "" && preview > 0 {
+		lines = append(lines, snapshot.Summary)
 	}
 	if preview > 0 {
 		var body []string
-		if snapshot.Summary != "" {
-			body = append(body, snapshot.Summary)
+		if builtin != nil && builtinShowsContent(snapshot.Blocks, options.Expanded) {
+			body = resultLines(result.Content)
+		} else {
+			// An own tool's code block is an output tail, so its preview keeps the end.
+			mode = bodyHead
+			if builtin != nil && onlyCodeBlocks(snapshot.Blocks) {
+				mode = bodyTail
+			}
+			for _, block := range snapshot.Blocks {
+				body = append(body, presentationBlockLines(block)...)
+			}
 		}
-		for _, block := range snapshot.Blocks {
-			body = append(body, presentationBlockLines(block)...)
-		}
-		shown := min(preview, len(body))
-		lines = append(lines, body[:shown]...)
-		if shown < len(body) {
-			lines = append(lines, fmt.Sprintf("… %d more presentation lines", len(body)-shown))
-		}
+		lines = append(lines, previewBody(body, mode, preview)...)
 	}
 	if snapshot.Continuation != nil {
 		continuation := "continue: " + snapshot.Continuation.Explanation
@@ -98,6 +140,52 @@ func renderPresentationResult(descriptor presentation.Descriptor, result sdk.Too
 		lines = append(lines, "partial output")
 	}
 	return fitPresentationLines(lines, width, preview+8)
+}
+
+// builtinShowsContent reports whether an own tool's body is its text result: when the snapshot has no blocks, and when an expanded view would otherwise show only the bounded output tail.
+func builtinShowsContent(blocks []presentation.Block, expanded bool) bool {
+	return len(blocks) == 0 || expanded && onlyCodeBlocks(blocks)
+}
+
+func onlyCodeBlocks(blocks []presentation.Block) bool {
+	for _, block := range blocks {
+		if block.Kind != presentation.BlockCode {
+			return false
+		}
+	}
+	return len(blocks) > 0
+}
+
+// previewBody keeps limit lines from the head or the tail and says how many it left out.
+func previewBody(body []string, mode bodyMode, limit int) []string {
+	if limit <= 0 {
+		return nil
+	}
+	if len(body) <= limit {
+		return body
+	}
+	hidden := len(body) - limit
+	if mode == bodyTail {
+		return append([]string{fmt.Sprintf("… %d earlier lines", hidden)}, body[hidden:]...)
+	}
+	return append(append([]string(nil), body[:limit]...), fmt.Sprintf("… %d more presentation lines", hidden))
+}
+
+func resultLines(blocks []map[string]any) []string {
+	var out strings.Builder
+	for _, block := range blocks {
+		if block["type"] != "text" {
+			continue
+		}
+		if text, ok := block["text"].(string); ok {
+			out.WriteString(text)
+		}
+	}
+	text := strings.TrimRight(out.String(), "\n")
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+	return splitPresentationText(text)
 }
 
 func presentationHeader(descriptor presentation.Descriptor, snapshot presentation.Snapshot, hostIsError bool, width int, root string, hostDuration *int64, shorten bool) string {
@@ -173,12 +261,11 @@ func presentationBlockLines(block presentation.Block) []string {
 		}
 	case presentation.BlockCode:
 		if block.Code != nil {
-			prefix := "code"
+			lines := splitPresentationText(block.Code.Text)
 			if block.Code.Language != "" {
-				prefix = block.Code.Language
+				lines = append([]string{"[" + block.Code.Language + "]"}, lines...)
 			}
-			lines := []string{"[" + prefix + "]"}
-			return append(lines, splitPresentationText(block.Code.Text)...)
+			return lines
 		}
 	case presentation.BlockNotice:
 		if block.Notice != nil {

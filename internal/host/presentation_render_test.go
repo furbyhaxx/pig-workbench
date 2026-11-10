@@ -11,18 +11,18 @@ import (
 func TestPresentationCallUsesRecordedRootAndLabelsMissingOrPartialArguments(t *testing.T) {
 	descriptor := presentation.Descriptor{Label: "Build", CallFields: []presentation.CallField{{Pointer: "/target", Format: "path"}}}
 	args := map[string]any{"target": "/work/app/src/a.go"}
-	shown := strings.Join(renderPresentationCall(descriptor, args, sdk.ToolRenderContext{ArgsComplete: true}, "/work/app", 80, true), "\n")
+	shown := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, args, sdk.ToolRenderContext{ArgsComplete: true}, "/work/app", 80, true), "\n")
 	if !strings.Contains(shown, "src/a.go") || strings.Contains(shown, "/work/app/src") {
 		t.Fatalf("recorded root was not applied: %q", shown)
 	}
-	other := strings.Join(renderPresentationCall(descriptor, args, sdk.ToolRenderContext{ArgsComplete: true}, "/elsewhere", 80, true), "\n")
+	other := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, args, sdk.ToolRenderContext{ArgsComplete: true}, "/elsewhere", 80, true), "\n")
 	if !strings.Contains(other, "/work/app/src/a.go") {
 		t.Fatalf("a different root must not reuse the first row's relative form: %q", other)
 	}
-	if got := strings.Join(renderPresentationCall(descriptor, nil, sdk.ToolRenderContext{}, "", 80, true), "\n"); !strings.Contains(got, "arguments not retained") {
+	if got := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, nil, sdk.ToolRenderContext{}, "", 80, true), "\n"); !strings.Contains(got, "arguments not retained") {
 		t.Fatalf("missing arguments were not labelled: %q", got)
 	}
-	if got := strings.Join(renderPresentationCall(descriptor, args, sdk.ToolRenderContext{ArgsComplete: false}, "", 80, true), "\n"); !strings.Contains(got, "partial arguments") {
+	if got := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, args, sdk.ToolRenderContext{ArgsComplete: false}, "", 80, true), "\n"); !strings.Contains(got, "partial arguments") {
 		t.Fatalf("streaming arguments were not labelled partial: %q", got)
 	}
 }
@@ -46,8 +46,8 @@ func TestPresentationHeaderHostDurationOverridesProducerApproximationOnly(t *tes
 func TestPresentationCallHonoursTheTargetShorteningSetting(t *testing.T) {
 	descriptor := presentation.Descriptor{Label: "Build", CallFields: []presentation.CallField{{Pointer: "/target", Format: "path"}}}
 	args := map[string]any{"target": "/srv/projects/pi-workbench/src/renderers.ts"}
-	on := strings.Join(renderPresentationCall(descriptor, args, sdk.ToolRenderContext{ArgsComplete: true}, "", 44, true), "\n")
-	off := strings.Join(renderPresentationCall(descriptor, args, sdk.ToolRenderContext{ArgsComplete: true}, "", 44, false), "\n")
+	on := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, args, sdk.ToolRenderContext{ArgsComplete: true}, "", 44, true), "\n")
+	off := strings.Join(renderPresentationCall(presentationRegistration{descriptor: descriptor}, args, sdk.ToolRenderContext{ArgsComplete: true}, "", 44, false), "\n")
 	if !strings.Contains(on, "/s/p/") {
 		t.Fatalf("shortening on should fish-abbreviate: %q", on)
 	}

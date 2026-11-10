@@ -47,6 +47,9 @@ func (s *session) effectiveDisplay(entry presentationRegistration) (effectiveDis
 }
 
 func displayFromSnapshot(snapshot *config.Snapshot, entry presentationRegistration) (effectiveDisplay, error) {
+	if entry.builtin != nil {
+		return builtinDisplay(entry, snapshot.Revision()), nil
+	}
 	get := func(field string) (config.Entry, bool) {
 		return snapshot.Get(displayKey(entry.owner, entry.key, field))
 	}

@@ -166,9 +166,6 @@ func (c *presentationCatalog) list() []presentationRegistration {
 }
 
 func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderers) *sdk.ToolRenderers {
-	if own := ownToolRenderers(toolName); own != nil {
-		return own
-	}
 	s, err := a.current()
 	if err != nil {
 		return next()
@@ -192,7 +189,7 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			if err != nil || !display.enabled {
 				return fitPresentationLines([]string{entry.descriptor.Label + " · presentation disabled; delegation appliesAfterReload"}, width, 2), nil
 			}
-			return renderPresentationCall(entry.descriptor, args, rc, s.callRoot(rc.ToolCallID), width, display.shorten), nil
+			return renderPresentationCall(entry, args, rc, s.callRoot(rc.ToolCallID), width, display.shorten), nil
 		},
 		Result: func(_ sdk.Context, result sdk.ToolRenderResult, options sdk.ToolRenderResultOptions, render sdk.ToolRenderContext, width int) ([]string, error) {
 			display, err := cache.get(s, entry)
@@ -203,14 +200,14 @@ func (a *app) resolveToolRenderer(toolName string, next func() *sdk.ToolRenderer
 			descriptor.DefaultDisplay.Density, descriptor.DefaultDisplay.PreviewLines = display.density, display.preview
 			record := s.presentationView(entry, toolName, render.ToolCallID, result.Details, false)
 			if !record.valid {
-				return renderPresentationResult(descriptor, result, options, render, width, display, record, s.callRoot(render.ToolCallID)), nil
+				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID)), nil
 			}
 			key := presentationLayoutKey{call: toolName + "\x00" + entry.owner + "\x00" + entry.key + "\x00" + render.ToolCallID, data: record.sequence, settings: display.revision, width: width, expanded: options.Expanded, partial: options.IsPartial, hostPartial: render.IsPartial, hostError: render.IsError}
 			if render.DurationMs != nil {
 				key.duration, key.durationKnown = *render.DurationMs, true
 			}
 			return layouts.render(key, func() []string {
-				return renderPresentationResult(descriptor, result, options, render, width, display, record, s.callRoot(render.ToolCallID))
+				return renderPresentationResult(descriptor, entry.builtin, result, options, render, width, display, record, s.callRoot(render.ToolCallID))
 			}), nil
 		},
 	}

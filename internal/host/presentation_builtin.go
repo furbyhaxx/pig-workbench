@@ -12,16 +12,30 @@ const (
 	bodyTail
 )
 
-// builtinPresentation is what a wire descriptor cannot say about an own tool: call facts parsed from its arguments and how its text result is previewed.
+// builtinPresentation is what a wire descriptor cannot say about an own tool: call facts parsed from its arguments and which end of its text result a preview keeps.
 type builtinPresentation struct {
 	facts func(args map[string]any, root string, width int) []string
 	body  bodyMode
+}
+
+// builtinDisplay is the fixed display of an own tool: it has no per-tool settings, every metric shows and paths are not abbreviated.
+func builtinDisplay(entry presentationRegistration, revision uint64) effectiveDisplay {
+	display := effectiveDisplay{enabled: true, density: entry.descriptor.DefaultDisplay.Density, preview: entry.descriptor.DefaultDisplay.PreviewLines, metrics: map[string]bool{}, revision: revision}
+	for _, definition := range entry.descriptor.MetricDefinitions {
+		display.metrics[definition.ID] = true
+	}
+	return display
 }
 
 var builtinMetrics = []presentation.MetricDefinition{
 	{ID: "lines", Label: "lines", Unit: presentation.UnitCount, Priority: 10},
 	{ID: "matches", Label: "matches", Unit: presentation.UnitCount, Priority: 10},
 	{ID: "entries", Label: "entries", Unit: presentation.UnitCount, Priority: 10},
+	{ID: "added", Label: "added", Unit: presentation.UnitCount, Priority: 10},
+	{ID: "removed", Label: "removed", Unit: presentation.UnitCount, Priority: 10},
+	{ID: "bytes", Label: "size", Unit: presentation.UnitBytes, Priority: 10},
+	{ID: "jobs", Label: "jobs", Unit: presentation.UnitCount, Priority: 10},
+	{ID: "answers", Label: "answers", Unit: presentation.UnitCount, Priority: 10},
 	{ID: "exitCode", Label: "exit", Unit: presentation.UnitCount, Priority: 15},
 	{ID: "durationMs", Label: "time", Unit: presentation.UnitMilliseconds, Priority: 20},
 }
@@ -42,7 +56,7 @@ var builtinTools = map[string]builtinTool{
 	"bash":     {presentation.PresetProcess, 10, builtinPresentation{facts: bashFacts, body: bodyTail}},
 	"jobs":     {presentation.PresetProcess, 8, builtinPresentation{facts: jobsFacts}},
 	"cd":       {presentation.PresetGeneric, 3, builtinPresentation{facts: cdFacts}},
-	"ask_user": {presentation.PresetQuestionnaire, 0, builtinPresentation{facts: askFacts}},
+	"ask_user": {presentation.PresetQuestionnaire, 12, builtinPresentation{facts: askFacts}},
 }
 
 func builtinRegistration(tool string) presentationRegistration {
