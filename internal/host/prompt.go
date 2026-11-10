@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/frames"
@@ -52,18 +53,22 @@ func walkReplace(value any, from, to string) (any, int) {
 
 func (a *app) spliceLatePrompt(ctx sdk.Context, data map[string]any) (any, error) {
 	session, err := a.current()
-	if err != nil || session.promptText == "" {
+	if err != nil {
+		return nil, nil
+	}
+	served, _, _, _ := session.prompt.get()
+	if served == "" {
 		return nil, nil
 	}
 	payload, ok := data["payload"]
 	if !ok {
 		return nil, nil
 	}
-	extra := lateSections(ctx, session.promptText)
+	extra := lateSections(ctx, served)
 	if extra == "" {
 		return nil, nil
 	}
-	replaced, n := walkReplace(payload, session.promptText, session.promptText+"\n\n"+extra)
+	replaced, n := walkReplace(payload, served, served+"\n\n"+extra)
 	if n == 0 {
 		if err := session.admitLateSection(ctx, extra); err != nil {
 			return nil, err
@@ -114,6 +119,59 @@ func lateSections(ctx sdk.Context, served string) string {
 		fmt.Fprintf(&b, "<%s>\n%s\n</%s>", section.Name, section.Value, section.Name)
 	}
 	return b.String()
+}
+
+// promptState is the last builtin/workbench render and whether it was sent to the host.
+type promptState struct {
+	mu     sync.Mutex
+	text   string
+	epoch  string
+	err    string
+	forced bool
+}
+
+// set records one render attempt; a failed render keeps the previous text and epoch.
+func (p *promptState) set(rendered string, ok bool, renderErr string, forced bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.err, p.forced = renderErr, forced
+	if ok {
+		p.text, p.epoch = rendered, promptEpoch(rendered)
+	}
+}
+
+func (p *promptState) get() (text, epoch, renderErr string, forced bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.text, p.epoch, p.err, p.forced
+}
+
+// servedPrompt reports the system prompt of the current epoch with a header naming its source.
+func servedPrompt(ctx sdk.Context, s *session) ([]byte, error) {
+	served, err := ctx.GetSystemPrompt()
+	if err != nil {
+		return nil, err
+	}
+	text, epoch, renderErr, forced := s.prompt.get()
+	var b strings.Builder
+	switch {
+	case forced && text != "" && strings.HasPrefix(served, text):
+		fmt.Fprintf(&b, "source: builtin/workbench\nepoch: %s\n", epoch)
+	case renderErr != "":
+		fmt.Fprintf(&b, "source: PiG (builtin/workbench failed to render: %s)\nepoch: %s\n", renderErr, promptEpoch(served))
+	default:
+		fmt.Fprintf(&b, "source: PiG (Workbench does not replace the prompt: prompt.enabled, prompt.delivery or instructions.enabled is off)\nepoch: %s\n", promptEpoch(served))
+	}
+	for _, name := range prompt.RequiredSections {
+		opening, closing := "<"+name+">", "</"+name+">"
+		if start := strings.Index(served, opening); start >= 0 {
+			if end := strings.Index(served[start:], closing); end >= 0 {
+				fmt.Fprintf(&b, "section: %s %d bytes\n", name, end+len(closing))
+			}
+		}
+	}
+	fmt.Fprintf(&b, "bytes: %d\n\n%s\n", len(served), strings.TrimRight(served, "\n"))
+	return []byte(b.String()), nil
 }
 
 func promptEpoch(rendered string) string {

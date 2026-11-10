@@ -62,9 +62,7 @@ type session struct {
 	secrets             *secretsBoundary
 	router              *resource.Router
 	skills              *skillState
-	promptText          string
-	promptEpoch         string
-	promptErr           string
+	prompt              promptState
 	scratch             string
 	materialized        atomic.Uint64
 	projects            *project.Registry

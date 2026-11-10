@@ -501,11 +501,7 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			}
 			rendered, renderErr := renderBuiltinPrompt(s, decodePromptOptions(options))
 			text, force, recorded := applyPromptRender(promptEnabled, rendered, renderErr, deliveryMode)
-			s.promptErr = recorded
-			if renderErr == nil {
-				s.promptText = rendered
-				s.promptEpoch = promptEpoch(rendered)
-			}
+			s.prompt.set(rendered, renderErr == nil, recorded, force)
 			if force {
 				options["forceSystemPrompt"] = text
 			}

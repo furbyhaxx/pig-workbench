@@ -1219,3 +1219,31 @@ func TestLiveSkillListingPagesFiftySkills(t *testing.T) {
 		}
 	}
 }
+
+func TestLiveSystemPromptResourceServesThePromptOfTheEpochAndNamesItsSource(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		enabled bool
+		source  string
+		marker  string
+	}{
+		{"workbench", true, "source: builtin/workbench", "Workbench resources are reachable by URI"},
+		{"pig", false, "source: PiG (Workbench does not replace the prompt", "<docs>"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			results := runScriptedConfig(t, root, "read", fmt.Sprintf("[prompt]\nenabled = %t\n", tc.enabled), func([]string) scriptedCall {
+				return scriptedCall{"read", map[string]any{"path": "session://self/system-prompt"}}
+			})
+			got := strings.ReplaceAll(results[0], `\n`, "\n")
+			for _, want := range []string{tc.source, tc.marker, "epoch: ", "bytes: "} {
+				if !strings.Contains(got, want) {
+					t.Fatalf("system-prompt lacks %q: %.900s", want, got)
+				}
+			}
+			if strings.Contains(got, "still serves PiG") {
+				t.Fatalf("the stub sentence is back: %.300s", got)
+			}
+		})
+	}
+}
