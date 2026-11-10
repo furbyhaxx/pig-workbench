@@ -119,22 +119,22 @@ func (s *session) snapshotStatus(uri string) (api.SnapshotStatus, *api.Error) {
 			status.SeenLines += span.End - span.Start + 1
 		}
 	}
-	current, ok := currentRevision(canonical)
+	current, ok := currentRevision(canonical, s.snapshotFileBytes())
 	status.Stale = !ok || current != snapshot.Revision
 	return status, nil
 }
 
-func currentRevision(path string) (string, bool) {
+func currentRevision(path string, limit int64) (string, bool) {
 	file, info, err := fileio.OpenRegular(path)
 	if err != nil {
 		return "", false
 	}
 	defer file.Close()
-	if info.Size() > 4<<20 {
+	if info.Size() > limit {
 		return "", false
 	}
-	raw, err := io.ReadAll(io.LimitReader(file, (4<<20)+1))
-	if err != nil || len(raw) > 4<<20 {
+	raw, err := io.ReadAll(io.LimitReader(file, limit+1))
+	if err != nil || int64(len(raw)) > limit {
 		return "", false
 	}
 	return hashline.SourceRevision(raw), true

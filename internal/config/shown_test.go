@@ -12,10 +12,6 @@ import (
 var pendingConsumers = []string{
 	"activity.replace-working-indicator",
 	"context.timezone",
-	"edit.snapshot.max-bytes",
-	"edit.snapshot.max-file-bytes",
-	"edit.snapshot.max-paths",
-	"edit.snapshot.max-versions",
 	"guides.disabled",
 	"guides.enabled",
 	"guides.max-bytes",

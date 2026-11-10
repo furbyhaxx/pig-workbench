@@ -20,20 +20,38 @@ type pendingView struct {
 	tagged                      bool
 }
 
+// snapshotFileBytes applies the configured edit.snapshot limits to the store and returns the per-file bound.
+func (s *session) snapshotFileBytes() int64 {
+	limits := hashline.StoreLimits{Resources: 256, Versions: 4, Bytes: 64 << 20, FileBytes: 4 << 20}
+	if s.settings != nil {
+		if snapshot, err := s.settings.Current(); err == nil {
+			limits.Resources = intValue(snapshot, "edit.snapshot.max-paths", limits.Resources)
+			limits.Versions = intValue(snapshot, "edit.snapshot.max-versions", limits.Versions)
+			limits.Bytes = int64(intValue(snapshot, "edit.snapshot.max-bytes", int(limits.Bytes)))
+			limits.FileBytes = int64(intValue(snapshot, "edit.snapshot.max-file-bytes", int(limits.FileBytes)))
+		}
+	}
+	if s.snapshots != nil {
+		_ = s.snapshots.SetLimits(limits)
+	}
+	return limits.FileBytes
+}
+
 func (s *session) rememberRead(callID, epoch string, target resource.Target, page resource.ReadResult) {
 	if s.snapshots == nil || callID == "" || target.Scheme != "file" || page.Facts.CoordinateSpace != "source-lines" || page.Facts.Revision == "" {
 		return
 	}
+	limit := s.snapshotFileBytes()
 	file, info, err := fileio.OpenRegular(target.Path)
 	if err != nil {
 		return
 	}
 	defer file.Close()
-	if info.Size() > 4<<20 {
+	if info.Size() > limit {
 		return
 	}
-	source, err := io.ReadAll(io.LimitReader(file, (4<<20)+1))
-	if err != nil || len(source) > 4<<20 || hashline.SourceRevision(source) != page.Facts.Revision {
+	source, err := io.ReadAll(io.LimitReader(file, limit+1))
+	if err != nil || int64(len(source)) > limit || hashline.SourceRevision(source) != page.Facts.Revision {
 		return
 	}
 	snapshot, err := s.snapshots.Retain(page.Facts.CanonicalURI, source)
@@ -74,7 +92,7 @@ func (s *session) rememberCommitted(effect hashline.Effects, outcome fileedit.Ou
 }
 
 func (s *session) rememberWritten(callID, epoch string, target resource.Target, raw []byte, receipt string) {
-	if s.snapshots == nil || callID == "" || len(raw) > 4<<20 {
+	if s.snapshots == nil || callID == "" || int64(len(raw)) > s.snapshotFileBytes() {
 		return
 	}
 	source, err := hashline.Normalize(raw)

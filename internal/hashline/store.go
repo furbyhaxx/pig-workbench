@@ -59,6 +59,36 @@ func NewStore(limits StoreLimits, epoch string) (*Store, error) {
 	return &Store{limits: limits, entries: make(map[string][]*retainedSnapshot), epoch: epoch}, nil
 }
 
+// SetLimits replaces the bounds and evicts down to them at once; zero fields keep their current value.
+func (s *Store) SetLimits(limits StoreLimits) error {
+	if limits.Resources < 0 || limits.Versions < 0 || limits.Bytes < 0 || limits.FileBytes < 0 {
+		return errors.New("invalid snapshot limits")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if limits.Resources > 0 {
+		s.limits.Resources = limits.Resources
+	}
+	if limits.Versions > 0 {
+		s.limits.Versions = limits.Versions
+	}
+	if limits.Bytes > 0 {
+		s.limits.Bytes = limits.Bytes
+	}
+	if limits.FileBytes > 0 {
+		s.limits.FileBytes = limits.FileBytes
+	}
+	for uri := range s.entries {
+		for len(s.entries[uri]) > s.limits.Versions {
+			s.removeOldest(uri)
+		}
+	}
+	for len(s.entries) > s.limits.Resources || s.bytes > s.limits.Bytes {
+		s.removeOldest("")
+	}
+	return nil
+}
+
 // SourceRevision is the digest of exact source bytes, before normalization.
 func SourceRevision(source []byte) string {
 	sum := sha256.Sum256(source)

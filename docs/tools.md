@@ -56,6 +56,8 @@ edit {"path": "notes.md", "edits": [{"oldText": "before", "newText": "after"}]}
 
 The tool description the model sees follows the session's `edit.mode`: in `hashline` (the default) it explains only the tagged form with worked operations, in `replace` only exact replacements, in `auto` both. Tagged edits support PUT, CUT (`CUT 7.=8` deletes lines 7-8 and keeps them in a register), REM, MV, structural blocks and registers. Seen-line enforcement covers complete consumed ranges. Changed sources are relocated only with unambiguous evidence; otherwise read the current file again. Exact replacements must be unique and non-overlapping. Edits are preflighted and revision-checked; a partial I/O failure reports what landed rather than claiming rollback.
 
+Tags resolve against source snapshots kept in memory for the session. `edit.snapshot.max-file-bytes` (default 4 MiB) is the largest file that gets one; `edit.snapshot.max-paths` (256), `edit.snapshot.max-versions` (4 per file) and `edit.snapshot.max-bytes` (64 MiB, each source counted twice) bound the store, dropping the least recently used first. A dropped snapshot means the file must be read again before a tagged edit. Changes apply at the next read or edit.
+
 ## `write`
 
 ```text

@@ -173,6 +173,18 @@ func Catalog() []Definition {
 		case "edit.enforce-seen-lines":
 			d.Application = "live"
 			d.Description = "Require fully emitted source lines before hashline edits; projects may require but not disable the guard."
+		case "edit.snapshot.max-paths":
+			d.Application = "live"
+			d.Description = "How many files keep a source snapshot for tagged edits; the least recently used file is dropped first and must be read again before a tagged edit."
+		case "edit.snapshot.max-versions":
+			d.Application = "live"
+			d.Description = "How many versions of one file stay available to tags from earlier reads."
+		case "edit.snapshot.max-bytes":
+			d.Application = "live"
+			d.Description = "Memory bound for all source snapshots; each retained source counts twice its size."
+		case "edit.snapshot.max-file-bytes":
+			d.Application = "live"
+			d.Description = "Largest file that gets a snapshot; a larger file is read without a tag and edited with exact text."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."

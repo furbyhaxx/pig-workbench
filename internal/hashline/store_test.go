@@ -130,3 +130,44 @@ func TestResolveNamesTheRetainedTagsWhenTheRequestedOneIsGone(t *testing.T) {
 		t.Fatalf("the error must name the requested and the retained tag, got %v", err)
 	}
 }
+
+func TestSetLimitsEvictsDownToTheNewBounds(t *testing.T) {
+	store, err := NewStore(StoreLimits{}, "epoch")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, uri := range []string{"file:///a", "file:///b", "file:///c"} {
+		for _, text := range []string{"one\n", "two\n"} {
+			if _, err := store.Retain(uri, []byte(text)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := store.SetLimits(StoreLimits{Resources: 2, Versions: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := store.Latest("file:///a"); ok {
+		t.Fatal("the least recently used resource survived a lower resource limit")
+	}
+	for _, uri := range []string{"file:///b", "file:///c"} {
+		latest, ok := store.Latest(uri)
+		if !ok || string(latest.Raw) != "two\n" || len(store.entries[uri]) != 1 {
+			t.Fatalf("%s must keep only its newest version: ok=%v versions=%d", uri, ok, len(store.entries[uri]))
+		}
+	}
+	if err := store.SetLimits(StoreLimits{FileBytes: 4}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Retain("file:///d", []byte("12345")); err == nil {
+		t.Fatal("a source above the new file limit was retained")
+	}
+	if err := store.SetLimits(StoreLimits{Bytes: 8}); err != nil {
+		t.Fatal(err)
+	}
+	if store.bytes > 8 || len(store.entries) != 1 {
+		t.Fatalf("byte limit not enforced: bytes=%d resources=%d", store.bytes, len(store.entries))
+	}
+	if err := store.SetLimits(StoreLimits{Versions: -1}); err == nil {
+		t.Fatal("a negative limit was accepted")
+	}
+}

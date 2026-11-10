@@ -147,8 +147,8 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 			if err != nil {
 				return nil, fmt.Errorf("read current source %s: %w", target.Path, err)
 			}
-			if len(currentRaw) > maxSnapshotSourceBytes {
-				return nil, fmt.Errorf("current source %s exceeds the %d-byte hashline snapshot limit; read a range and use exact-text edit", target.Path, maxSnapshotSourceBytes)
+			if limit := s.snapshotFileBytes(); int64(len(currentRaw)) > limit {
+				return nil, fmt.Errorf("current source %s exceeds the %d-byte hashline snapshot limit (edit.snapshot.max-file-bytes); read a range and use exact-text edit", target.Path, limit)
 			}
 			sources[section.Path] = snapshot
 			currentSources[section.Path] = hashline.Snapshot{URI: snapshot.URI, Revision: hashline.SourceRevision(currentRaw), Epoch: snapshot.Epoch, Raw: currentRaw}
@@ -344,8 +344,6 @@ func (a *app) edit(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	return sdk.ToolResult{Content: content.String(), Details: map[string]any{"changed": changed, "outcomes": outcomes, "partial": commitErr != nil, "locationRevision": captured.Revision}, IsError: commitErr != nil}, nil
 }
-
-const maxSnapshotSourceBytes = 4 << 20
 
 func currentSourceContext(work context.Context, s *session, callID, cwd, epoch string, relocation *hashline.RelocationError, raw []byte) string {
 	target, err := localEditTarget(cwd, relocation.Path)
