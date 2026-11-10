@@ -1,5 +1,5 @@
  │ - Never print envelopes.
- └ instruction · trusted instruction · seq 7 · 10.11.2026 12:44 · delivered
+ └ instruction · trusted instruction · seq 7 · 10.11.2026 13:31 · delivered
 
 
  hello
@@ -12,5 +12,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes14...
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes51...
 17.6%/32k (auto)                                                            mock

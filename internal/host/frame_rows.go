@@ -122,6 +122,9 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 		row.facts = []string{title}
 	default:
 		row.facts = []string{bodySummary(envelope.Body)}
+		if summary := contextSummary(envelope); summary != "" {
+			row.facts = []string{summary}
+		}
 	}
 	if envelope.Trust == "untrusted" {
 		row.facts = append(row.facts, "untrusted")
@@ -132,6 +135,54 @@ func (a *app) frameRowFor(text string, width int) (frameRow, error) {
 	}
 	row.provenance = strings.Join(parts, " · ")
 	return row, nil
+}
+
+// contextSummary states what a session context frame says in the words a person would use.
+func contextSummary(envelope frames.Envelope) string {
+	var facts struct {
+		Date, Timezone, OS, Architecture, Name, Slug, ID, Provider, EditMode string
+		Reasoning                                                            bool
+		ContextWindow                                                        int
+		ActiveTools, Schemes, Skills                                         []any
+	}
+	if json.Unmarshal([]byte(envelope.Body), &facts) != nil {
+		return ""
+	}
+	switch envelope.Source {
+	case "session.date":
+		zone, _, _ := strings.Cut(facts.Timezone, " ")
+		return strings.TrimSpace(facts.Date + " " + envelope.CreatedAt.Local().Format("15:04") + " " + zone)
+	case "session.environment":
+		return facts.OS + "/" + facts.Architecture
+	case "session.project":
+		name, id := facts.Name, facts.Slug
+		if id == "" {
+			id = facts.ID
+		}
+		if name == "" {
+			return id
+		}
+		return name + " (" + id + ")"
+	case "session.model":
+		model := facts.Provider + "/" + facts.ID
+		if facts.Reasoning {
+			model += " · reasoning"
+		}
+		if facts.ContextWindow >= 1000 {
+			model += fmt.Sprintf(" · %dk context", facts.ContextWindow/1000)
+		}
+		return model
+	case "session.capabilities":
+		parts := []string{fmt.Sprintf("%d tools", len(facts.ActiveTools)), fmt.Sprintf("%d schemes", len(facts.Schemes))}
+		if len(facts.Skills) > 0 {
+			parts = append(parts, fmt.Sprintf("%d skills", len(facts.Skills)))
+		}
+		if facts.EditMode != "" {
+			parts = append(parts, facts.EditMode+" edits")
+		}
+		return strings.Join(parts, ", ")
+	}
+	return ""
 }
 
 // instructionPath shows a file inside the working location relative to it and any other file absolute.
@@ -263,10 +314,10 @@ func (r frameRow) render(paint painter, expanded bool, width int) []string {
 	if text := strings.Join(r.facts, " · "); text != "" {
 		facts = " · " + strings.ReplaceAll(text, "\n", " ")
 	}
-	// The hint goes first, then the count; the subject keeps at least nine columns.
+	// The hint goes first, then the count; the facts keep up to 32 columns.
 	suffix := count + hint
 	for _, shorter := range []string{count, ""} {
-		if tui.VisibleWidth(suffix) <= room-min(tui.VisibleWidth(facts), 9) {
+		if tui.VisibleWidth(suffix) <= room-min(tui.VisibleWidth(facts), 32) {
 			break
 		}
 		suffix = shorter

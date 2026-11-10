@@ -3,17 +3,17 @@
  may not work. Add `set -g extended-keys on` to
  ~/.tmux.conf and restart tmux.
 
- i session.date · date 2026-11… · 4 lines · ctrl+o expand
+ i session.date · 2026-11-10 13:31 CET · 4 lines
 
- i session.environment · archi… · 5 lines · ctrl+o expand
+ i session.environment · linux/amd64 · 5 lines
 
- i session.project · id global… · 7 lines · ctrl+o expand
+ i session.project · Global (global) · 7 lines
 
- i session.location · ~/.cache… · 9 lines · ctrl+o expand
+ i session.location · ~/.cache/…/001 · 9 lines
 
- i session.model · contextWind… · 9 lines · ctrl+o expand
+ i session.model · workbench-fixture/mock · 32k context
 
- i session.capabilities · activeTools 10, edi… · 29 lines
+ i session.capabilities · 10 tools, 12 schemes, hashline…
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines
 

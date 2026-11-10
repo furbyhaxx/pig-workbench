@@ -3,17 +3,17 @@
  Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
  -g extended-keys on` to ~/.tmux.conf and restart tmux.
 
- i session.date · date 2026-11-10, timezone CET +01:00 · 4 lines · ctrl+o expand
+ i session.date · 2026-11-10 13:31 CET · 4 lines · ctrl+o expand
 
- i session.environment · architecture amd64, hostCwd … · 5 lines · ctrl+o expand
+ i session.environment · linux/amd64 · 5 lines · ctrl+o expand
 
- i session.project · id global, name Global, recogniz… · 7 lines · ctrl+o expand
+ i session.project · Global (global) · 7 lines · ctrl+o expand
 
  i session.location · ~/.cache/pig-workbench-test-tmp… · 9 lines · ctrl+o expand
 
- i session.model · contextWindow 32000, id mock, maxO… · 9 lines · ctrl+o expand
+ i session.model · workbench-fixture/mock · 32k conte… · 9 lines · ctrl+o expand
 
- i session.capabilities · activeTools 10, editMode h… · 29 lines · ctrl+o expand
+ i session.capabilities · 10 tools, 12 schemes, hashline edits · 29 lines
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes14...
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes51...
 17.6%/32k (auto)                                                            mock

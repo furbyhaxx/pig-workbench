@@ -3,17 +3,17 @@
 
  Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
 
- i session.date · date 2026-11-10, timezone CET +01:00 · 4 lines · ctrl+o expand
+ i session.date · 2026-11-10 13:31 CET · 4 lines · ctrl+o expand
 
- i session.environment · architecture amd64, hostCwd $HOME/.cache/pig-workbench-test-tmp/work/TestLiveF… · 5 lines · ctrl+o expand
+ i session.environment · linux/amd64 · 5 lines · ctrl+o expand
 
- i session.project · id global, name Global, recognizedBy global, root $HOME/.cache/pig-workbench-test-… · 7 lines · ctrl+o expand
+ i session.project · Global (global) · 7 lines · ctrl+o expand
 
  i session.location · ~/.cache/pig-workbench-test-tmp/work/…/001 · 9 lines · ctrl+o expand
 
- i session.model · contextWindow 32000, id mock, maxOutputTokens 4000, name Workbench scripted fixture, provider … · 9 lines · ctrl+o expand
+ i session.model · workbench-fixture/mock · 32k context · 9 lines · ctrl+o expand
 
- i session.capabilities · activeTools 10, editMode hashline, schemes 12 · 29 lines · ctrl+o expand
+ i session.capabilities · 10 tools, 12 schemes, hashline edits · 29 lines · ctrl+o expand
 
  ◆ instructions.steering · AGENTS.md · loaded · 5 lines · ctrl+o expand
 
@@ -28,5 +28,5 @@
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes1451488879/001
+~/.cache/pig-workbench-test-tmp/work/TestLiveFramesRenderAsRowsNotEnvelopes513888334/001
 17.6%/32k (auto)                                                                                                                        mock
