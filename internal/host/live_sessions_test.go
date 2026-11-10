@@ -589,6 +589,13 @@ func TestLiveActivitySettingsControlWidget(t *testing.T) {
 			if tc.want == "" {
 				time.Sleep(time.Second)
 				capture = tmux("capture-pane", "-p", "-t", "workbench")
+			} else {
+				for deadline := time.Now().Add(5 * time.Second); !strings.Contains(capture, "Ready  1 jobs") && time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+					capture = tmux("capture-pane", "-p", "-t", "workbench")
+				}
+				if !strings.Contains(capture, "Ready  1 jobs") {
+					t.Fatalf("the line does not lead with the turn state after the turn ended:\n%s", capture)
+				}
 			}
 			line := -1
 			for i, text := range strings.Split(capture, "\n") {
