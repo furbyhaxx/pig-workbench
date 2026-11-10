@@ -108,7 +108,7 @@ func (p skillProvider) List(ctx context.Context, uri, cursor string, limit int) 
 	for _, name := range names {
 		entries = append(entries, resource.Entry{Name: name, URI: "skill://" + name, Kind: resource.EntryFile})
 	}
-	return pageEntries(entries, cursor, limit)
+	return resource.PageEntries(entries, cursor, limit)
 }
 
 func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

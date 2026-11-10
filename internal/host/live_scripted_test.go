@@ -925,6 +925,7 @@ func TestLiveTreeRootsListAndScratchIsWritable(t *testing.T) {
 		{"read", map[string]any{"path": "job://"}},
 		{"read", map[string]any{"path": "agent://"}},
 		{"read", map[string]any{"path": "cfg://"}},
+		{"read", map[string]any{"path": "out://"}},
 	}
 	steps := make([]scriptStep, len(calls))
 	for i, call := range calls {

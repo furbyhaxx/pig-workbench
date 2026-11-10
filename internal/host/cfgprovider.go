@@ -87,7 +87,7 @@ func (p cfgProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 		for _, owner := range owners {
 			entries = append(entries, resource.Entry{Name: owner, URI: "cfg://workbench/integrations/" + owner, Kind: resource.EntryFile})
 		}
-		return pageEntries(entries, cursor, limit)
+		return resource.PageEntries(entries, cursor, limit)
 	}
 	if len(parts) != 0 {
 		return resource.Listing{}, resource.ErrUnsupported
@@ -106,7 +106,7 @@ func (p cfgProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 	for _, name := range names {
 		entries = append(entries, resource.Entry{Name: name, URI: "cfg://" + name, Kind: resource.EntryDir})
 	}
-	return pageEntries(entries, cursor, limit)
+	return resource.PageEntries(entries, cursor, limit)
 }
 
 func (p cfgProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

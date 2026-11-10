@@ -367,7 +367,7 @@ func (p docsProvider) List(ctx context.Context, uri, cursor string, limit int) (
 		}
 		return entries[i].Name < entries[j].Name
 	})
-	return pageEntries(entries, cursor, limit)
+	return resource.PageEntries(entries, cursor, limit)
 }
 
 const docsMaxFileBytes = 4 << 20

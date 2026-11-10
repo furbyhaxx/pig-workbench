@@ -453,3 +453,46 @@ func TestLocalProviderWriteIsConfinedAndReadable(t *testing.T) {
 		t.Error("oversized scratch write accepted")
 	}
 }
+
+func TestOutRootListsRetainedSpillsOldestFirstAndPages(t *testing.T) {
+	store, err := NewOutStore(filepath.Join(t.TempDir(), "out"), 1<<20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []string
+	for i := 0; i < 30; i++ {
+		uri, err := store.Spill(context.Background(), make([]byte, 10+i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		want = append(want, uri)
+	}
+	provider := OutProvider{Store: store}
+	if stat, err := provider.Stat(context.Background(), "out://"); err != nil || stat.Kind != EntryDir {
+		t.Fatalf("root stat = %+v, %v", stat, err)
+	}
+	var got []string
+	cursor := ""
+	for {
+		page, err := provider.List(context.Background(), "out://", cursor, 16)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(page.Entries) > 16 {
+			t.Fatalf("page holds %d entries", len(page.Entries))
+		}
+		for _, entry := range page.Entries {
+			got = append(got, entry.URI)
+		}
+		if page.Complete {
+			break
+		}
+		cursor = page.NextCursor
+	}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("listing = %v, want %v", got, want)
+	}
+	if _, err := provider.List(context.Background(), "out://", "gone", 16); err == nil || !strings.Contains(err.Error(), "staleRevision") {
+		t.Fatalf("vanished cursor = %v", err)
+	}
+}

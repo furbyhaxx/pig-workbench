@@ -114,7 +114,7 @@ func (p jobProvider) List(ctx context.Context, uri, cursor string, limit int) (r
 		}
 		entries = append(entries, resource.Entry{Name: name, URI: base + name, Kind: entryKind})
 	}
-	return pageEntries(entries, cursor, limit)
+	return resource.PageEntries(entries, cursor, limit)
 }
 
 func (p jobProvider) Read(ctx context.Context, request resource.ReadRequest) (resource.ReadResult, error) {

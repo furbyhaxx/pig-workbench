@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -87,6 +88,9 @@ func (OutProvider) Scheme() string { return "out" }
 
 // Stat describes one spilled output.
 func (p OutProvider) Stat(ctx context.Context, uri string) (StatResult, error) {
+	if uri == "out://" || uri == "out:" {
+		return StatResult{URI: "out://", Kind: EntryDir}, nil
+	}
 	path, err := p.Store.Path(uri)
 	if err != nil {
 		return StatResult{}, err
@@ -101,9 +105,39 @@ func (p OutProvider) Stat(ctx context.Context, uri string) (StatResult, error) {
 	return StatResult{URI: uri, Kind: EntryFile, Size: info.Size()}, nil
 }
 
-// List reports that spilled outputs are addressed directly, not enumerated.
-func (OutProvider) List(context.Context, string, string, int) (Listing, error) {
-	return Listing{}, ErrUnsupported
+// List enumerates the retained spilled outputs, oldest first.
+func (p OutProvider) List(_ context.Context, uri, cursor string, limit int) (Listing, error) {
+	if uri != "out://" && uri != "out:" {
+		return Listing{}, ErrUnsupported
+	}
+	p.Store.mu.Lock()
+	entries := make([]Entry, 0, len(p.Store.order))
+	for _, entry := range p.Store.order {
+		entries = append(entries, Entry{Name: entry.id, URI: "out://" + entry.id, Kind: EntryFile, Detail: fmt.Sprintf("%d bytes", entry.size)})
+	}
+	p.Store.mu.Unlock()
+	return PageEntries(entries, cursor, limit)
+}
+
+// PageEntries returns one listing page of at most limit entries starting at the entry named cursor.
+// A cursor whose entry is gone is stale: answering from the start would repeat entries.
+func PageEntries(entries []Entry, cursor string, limit int) (Listing, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 200
+	}
+	start := 0
+	if cursor != "" {
+		start = slices.IndexFunc(entries, func(entry Entry) bool { return entry.Name == cursor })
+		if start < 0 {
+			return Listing{}, errors.New("staleRevision: listing changed or cursor entry disappeared; restart listing")
+		}
+	}
+	end := min(start+limit, len(entries))
+	listing := Listing{Entries: entries[start:end], Complete: end == len(entries)}
+	if !listing.Complete {
+		listing.NextCursor = entries[end].Name
+	}
+	return listing, nil
 }
 
 // Read pages one spilled output.
