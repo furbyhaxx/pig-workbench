@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 6
+  revision: 7
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T17:00:48+01:00"
+  updated_at: "2026-11-10T17:22:21+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 6
-      reason: "Area E classification of the settings that are still inert"
-      changes: ["Table of 58 keys: 26 to wire with owner area, 32 not shown with the owning plan"]
+    - revision: 7
+      reason: "projects.storage-links was a duplicate"
+      changes: ["Area E table: projects.storage-links removed in favour of projects.session-storage"]
 ---
 
 # 1. Outcome
@@ -124,7 +124,8 @@ Seven of the 65 were wired in areas A–C (`bash.route-to-tools`, `frames.displa
 | `edit.snapshot.max-paths`, `max-versions`, `max-bytes`, `max-file-bytes` | wire | E |
 | `guides.enabled`, `guides.max-bytes`, `guides.disabled` | wire | E |
 | `storage.finished-retention-days` | wire | E |
-| `projects.offer-registration`, `projects.storage-links` | wire | E |
+| `projects.offer-registration` | wire | E |
+| `projects.storage-links` | removed: it duplicated the consumed `projects.session-storage` (`link`/`off`) | — |
 | `context.timezone`, `prompt.template`, `secrets.env-injection`, `activity.replace-working-indicator` | wire | E |
 | `jobs.yield-after-ms`, `termination-grace-ms`, `max-finished`, `log-bytes`, `session-log-bytes`, `raw-logs` | wire | G |
 | `skills.conditions` | wire | F |
@@ -138,7 +139,7 @@ Seven of the 65 were wired in areas A–C (`bash.route-to-tools`, `frames.displa
 | `statusline.mode`, `statusline.path-style` | not shown: statusline modes are chrome | PLAN-0004 C3 |
 | `frames.role` | not shown: no native role projection on stock PiG | PLAN-0004 C4 |
 
-26 keys are wired, 32 are not shown. A key in the wire class that turns out to have no feature behind it moves to not shown with a row here. `TestLiveCatalogSettingsHaveBehavioralConsumers` already requires a behavioral test per live key; area E adds the rule that every shown key is live.
+25 keys are wired, 32 are not shown and one duplicate is removed. A key in the wire class that turns out to have no feature behind it moves to not shown with a row here. `TestLiveCatalogSettingsHaveBehavioralConsumers` already requires a behavioral test per live key; area E adds the rule that every shown key is live.
 
 ## F. Skills
 

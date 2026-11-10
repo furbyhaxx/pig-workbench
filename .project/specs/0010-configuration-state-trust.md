@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 22
+  revision: 23
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:19:28+01:00"
+  updated_at: "2026-11-10T17:21:58+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 22
-      reason: "storage.finished-retention-days gained its consumer"
-      changes: ["§3 and §6: the key bounds how long a finished session's scratch directory is kept; the scratch row names the real location and the claim lock"]
+    - revision: 23
+      reason: "projects.offer-registration gained its consumer"
+      changes: ["§3: the offer key is consumed; projects.storage-links is gone, projects.session-storage is the one switch for symlinked buckets"]
 ---
 
 # 1. Scope and precedence
@@ -114,7 +114,8 @@ All defaults below are proposals subject to design review and measurements, not 
 | sessions.broadcast | project | user/runtime only (SPEC-0011 §6) |
 | coordinator.classes / lease-hours / target-consent | observe, message / 8 / first-action | user/runtime only; enabling is a user command (SPEC-0011 §9.3) |
 | coordinator.single / confirm-destructive / mark-targets / frames / audit / answer-attribution | true each | user/runtime only |
-| projects.offer-registration / storage-links | true / true | user/runtime; symlinked session buckets of SPEC-0012 §3.5 |
+| projects.offer-registration | true | user/runtime; the once-per-repository project offer of SPEC-0012 §3.3 |
+| projects.session-storage | link | user/runtime; `link` or `off`, symlinked session buckets of SPEC-0012 §3.5 |
 | guides.enabled / max-bytes / disabled | true / 2048 / [] | user/project/runtime presentation (SPEC-0012 §5.5) |
 | docs.source-versions-kept / source-paths | 3 / docs, extensions/sdk, cmd, internal | user/runtime; fetch only on first access (SPEC-0012 §5.4) |
 | instructions.agents-md-reminder / backlog.validate-pointers | true / true | user/project/runtime (SPEC-0007 §2) |

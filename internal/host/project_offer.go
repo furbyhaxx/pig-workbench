@@ -31,7 +31,7 @@ func claimProjectOffer(dir, root string) (bool, error) {
 
 // offerProject tells the user once per repository that no project recognises it. It never creates one.
 func (a *app) offerProject(ctx sdk.Context, s *session) {
-	if !ctx.HasUI() {
+	if !ctx.HasUI() || !s.settingBool("projects.offer-registration", true) {
 		return
 	}
 	cwd := s.location.Current().Cwd

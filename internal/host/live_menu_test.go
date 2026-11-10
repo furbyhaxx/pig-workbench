@@ -822,6 +822,29 @@ func TestLiveRepositoryInNoProjectIsOfferedAProjectOnce(t *testing.T) {
 	}
 }
 
+// With the offer switched off, a repository in no project starts quietly and keeps its one offer for later.
+func TestLiveProjectOfferIsSuppressedByItsSetting(t *testing.T) {
+	root := t.TempDir()
+	gitInit(t, root)
+	config := filepath.Join(root, "agent", "Workbench.toml")
+	if err := os.MkdirAll(filepath.Dir(config), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(config, []byte("[projects]\noffer-registration = false\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	quiet := startTUI(t, root)
+	time.Sleep(3 * time.Second)
+	if strings.Contains(quiet.history(), "belongs to no project yet") {
+		t.Fatal("the offer appeared although projects.offer-registration is false")
+	}
+	if err := os.WriteFile(config, []byte("[projects]\noffer-registration = true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	offered := startTUI(t, root)
+	offered.waitFor("belongs to no project yet", 15*time.Second)
+}
+
 func TestLiveUserBashListsASchemeDirectoryAndRunsACommandWithAURL(t *testing.T) {
 	web := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "fetched-by-user-curl") }))
 	defer web.Close()

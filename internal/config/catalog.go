@@ -110,7 +110,6 @@ func Catalog() []Definition {
 		integer("sessions.max-hops", 8, 1, 128, DenyProject),
 		integer("sessions.rate-limit", 30, 1, 10000, DenyProject),
 		boolean("projects.offer-registration", true, DenyProject),
-		boolean("projects.storage-links", true, DenyProject),
 		boolean("guides.enabled", true, AllowProject),
 		integer("guides.max-bytes", 2048, 0, 65536, ReduceProject),
 		stringList("guides.disabled", []string{}, AllowProject),
@@ -197,6 +196,9 @@ func Catalog() []Definition {
 		case "storage.finished-retention-days":
 			d.Application = "live"
 			d.Description = "Days a finished session's local:// scratch directory is kept before a later session start removes it; a directory in use is never removed, and 0 removes unused ones at once."
+		case "projects.offer-registration":
+			d.Application = "live"
+			d.Description = "Tell the user once per repository that no project recognises it and how to create or join one."
 		case "instructions.enabled":
 			d.Application = "live"
 			d.Description = "Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting."
