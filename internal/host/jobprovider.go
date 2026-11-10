@@ -212,12 +212,11 @@ func (p jobProvider) jobAction(s *session, uri, content string) error {
 		case action == "kill":
 			return s.jobs.Cancel(id)
 		case strings.HasPrefix(action, "signal "):
-			name := strings.TrimSpace(strings.TrimPrefix(action, "signal "))
-			number, ok := jobSignals[strings.ToUpper(name)]
-			if !ok {
-				return fmt.Errorf("unsupported signal %q; supported: HUP INT QUIT TERM KILL", name)
+			number, err := jobSignal(strings.TrimPrefix(action, "signal "))
+			if err != nil {
+				return err
 			}
-			return s.jobs.Signal(id, syscall.Signal(number))
+			return s.jobs.Signal(id, number)
 		default:
 			return fmt.Errorf("ctl accepts eof, kill or signal <name>; got %q", action)
 		}
@@ -242,4 +241,13 @@ func jobCatalog(s *session) string {
 	return b.String()
 }
 
-var jobSignals = map[string]syscall.Signal{"HUP": syscall.SIGHUP, "INT": syscall.SIGINT, "QUIT": syscall.SIGQUIT, "TERM": syscall.SIGTERM, "KILL": syscall.SIGKILL}
+var jobSignals = map[string]syscall.Signal{"TERM": syscall.SIGTERM, "INT": syscall.SIGINT, "HUP": syscall.SIGHUP, "QUIT": syscall.SIGQUIT, "KILL": syscall.SIGKILL}
+
+// jobSignal resolves a signal name for the jobs tool and job://<id>/ctl alike; case and a SIG prefix do not matter.
+func jobSignal(name string) (syscall.Signal, error) {
+	key := strings.TrimPrefix(strings.ToUpper(strings.TrimSpace(name)), "SIG")
+	if number, ok := jobSignals[key]; ok {
+		return number, nil
+	}
+	return 0, fmt.Errorf("unsupported signal %q; supported: TERM INT HUP QUIT KILL", name)
+}

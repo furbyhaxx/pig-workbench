@@ -49,3 +49,24 @@ func TestTerminalTextKeepsWhatATerminalWouldShow(t *testing.T) {
 		}
 	}
 }
+
+// TestJobSignalNamesAreSharedByToolAndCtl pins the one signal table and its one refusal text.
+func TestJobSignalNamesAreSharedByToolAndCtl(t *testing.T) {
+	for _, name := range []string{"TERM", "term", "SIGTERM", " sigint ", "HUP", "QUIT", "KILL"} {
+		if _, err := jobSignal(name); err != nil {
+			t.Errorf("jobSignal(%q): %v", name, err)
+		}
+	}
+	const refusal = `unsupported signal "USR1"; supported: TERM INT HUP QUIT KILL`
+	if _, err := jobSignal("USR1"); err == nil || err.Error() != refusal {
+		t.Fatalf("lookup refusal = %v", err)
+	}
+	s := newJobTestSession(t)
+	id, err := s.jobs.Start(t.Context(), jobs.Spec{Command: []string{"sleep", "30"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := (jobProvider{}).jobAction(s, "job://"+id+"/ctl", "signal USR1"); err == nil || err.Error() != refusal {
+		t.Fatalf("ctl refusal = %v", err)
+	}
+}

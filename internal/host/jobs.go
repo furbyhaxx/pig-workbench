@@ -379,9 +379,12 @@ func (a *app) jobsTool(ctx sdk.Context, params map[string]any) (any, error) {
 	if input.Signal != "" && input.Action != "kill" {
 		return nil, errors.New("signal applies to kill")
 	}
-	signal, forceSignal := jobSignals[input.Signal]
-	if input.Signal != "" && !forceSignal {
-		return nil, fmt.Errorf("unsupported signal %q; supported: TERM INT HUP QUIT KILL", input.Signal)
+	var signal syscall.Signal
+	forceSignal := input.Signal != ""
+	if forceSignal {
+		if signal, err = jobSignal(input.Signal); err != nil {
+			return nil, err
+		}
 	}
 	s, work, release, err := a.admit(ctx)
 	if err != nil {
