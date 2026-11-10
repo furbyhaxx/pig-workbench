@@ -90,7 +90,7 @@ func (s *session) integrationsText(owner string) (string, bool) {
 		if owner != "" {
 			return "", false
 		}
-		return "No extension has registered contributions with Workbench.\n", true
+		return emptyState("registered integrations", "An extension appears here once it registers with Workbench.") + "\n", true
 	}
 	return out.String(), true
 }

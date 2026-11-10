@@ -345,7 +345,7 @@ func (a *app) listInstructionPins() (string, error) {
 	state.mu.Lock()
 	defer state.mu.Unlock()
 	if len(state.pins) == 0 {
-		return "No pinned instruction files.", nil
+		return emptyState("pinned instruction files", ""), nil
 	}
 	lines := make([]string, len(state.pins))
 	for i, pin := range state.pins {
@@ -401,7 +401,7 @@ func (a *app) instructionRules(ctx sdk.Context) (string, error) {
 		case hostErr != nil:
 			lines = append(lines, "  unavailable: "+hostErr.Error())
 		case len(host.Files) == 0 && len(host.Reasons) == 0:
-			lines = append(lines, "  none present")
+			lines = append(lines, "  "+emptyState("host files", ""))
 		}
 		for _, file := range host.Files {
 			lines = append(lines, "  "+file.Class+"  "+file.Path)
@@ -425,7 +425,7 @@ func (a *app) instructionRules(ctx sdk.Context) (string, error) {
 		lines = append(lines, "  "+file.Class+"  "+file.Path+note)
 	}
 	if len(set.Files) == 0 {
-		lines = append(lines, "  none")
+		lines = append(lines, "  "+emptyState("instruction files", ""))
 	}
 	return strings.Join(lines, "\n"), nil
 }

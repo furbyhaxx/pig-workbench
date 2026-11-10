@@ -185,6 +185,7 @@ func TestLiveWorkbenchMenuOpensInteractivePanelsInTUI(t *testing.T) {
 	if strings.Contains(hub, "extension error") || strings.Contains(hub, "not found") {
 		t.Fatalf("hub opened with an error:\n%s", hub)
 	}
+	s.capture("hub")
 
 	s.keys("Enter")
 	tools := s.waitFor("Workbench › Tools", 10*time.Second)

@@ -338,7 +338,7 @@ func (a *app) skillsCommand(ctx sdk.Context, args string) error {
 		}
 	}
 	if b.Len() == 0 {
-		b.WriteString("No skills found.\n")
+		b.WriteString(emptyState("skills", "") + "\n")
 	}
 	a.present(ctx, "Workbench › Skills", b.String())
 	return nil

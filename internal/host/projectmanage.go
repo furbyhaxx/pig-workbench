@@ -59,7 +59,7 @@ func (s *session) listProjects() (string, error) {
 	}
 	var out strings.Builder
 	if len(entries) == 0 {
-		out.WriteString("no registered projects; create one with /workbench projects create <slug> [name]\n")
+		out.WriteString(emptyState("registered projects", "Create one with /workbench projects create <slug> [name].") + "\n")
 	}
 	for _, entry := range entries {
 		fmt.Fprintf(&out, "%s  %s", entry.Project.Slug, entry.Project.ID)

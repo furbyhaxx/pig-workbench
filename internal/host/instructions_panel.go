@@ -56,7 +56,7 @@ func (p *instructionsPanel) View(width int) kit.View {
 	}
 	hint := "p pin · u unpin · v rules · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
-		body := kit.NewText("No pinned instruction files. Root and nearest files apply automatically; press p to pin one.", 1, 0)
+		body := kit.NewText(emptyState("pinned instruction files", "Root and nearest files apply automatically; press p to pin one."), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, p.message, hint, width)}
 	}
 	p.selected = max(0, min(p.selected, len(items)-1))

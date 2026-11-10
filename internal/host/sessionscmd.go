@@ -61,7 +61,7 @@ func (a *app) sessionsCommand(ctx sdk.Context, args string) error {
 			fmt.Fprintf(&out, "%s  %-24s %-12s %-14s %s %s\n", row.id, row.name, row.project, row.state, row.cwd, row.flags)
 		}
 		if len(rows) == 0 {
-			out.WriteString("No other live session is discoverable.\n")
+			out.WriteString(emptyState("other live sessions", "") + "\n")
 		}
 		a.notify(ctx, out.String())
 		return nil

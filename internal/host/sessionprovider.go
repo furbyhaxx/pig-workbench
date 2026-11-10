@@ -477,7 +477,7 @@ func (p sessionProvider) renderFrames(host sdk.Context, t sessionTarget) ([]byte
 	var out strings.Builder
 	if t.depth == 2 {
 		if len(records) == 0 {
-			return []byte("no frames in this session\n"), nil
+			return []byte(emptyState("frames in this session", "") + "\n"), nil
 		}
 		for _, record := range records {
 			fmt.Fprintf(&out, "%s  %s\n", record.Frame.FrameID, frameReceiptLine(record))

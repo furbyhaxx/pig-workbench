@@ -8,6 +8,8 @@ import (
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/kit"
 	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
+
+	"github.com/furbyhaxx/pig-workbench/internal/pathdisplay"
 )
 
 // panelsAvailable reports whether kit panels can open; RPC, print and JSON keep plain notifications.
@@ -57,7 +59,7 @@ func wrapLines(text string, width int) []string {
 }
 
 func fitLine(text string, width int) string {
-	return tui.TruncateToWidth(tui.StripTerminalSequences(text), max(1, width-2), "…", false)
+	return tui.StripTerminalSequences(tui.TruncateToWidth(tui.StripTerminalSequences(text), max(1, width-2), "…", false))
 }
 
 func panelFrame(title string, body kit.Node, status, hint string, width int) *kit.Container {
@@ -125,9 +127,21 @@ func (p *textPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) 
 
 type hubItem struct{ value, label, description string }
 
+// hubLabelColumn is where the kit list starts a description: cursor and its 32-cell label column.
+const hubLabelColumn = 34
+
+// emptyState is the one wording for a list with nothing in it, with an optional next step.
+func emptyState(what, next string) string {
+	text := "No " + what + "."
+	if next != "" {
+		text += " " + next
+	}
+	return text
+}
+
 // hubPanel is the Workbench entry menu: one selectable row per feature, narrowed by typing.
 type hubPanel struct {
-	title    string
+	location string
 	items    []hubItem
 	filter   string
 	selected int
@@ -153,16 +167,18 @@ func (p *hubPanel) View(width int) kit.View {
 	visible := p.visible()
 	items := make([]kit.SelectItem, len(visible))
 	for i, item := range visible {
-		items[i] = kit.SelectItem{Value: item.value, Label: item.label, Description: fitLine(item.description, max(20, width-24))}
+		items[i] = kit.SelectItem{Value: item.value, Label: item.label, Description: fitLine(item.description, max(8, width-hubLabelColumn))}
 	}
 	list := kit.NewSelectList("hub", items, listRows(p.height(), 7, len(p.items)))
 	list.SetSelectedIndex(max(0, min(p.selected, max(0, len(items)-1))))
 	hint := sdk.KeyHint("tui.select.confirm", "open") + " · type to search · " + sdk.KeyHint("tui.select.cancel", "close")
 	body := kit.NewContainer(kit.NewText(fitLine("search: "+p.filter+"▏", width), 1, 0), list)
 	if len(items) == 0 {
-		body.AddChild(kit.NewText("No entry matches the search.", 1, 0))
+		body.AddChild(kit.NewText(emptyState("entry matches the search", ""), 1, 0))
 	}
-	return kit.View{Root: panelFrame(p.title, body, "", hint, width), Focus: "hub"}
+	const prefix = "Workbench · "
+	title := prefix + pathdisplay.Display(pathdisplay.Target{Value: p.location, NoFish: true}, max(8, width-2-tui.VisibleWidth(prefix)))
+	return kit.View{Root: panelFrame(title, body, "", hint, width), Focus: "hub"}
 }
 
 func (p *hubPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) {

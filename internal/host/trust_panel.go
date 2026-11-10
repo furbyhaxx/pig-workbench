@@ -39,7 +39,7 @@ func (p *trustPanel) View(width int) kit.View {
 	}
 	hint := "a add · d remove · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
-		body := kit.NewText("No trust rules: nested repositories stay a boundary. Nearest rule wins; deny beats allow at equal depth.", 1, 0)
+		body := kit.NewText(emptyState("trust rules", "Nested repositories stay a boundary. Nearest rule wins; deny beats allow at equal depth."), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, status, hint, width)}
 	}
 	p.selected = max(0, min(p.selected, len(items)-1))

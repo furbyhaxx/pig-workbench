@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"path/filepath"
 	"slices"
@@ -234,5 +235,52 @@ func TestJobStreamNameIsValidated(t *testing.T) {
 	}
 	if _, err := jobStream("stdin"); err == nil {
 		t.Fatal("unknown stream accepted")
+	}
+}
+
+func TestHubFitsDescriptionsAndShortensTheTitlePath(t *testing.T) {
+	const location = "/srv/checkouts/a-rather-long-organisation-name/some-project/internal/host"
+	panel := &hubPanel{location: location, height: func() int { return 24 }, items: []hubItem{{"tools", "Tools", "11 registered · inspect schemas, owners and exposure"}}}
+	for _, width := range []int{57, 80} {
+		encoded, err := json.Marshal(panel.View(width).Root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var texts []string
+		var collect func(any)
+		collect = func(value any) {
+			switch typed := value.(type) {
+			case string:
+				texts = append(texts, typed)
+			case []any:
+				for _, item := range typed {
+					collect(item)
+				}
+			case map[string]any:
+				for _, item := range typed {
+					collect(item)
+				}
+			}
+		}
+		var decoded any
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			t.Fatal(err)
+		}
+		collect(decoded)
+		var description, title string
+		for _, text := range texts {
+			if strings.HasPrefix(text, "11 registered") {
+				description = text
+			}
+			if strings.HasPrefix(text, "Workbench · ") {
+				title = text
+			}
+		}
+		if !strings.HasSuffix(description, "…") || tui.VisibleWidth(description) > width-hubLabelColumn {
+			t.Errorf("width %d: description %q must fit beside the label column and end with an ellipsis", width, description)
+		}
+		if title == "" || strings.Contains(title, location) || !strings.HasSuffix(title, "host") || tui.VisibleWidth(title) > width-2 {
+			t.Errorf("width %d: title %q must shorten the path and keep its last segment", width, title)
+		}
 	}
 }

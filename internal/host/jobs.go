@@ -611,7 +611,7 @@ func (s *session) jobRows() []jobRow {
 func (s *session) jobListText() string {
 	rows := s.jobRows()
 	if len(rows) == 0 {
-		return "No jobs in this session."
+		return emptyState("jobs in this session", "")
 	}
 	var b strings.Builder
 	for _, row := range rows {

@@ -72,7 +72,7 @@ func (a *app) hub(ctx sdk.Context) error {
 			return err
 		}
 		location := s.location.Current().Cwd
-		panel := &hubPanel{title: "Workbench · " + location, items: a.hubItems(ctx, s), selected: selected, height: ctx.Height}
+		panel := &hubPanel{location: location, items: a.hubItems(ctx, s), selected: selected, height: ctx.Height}
 		result, err := ctx.Custom(panel, nil)
 		if err != nil {
 			return err

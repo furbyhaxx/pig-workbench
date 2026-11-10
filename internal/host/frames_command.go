@@ -76,7 +76,7 @@ func (a *app) framesCommand(ctx sdk.Context, args string) error {
 			lines = append(lines, line)
 		}
 		if len(lines) == 0 {
-			lines = append(lines, "No frames in this session.")
+			lines = append(lines, emptyState("frames in this session", ""))
 		}
 		a.notify(ctx, strings.Join(lines, "\n"))
 		return nil

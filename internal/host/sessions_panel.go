@@ -52,7 +52,7 @@ func (p *sessionsPanel) View(width int) kit.View {
 	}
 	hint := "m message · t trust · b block · h hide/show · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
-		body := kit.NewText("No other live session is discoverable.", 1, 0)
+		body := kit.NewText(emptyState("other live sessions", ""), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, status, hint, width)}
 	}
 	p.selected = max(0, min(p.selected, len(items)-1))

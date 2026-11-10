@@ -74,7 +74,7 @@ func (a *app) askCommand(ctx sdk.Context, args string) error {
 		return err
 	}
 	if !found {
-		a.notify(ctx, "No unanswered ask_user form on this branch.")
+		a.notify(ctx, emptyState("unanswered ask_user forms on this branch", ""))
 		return nil
 	}
 	form, err := ask.ParseQuestions(record.Payload)

@@ -117,7 +117,7 @@ func (a *app) trustCommand(ctx sdk.Context, args string) error {
 			fmt.Fprintf(&out, "- %s\n", rule)
 		}
 		if len(rules) == 0 {
-			out.WriteString("(none: nested repositories stay a boundary)\n")
+			out.WriteString(emptyState("trust rules", "Nested repositories stay a boundary.") + "\n")
 		}
 		for _, text := range invalid {
 			fmt.Fprintf(&out, "! ignored malformed rule: %s\n", noticeText(text, 80))

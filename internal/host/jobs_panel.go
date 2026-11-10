@@ -58,7 +58,7 @@ func (p *jobsPanel) View(width int) kit.View {
 	hint := "enter open · k stop · w wait · r refresh · " + sdk.KeyText("tui.select.cancel") + " close"
 	status := p.status()
 	if len(items) == 0 {
-		body := kit.NewText("No jobs in this session.", 1, 0)
+		body := kit.NewText(emptyState("jobs in this session", ""), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, status, hint, width)}
 	}
 	p.selected = max(0, min(p.selected, len(items)-1))
