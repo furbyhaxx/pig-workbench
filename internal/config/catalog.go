@@ -122,7 +122,6 @@ func Catalog() []Definition {
 		boolean("activity.enabled", true, DenyProject),
 		choice("activity.placement", "above-editor", DenyProject, "above-editor", "below-editor"),
 		text("activity.shortcut", "alt+w", DenyProject),
-		boolean("activity.replace-working-indicator", false, DenyProject),
 		boolean("prompt.enabled", true, DenyProject),
 		text("prompt.template", "builtin/workbench", AllowProject),
 		choice("prompt.delivery", "auto", DenyProject, "auto", "force", "sections"),

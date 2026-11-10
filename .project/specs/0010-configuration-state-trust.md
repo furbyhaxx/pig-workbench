@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 24
+  revision: 25
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:24:14+01:00"
+  updated_at: "2026-11-10T17:29:33+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 24
-      reason: "context.timezone gained its consumer"
-      changes: ["§3: context.timezone (system or an IANA name) is consumed by the session.date frame"]
+    - revision: 25
+      reason: "activity.replace-working-indicator left the catalog"
+      changes: ["§3: the row is gone until the activity state item exists (SPEC-0009 §9)"]
 ---
 
 # 1. Scope and precedence
@@ -127,7 +127,6 @@ All defaults below are proposals subject to design review and measurements, not 
 | prompt.families | builtin family table | user/runtime; user entries are matched first (SPEC-0014 §3.5) |
 | context.timezone | system | user/runtime; `system` or an IANA zone name for the `session.date` frame (SPEC-0014 §4.3) |
 | skills.listing / listing-budget / conditions | prompt / 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |
-| activity.replace-working-indicator | false | user/runtime; enabling requires verified retry/compaction events |
 
 `Project.toml` (`[component]`, `[[components]]`, `[worktrees]`, `[artifacts]`, `[conventions]`) is project data, not settings: it is committed, parsed strictly, and cannot carry any key of this catalog (SPEC-0012 §3.2).
 

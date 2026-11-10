@@ -5,15 +5,15 @@ document:
   title: "Questionnaires, answer extraction, checkpoints and command UX"
   description: "Interactive state machines, remote answers, inference boundaries and the complete user command contract"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T14:28:25+01:00"
+  updated_at: "2026-11-10T17:29:33+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "frames verbs implemented"
-      changes: ["/workbench frames route states its real verbs and targets"]
+    - revision: 15
+      reason: "activity.replace-working-indicator is not a shown setting yet"
+      changes: ["§9: the setting joins the catalog with a verified state item"]
 ---
 
 # 1. Scope and sources
@@ -169,7 +169,7 @@ Statusline (user decision D9.d): `statusline.mode = segments|footer`, default `s
   - Zero counts are hidden unless the user pins the item (`show: always`). Severity pairs color with a word (`1 failed`). Below 50 columns items become glyph + number (`⚇2 ⚙2✗1 ◆5`). Lowest priority drops first; no item is cut mid-word.
   - Sent on change, coalesced to ≤ 4 per second; once per second while working (elapsed time). No I/O in render.
   - Click (fullscreen mode, the target mode): an item opens its inspector (`/workbench sessions`, `jobs`, `instructions`, `ls skill://`, `/cd`, a contributed `open` target); the state opens the hub (SKETCH-0001 §3). Keyboard: shortcut `alt+w` (setting `activity.shortcut`) opens the hub with the first non-zero item selected. Headless: `/workbench show` and `cfg://workbench/status` carry the same items.
-  - While the line is on, Workbench publishes no `SetStatus` segments for jobs, peers or pending ask. PiG's own working indicator stays visible; `activity.replace-working-indicator` (default false) hides it only after the retry/compaction events it shows are verified observable.
+  - While the line is on, Workbench publishes no `SetStatus` segments for jobs, peers or pending ask. PiG's own working indicator stays visible. A setting `activity.replace-working-indicator` that hides it joins the catalog only together with a state item that shows the retry and compaction events the indicator shows, after those events are verified observable.
   - Host gap: the SDK delivers kit view events only to open `ctx.Custom` overlays (`view.go` `viewEvent`), so clicks on a widget `MouseRegion` are dropped today. Until the PiG change lands (PLAN-0001 M0.2), the line renders without hover affordances and the shortcut is the entry.
 - Other extensions register `statusSegment` contributions `{key, label, priority, minColumns, maxColumns, align, placement?, glyph?, open?}`, where `placement` is `status` (default) or `activity`, `glyph` is one cell for narrow widths, and `open` is a command or resource URI run only on an explicit click or Enter. `status.update` also accepts `count` and `severity` for activity items, which Workbench renders as `N <label>` and hides at zero. and push values with `status.update` `{text ≤ 64 columns plain, style: normal|dim|success|warning|error}`, coalesced to 4 updates per second. In both modes the user orders and hides them in `/workbench statusline`. The receipt says `composedByWorkbench: true`, so the producer stops its own `SetStatus` to avoid duplicates; it resumes when Workbench closes.
 
