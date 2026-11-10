@@ -4,16 +4,16 @@ document:
   id: "SPEC-0006"
   title: "Advanced reads, format adapters and search contracts"
   description: "Selector semantics, bounded pipelines, structural views, rich formats and exact source coverage"
-  status: "approved"
-  revision: 8
+  status: "published"
+  revision: 9
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 8
-      reason: "User approved the remaining five specifications on 07.11.2026"
-      changes: ["Approved the advanced-read contract for Slice 1; implementation and acceptance remain separately tracked"]
+    - revision: 9
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 8 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Scope and evidence

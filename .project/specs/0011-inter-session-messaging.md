@@ -4,16 +4,16 @@ document:
   id: "SPEC-0011"
   title: "Live session discovery and inter-session messaging"
   description: "How live PiG sessions with Workbench find each other across projects and exchange messages that can wake an idle agent"
-  status: "approved"
-  revision: 8
+  status: "published"
+  revision: 9
   created_at: "2026-11-02T20:55:00+01:00"
-  updated_at: "2026-11-07T08:00:56+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 8
-      reason: "User approved the remaining five specifications on 07.11.2026"
-      changes: ["Approved the messaging contract for Slice 1; implementation and acceptance remain separately tracked"]
+    - revision: 9
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 8 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose and boundary

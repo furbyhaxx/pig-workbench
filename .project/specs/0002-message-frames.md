@@ -4,16 +4,16 @@ document:
   id: "SPEC-0002"
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
-  status: "approved"
-  revision: 11
+  status: "published"
+  revision: 12
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-09T15:00:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "User report 09.11.2026: the first prompt delivered every context frame inside one session entry"
-      changes: ["beforePrompt delivery sends one SendMessage per frame, so each frame is its own session entry, in ledger order, before the user prompt", "No wire, ledger or dedup change"]
+    - revision: 12
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose and dependency

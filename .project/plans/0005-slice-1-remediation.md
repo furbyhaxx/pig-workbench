@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 2
+  revision: 3
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T10:20:00+01:00"
+  updated_at: "2026-11-10T10:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 2
-      reason: "User decided the open points of revision 1"
-      changes: ["Unwired settings are hidden, not shown as planned", "Skills are delivered only as frames, with availability diffs", "operation.status stays reserved", ".project rules move to the dot-project standard"]
+    - revision: 3
+      reason: "The dot-project migration was done ahead of the plan at the user's request"
+      changes: ["Area M no longer carries the migration; only backlog items for leftovers remain"]
 ---
 
 # 1. Outcome
@@ -163,7 +163,7 @@ Change: `syncDirectory`, `nonblockFlag`, atomic write and lock-file helpers live
 
 Change: generate the settings reference in `docs/configuration.md` from the shown catalog keys; update README limitations, `docs/tools.md` and `docs/extension-services.md`; add `internal/modelknowledge/AGENTS.md` and complete `internal/AGENTS.md`; fix stale Progress text in PLAN-0001, PLAN-0002 and SPEC-0002 §1; record the stricter relocation rule in SPEC-0005; revise PLAN-0003 for the rows moved there.
 
-`.project` moves to the `dot-project` standard: its `AGENTS.md` is already updated; the remaining migration is one changelog entry per artifact, the artifact check in `just check`, deletion of consumed handoffs and analyses with trailers, and `BACKLOG.md` with item files for anything left open.
+`.project` follows the `dot-project` standard since 10.11.2026 (rules, single changelog entries, statuses, consumed handoffs and drafts deleted, `just artifacts` in `just check`). Left here: `BACKLOG.md` pointers with items in `.project/backlog/` for anything this plan leaves open.
 
 ## N. Exit
 

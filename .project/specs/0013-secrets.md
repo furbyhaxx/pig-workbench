@@ -4,17 +4,16 @@ document:
   id: "SPEC-0013"
   title: "Secrets: keep credentials out of LLM context without limiting the agent"
   description: "nukii-style secret handling for PiG: red-sec placeholders at every LLM-bound boundary, substitution right before tools run, an encrypted vault, secret:// and ask_user secret questions"
-  status: "approved"
-  revision: 9
+  status: "published"
+  revision: 10
   created_at: "2026-11-03T11:12:00+01:00"
-  updated_at: "2026-11-09T13:10:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 9
-      reason: "A secret.key with a wide mode refused every prompt although narrowing it is always safe"
-      changes: ["A user-owned key file wider than 0600 is narrowed to 0600 and reported once; malformed, foreign-owned or non-regular keys are still refused"]
-      migration: "None; the key bytes are never changed."
+    - revision: 10
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 9 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose

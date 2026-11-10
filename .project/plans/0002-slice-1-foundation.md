@@ -95,7 +95,7 @@ Freeze everything that fixes data models, persisted records, wire formats, model
 - **Persisted:** config keys and files (SPEC-0010), frame ledger and delivery records (SPEC-0002 §4), snapshots and seen-state (SPEC-0005 §3), jobs (SPEC-0008), project registry, `Project.toml` and bucket migration state (SPEC-0012 §3), vault (SPEC-0013 §3), prompt epochs (SPEC-0014 §4.3), loaded skills, pending asks; branch vs session ownership and recovery after reload.
 - **Behavioral:** root+nearest, pin and cap semantics (PLAN-0001 §6), command routes, the mode and host matrix (§6).
 
-Each frozen specification gets a revision with `status: "approved"` after user review. Later changes need a new revision and a migration note.
+Each frozen specification gets a revision with `status: "published"` after user review. Later changes need a new revision and a migration note.
 
 **Approval state (07.11.2026).** The user approved the remaining five specifications: SPEC-0003 rev 8, SPEC-0006 rev 8, SPEC-0007 rev 7, SPEC-0008 rev 8 and SPEC-0011 rev 8. The previously approved specifications remain SPEC-0001 rev 8, SPEC-0002 rev 8, SPEC-0004 rev 7, SPEC-0005 rev 11, SPEC-0009 rev 11, SPEC-0010 rev 14, SPEC-0012 rev 8, SPEC-0013 rev 6 and SPEC-0014 rev 8, including the required 1–120 character `resourceProvider.summary` (enforced in `resource.ProviderDescriptor.Validate`). Approval freezes the contracts, not the incomplete implementation or Slice 1 acceptance.
 

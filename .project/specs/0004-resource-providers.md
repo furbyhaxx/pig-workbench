@@ -4,16 +4,16 @@ document:
   id: "SPEC-0004"
   title: "Resource provider API and URI contracts"
   description: "Pluggable schemes, selectors, operations, paging, policy and source provenance"
-  status: "approved"
-  revision: 10
+  status: "published"
+  revision: 11
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-09T15:00:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 10
-      reason: "pig-web R10: a declared search capability was accepted but never called"
-      changes: ["Defined the search request and result (§5.1)", "grep and find dispatch to a provider that declares search; an unsupported answer falls back to the bounded walk and is reported", "Provider search results are validated against the searched root and bounded like local matches"]
+    - revision: 11
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose and architectural boundary

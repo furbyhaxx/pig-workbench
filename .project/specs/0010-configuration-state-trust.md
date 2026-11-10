@@ -4,16 +4,16 @@ document:
   id: "SPEC-0010"
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
-  status: "approved"
-  revision: 15
+  status: "published"
+  revision: 16
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-08T22:30:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 15
-      reason: "User directive 08.11.2026: finished jobs wake the model; frames can wake"
-      changes: ["jobs.wake-on-completion default is true", "Added frames.wake-budget (10 per producer-hour, user/runtime only; zero disables external wake)"]
+    - revision: 16
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 15 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Scope and precedence

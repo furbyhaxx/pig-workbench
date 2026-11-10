@@ -4,16 +4,16 @@ document:
   id: "SPEC-0014"
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
-  status: "approved"
-  revision: 10
+  status: "published"
+  revision: 11
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-09T15:30:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 10
-      reason: "User decision 09.11.2026: a model without a models.dev cutoff gets an estimate"
-      changes: ["When no setting, contributed value or explicit snapshot cutoff exists, Workbench shows an estimate of the model's earliest listed release date minus one year, basis estimated, source naming the release date and snapshot", "Models with neither cutoff nor release date still omit the field", "Migration: none; the frame field already allowed basis estimated; the generated snapshot gains a releases table"]
+    - revision: 11
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose and scope

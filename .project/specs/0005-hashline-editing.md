@@ -4,16 +4,16 @@ document:
   id: "SPEC-0005"
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
-  status: "approved"
-  revision: 11
+  status: "published"
+  revision: 12
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-05T18:05:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "User approved the contract freeze on 05.11.2026"
-      changes: ["approved for Slice 1 implementation; grammar, snapshots, commit and edit-tracking contracts frozen"]
+    - revision: 12
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Authority and scope

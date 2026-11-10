@@ -4,16 +4,16 @@ document:
   id: "SPEC-0012"
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
-  status: "approved"
-  revision: 10
+  status: "published"
+  revision: 11
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-09T16:00:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 10
-      reason: "User report 09.11.2026: joining the project a checkout already declares looped on a raw file error"
-      changes: ["§3.3.1: joining a project the checkout's Project.toml already declares writes nothing and succeeds; joining another project over an existing Project.toml is refused naming the declared project, for file and marker modes", "The panel keeps the typed value after a failed submit and shows the whole error", "Migration: none"]
+    - revision: 11
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Scope

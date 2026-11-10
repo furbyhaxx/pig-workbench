@@ -4,16 +4,16 @@ document:
   id: "SPEC-0008"
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
-  status: "approved"
-  revision: 10
+  status: "published"
+  revision: 11
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-09T22:30:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 10
-      reason: "User report 09.11.2026: a job the model already waited on was announced again"
-      changes: ["A job whose terminal state a tool result already showed the model (jobs wait, status or output) emits no completion frame, wake or user notice"]
+    - revision: 11
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 10 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Scope and references

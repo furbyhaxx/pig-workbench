@@ -75,4 +75,7 @@ head-check:
     printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "$work/.tmp/go.mod"
     ( cd "$work" && go build -modfile=.tmp/go.mod ./... && go test -modfile=.tmp/go.mod ./... )
 
-check: fmt-check vet test validate
+artifacts:
+	python3 scripts/check_artifacts.py .
+
+check: fmt-check vet test validate artifacts

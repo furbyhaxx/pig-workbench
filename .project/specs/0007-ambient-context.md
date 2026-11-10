@@ -4,16 +4,16 @@ document:
   id: "SPEC-0007"
   title: "Instruction and ambient-file selection, injection and updates"
   description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
-  status: "approved"
-  revision: 11
+  status: "published"
+  revision: 12
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-09T22:45:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 11
-      reason: "User decision 09.11.2026: the 'no longer applies' notice is noise"
-      changes: ["A source that stops applying (out of scope, unpinned, deleted, host replaced) is withdrawn silently: no frame is sent and the delivered digest is kept, so the same bytes are not re-sent when it applies again", "Content that really leaves the context (compaction, branch change) is re-delivered through reconstruction as before", "Migration: the earlier explicit withdrawal notice is removed; a model may keep following the old text until the next delivery or compaction"]
+    - revision: 12
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 11 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Purpose and inputs

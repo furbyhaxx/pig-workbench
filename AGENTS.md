@@ -12,7 +12,7 @@ Go factory extension for PiG: enhanced builtin tools, working locations, harness
 - `.tmp/` — generated modfile for direct `go` commands; git-ignored.
 
 ## Commands
-- Gate: `just check` (gofmt, vet, test, PiG build of `./extensions/pig-workbench`, `pig package validate .`). Concurrency changes: `just race`.
+- Gate: `just check` (gofmt, vet, test, PiG build of `./extensions/pig-workbench`, `pig package validate .`, artifact check). Artifacts alone: `just artifacts`. Concurrency changes: `just race`.
 - Don't run bare `go build`/`go test`; the SDK resolves only through the staged copy. Use the Justfile recipes or `-modfile=.tmp/go.mod` after `just _modfile`.
 - Load live: `pig -e ./extensions/pig-workbench`; isolated: `pig --no-session -ne -e ./extensions/pig-workbench`. Install: `pig install git:https://github.com/furbyhaxx/pig-workbench`.
 

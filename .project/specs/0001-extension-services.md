@@ -4,16 +4,16 @@ document:
   id: "SPEC-0001"
   title: "Shared extension services and event protocol"
   description: "Discovery, identity, request/reply, registrations, lifecycle and common safety boundaries"
-  status: "approved"
-  revision: 12
+  status: "published"
+  revision: 13
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-09T14:00:00+01:00"
+  updated_at: "2026-11-10T10:50:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "pig-web R9: the project identity the contract already promised was missing from the implemented location surfaces"
-      changes: ["Added api.Location and api.LocationChange; discover, location.get and both sides of location.changed carry project {id, slug}, absent in the builtin global project", "No per-project partitioning: the project is a fact, not a scope", "component stays absent until detection reports one"]
+    - revision: 13
+      reason: "Align with the dot-project standard"
+      changes: ["Status approved becomes published; the user approval of revision 12 and its frozen contracts are unchanged", "Changelog keeps the current revision only; references to deleted drafts removed"]
 ---
 
 # 1. Status, boundaries and terminology
