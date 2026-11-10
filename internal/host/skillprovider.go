@@ -181,19 +181,7 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 		}
 		return resource.ReadResult{Content: page.Content, Facts: page}, nil
 	}
-	s.skills.mu.Lock()
-	if s.skills.loaded == nil {
-		s.skills.loaded = map[string]bool{}
-	}
-	repeat := s.skills.loaded[skill.Name]
-	replayed := s.skills.replayed[skill.Name]
-	s.skills.markLoaded(skill.Name)
-	delete(s.skills.declined, skill.Name)
-	if replayed {
-		delete(s.skills.replayed, skill.Name)
-	}
-	s.skills.mu.Unlock()
-	s.skills.save()
+	repeat, replayed := s.markSkillLoaded(skill.Name)
 	body := skill.Body
 	if replayed {
 		body = "loaded earlier; read before relying on it\n"
@@ -207,6 +195,42 @@ func (p skillProvider) Read(ctx context.Context, request resource.ReadRequest) (
 		return resource.ReadResult{}, err
 	}
 	return resource.ReadResult{Content: page.Content, Facts: page}, nil
+}
+
+// markSkillLoaded records an explicit load and reports whether the skill was loaded before and whether
+// that load was only replayed after compaction.
+func (s *session) markSkillLoaded(name string) (repeat, replayed bool) {
+	s.skills.mu.Lock()
+	if s.skills.loaded == nil {
+		s.skills.loaded = map[string]bool{}
+	}
+	repeat = s.skills.loaded[name]
+	replayed = s.skills.replayed[name]
+	s.skills.markLoaded(name)
+	delete(s.skills.declined, name)
+	delete(s.skills.replayed, name)
+	s.skills.mu.Unlock()
+	s.skills.save()
+	return repeat, replayed
+}
+
+// loadSkill loads a catalog skill by name for the user.
+func (s *session) loadSkill(name string) (skills.Skill, bool, error) {
+	catalog, err := s.skills.catalog()
+	if err != nil {
+		return skills.Skill{}, false, err
+	}
+	skill, err := skills.Find(catalog, name)
+	if err != nil {
+		return skills.Skill{}, false, err
+	}
+	repeat, _ := s.markSkillLoaded(skill.Name)
+	return skill, repeat, nil
+}
+
+// skillUnloaded tells the model to stop applying the withdrawn skills.
+func (a *app) skillUnloaded(ctx sdk.Context, s *session, withdrawn []string) {
+	a.skillFrame(ctx, s, "unload/"+withdrawn[0], "unloaded "+strings.Join(withdrawn, ", "), "Skills unloaded; stop applying them: "+strings.Join(withdrawn, ", ")+"\n")
 }
 
 func (p skillProvider) unload(s *session, uri, content string) ([]string, error) {

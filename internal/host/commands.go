@@ -208,25 +208,77 @@ func (a *app) jobsCommand(ctx sdk.Context, args string) error {
 	return nil
 }
 
-func (a *app) skillsCommand(ctx sdk.Context) error {
+// skillsCommand lists the whole catalog with each skill's state, or loads and unloads one for the user.
+func (a *app) skillsCommand(ctx sdk.Context, args string) error {
 	s, err := a.current()
 	if err != nil {
 		return err
 	}
-	listed, loaded, err := s.listedSkills()
+	verb, name, _ := strings.Cut(strings.TrimSpace(args), " ")
+	name = strings.TrimSpace(name)
+	switch verb {
+	case "", "ls", "list":
+	case "load":
+		skill, repeat, err := s.loadSkill(name)
+		if err != nil {
+			return fmt.Errorf("no skill %q; /workbench skills ls lists them", name)
+		}
+		if repeat {
+			a.notify(ctx, "skill "+skill.Name+" is already loaded")
+			return nil
+		}
+		a.skillFrame(ctx, s, "load/"+skill.Name, "skill "+skill.Name+" loaded by the user", "The user loaded skill "+skill.Name+"; apply it.\n"+skill.Body+"\nresolve relative paths against "+skill.Dir+"\n")
+		a.notify(ctx, "skill "+skill.Name+" loaded")
+		return nil
+	case "unload":
+		withdrawn, err := (skillProvider{}).unload(s, "skill://"+name+"/ctl", "unload")
+		if err != nil {
+			return fmt.Errorf("skill %q is not loaded", name)
+		}
+		a.skillUnloaded(ctx, s, withdrawn)
+		a.notify(ctx, "unloaded "+strings.Join(withdrawn, ", "))
+		return nil
+	default:
+		return fmt.Errorf("usage: /workbench skills [ls | load <name> | unload <name>]")
+	}
+	catalog, err := s.skills.catalog()
 	if err != nil {
 		return err
 	}
+	visible, loaded, err := s.listedSkills()
+	if err != nil {
+		return err
+	}
+	// A listed skill shows the description the model received after the budget ladder.
+	listed := map[string]string{}
+	for _, item := range visible {
+		listed[item.Name] = item.Description
+	}
+	width := 0
+	for _, skill := range catalog.Skills {
+		width = max(width, len(skill.Name))
+	}
 	var b strings.Builder
-	for _, item := range listed {
+	for _, skill := range catalog.Skills {
 		state := "available"
-		if loaded[item.Name] {
+		description, shown := listed[skill.Name]
+		switch {
+		case loaded[skill.Name]:
 			state = "loaded"
+		case shown:
+		case skill.Parent != "":
+			state, description = "hidden: load "+skill.Parent+" first", skill.Description
+		default:
+			state, description = "hidden: when "+strings.Join(skill.WhenFiles, ", ")+" not met", skill.Description
 		}
-		fmt.Fprintf(&b, "%s [%s] %s %s\n", item.Name, state, item.Location, item.Description)
+		line := fmt.Sprintf("%-*s  %s", width, skill.Name, state)
+		if description != "" {
+			line += " · " + description
+		}
+		b.WriteString(line + "\n")
 	}
 	if b.Len() == 0 {
-		b.WriteString("no skills\n")
+		b.WriteString("No skills found.\n")
 	}
 	a.present(ctx, "Workbench › Skills", b.String())
 	return nil
@@ -289,7 +341,7 @@ func (a *app) workbench(ctx sdk.Context, args string) error {
 	case "jobs":
 		return a.jobsCommand(ctx, rest)
 	case "skills":
-		return a.skillsCommand(ctx)
+		return a.skillsCommand(ctx, rest)
 	case "prompt":
 		return a.promptCommand(ctx)
 	case "codemode":

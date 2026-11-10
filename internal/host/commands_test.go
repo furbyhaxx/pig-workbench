@@ -1,6 +1,7 @@
 package host
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -101,5 +102,13 @@ func TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb(t *testing.T) {
 	items, _ = completeWorkbench("resources k", []string{"resources kb", "resources file"}, config.Catalog())
 	if len(items) != 1 || items[0].Value != "resources kb" {
 		t.Fatalf("schemes = %+v", items)
+	}
+	items, _ = completeWorkbench("skills l", []string{"skills load rust", "skills unload toml"}, config.Catalog())
+	var values []string
+	for _, item := range items {
+		values = append(values, item.Value)
+	}
+	if !slices.Contains(values, "skills ls") || !slices.Contains(values, "skills load rust") || slices.Contains(values, "skills unload toml") {
+		t.Fatalf("skills completions = %v", values)
 	}
 }

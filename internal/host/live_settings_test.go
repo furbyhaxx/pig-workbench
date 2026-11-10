@@ -184,3 +184,41 @@ func TestLiveSettingsScopesAndReload(t *testing.T) {
 		t.Fatalf("user save was not persisted: %+v", value)
 	}
 }
+
+// TestLiveSkillsCommandListsLoadsAndUnloads covers /workbench skills: the listing names a PiG-discovered
+// skill and why another is hidden, load delivers the body to the model as a frame, and unload withdraws it.
+func TestLiveSkillsCommandListsLoadsAndUnloads(t *testing.T) {
+	root := t.TempDir()
+	for name, front := range map[string]string{"user-wide": "", "gated": "when:\n  files: [\"Cargo.toml\"]\n"} {
+		dir := filepath.Join(root, "agent", "skills", name)
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\ndescription: about "+name+"\n"+front+"---\nBODY-OF-"+name+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fixture := startRPCWithExtensions(t, root, true, nil)
+	command := func(id, text, want string) string {
+		t.Helper()
+		fixture.send(id, "prompt", text)
+		notice := fixture.wait(func(event map[string]any) bool {
+			return event["type"] == "extension_ui_request" && event["method"] == "notify" && strings.Contains(fmt.Sprint(event["message"]), want)
+		})
+		fixture.wait(func(event map[string]any) bool { return event["type"] == "response" && event["id"] == id })
+		return fmt.Sprint(notice["message"])
+	}
+	list := command("ls", "/workbench skills ls", "user-wide")
+	if !strings.Contains(list, "available · about user-wide") || !strings.Contains(list, "hidden: when Cargo.toml not met · about gated") {
+		t.Fatalf("listing must show each skill's state:\n%s", list)
+	}
+	command("load", "/workbench skills load user-wide", "skill user-wide loaded")
+	command("again", "/workbench skills load user-wide", "already loaded")
+	if list = command("ls2", "/workbench skills", "user-wide"); !strings.Contains(list, "loaded · about user-wide") {
+		t.Fatalf("a loaded skill must be marked:\n%s", list)
+	}
+	command("unload", "/workbench skills unload user-wide", "unloaded user-wide")
+	if frames := command("frames", "/workbench frames ls", "workbench.skills"); strings.Count(frames, "workbench.skills") != 2 {
+		t.Fatalf("load and unload must each leave one workbench.skills frame:\n%s", frames)
+	}
+}

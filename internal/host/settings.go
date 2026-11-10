@@ -29,6 +29,17 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 		for _, scheme := range s.router.Schemes() {
 			live = append(live, "resources "+scheme)
 		}
+		if catalog, err := s.skills.catalog(); err == nil {
+			s.skills.mu.Lock()
+			for _, skill := range catalog.Skills {
+				if s.skills.loaded[skill.Name] {
+					live = append(live, "skills unload "+skill.Name)
+				} else {
+					live = append(live, "skills load "+skill.Name)
+				}
+			}
+			s.skills.mu.Unlock()
+		}
 		if s.projects != nil {
 			entries, _ := s.projects.Peek(context.Background())
 			for _, entry := range entries {
@@ -40,7 +51,7 @@ func (a *app) workbenchCompletions(prefix string) ([]sdk.AutocompleteItem, error
 }
 
 func completeWorkbench(prefix string, live []string, catalog []config.Definition) ([]sdk.AutocompleteItem, error) {
-	candidates := []string{"show", "tools", "cd", "jobs", "skills", "prompt", "codemode", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects list", "projects create", "projects join", "projects join file", "projects join marker", "projects example", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "frames ls", "frames show", "frames collapse", "frames hide", "settings", "settings tools", "settings tools show", "settings tools set", "settings tools reset", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
+	candidates := []string{"show", "tools", "cd", "jobs", "skills", "skills ls", "skills load", "skills unload", "prompt", "codemode", "instructions", "instructions pin", "instructions unpin", "instructions ls", "instructions rules", "instructions reload", "ask", "ask show", "ask resume", "ask discard", "trust", "trust ls", "trust add allow", "trust add deny", "trust rm", "projects", "projects status", "projects list", "projects create", "projects join", "projects join file", "projects join marker", "projects example", "projects unlink-storage", "sessions", "sessions ls", "sessions send", "sessions trust", "sessions untrust", "sessions block", "sessions unblock", "sessions hide", "sessions show", "integrations", "resources", "frames", "frames ls", "frames show", "frames collapse", "frames hide", "settings", "settings tools", "settings tools show", "settings tools set", "settings tools reset", "settings show", "settings catalog", "settings reload", "settings set", "settings reset"}
 	for _, scope := range []string{"user", "project", "runtime"} {
 		candidates = append(candidates, "settings set "+scope, "settings reset "+scope)
 	}
