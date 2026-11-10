@@ -1,0 +1,65 @@
+ exercise the tools
+
+ read · Justfile
+ ✓ read · succeeded · lines 3
+ [Justfile#E181]
+ 1:default:
+ 2: echo hi
+
+ read · Justfile, Justfile:1-2
+ ✓ read · succeeded · lines 8
+ [Justfile#E181]
+ 1:default:
+ 2: echo hi
+
+ [Justfile#E181]
+ 1:default:
+ 2: echo hi
+ Repeated read: unchanged resource, revision and selection. Use a different ra…
+
+ write · new.txt
+ ✓ write · succeeded · size 2B
+ diff create
+ new.txt
+
+ ls · .
+ ✓ ls · succeeded · entries 7
+ dir  agent
+ dir  cache
+ dir  data
+ dir  docs
+ dir  state
+ file Justfile (18 bytes)
+ file new.txt (2 bytes)
+
+ find · *.txt
+ ✓ find · succeeded · entries 1
+ new.txt
+
+ cd · .
+ ✓ cd · succeeded
+ Working location: $HOME/.cache/pig-workbench-test-tmp/work/TestLive…
+ Authority: local · revision 3
+ Relative tool paths resolve here; PiG session cwd is unchanged.
+
+ edit · Justfile
+ ✗ edit · failed
+ tag BEEF is not a retained version of Justfile (retained: E181); the file cha…
+
+ grep · echo · Justfile
+ ✓ grep · succeeded · matches 1
+ Justfile:2:2:  echo hi
+
+ bash · echo from-bash
+ ✓ bash · succeeded · exit 0 · lines 1
+ from-bash
+
+ done
+
+ Tool output: expanded
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveToolRowsShowTheirTargetsInTUI236...
+17.9%/32k (auto)                                                            mock

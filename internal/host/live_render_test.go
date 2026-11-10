@@ -59,5 +59,11 @@ func TestLiveToolRowsShowTheirTargetsInTUI(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
+		s.tmux("resize-window", "-t", "wb", "-x", "80", "-y", "200")
+		s.keys("C-o")
+		time.Sleep(time.Second)
+		if err := os.WriteFile(filepath.Join(target, "w80-expanded.txt"), []byte(s.history()), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
