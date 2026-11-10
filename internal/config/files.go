@@ -84,42 +84,9 @@ func lockTarget(ctx context.Context, path string) (string, func() error, error) 
 }
 
 func atomicWrite(ctx context.Context, path string, data []byte) (bool, error) {
-	if err := ctx.Err(); err != nil {
-		return false, err
-	}
-	file, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
+	replaced, err := fileio.WriteAtomic(ctx, path, data, 0600)
 	if err != nil {
-		return false, fmt.Errorf("create private settings temporary file: %w", err)
-	}
-	name := file.Name()
-	defer os.Remove(name)
-	closed := false
-	defer func() {
-		if !closed {
-			file.Close()
-		}
-	}()
-	if err := file.Chmod(0600); err != nil {
-		return false, err
-	}
-	if _, err := file.Write(data); err != nil {
-		return false, fmt.Errorf("write settings: %w", err)
-	}
-	if err := file.Sync(); err != nil {
-		return false, fmt.Errorf("flush settings: %w", err)
-	}
-	if err := file.Close(); err != nil {
-		return false, err
-	}
-	closed = true
-	if err := ctx.Err(); err != nil {
-		return false, err
-	}
-	if err := os.Rename(name, path); err != nil {
-		return false, fmt.Errorf("replace settings: %w", err)
-	}
-	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
-		return true, fmt.Errorf("settings saved but directory durability is uncertain: %w", err)
+		return replaced, fmt.Errorf("settings: %w", err)
 	}
 	return true, nil
 }

@@ -2,6 +2,7 @@
 package sessionstore
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
 
 var (
@@ -69,16 +72,10 @@ func writeJournal(path string, j journal) error {
 	if err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		return err
+	if _, err := fileio.WriteAtomic(context.Background(), path, data, 0o600); err != nil {
+		return fmt.Errorf("storage journal: %w", err)
 	}
-	file, err := os.Open(tmp)
-	if err == nil {
-		_ = file.Sync()
-		file.Close()
-	}
-	return os.Rename(tmp, path)
+	return nil
 }
 
 // Convert turns the real directory bucket into a symlink to target, sharing every session file.

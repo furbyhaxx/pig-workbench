@@ -171,42 +171,8 @@ func encodeRecord(record Record) ([]byte, error) {
 }
 
 func writeRecord(ctx context.Context, path string, data []byte) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	file, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
-	if err != nil {
-		return fmt.Errorf("create endpoint temporary file: %w", err)
-	}
-	name := file.Name()
-	defer os.Remove(name)
-	closed := false
-	defer func() {
-		if !closed {
-			file.Close()
-		}
-	}()
-	if err := file.Chmod(0600); err != nil {
-		return fmt.Errorf("set endpoint temporary permissions: %w", err)
-	}
-	if _, err := file.Write(data); err != nil {
-		return fmt.Errorf("write endpoint record: %w", err)
-	}
-	if err := file.Sync(); err != nil {
-		return fmt.Errorf("flush endpoint record: %w", err)
-	}
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("close endpoint record: %w", err)
-	}
-	closed = true
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if err := os.Rename(name, path); err != nil {
-		return fmt.Errorf("replace endpoint record: %w", err)
-	}
-	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
-		return fmt.Errorf("endpoint record saved but directory durability is uncertain: %w", err)
+	if _, err := fileio.WriteAtomic(ctx, path, data, 0600); err != nil {
+		return fmt.Errorf("endpoint record: %w", err)
 	}
 	return nil
 }

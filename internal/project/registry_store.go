@@ -252,36 +252,8 @@ func registryCacheMatches(path string, expected []byte) (bool, error) {
 }
 
 func writeRegistryFile(path string, data []byte) error {
-	file, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
-	if err != nil {
-		return fmt.Errorf("create project registry temporary file: %w", err)
-	}
-	name := file.Name()
-	defer os.Remove(name)
-	closed := false
-	defer func() {
-		if !closed {
-			file.Close()
-		}
-	}()
-	if err := file.Chmod(0600); err != nil {
-		return fmt.Errorf("set project registry file permissions: %w", err)
-	}
-	if _, err := file.Write(data); err != nil {
-		return fmt.Errorf("write project registry file: %w", err)
-	}
-	if err := file.Sync(); err != nil {
-		return fmt.Errorf("flush project registry file: %w", err)
-	}
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("close project registry file: %w", err)
-	}
-	closed = true
-	if err := os.Rename(name, path); err != nil {
-		return fmt.Errorf("replace project registry file: %w", err)
-	}
-	if err := fileio.SyncDirectory(filepath.Dir(path)); err != nil {
-		return fmt.Errorf("project registry file saved but directory durability is uncertain: %w", err)
+	if _, err := fileio.WriteAtomic(context.Background(), path, data, 0600); err != nil {
+		return fmt.Errorf("project registry file: %w", err)
 	}
 	return nil
 }
