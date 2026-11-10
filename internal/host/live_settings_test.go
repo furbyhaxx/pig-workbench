@@ -71,6 +71,15 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"frame-style", []string{"frames.display.style"}, TestFrameRowStylesChangeOnlyTheBodyFraming},
 		{"instruction-self-edits", []string{"instructions.updates.self-edits"}, TestLiveSelfEditedInstructionsFollowTheSelfEditsSetting},
 		{"instruction-boundary", []string{"instructions.boundary"}, TestLiveInstructionBoundarySettingSelectsHowFarDiscoveryAscends},
+		{"summary-folds", []string{"read.summarize.min-body-lines", "read.summarize.min-comment-lines"}, TestSummaryFoldThresholdsFollowTheSettings},
+		{"summary-prose", []string{"read.summarize.prose"}, TestProseSummaryIsOffUntilEnabled},
+		{"snapshot-limits", []string{"edit.snapshot.max-paths", "edit.snapshot.max-versions", "edit.snapshot.max-bytes", "edit.snapshot.max-file-bytes"}, TestSnapshotStoreFollowsTheEditSnapshotSettings},
+		{"guides", []string{"guides.enabled", "guides.disabled", "guides.max-bytes"}, TestGuideSettingsControlFirstTouchDelivery},
+		{"scratch-retention", []string{"storage.finished-retention-days"}, TestLiveSessionStartSweepsScratchLeftBehindPastTheRetention},
+		{"project-offer", []string{"projects.offer-registration"}, TestLiveProjectOfferIsSuppressedByItsSetting},
+		{"timezone", []string{"context.timezone"}, TestLiveDateFrameFollowsTheConfiguredTimezone},
+		{"prompt-template", []string{"prompt.template"}, TestLiveUserPromptTemplateIsServedAndAFailingOneKeepsPiGsPrompt},
+		{"env-injection", []string{"secrets.env-injection"}, TestLiveEnvInjectionOffKeepsVaultSecretsOutOfJobs},
 	}
 	var covered, live []string
 	for _, check := range checks {
