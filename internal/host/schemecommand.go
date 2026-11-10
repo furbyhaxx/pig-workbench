@@ -274,7 +274,7 @@ func (a *app) prepareShellCommand(ctx sdk.Context, work context.Context, s *sess
 const maxMaterializedBytes = 50 << 10
 
 // materializeSchemeWords replaces each scheme word the router can read as a file with the
-// path of a read-only copy. A word that names a directory or nothing readable stays as written.
+// path of a read-only copy. A word that names nothing readable stays as written.
 func (s *session) materializeSchemeWords(ctx context.Context, command string, words []schemeWord) (string, error) {
 	for i := len(words) - 1; i >= 0; i-- {
 		word := words[i]
@@ -294,10 +294,13 @@ func (s *session) materializeSchemeWords(ctx context.Context, command string, wo
 			continue
 		}
 		if stat.Kind == resource.EntryDir {
-			continue
+			return "", fmt.Errorf("%s is a directory and cannot be passed to a command; list it with a standalone `ls %s`", word.value, word.value)
 		}
 		target.Selection.Raw = true
 		page, err := s.router.Read(ctx, target, resource.Budget{Bytes: maxMaterializedBytes, Lines: 2000})
+		if errors.Is(err, resource.ErrNotFound) {
+			continue
+		}
 		if err != nil {
 			return "", err
 		}

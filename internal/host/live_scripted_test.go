@@ -270,6 +270,38 @@ func TestLiveBashRunsCommandsThatMentionASchemeAndPassesSchemePathsAsFiles(t *te
 	}
 }
 
+func TestLiveBashSchemeArgumentsThatCannotBecomeFiles(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "ran")
+	bash := func(command string) scriptStep {
+		return func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": command}} }
+	}
+	results := runScripted(t, root, "bash",
+		bash(`cat cfg://workbench/no-such-entry | cat; echo passed-through`),
+		bash(`touch `+marker+`; ls -la cfg://workbench/integrations/`),
+		bash(`head -c 120000 /dev/zero | tr '\0' a`),
+		func(previous []string) scriptedCall {
+			id := strings.TrimSuffix(strings.Fields(previous[len(previous)-1])[1], ":")
+			return scriptedCall{"bash", map[string]any{"command": `touch ` + marker + `; wc -c job://` + id + `/log`}}
+		},
+	)
+	if len(results) != 4 {
+		t.Fatalf("got %d results: %v", len(results), results)
+	}
+	if !strings.Contains(results[0], "passed-through") || !strings.Contains(results[0], "cfg://workbench/no-such-entry") {
+		t.Errorf("unresolvable word was not left to the shell: %s", results[0])
+	}
+	if !strings.Contains(results[1], "is a directory") || !strings.Contains(results[1], "standalone `ls cfg://workbench/integrations/`") {
+		t.Errorf("directory argument: %s", results[1])
+	}
+	if !strings.Contains(results[3], "too large") {
+		t.Errorf("over-limit argument: %.300s", results[3])
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Errorf("a refused command ran: %v", err)
+	}
+}
+
 func TestLiveSchemeRedirectUsesControlWrite(t *testing.T) {
 	results := runScripted(t, t.TempDir(), "bash,read",
 		func([]string) scriptedCall {
