@@ -60,7 +60,6 @@ func TestLiveCatalogSettingsHaveBehavioralConsumers(t *testing.T) {
 		{"activity-shortcut", []string{"activity.shortcut"}, TestLiveActivityShortcutSettingBindsTheConfiguredKey},
 		{"prompt", []string{"prompt.enabled", "prompt.delivery"}, TestLivePromptSettingsControlTakeover},
 		{"fetch-backends", []string{"fetch.disabled-backends"}, TestLiveDisabledFetchBackendFallsBackToTheBuiltinReader},
-		{"skills-frame", []string{"skills.listing"}, TestLiveSkillsAreListedOnlyByTheSkillsFrame},
 		{"model-cutoffs", []string{"models.knowledge-cutoffs"}, TestModelFrameCutoffPrecedenceIsSettingThenContributedThenSnapshot},
 		{"skills", []string{"skills.listing-budget"}, TestLiveSkillsListingBudgetChangesTheCommandOutput},
 		{"bash-routing", []string{"bash.route-to-tools"}, TestLiveBashLeavesSchemePathsToTheShellWhenRoutingIsOff},

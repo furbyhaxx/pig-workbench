@@ -127,7 +127,6 @@ func Catalog() []Definition {
 		choice("prompt.delivery", "auto", DenyProject, "auto", "force", "sections"),
 		text("context.timezone", "system", DenyProject),
 		stringList("models.knowledge-cutoffs", []string{}, DenyProject),
-		choice("skills.listing", "prompt", AllowProject, "prompt", "frame"),
 		integer("skills.listing-budget", 4096, 0, 65536, ReduceProject),
 		boolean("skills.conditions", true, AllowProject),
 	}
@@ -282,15 +281,12 @@ func Catalog() []Definition {
 		case "prompt.template":
 			d.Application = "live"
 			d.Description = "Entry template of the system prompt: builtin/workbench, or a file such as system.md in the agent directory's system-prompts/ or, in a trusted project, the project's. A template that fails to render keeps the last good render, else PiG's prompt, and is reported."
-		case "skills.listing":
-			d.Application = "live"
-			d.Description = "prompt keeps PiG's <skills> section in the Workbench system prompt; frame leaves it out and delivers the budgeted skill:// listing in the session.capabilities frame. The system prompt is only Workbench's when prompt delivery takes it over."
 		case "models.knowledge-cutoffs":
 			d.Application = "live"
 			d.Description = "Knowledge cutoffs for the session.model frame, each `<model-id>=<YYYY-MM[-DD]>` with an optional `provider/` prefix; overrides contributed, bundled and estimated values (an estimate is the release date minus one year). Captured when the frame is built."
 		case "skills.listing-budget":
 			d.Application = "live"
-			d.Description = "Target byte budget for the /workbench skills listing and the frame listing; zero disables the ladder. It does not change PiG's prompt skill listing."
+			d.Description = "Target byte budget for the session.skills frame and the /workbench skills listing; over it descriptions are shortened, then dropped, and every skill stays listed by name. Zero disables the ladder."
 		case "activity.shortcut":
 			d.Application = "live"
 			d.Description = "Key that shows the activity line's inspector (for example alt+w or ctrl+shift+s). PiG registers shortcuts while the extension loads, so the user-layer value is read at load and a change applies after /reload; runtime and project values are not consulted."

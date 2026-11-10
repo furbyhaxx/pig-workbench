@@ -35,13 +35,15 @@ func TestEveryShownSettingHasAConsumer(t *testing.T) {
 }
 
 func TestAValueOfARemovedSettingSurvivesASaveAndIsIgnored(t *testing.T) {
-	m, paths := setup(t, "[coordinator]\nsingle = false # mine\n\n[read]\nmax-lines = 100\n", "")
+	m, paths := setup(t, "[coordinator]\nsingle = false # mine\n\n[skills]\nlisting = \"frame\"\n\n[read]\nmax-lines = 100\n", "")
 	if err := m.Load(context.Background(), false); err != nil {
 		t.Fatal(err)
 	}
 	snapshot := current(t, m)
-	if _, shown := snapshot.Get("coordinator.single"); shown {
-		t.Fatal("a setting without a consumer is shown")
+	for _, key := range []string{"coordinator.single", "skills.listing"} {
+		if _, shown := snapshot.Get(key); shown {
+			t.Fatalf("%s has no consumer and is shown", key)
+		}
 	}
 	if _, err := m.Save(context.Background(), User, snapshot, []Edit{{Key: "coordinator.single", Value: true}}, nil); err == nil {
 		t.Fatal("a setting without a consumer was saved")
@@ -50,7 +52,7 @@ func TestAValueOfARemovedSettingSurvivesASaveAndIsIgnored(t *testing.T) {
 		t.Fatal(err)
 	}
 	saved, err := os.ReadFile(paths.User)
-	if err != nil || !strings.Contains(string(saved), "single = false") || !strings.Contains(string(saved), "# mine") || !strings.Contains(string(saved), "max-lines = 200") {
+	if err != nil || !strings.Contains(string(saved), "single = false") || !strings.Contains(string(saved), `listing = "frame"`) || !strings.Contains(string(saved), "# mine") || !strings.Contains(string(saved), "max-lines = 200") {
 		t.Fatalf("saved file lost the retained value: %v\n%s", err, saved)
 	}
 }
