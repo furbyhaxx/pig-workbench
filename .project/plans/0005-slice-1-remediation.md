@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 4
+  revision: 5
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T14:21:02+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 4
-      reason: "frames.role cannot be wired on stock PiG"
-      changes: ["frames.role is hidden with area E; it returns with PLAN-0004 C4"]
+    - revision: 5
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["Decision row and area C: watcher settings are removed, not wired"]
 ---
 
 # 1. Outcome
@@ -46,6 +46,7 @@ User decisions of 10.11.2026:
 | T3 | Move the ten own tools onto the SPEC-0003 presentation path now |
 | Layouts | Frame rows, panel actions and the activity line each get a design with captures for review before implementation |
 | PLAN-0003 | `session://<id>/tree` and `messages` for stored sessions and `/workbench jobs monitor\|write` move there by revision |
+| Watcher | No instruction file watcher in Slice 1. Changes are found by digest at every prompt and tool call; the two `instructions.watch.*` settings are removed |
 | `.project` rules | `.project/AGENTS.md` follows the `dot-project` standard: consumed artifacts are deleted with commit trailers, one changelog entry per file |
 
 Background for two of them:
@@ -95,7 +96,7 @@ Tests: 1000 delivered 8 KiB frames, then an admit succeeds; a resumed over-limit
 
 Current: `toolInstructions` in `internal/host/instruction_context.go` inspects `path` and hashline sections only.
 
-Change: use the same target extraction as the renderer (`readCallTargets`) for every tool, take the union, and serve `session://self/instructions/` as a listing with `ctl`. Wire `instructions.updates.self-edits`, `instructions.watch.debounce-ms` and `instructions.boundary`.
+Change: use the same target extraction as the renderer (`readCallTargets`) for every tool, take the union, and serve `session://self/instructions/` as a listing with `ctl`. Wire `instructions.updates.self-edits` and `instructions.boundary`. Remove `instructions.watch.debounce-ms` and `instructions.watch.remote`: there is no watcher.
 
 Tests: a `paths` read of files under two nested `AGENTS.md` delivers both before content; the barrier returns `instructionContextChanged` once.
 

@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 19
+  revision: 20
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T14:28:25+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 19
-      reason: "frames.display.sources added"
-      changes: ["Per-source transcript visibility key"]
+    - revision: 20
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["instructions.watch.debounce-ms and instructions.watch.remote removed"]
 ---
 
 # 1. Scope and precedence
@@ -86,7 +86,6 @@ All defaults below are proposals subject to design review and measurements, not 
 | read.loop-hint-after | 3 | display hint, not a read lockout |
 | instructions.enabled/boundary | true / project | user/runtime; project cannot widen boundary |
 | instructions.classes | steering/backlog defaults from SPEC-0007 | bounded project context additions allowed |
-| instructions.watch.debounce-ms/remote | 100 / auto | user/runtime; no auto-install |
 | instructions.updates.context/self-edits | 3 / notice | user/project/runtime; safety baselines always persisted |
 | frames.role | auto | policy selects supported role; project cannot elevate authority |
 | frames.display.style/default-visibility | rail / collapsed | user/project/runtime; transcript only: `collapsed` one row per context frame, `shown` opens the body, `hidden` omits the row; style frames an opened body (rail, row, card) |

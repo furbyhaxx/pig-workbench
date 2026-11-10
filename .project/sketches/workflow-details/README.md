@@ -5,15 +5,15 @@ document:
   title: "Editing, reading, ambient context and interactive workflow designs"
   description: "Detailed flows and wireframes for remaining Workbench tools, locations, jobs, questionnaires, checkpoints and config recovery"
   status: "draft"
-  revision: 1
+  revision: 2
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-02T16:17:52+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 1
-      reason: "Complete the remaining feature design areas alongside their specifications"
-      changes: ["Added workflow state diagrams, detailed failure/recovery panels and responsive/mode acceptance coverage"]
+    - revision: 2
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["The settings-conflict example no longer uses a removed watcher setting"]
 ---
 
 # Scope and status
@@ -388,8 +388,8 @@ A completed checkpoint is not labeled host compaction. Old card stays until rege
 
 ```text
 ▲ settings · saved, not fully applied
-  instructions.watch.remote saved as on-turn
-  Consumer reconciliation failed; old watcher remains active.
+  jobs.timeout-seconds saved as 300
+  Consumer reconciliation failed; the old value remains active.
   [inspect] effective values and remediation
 ```
 

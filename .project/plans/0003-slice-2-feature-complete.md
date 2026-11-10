@@ -5,15 +5,15 @@ document:
   title: "Slice 2: full depth, every feature usable by agents"
   description: "Depth on the Slice 1 foundation: format adapters, remaining schemes, SSH, worktrees, PTY, donor-parity heuristics, project conventions, remaining instruction, interaction and messaging flows, with plain UI"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-03T15:05:00+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 5
-      reason: "User decision 09.11.2026: host-level /etc/agents files, per remote host"
-      changes: ["W3 supplies a remote HostReader so each SSH authority's /etc/agents/AGENTS.md and HOST.md replace the local copies per file name (SPEC-0007 §3.1)"]
+    - revision: 6
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["W5 checks remote instruction files on turn; no watcher"]
 ---
 
 # 1. Outcome
@@ -35,7 +35,7 @@ All packages can be developed in parallel. These are **completion** dependencies
 | Shared interface | Owner | Consumers |
 |---|---|---|
 | Reversible notebook cell mapping (cell view ↔ source bytes) | W2 | W1 notebook editing |
-| SSH backend for location, resources and jobs | W3 | W4 `ssh://` remote search paths, W5 remote watching |
+| SSH backend for location, resources and jobs | W3 | W4 `ssh://` remote search paths, W5 remote instruction checks |
 | Worktree state and artifact storage (`tree`/`branch`) | W3 | W4 `project://` locations and artifact projections, W7 artifact validation paths |
 | Coordinator `lifecycle` grant | W6 | W6 titles of other live sessions |
 | Archive backends approved (PLAN-0002 A0 ledger) | user | W2 archives |
@@ -68,7 +68,7 @@ SSH backend for the location, resource and job abstractions; `ssh://`; remote ed
 
 ## W5. Context depth (SPEC-0007 §8–§9, SPEC-0014 §9, WB-13/18/25)
 
-Remote watching with on-turn fallback, external project notification ingress, further instruction classes and `select = "all"`. Model-family adapters are PLAN-0004 C6.
+Remote instruction checks by on-turn stat/hash, external project notification ingress, further instruction classes and `select = "all"`. Model-family adapters are PLAN-0004 C6.
 
 **Exit:** SPEC-0007 §10 remaining rows; SPEC-0014 §12 `select = "all"` row; model-context evidence matches `/workbench instructions`.
 

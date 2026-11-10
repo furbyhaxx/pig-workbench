@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 64
+  revision: 65
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 64
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 65
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["Context row and phase K name boundary change detection; remote checks stay in PLAN-0003 W5"]
 ---
 
 # 1. Outcome
@@ -51,7 +51,7 @@ Target scope by area, not a claim of current implementation; PLAN-0001 §9 is au
 | URI system | Parser, selector grammar, router, pager, walking rules, guides; core schemes `file://`, `http(s)://` (fetch backends + builtin reader), `artifact://`, `out://`, `local://`, `job://`, `session://` (`self`, `<id>`, `by-id/`, titles of own and stored sessions), `skill://`, `cfg://`, `docs://` (registered docs), `agent://`; external providers and fetch backends; bash scheme commands (G8.20) | `ssh://`, `project://`, `conflict://`, `secret://`, `session://by-project/` and `by-name/`, cross-session search, titles of other live sessions, docs PiG source |
 | Location and projects | Location abstraction with revisions and leases, local backend, `cd`; project identity and registry; symlinked session buckets with undo | SSH backend, `/remote`, worktrees and links, shared artifact tree, artifact storage modes, project conventions (SPEC-0012 §4.1–4.2) |
 | Jobs | One supervisor: foreground, background, promotion, stdin/EOF/signals, logs with cursors, cancel, cleanup, env injection | PTY backend and key controls, remote jobs |
-| Context | Frame ledger, presentation resolver, instruction class engine (AGENTS.md, BACKLOG.md, project private notes), root+nearest, pins, caps with both baselines, diff updates, local watching, compaction and branch reconstruction | Remote watching, external notification ingress, further classes and `select = "all"` |
+| Context | Frame ledger, presentation resolver, instruction class engine (AGENTS.md, BACKLOG.md, project private notes), root+nearest, pins, caps with both baselines, diff updates, change detection at boundaries, compaction and branch reconstruction | Remote instruction checks, external notification ingress, further classes and `select = "all"` |
 | System prompt | gonja engine, `builtin/workbench` (default, SPEC-0014 §7), conditionals, delivery `auto`, epochs, late-section splice, all six context frames, skills complete (listing ladder, load/unload, `when`, `auto_load`, nested, compaction replay) | `select = "all"` (PLAN-0003 W5); model-family adapters of SPEC-0014 §6.3 with A/B evidence (PLAN-0004 C6) |
 | Secrets | Detection, placeholders, vault, boundary hooks, substitution, env injection, prompt section, `ask_user` type `secret` | `secret://` and `/workbench secrets` |
 | Interaction | `ask_user` complete in TUI and RPC, `interactionUnavailable` in print/JSON, pending recovery | Remote bridge, replay, answer history, `/answer`, `/tldr` |
@@ -193,7 +193,7 @@ Detection (auth.json incl. `!command` per A2, environment, `.env*`, token shapes
 
 ## K. Instructions and ambient context (SPEC-0007 §2–§8 local, SPEC-0012 §3.6, PLAN-0001 §6)
 
-Class engine with AGENTS.md, BACKLOG.md and `projectPrivate` classes, ancestors, root+nearest, multi-touch union, delivery before mutation, pins, caps with source and delivered-view baselines, diff updates, local watchers including new candidates, dedup and withdrawal, compaction and branch reconstruction; `/workbench instructions` and `/workbench frames`.
+Class engine with AGENTS.md, BACKLOG.md and `projectPrivate` classes, ancestors, root+nearest, multi-touch union, delivery before mutation, pins, caps with source and delivered-view baselines, diff updates, change detection at boundaries, dedup and withdrawal, compaction and branch reconstruction; `/workbench instructions` and `/workbench frames`.
 
 **Acceptance:** SPEC-0007 §10 local rows; parallel codemode touches select the union; a capped BACKLOG change emits a reconstructible diff; changes during compaction recover with full views; no duplicate host injection.
 

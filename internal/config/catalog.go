@@ -88,8 +88,6 @@ func Catalog() []Definition {
 		boolean("instructions.enabled", true, DenyProject),
 		text("instructions.system-dir", "/etc/agents", DenyProject),
 		choice("instructions.boundary", "project", DenyProject, "project", "filesystem"),
-		integer("instructions.watch.debounce-ms", 100, 1, 60000, DenyProject),
-		choice("instructions.watch.remote", "auto", DenyProject, "auto", "native", "off"),
 		integer("instructions.updates.context", 3, 0, 1000, AllowProject),
 		choice("instructions.updates.self-edits", "notice", AllowProject, "notice", "diff", "silent"),
 		boolean("instructions.agents-md-reminder", true, AllowProject),

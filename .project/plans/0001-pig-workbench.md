@@ -5,15 +5,15 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 26
+  revision: 27
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 26
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 27
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["§9 row 0007 §2–§8 and M6 name boundary change detection, not watchers"]
 ---
 
 # 1. Outcome and authority
@@ -308,7 +308,7 @@ Implement bash foreground/background/promotion and one supervisor used by `jobs`
 
 ## M6 — Full instruction and ambient-context lifecycle (later)
 
-Depends on M1, M3–M5. Deliver the section 6 contract: file classes, ancestors/root+nearest/root/nearest selection, pins, local/remote watchers, discovery of newly created candidates, diff updates, capped views, deduplication/relocation/withdrawal, self-edit behavior and branch/compaction reconstruction.
+Depends on M1, M3–M5. Deliver the section 6 contract: file classes, ancestors/root+nearest/root/nearest selection, pins, local/remote change detection at boundaries, discovery of newly created candidates, diff updates, capped views, deduplication/relocation/withdrawal, self-edit behavior and branch/compaction reconstruction.
 
 Add `select = "all"` classes, the remaining context frames and `builtin/workbench` (SPEC-0014 §5, §7, §9). Provide `/workbench instructions` inspection with reasons: selected, shadowed, pinned, ignored, untrusted, capped, withdrawn. Implement external project/path-scoped notification ingress without storing tasks or agent definitions.
 
@@ -392,7 +392,7 @@ Authoritative assignment of every specification section to a slice and phase. Sl
 | 0005 §9 except G5.2 | Payload repair, leniency, per-model mode, streaming, repair, notebooks | S2 W1 | Donor fixture corpus |
 | 0006 §2–§4, §6–§7 | Read schema, pipeline, summaries, search tools, loop guard | S1 D | SPEC-0006 §8 |
 | 0006 §5 | Adapter matrix | S2 W2 | SPEC-0006 §5, §8 |
-| 0007 §2–§8 local | Classes, roots, touches, barrier, pins, caps, local watchers | S1 K | SPEC-0007 §10 |
+| 0007 §2–§8 local | Classes, roots, touches, barrier, pins, caps, change detection at boundaries | S1 K | SPEC-0007 §10 |
 | 0007 §8 remote, §9 | Remote watching, external notifications, further classes | S2 W5 | SPEC-0007 §10 |
 | 0008 §2–§3 local | Location capture, `cd` | S1 E1 | SPEC-0008 §8 |
 | 0008 §3 worktrees, §4 | Worktrees, SSH, `/remote` | S2 W3 | SPEC-0008 §8 |

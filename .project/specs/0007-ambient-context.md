@@ -3,17 +3,17 @@ document:
   type: "specification"
   id: "SPEC-0007"
   title: "Instruction and ambient-file selection, injection and updates"
-  description: "Ancestor and root-nearest policies, pins, capped backlog views, watchers, diffs and context epochs"
+  description: "Ancestor and root-nearest policies, pins, capped backlog views, change detection, diffs and context epochs"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T14:50:00+01:00"
+  updated_at: "2026-11-10T15:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "instructions.boundary is wired with the two values the catalog offers"
-      changes: ["§3 boundary values are project and filesystem; the home value is removed", "§8 self-edit recognition by committed-bytes digest"]
+    - revision: 15
+      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
+      changes: ["§8 describes boundary reconciliation by digest; the fsnotify watcher and its debounce are removed", "G7.2 no longer names an instructions.watch setting"]
 ---
 
 # 1. Purpose and inputs
@@ -181,11 +181,9 @@ For any class, apply item/line/byte budgets together, reserving footer space. St
 
 Update auto: unified diff against previous **delivered view** when smaller and reconstructible, otherwise full view. diff mode still falls back to full baseline after compaction/missing base, with reason. Changes beneath the cap can alter source revision/omitted count without a visible content hunk. Cap changes or item reordering produce a correct new view; diffing full unseen source is forbidden.
 
-# 8. Watchers, self-edits and delivery ledger
+# 8. Change detection, self-edits and delivery ledger
 
-Watch selected files and candidate directories for create/delete/rename/atomic replace; missing-candidate cache entries expire on directory change. Default debounce 100 ms. Bound watch count and scan work; if native watcher unavailable, reconcile at turn boundaries and relevant tool results. Remote auto uses an approved available watcher or on-turn stat/hash; no auto-install of remote tooling and no hidden new transport just to watch.
-
-Local backend: `github.com/fsnotify/fsnotify` with directory-level watches (approved 02.11.2026). Measured behaviour the watcher must handle: an in-place write reports WRITE; temp-file-plus-rename (most editors, `git checkout`) reports CREATE only; a vim backup-rename reports RENAME, CREATE, WRITE; delete reports REMOVE; a nested directory reports nothing unless it is watched itself. So: watch candidate directories, not files; treat CREATE as a change; add a watch for each new directory; cap watches per session. On macOS kqueue opens one descriptor per watched file and per file inside a watched directory, so the cap counts files and stays well under `kern.maxfilesperproc`. On Windows `ReadDirectoryChangesW` can drop events on buffer overflow; reconcile by stat.
+There is no file watcher. Before every prompt and every tool call the applicable scopes are discovered again and each selected file is compared by canonical URI and content digest with the view the model holds; a new, changed or replaced file is delivered at that boundary, which is the only point where a frame can reach the model. A file created, deleted, renamed or atomically replaced between two boundaries is therefore seen at the next one, with no debounce and no watch limits. Scan work per boundary is bounded by the touched directories and their ancestors. Remote authorities use the same on-turn stat/hash check through the SSH backend (PLAN-0003 W5); no remote tooling is installed and no extra transport is opened for it.
 
 A check uses canonical URI and content digest, not only mtime/size. Coalesce repeated changes to the latest unsent view but preserve removals/trust changes. Discovery failures retain a visible stale/unavailable state and prevent safety-relevant mutation; they do not withdraw instructions as if absence were proven.
 
@@ -216,7 +214,7 @@ External claim/completion messages enter through registered frame producers with
 - Pin add/replace-nearest/unpin, deletion, trust revocation, fork/resume and authority separation.
 - BACKLOG first-N exact counts, malformed pointers, oversized source, hidden change, cap change and item reorder.
 - Diff application reconstructs injected view byte-for-byte; no use of an absent epoch baseline.
-- New file, atomic replacement, watcher overflow, remote disconnect and turn-boundary healing.
+- New file, atomic replacement, remote disconnect and detection at the next boundary.
 - Mutation blocked before newly discovered instructions; codemode cannot hide affected targets.
 - Self-edit with actual transformation vs authored bytes; failed persistence never marks content delivered.
 - Equal bytes/different trust do not deduplicate; worktree identity alone does not prove sameness.
@@ -226,10 +224,10 @@ External claim/completion messages enter through registered frame producers with
 
 From the donor test audit of 02.11.2026, pi-workbench `instructions/*` at `bc7ce0e`. Normative.
 - **G7.1 Remote watching.** Detect an already-installed remote inotify tool once per host, otherwise fall back to on-turn checks. A forced native mode that fails names the host and the recovery step. The remote monitor exits on stdin EOF, restarts with backoff, and is torn down by abort with a process-group kill fallback. NUL-separated events are parsed across chunk boundaries.
-- **G7.2** `instructions.watch = auto|native|off`. `off` never rechecks remote host instructions on later prompts, withdraws remote ancestors on a local transition without remote reads, and still checks local changes.
+- **G7.2** Remote host instructions are rechecked on later prompts by stat/hash; a local transition withdraws remote ancestors without remote reads, and local changes are always checked.
 - **G7.3 Idle delivery.** Changes while idle coalesce to the latest view and are delivered at the next prompt. Idle compaction defers to the next prompt's full baseline. An unreachable restored host never blocks local deliveries; host connection failures are reported at the prompt.
 - **G7.4** BOM stripping never produces a false change. Local reads report caps, skip directories and honour abort. SSH reads fetch all ancestors in one batched round trip, keep first-filename precedence, and distinguish absent from empty.
-- **G7.5** A cancelled self-edit cannot acknowledge or clear a newer edit. A self-edit suppresses the matching watcher diff and emits exactly one notice.
+- **G7.5** A cancelled self-edit cannot acknowledge or clear a newer edit. A self-edit suppresses the matching change diff and emits exactly one notice.
 - **G7.6** A prepared plan applies exactly once without further filesystem reads. A root or manager revision change discards a stale plan or scan. An aborted preparation changes nothing.
 - **G7.7** An authorised SSH host note delivers its body as host-scoped steering. A note with only frontmatter delivers nothing.
 - **G7.8** SSH host/path trust rules are isolated from local and global rules. Host trust defaults apply only to local sources.
