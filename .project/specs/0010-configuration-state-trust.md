@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 25
+  revision: 26
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T17:29:33+01:00"
+  updated_at: "2026-11-10T17:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 25
-      reason: "activity.replace-working-indicator left the catalog"
-      changes: ["§3: the row is gone until the activity state item exists (SPEC-0009 §9)"]
+    - revision: 26
+      reason: "skills.listing removed: skills are listed only by the session.skills frame"
+      changes: ["§3: the skills row lists listing-budget and conditions"]
 ---
 
 # 1. Scope and precedence
@@ -126,7 +126,7 @@ All defaults below are proposals subject to design review and measurements, not 
 | prompt.enabled / template / delivery | true / builtin/workbench / auto | user/runtime; project may select a template only from trusted project files (SPEC-0014 §3.2, §4) |
 | prompt.families | builtin family table | user/runtime; user entries are matched first (SPEC-0014 §3.5) |
 | context.timezone | system | user/runtime; `system` or an IANA zone name for the `session.date` frame (SPEC-0014 §4.3) |
-| skills.listing / listing-budget / conditions | prompt / 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |
+| skills.listing-budget / conditions | 4096 bytes / true | user/project/runtime (SPEC-0014 §8) |
 
 `Project.toml` (`[component]`, `[[components]]`, `[worktrees]`, `[artifacts]`, `[conventions]`) is project data, not settings: it is committed, parsed strictly, and cannot carry any key of this catalog (SPEC-0012 §3.2).
 

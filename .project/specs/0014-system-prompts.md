@@ -5,20 +5,20 @@ document:
   title: "System prompt templates, context frames and progressive skill disclosure"
   description: "Workbench renders PiG's system prompt from Jinja templates (partials, model/tool conditionals, model families), keeping PiG's prompt structure with Workbench content; session facts arrive as nugent-style context frames; skills are listed, loaded and unloaded by progressive disclosure"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-03T12:26:45+01:00"
-  updated_at: "2026-11-10T14:00:00+01:00"
+  updated_at: "2026-11-10T17:55:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "User: a changed context source is never sent whole again"
-      changes: ["A changed source commits a notice frame with only the changed fields", "session.model carries the current thinking level instead of a reasoning flag"]
+    - revision: 14
+      reason: "User: skills are delivered only as a frame; availability changes are diff frames"
+      changes: ["§5, §8.1, §8.5: the session.skills frame is the only skill listing; a change names only the skills that became or stopped being available", "§3, §7: builtin/workbench has no skills section and the template has no skills input", "§10: the skills.listing setting is removed"]
 ---
 
 # 1. Purpose and scope
 
-Workbench owns the system prompt. It renders it from Jinja templates and sends it in place of PiG's builtin. The builtin template, `builtin/workbench` (§7), keeps PiG's sections, order and markup and adapts their content: documentation as `docs://` URIs, skills as `skill://`, instructions from SPEC-0007, a new `<resources>` section. It does not copy PiG's text. Model-aware templates are built on top: the same instructions, worded for each model family, plus countersteering for a family's known weaknesses.
+Workbench owns the system prompt. It renders it from Jinja templates and sends it in place of PiG's builtin. The builtin template, `builtin/workbench` (§7), keeps PiG's sections, order and markup and adapts their content: documentation as `docs://` URIs, instructions from SPEC-0007, a new `<resources>` section; it has no skills section, because skills are listed by a frame (§8.1). It does not copy PiG's text. Model-aware templates are built on top: the same instructions, worded for each model family, plus countersteering for a family's known weaknesses.
 
 Three related mechanisms ship with it, because a cacheable prompt needs them:
 - **Context frames** (nugent): date, environment, project, location, model and capabilities arrive as framed messages before the user's input, not in the system prompt.
@@ -88,7 +88,7 @@ A template renders **sections**, the unit PiG records and patches:
 
 - Text before the first section is the preamble. `{% section "name" %}…{% endsection %}` (custom tag) delimits a section; its body is wrapped as `<name>\n…\n</name>`, as PiG does. `{% section "name" raw %}` emits it untagged; only `force` delivery can send untagged sections (PiG wraps every custom section).
 - Names follow PiG's rule `[a-z][a-z0-9_-]*`; duplicates are a render error. A section whose body is empty after trimming is left out.
-- `builtin/workbench` wraps each section in a block of the same name (`preamble`, `tools`, `rules`, `resources`, `docs`, `addendum`, `project_context`, `skills`, `cwd`), so a child template changes one section without copying the rest.
+- `builtin/workbench` wraps each section in a block of the same name (`preamble`, `tools`, `rules`, `resources`, `docs`, `addendum`, `project_context`, `cwd`), so a child template changes one section without copying the rest.
 
 ## 3.4 Inputs
 
@@ -100,7 +100,6 @@ Only typed values that are fixed for the request. No clock, environment variable
 | `tools` | `selected` (ordered), `declared` (selected minus hidden), `hidden`, `snippets` (name → text), `guidelines` (name → list) |
 | `host` | `custom_prompt`, `append`, `prompt_guidelines`, `docs` (whether PiG's docs bundle is present), `context_files` (path, content), `skills` (PiG's discovered list), `sections` (other extensions' custom sections, name → text), `mode` (`interactive`, `rpc`, `print`, `json`), `os`, `shell` |
 | `instructions` | Stable instruction set selected by SPEC-0007 at the epoch start: list of `{class, path, display_path, role, content}` |
-| `skills` | Workbench catalog (§8): `{name, description, location, source, bundle}`, plus `listing` (`prompt` or `frame`) |
 | `workbench` | Prompt-relevant settings: `edit.mode`, `read` features, `secrets.enabled`, registered schemes (name, one-line summary) |
 | `project_root` | Host session cwd; stable for the session (`<cwd>`). The current Workbench location is a frame (§5), not a template input |
 
@@ -168,7 +167,7 @@ Prompt-cache hits need an identical prefix. The served prompt is rendered at an 
 | Other extensions' sections (`host.sections`, including `<mcp_servers>`), append text, custom prompt, context files | served prompt unchanged; diff frame per changed section |
 | Template or partial file edited | served prompt unchanged; diff frame of the changed sections (nugent's served-section model) |
 | Instruction file of the stable set | the same, through SPEC-0007's diff frames |
-| Skill catalog | capabilities frame (§5) when `skills.listing = "frame"`; with `prompt`, diff frame of `<skills>` |
+| Skill catalog | served prompt unchanged; `session.skills` notice naming the skills that became or stopped being available (§8.1) |
 
 Frames are SPEC-0002 frames (kind `notice`, source `workbench.prompt`, persisted nonce): user-role messages appended after the cached prefix. Nothing before them changes, so the cache holds for every model. `<rules>` states once that Workbench frames carry harness updates and that a section update replaces the served text of that section. Whether models follow user-role updates as well as system text is part of the A/B evaluation (§12).
 
@@ -185,14 +184,16 @@ Session facts that change are frames, not prompt text. Workbench evaluates them 
 | `session.project` | Project (SPEC-0012) name and root, session ID and title, git branch and short HEAD (no dirty state) | `on-change` |
 | `session.location` | Working location with authority, how plain paths resolve (SPEC-0008); a `cd` result also states it at once | `on-change` |
 | `session.model` | Model, context window, current thinking level (`thinking`, only for a reasoning model; no capability flag) | `on-change` |
-| `session.capabilities` | Schemes (one line each) and, with `skills.listing = "frame"`, the skill listing (§8) | `on-change` |
+| `session.capabilities` | Active tools, registered schemes, edit mode | `on-change` |
+| `session.skills` | The skill listing (§8.1): one `- skill://<name>: description` line per available skill. Not sent while no skill is available | `on-change` |
 
+- `session.skills` changes by availability, not by field: its notice lists the entries under `Available now:` and the names under `No longer available:`, and states that every other skill is as before. A change that leaves the same skills available (a reworded description) commits nothing.
 - **A source is never sent whole twice.** Once the model holds a source's view, a change commits a `notice` frame under the same source that lists only the changed fields as `field: old -> new` (list fields as `+added, -removed`) and states that every other field is unchanged. This holds for every source, including a thinking-level change on `session.model`. The full body is sent again only when the delivered view is no longer known: after compaction, a branch switch or a resume.
 - `on-change` commits when the body differs from the last committed body of that source on the active branch since the last boundary; `on-input` commits on every user input, never on continuations; a boundary commits every source again.
 - Delivery: `SendMessage(steer)` from `before_agent_start` (SPEC-0002 delivery `beforePrompt`), so frames precede the user's message and are persisted. Persisting keeps history byte-stable; projecting them per request would rewrite the past.
 - The ledger is rebuilt from the branch's `pig-workbench.frame` entries; a compaction entry after a source's last frame counts as a boundary.
 - Frames use SPEC-0002 rendering, kind `info`, trusted Workbench source. Time zone: setting `context.timezone`, else the system zone; unknown zone gives `Date is unavailable.`, never a guessed date.
-- Each source can be switched off (`context.frames.<source>`). All are on by default; `session.capabilities` carries the skill listing only with `skills.listing = "frame"`.
+- Each source can be switched off (`context.frames.<source>`). All are on by default.
 
 ## 5.1 Contributed model fields
 
@@ -252,7 +253,7 @@ The default entry template. It keeps PiG's sections, order and markup, so models
 | `<docs>` | Absolute paths to PiG's docs bundle, README and examples, topic → file map | Same topic map as URIs: `docs://harness/…` (PiG), `docs://workbench/…`, `docs://<owner>/…` for registered extensions; source under `docs://harness/source/` |
 | `<addendum>` | APPEND_SYSTEM.md and `--append-system-prompt` | Unchanged (`host.append`) |
 | `<project_context>` | "Project-specific instructions and guidelines:" and one `<project_instructions path=…>` per context file | Same markup, filled from the SPEC-0007 stable set (`instructions`), with `display_path` |
-| `<skills>` | `<available_skills>` with file locations | Same markup with `skill://<name>` locations and the load/unload rule (§8); left out when `skills.listing = "frame"` |
+| `<skills>` | `<available_skills>` with file locations | Not rendered. The `session.skills` frame lists skills (§8.1) |
 | `<cwd>` | Host cwd | Project root: the host session cwd, which Workbench `cd` does not change (SPEC-0010 §1), so the section is stable for the session. The current Workbench location arrives as the `session.location` frame |
 | `<mcp_servers>` | Set by PiG's built-in MCP extension as a custom section: servers whose tools are not declared | Placed explicitly after `<tools>`; arrives through the late-section splice (§4.2, PR8) |
 | others | Custom sections of other extensions, appended | Appended where PiG would, from `host.sections` |
@@ -266,8 +267,9 @@ The default entry template. It keeps PiG's sections, order and markup, so models
 ## 8.1 Catalog and listing
 
 - Sources: PiG's discovered skills (`host.skills`, honouring `disable-model-invocation`) plus Workbench's own frontmatter reading of each `SKILL.md`. Trust follows PiG's skill discovery.
-- Listing entry: name, description (routing text) and location `skill://<name>`. Bodies never enter the system prompt.
-- `skills.listing = "prompt"` keeps PiG's `<skills>` section; `"frame"` moves the listing into `session.capabilities`, so catalog changes do not break the prompt cache.
+- Listing entry: name, description (routing text) and location `skill://<name>`. Bodies never enter the listing.
+- The listing is delivered only as the `session.skills` frame (§5). No system prompt lists skills: `builtin/workbench` has no skills section, and Workbench empties the host's `skills` prompt option so PiG's own prompt lists none when it is in use. A catalog change therefore never rewrites the prompt.
+- **Availability changes are diffs.** After the listing is delivered, a skill that becomes available (its `when` starts holding, its parent is loaded, it appears on disk) or stops being available (the reverse, or an unload that withdraws sub-skills) is announced by a notice frame naming only that skill. Frames are collected at prompt and tool-call boundaries, so a change made by one tool call is announced with the next call or prompt. No availability change, no frame.
 - Budget (`skills.listing-budget`, default 4096 bytes): over budget, bundled skills lose their descriptions first, then other descriptions are cut to 80 characters, then lowest-ranked entries become names only. Every skill stays listed by name; only listed names can be loaded by the model.
 
 ## 8.2 Load and unload
@@ -305,7 +307,7 @@ auto_load:       # trigger: holds → body delivered without a load
 
 ## 8.5 After compaction
 
-The listing comes back with the boundary commit of `session.capabilities`. Loaded skills come back within a replay budget: explicit loads newest first as pointers ("loaded earlier; read before relying on it"), then auto-loads; a skill used before compaction is never presented as a fresh instruction.
+The whole current listing comes back once with the boundary commit of `session.skills`; changes after it are diffs again. Loaded skills come back within a replay budget: explicit loads newest first as pointers ("loaded earlier; read before relying on it"), then auto-loads; a skill used before compaction is never presented as a fresh instruction.
 
 # 9. Several instruction files per directory
 
@@ -327,7 +329,7 @@ Separate classes remain the tool when files need different placement, caps or ro
 
 - `/workbench prompt`: entry template and its chain, matched family, delivery mode, epoch, last error, rendered sections with byte counts, diff against the host-rendered prompt, structure check result. `/workbench prompt render --model <ref> [--tools …]` previews another model without sending anything.
 - `session://<id>/system-prompt`: the prompt served in the current epoch (read only). `docs://workbench/prompts`: template variables, helpers, gonja differences.
-- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/workbench`), `prompt.delivery` (`auto`), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing` (`prompt`), `skills.listing-budget` (4096), `skills.conditions` (true).
+- Settings (SPEC-0010 §3): `prompt.enabled` (true), `prompt.template` (`builtin/workbench`), `prompt.delivery` (`auto`), `prompt.families`; `context.timezone`, `context.frames.<source>`; `skills.listing-budget` (4096), `skills.conditions` (true).
 
 # 11. Host probes and requests
 
@@ -351,13 +353,13 @@ Host changes go to a personal PiG fork (user decision 2026-11-03), not upstream:
 
 # 12. Acceptance
 
-- `builtin/workbench` golden renders for every PR5 fixture: PiG's section order and markup, `<docs>` without filesystem paths, `<skills>` with `skill://` locations, `<cwd>` unchanged after a Workbench `cd`; a host prompt with an unknown section is reported by the structure check.
+- `builtin/workbench` golden renders for every PR5 fixture: PiG's section order and markup, `<docs>` without filesystem paths, no skill listing, `<cwd>` unchanged after a Workbench `cd`; a host prompt with an unknown section is reported by the structure check.
 - Template chain: user/project shadowing, `builtin/` not shadowable, untrusted project ignored, traversal and symlink escape rejected, strict undefined error, limits and deadline.
 - Conditionals: `family`, `glob`, `regex`, `has_tool`, `variant` select the expected text for fixture models (one per builtin family plus an unmatched one).
 - Stability: two consecutive requests of one epoch carry identical prompt bytes; a template edit produces a diff frame and changes the prompt only at the next epoch; a model change re-renders.
 - Frames: date on every input, `on-change` sources only on change, all sources after compaction and on a new branch; frames precede the user message; nothing is committed on continuations.
 - Contributed model fields: wrong owner, unknown field, invalid date and duplicate claim refused; explicit versus estimated cutoff visibly distinguished; identical updates produce no duplicate frame; model change rejects stale data; unregister/reload withdraws live state; compaction repeats the applicable value with provenance; no system-prompt prefix change.
-- Skills: listing budget ladder; load, repeated load, unload with sub-skills; `when`, `auto_load`, declined after unload; replay after compaction; listing changes do not alter the system prompt with `listing = "frame"`.
+- Skills: listing budget ladder; load, repeated load, unload with sub-skills; `when`, `auto_load`, declined after unload; replay after compaction; the request carries each skill once, in the `session.skills` frame and in no prompt; an availability change is one notice naming only the changed skill; the whole listing returns once after compaction.
 - Instructions: `select = "all"` injects `AGENTS.md` and `CONVENTIONS.md` of one directory in list order; `first` keeps one.
 - Prompt changes are evaluated on fixed tasks (golden transcripts, A/B, cache-hit rate) before an adapter or `builtin/workbench` change ships.
 
@@ -371,5 +373,5 @@ Accepted by the user on 2026-11-03 ("go ahead") as recommended:
 | Q2 | Takeover on by default | Yes, with `builtin/workbench`; `prompt.enabled = false` restores PiG's own prompt |
 | Q3 | Default delivery | `auto`: `force` on stock PiG and for unflagged models; `sections` on the fork for flagged models; mid-epoch changes as frames (§4.3) |
 | Q4 | Skill condition keys | nukii's `when` / `auto_load` (shared skills), not kebab-case |
-| Q5 | Skill listing default | `prompt` (in `<skills>`, as PiG); `frame` once A/B runs show the cache gain |
+| Q5 | Skill listing | The `session.skills` frame only, with diff notices; no prompt listing and no setting |
 | Q6 | Template directory | `system-prompts/` in agent dir and `.pig/`; PiG's `prompts/` is taken by prompt templates |
