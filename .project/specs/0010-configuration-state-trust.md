@@ -5,15 +5,15 @@ document:
   title: "Configuration, persistence, privacy and trust"
   description: "Scoped TOML configuration, safe saves, durable records, lifecycle ownership and permission boundaries"
   status: "published"
-  revision: 20
+  revision: 21
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T15:10:00+01:00"
+  updated_at: "2026-11-10T17:02:37+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 20
-      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
-      changes: ["instructions.watch.debounce-ms and instructions.watch.remote removed"]
+    - revision: 21
+      reason: "User decision 10.11.2026: settings without a consumer are not shown"
+      changes: ["§3: the catalog holds only keys with a wired consumer; other table rows join it with their feature"]
 ---
 
 # 1. Scope and precedence
@@ -67,7 +67,7 @@ Known fields reject wrong types/ranges/unknown enums, reporting file/key/expecte
 
 Malformed existing file is not replaced with defaults. On startup expose a configuration error and block affected feature admission until fixed; diagnostic commands remain available. On reload retain the last valid effective snapshot marked stale with explicit error, rather than applying half a file. User must see whether saved values are active. Parse errors must not print secret-bearing source lines wholesale.
 
-Config settings catalog has key, type, default, allowed scopes, bounds/choices, description, sensitivity, live/reload application, affected consumers and display section. Generate UI/validation/documentation from this single catalog where practical; do not maintain conflicting key lists manually.
+Config settings catalog has key, type, default, allowed scopes, bounds/choices, description, sensitivity, live/reload application, affected consumers and display section. Generate UI/validation/documentation from this single catalog where practical; do not maintain conflicting key lists manually. The catalog holds only keys with a wired consumer. A key in the table below whose feature is not built is absent from the catalog, the settings panel, `cfg://` and the product docs; a value for it in a settings file is treated as an unknown key (warned, preserved on save, ignored) and the key joins the catalog together with its consumer.
 
 # 3. Initial settings catalog
 
