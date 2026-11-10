@@ -168,6 +168,7 @@ For a trusted project, Workbench selects root-level `*.md` personal notes from `
 - `session://self/meta` — session id, name, cwd, mode, entry counts, whether it is durable.
 - `session://self/title` — current title.
 - `session://self/transcript` — the active branch as Markdown.
+- `session://self/frames/` — one entry per context frame of this session with its state, kind and source; `session://self/frames/<frameId>` shows that frame's provenance and body.
 - `session://self/entries` — raw session entries, one JSON object per line.
 - `cfg://workbench/status` — configuration readiness, revision and effective read policy.
 - `cfg://<group>/<key>` — one effective setting with its source scope and file.

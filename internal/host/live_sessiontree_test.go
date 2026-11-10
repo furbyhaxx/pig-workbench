@@ -119,3 +119,25 @@ func TestLiveStoredSessionsAreListedReadAndTitled(t *testing.T) {
 		}
 	}
 }
+
+func TestLiveSessionSelfFramesAreListedAndRead(t *testing.T) {
+	root := t.TempDir()
+	fixture, recorder := startInRoot(t, root, []scriptedCall{
+		{"ls", map[string]any{"path": "session://self/"}},
+		{"ls", map[string]any{"path": "session://self/frames/"}},
+		{"read", map[string]any{"path": "session://self/frames"}},
+	})
+	fixture.send("p", "prompt", "inspect the frames")
+	fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 3 || !strings.Contains(results[0], "frames") {
+		t.Fatalf("self listing lacks frames: %v", results)
+	}
+	for _, result := range results[1:] {
+		if !strings.Contains(result, "session.date") || !strings.Contains(result, "delivered") {
+			t.Errorf("frame receipts lack the delivered date frame:\n%s", result)
+		}
+	}
+}

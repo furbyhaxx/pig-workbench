@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 	"github.com/furbyhaxx/pig-workbench/internal/resource"
@@ -51,10 +52,12 @@ var storedSessionFiles = []string{"meta", "transcript", "entries", "title"}
 
 // sessionTarget is a parsed session:// URI: the session it names and the file below it.
 type sessionTarget struct {
-	root  bool
-	byID  bool
-	id    string
-	file  string
+	root bool
+	byID bool
+	id   string
+	file string
+	// frame is the frame ID below frames/.
+	frame string
 	depth int
 }
 
@@ -71,12 +74,15 @@ func parseSessionTarget(parts []string) (sessionTarget, error) {
 			return t, nil
 		}
 	}
-	if len(parts) > 2 {
+	if len(parts) > 3 || len(parts) == 3 && parts[1] != "frames" {
 		return t, resource.ErrNotFound
 	}
 	t.id, t.depth = parts[0], len(parts)
-	if len(parts) == 2 {
+	if len(parts) >= 2 {
 		t.file = parts[1]
+	}
+	if len(parts) == 3 {
+		t.frame = parts[2]
 	}
 	return t, nil
 }
@@ -147,6 +153,19 @@ func (p sessionProvider) Stat(ctx context.Context, uri string) (resource.StatRes
 	if t.depth == 1 {
 		return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
 	}
+	if t.file == "frames" {
+		records, err := p.frameRecords(host, t.id)
+		if err != nil {
+			return resource.StatResult{}, err
+		}
+		if t.depth == 2 {
+			return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
+		}
+		if _, ok := findFrame(records, t.frame); ok {
+			return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
+		}
+		return resource.StatResult{}, resource.ErrNotFound
+	}
 	if containsName(files, t.file) {
 		return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
 	}
@@ -196,6 +215,17 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		}
 		return resource.Listing{Complete: true, Entries: entries}, nil
 	}
+	if t.depth == 2 && t.file == "frames" {
+		records, err := p.frameRecords(host, t.id)
+		if err != nil {
+			return resource.Listing{}, err
+		}
+		entries := make([]resource.Entry, 0, len(records))
+		for _, record := range records {
+			entries = append(entries, resource.Entry{Name: record.Frame.FrameID, URI: "session://self/frames/" + record.Frame.FrameID, Kind: resource.EntryFile, Detail: frameReceiptLine(record)})
+		}
+		return pageEntries(entries, cursor, limit), nil
+	}
 	if t.depth != 1 {
 		return resource.Listing{}, resource.ErrNotFound
 	}
@@ -208,6 +238,9 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 	entries := make([]resource.Entry, 0, len(files))
 	for _, name := range files {
 		entries = append(entries, resource.Entry{Name: name, URI: base + name, Kind: resource.EntryFile})
+	}
+	if p.isSelf(host, t.id) {
+		entries = append(entries, resource.Entry{Name: "frames", URI: base + "frames/", Kind: resource.EntryDir})
 	}
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
 	return resource.Listing{Complete: true, Entries: entries}, nil
@@ -226,11 +259,13 @@ func (p sessionProvider) Read(ctx context.Context, request resource.ReadRequest)
 	if err != nil {
 		return resource.ReadResult{}, err
 	}
-	if t.depth != 2 {
+	if t.depth < 2 {
 		return resource.ReadResult{}, resource.ErrUnsupported
 	}
 	var body []byte
-	if p.isSelf(session, t.id) {
+	if t.file == "frames" {
+		body, err = p.renderFrames(session, t)
+	} else if p.isSelf(session, t.id) {
 		body, err = p.render(ctx, session, t.file)
 	} else {
 		var info sdk.SessionInfo
@@ -358,4 +393,93 @@ func dedupeByID(all []sdk.SessionInfo) []sdk.SessionInfo {
 		}
 	}
 	return unique
+}
+
+// frameRecords returns this session's frame ledger, oldest first; only the own session has one.
+func (p sessionProvider) frameRecords(host sdk.Context, id string) ([]frameRecord, error) {
+	if !p.isSelf(host, id) || p.source == nil {
+		return nil, resource.ErrNotFound
+	}
+	s, ok := p.source()
+	if !ok {
+		return nil, resource.ErrNotFound
+	}
+	var records []frameRecord
+	for _, raw := range s.contextFrames.ledger.Snapshot() {
+		var record frameRecord
+		if json.Unmarshal(raw, &record) == nil {
+			records = append(records, record)
+		}
+	}
+	return records, nil
+}
+
+func findFrame(records []frameRecord, id string) (frameRecord, bool) {
+	for _, record := range records {
+		if record.Frame.FrameID == id {
+			return record, true
+		}
+	}
+	return frameRecord{}, false
+}
+
+func frameReceiptLine(record frameRecord) string {
+	line := fmt.Sprintf("%-10s %-8s %s", record.State, record.Frame.Kind, record.Frame.Source)
+	if record.Frame.Title != "" {
+		line += "  " + record.Frame.Title
+	}
+	return line
+}
+
+// renderFrames renders the receipt list, or one frame with its provenance and body.
+func (p sessionProvider) renderFrames(host sdk.Context, t sessionTarget) ([]byte, error) {
+	records, err := p.frameRecords(host, t.id)
+	if err != nil {
+		return nil, err
+	}
+	var out strings.Builder
+	if t.depth == 2 {
+		if len(records) == 0 {
+			return []byte("no frames in this session\n"), nil
+		}
+		for _, record := range records {
+			fmt.Fprintf(&out, "%s  %s\n", record.Frame.FrameID, frameReceiptLine(record))
+		}
+		return []byte(out.String()), nil
+	}
+	record, ok := findFrame(records, t.frame)
+	if !ok {
+		return nil, resource.ErrNotFound
+	}
+	frame := record.Frame
+	fmt.Fprintf(&out, "frame %s\nstate %s\nsource %s\nkind %s\ndelivery %s\ntrust %s\nauthority %s\ncreated %s\ndigest %s\n", frame.FrameID, record.State, frame.Source, frame.Kind, frame.Delivery, frame.Trust, frame.Authority, frame.CreatedAt.Local().Format(time.RFC3339), frame.ContentDigest)
+	if frame.Title != "" {
+		fmt.Fprintf(&out, "title %s\n", frame.Title)
+	}
+	if record.BodyDropped {
+		out.WriteString("\nbody no longer retained in memory; the session entry still holds it\n")
+	} else {
+		out.WriteString("\n" + frame.Body + "\n")
+	}
+	return []byte(out.String()), nil
+}
+
+// pageEntries returns one listing page of at most limit entries starting at the entry named cursor.
+func pageEntries(entries []resource.Entry, cursor string, limit int) resource.Listing {
+	if limit <= 0 || limit > 200 {
+		limit = 200
+	}
+	start := 0
+	for i, entry := range entries {
+		if cursor != "" && entry.Name == cursor {
+			start = i
+			break
+		}
+	}
+	end := min(start+limit, len(entries))
+	listing := resource.Listing{Entries: entries[start:end], Complete: end == len(entries)}
+	if !listing.Complete {
+		listing.NextCursor = entries[end].Name
+	}
+	return listing
 }
