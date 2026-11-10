@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 12
+  revision: 13
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T11:30:00+01:00"
+  updated_at: "2026-11-10T11:55:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 12
-      reason: "Consumed analyses and the proposal draft are deleted; their facts are stated in place"
-      changes: ["Links to deleted analyses replaced by the fact or its new location"]
+    - revision: 13
+      reason: "User decision of 10.11.2026: ordinary commands must not be refused for mentioning a scheme, and scheme paths work as command arguments"
+      changes: ["G8.20 rewritten: detection by static argument words, http and https excluded, readable scheme arguments passed as read-only copies, writes only by standalone forms, `!` commands included, `bash.route-to-tools` switches it off", "G8.19 names the copy as the second permitted rewrite of shell text"]
 ---
 
 # 1. Scope and references
@@ -200,5 +200,10 @@ From the donor test audit of 02.11.2026, pi-workbench `core/*` at `bc7ce0e` and 
 - **G8.16** Terminal graphics (Sixel, kitty) are extracted before sanitisation and kept even on timeout or failure.
 - **G8.17** Non-interactive environment defaults: pager off, no prompts. `exec` cannot replace the supervisor. A grandchild holding stdout open does not block completion. Grandchildren are killed on timeout and abort.
 - **G8.18 Result shape.** A non-zero exit is an error result with details, not a thrown tool failure. A timeout is a warning state with one notice; cancellation is distinct from timeout. A pipeline ending in `head`/`tail` keeps the final-stage output. Late results never flush into a replacement session or branch.
-- **G8.19** The cwd may be a locatable URI (`skill://`, `local://`) and resolves to its backing path. A non-locatable or read-only scheme as cwd or redirect target fails explicitly. Shell text is never rewritten, except for SPEC-0013 placeholder substitution.
-- **G8.20 Scheme commands.** A standalone `ls`, `cat`, `rm`, `mv`, `cp` or `mkdir` (or a `>` redirect) whose path arguments use a registered non-locatable scheme (e.g. `rm secret://global/old-token`) runs in-process through the resource router with that provider's approval rules, and returns shell-like output and exit status. Any other command with such a path fails with an error naming the supported forms. Scheme paths in commands for an `ssh://` cwd fail explicitly.
+- **G8.19** The cwd may be a locatable URI (`skill://`, `local://`) and resolves to its backing path. A non-locatable or read-only scheme as cwd or redirect target fails explicitly. Shell text is never rewritten, except for SPEC-0013 placeholder substitution and the G8.20 argument copies.
+- **G8.20 Scheme paths in shell commands.** Applies to the `bash` tool and to user `!` commands; `bash.route-to-tools = false` switches all of it off.
+  - **Detection.** A scheme path is a static command word, or redirect target, that starts with `<scheme>://` for a registered non-locatable scheme other than `http` and `https`, which belong to the programs a command runs. A static word contains no expansion, substitution or glob; quotes and escapes are resolved first. Text inside another word, a heredoc or here-string body, an option value (`--from=…`), an assignment, any argument of `echo`, `printf` or `git`, and the pattern operand of `grep`, `rg`, `ag`, `sed`, `awk` and `jq` are never scheme paths. A command that mentions a scheme in any of those places runs unchanged. Paths the shell builds at run time are not recognized; this is not a sandbox.
+  - **Standalone forms.** One simple `ls`, `cat`, `rm` or `mkdir` with one scheme path, `mv` or `cp` between two scheme paths, or `word > path` runs in-process through the resource router with that provider's approval rules (e.g. `rm secret://global/old-token`) and returns shell-like output. `mv` between a scheme path and a local path is refused.
+  - **Arguments of other commands.** Each scheme path the router can read as a file is replaced by the path of a read-only copy of its raw content in session-private storage, removed at shutdown, so `cat docs://… | wc -l` and `diff job://a/log job://b/log` work. A line selector on the path selects the copied lines. A path that resolves to nothing is left for the shell to report. A directory, or content over 50 KiB without a selector, refuses the whole command before it runs and names the alternative.
+  - **Writes.** A scheme path as the target of `>`/`>>` or other output redirects, as an argument of `rm`, `mv`, `mkdir`, `rmdir`, `touch`, `tee`, `chmod`, `chown` or `truncate`, or as the destination of `cp`, `install` or `ln`, inside any command that is not a standalone form, refuses the whole command before it runs and names the standalone forms. Another program that writes to its argument changes only the copy.
+  - Scheme paths in commands for an `ssh://` cwd fail explicitly.

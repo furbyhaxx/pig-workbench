@@ -132,7 +132,22 @@ The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `wri
 
 A job also outlives the runtime that started it when that runtime dies without shutting down. To keep such a job from becoming an unsupervised process, each runtime claims a liveness lock for its generation under `$XDG_STATE_HOME/pig-workbench/jobs/`, records the pid and kernel start time of every job it starts, and the next start terminates the process groups whose owner lock is free — after rechecking the recorded pid against its start time, so a recycled pid is never signalled. Records of a live runtime are left untouched, including another session's.
 
-`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. In the TUI, `/workbench jobs` opens a panel: `enter` shows a job's output, `r` refreshes, `w` waits up to three seconds and `k` stops the job after one `y` confirmation; every action goes through the `jobs` tool's policy. Standalone `ls` and `cat` are routed for non-locatable scheme paths. The limited form `value > URI` sends one static shell word as content to the same supported control targets as `write`, including its confirmation rules; static quotes and escapes are recognized, but expansions and shell composition are refused when a scheme path is detected. This is not general shell redirection; paths constructed dynamically by the shell cannot always be recognized before execution. Scheme-path `rm`, `mv`, `cp` and `mkdir` dispatch declared provider operations without new permission prompts. Copy/move stay within one provider and require an absent destination; recursive operations are unsupported. Quoted static words are recognized, while pipes and compounds are rejected. Do not rely on this guard as shell sandboxing. Provider hashline editing and job panels remain pending.
+`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. In the TUI, `/workbench jobs` opens a panel: `enter` shows a job's output, `r` refreshes, `w` waits up to three seconds and `k` stops the job after one `y` confirmation; every action goes through the `jobs` tool's policy.
+
+### Scheme paths in shell commands
+
+Paths on non-locatable schemes (`job://`, `session://`, `cfg://`, `docs://`, contributed schemes) work in `bash` and in `!` editor commands:
+
+| Command | What happens |
+|---|---|
+| `ls session://self/`, `cat job://<id>/log` | Runs in-process through the scheme's provider |
+| `rm`, `mkdir`, `mv a b`, `cp a b` on scheme paths | Dispatches the provider's declared operation; copy and move stay within one provider and need an absent destination; nothing recursive |
+| `kill > job://<id>/ctl` | Sends the one word as content to a control target, with the `write` tool's confirmation rules |
+| `cat cfg://workbench/status \| wc -l`, `diff job://a/log job://b/log` | Each readable scheme path is replaced by a read-only copy (at most 50 KiB; add a line selector for more) |
+| `grep "agent://" src`, `curl https://…`, heredocs, `echo` text | Runs unchanged: text that mentions a scheme is not a path, and `http(s)` belongs to the program |
+| `… \| tee job://x`, `echo a >> cfg://…` | Refused before anything runs; writes need a standalone form |
+
+A scheme directory cannot be passed to another command; list it with a standalone `ls`. Only static words are recognized: a path the shell builds from a variable or substitution reaches the program as written. This is routing, not a sandbox. Set `bash.route-to-tools = false` to leave every command to the shell. Provider hashline editing remains pending.
 
 ## `ask_user`
 
