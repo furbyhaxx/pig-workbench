@@ -46,3 +46,41 @@ func TestManagerUnadmittedExternalReapRemainsOwned(t *testing.T) {
 		t.Fatalf("close hid unresolved cleanup: %v", err)
 	}
 }
+
+// TestManagerReportsUnknownWhenTheLeaderStatusWasLost pins the unknown state: a leader reaped
+// outside this package leaves no status, so the job is neither running for certain nor exited.
+func TestManagerReportsUnknownWhenTheLeaderStatusWasLost(t *testing.T) {
+	managerTestUnix(t)
+	manager, err := NewManager(ManagerOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := manager.Start(context.Background(), Spec{Command: []string{"sleep", "30"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	job, err := manager.job(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Hold the supervisor before its reap so the outside reap wins deterministically.
+	job.selectionMu.Lock()
+	pid := job.process.PID()
+	killErr := syscall.Kill(pid, syscall.SIGKILL)
+	var status syscall.WaitStatus
+	reaped, waitErr := syscall.Wait4(pid, &status, 0, nil)
+	job.selectionMu.Unlock()
+	if killErr != nil || waitErr != nil || reaped != pid {
+		t.Fatalf("external reap: kill=%v pid=%d err=%v", killErr, reaped, waitErr)
+	}
+	state := managerWait(t, manager, id)
+	if !state.Unknown || !state.Running || state.Stopping || state.Exit != nil || state.Error == "" {
+		t.Fatalf("state = %+v", state)
+	}
+	if listed := manager.List(); len(listed) != 1 || !listed[0].Unknown {
+		t.Fatalf("list = %+v", listed)
+	}
+	if err := manager.Close(); !errors.Is(err, ErrJobCleanupIncomplete) {
+		t.Fatalf("close hid the unresolved job: %v", err)
+	}
+}

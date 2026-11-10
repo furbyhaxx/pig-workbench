@@ -41,6 +41,8 @@ func (s *session) activityItems() []activityItem {
 		running, failed := 0, 0
 		for _, job := range s.jobs.List() {
 			switch {
+			case job.Unknown, job.FailedToStart:
+				failed++
 			case job.Running:
 				running++
 			case job.Cancelled:

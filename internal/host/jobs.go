@@ -110,9 +110,9 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		s.secrets.withhold(ctx, err)
 		return nil, errors.New("the secrets boundary is unavailable; the command was not run")
 	}
-	id, err := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
-	if err != nil {
-		return nil, err
+	id, startErr := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
+	if id == "" {
+		return nil, startErr
 	}
 	if s.jobRegistry != nil {
 		if pid, identity, ok := s.jobs.ProcessID(id); ok {
@@ -134,6 +134,10 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	s.jobMeta.values[id] = jobMetadata{Title: input.Title, Command: input.Command, Cwd: location.Cwd, LocationRevision: location.Revision, Started: time.Now()}
 	s.jobMeta.mu.Unlock()
+	if startErr != nil {
+		// No completion watcher starts: this error already tells the model.
+		return nil, fmt.Errorf("%w (job %s)", startErr, id)
+	}
 	if timeout > 0 {
 		err := s.supervisor.Start(func(lifetime context.Context) {
 			deadline, cancel := context.WithTimeout(lifetime, time.Duration(timeout*float64(time.Second)))
@@ -171,7 +175,7 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 			a.forgetJobRecord(s, id)
 		}
 	}
-	if state, err := s.jobs.Status(id); err == nil && state.Running {
+	if state, err := s.jobs.Status(id); err == nil && state.Active() {
 		a.watchJobCompletion(s, id)
 	}
 	return s.jobResult(id, jobs.StreamCombined, 0)
@@ -288,7 +292,7 @@ func (s *session) waitOutput(ctx context.Context, id string, stream jobs.Stream,
 		if err != nil {
 			return err
 		}
-		if len(data) > 0 || !state.Running {
+		if len(data) > 0 || !state.Active() {
 			return nil
 		}
 		select {
@@ -304,7 +308,7 @@ func (s *session) waitOutput(ctx context.Context, id string, stream jobs.Stream,
 func (s *session) waitAnyJob(ctx context.Context, output bool) (sdk.ToolResult, error) {
 	seen := map[string]int64{}
 	for _, state := range s.jobs.List() {
-		if !state.Running {
+		if !state.Active() {
 			continue
 		}
 		written, err := s.jobs.Written(state.ID)
@@ -326,7 +330,7 @@ func (s *session) waitAnyJob(ctx context.Context, output bool) (sdk.ToolResult, 
 				continue
 			}
 			written, _ := s.jobs.Written(id)
-			if !state.Running || output && written > seen[id] {
+			if !state.Active() || output && written > seen[id] {
 				return s.jobResult(id, jobs.StreamCombined, seen[id])
 			}
 		}
@@ -482,7 +486,7 @@ type jobList struct {
 }
 
 func newJobFacts(state jobs.JobState, metadata jobMetadata) jobFacts {
-	facts := jobFacts{ID: state.ID, Title: metadata.Title, Command: metadata.Command, Cwd: metadata.Cwd, State: jobLabel(state, metadata), Running: state.Running, Error: state.Error}
+	facts := jobFacts{ID: state.ID, Title: metadata.Title, Command: metadata.Command, Cwd: metadata.Cwd, State: jobLabel(state, metadata), Running: state.Active(), Error: state.Error}
 	if !metadata.Started.IsZero() {
 		facts.StartedAt = metadata.Started.Format(time.RFC3339)
 	}
@@ -518,17 +522,21 @@ func commandDir(base, name string) (string, error) {
 }
 
 func jobLabel(state jobs.JobState, metadata jobMetadata) string {
-	label := "running"
-	if !state.Running {
-		label = "exited"
+	switch {
+	case state.FailedToStart:
+		return "failedToStart"
+	case state.Unknown:
+		return "unknown"
+	case state.Stopping:
+		return "stopping"
+	case state.Running:
+		return "running"
+	case metadata.TimedOut:
+		return "timedOut"
+	case state.Cancelled:
+		return "cancelled"
 	}
-	if state.Cancelled {
-		label = "cancelled"
-	}
-	if metadata.TimedOut {
-		label = "timedOut"
-	}
-	return label
+	return "exited"
 }
 
 // jobRows lists the session's jobs for people and panels.
@@ -594,7 +602,7 @@ func (s *session) jobResult(id string, stream jobs.Stream, cursor int64) (sdk.To
 	}
 	s.jobMeta.mu.Lock()
 	metadata := s.jobMeta.values[id]
-	if _, ok := s.jobMeta.values[id]; ok && !state.Running {
+	if _, ok := s.jobMeta.values[id]; ok && !state.Active() {
 		observed := metadata
 		observed.Observed = true
 		s.jobMeta.values[id] = observed

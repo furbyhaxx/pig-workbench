@@ -47,6 +47,9 @@ func (*JobRetiredError) Unwrap() error { return ErrJobNotFound }
 // ErrJobRetired identifies a removed terminal state.
 var ErrJobRetired = &JobRetiredError{}
 
+// ErrFailedToStart reports a command that could not be launched; its ID stays answerable.
+var ErrFailedToStart = errors.New("job failed to start")
+
 // ErrManagerClosed means admission is closed.
 var ErrManagerClosed = errors.New("job manager is closed")
 
@@ -75,8 +78,15 @@ type JobState struct {
 	ID        string
 	Running   bool
 	Cancelled bool
-	Exit      *Exit
-	Error     string
+	// Stopping is set while a requested termination has not produced an exit yet.
+	Stopping bool
+	// FailedToStart marks a command that never ran; Error says why.
+	FailedToStart bool
+	// Unknown marks a job whose supervision ended without a leader status: whether it
+	// still runs is not known, so Running stays true and no exit is invented.
+	Unknown bool
+	Exit    *Exit
+	Error   string
 }
 
 type managedJob struct {
@@ -240,7 +250,17 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 	spec.Errors = streamWriter{track: streams, stderr: true}
 	process, err := StartProcess(spec)
 	if err != nil {
-		return "", err
+		// The reserved ID stays answerable as a terminal state with an empty log.
+		_ = m.logs.Append(id, nil)
+		job := &managedJob{sequence: sequence, state: JobState{ID: id, FailedToStart: true, Error: err.Error()}, done: make(chan struct{}), stop: make(chan struct{}), selected: true, err: err}
+		close(job.done)
+		m.mu.Lock()
+		m.jobs[id] = job
+		m.finished = append(m.finished, job)
+		retired := m.retireFinishedLocked()
+		m.mu.Unlock()
+		m.forgetRetired(retired)
+		return id, fmt.Errorf("%w: %w", ErrFailedToStart, err)
 	}
 	if err := m.logs.Append(id, nil); err != nil {
 		var cleanupErr error
@@ -393,6 +413,7 @@ func (m *Manager) closeUnobserved(process *Process, cause error) error {
 func (m *Manager) finishUnknown(job *managedJob, cancelled bool, err error) {
 	m.mu.Lock()
 	job.state.Cancelled = cancelled
+	job.state.Unknown = true
 	job.state.Error = err.Error()
 	job.err = err
 	close(job.done)
@@ -428,10 +449,20 @@ func (m *Manager) retiredLocked(id string) bool {
 	return sequence <= m.sequence
 }
 
-func cloneJobState(state JobState) JobState {
+// Active reports a job that is known to be running; an unknown job is not waited on.
+func (s JobState) Active() bool { return s.Running && !s.Unknown }
+
+// snapshot copies the job's state and derives Stopping from a pending stop request.
+func (j *managedJob) snapshot() JobState {
+	state := j.state
 	if state.Exit != nil {
 		exit := *state.Exit
 		state.Exit = &exit
+	}
+	if state.Running && !state.Unknown {
+		j.selectionMu.Lock()
+		state.Stopping = j.stopRequested
+		j.selectionMu.Unlock()
 	}
 	return state
 }
@@ -444,7 +475,7 @@ func (m *Manager) Status(id string) (JobState, error) {
 	if err != nil {
 		return JobState{}, err
 	}
-	return cloneJobState(job.state), nil
+	return job.snapshot(), nil
 }
 
 // List returns independent snapshots of every retained job, oldest admission first.
@@ -484,7 +515,7 @@ func (m *Manager) List() []JobState {
 	sort.Slice(jobs, func(i, j int) bool { return jobs[i].sequence < jobs[j].sequence })
 	states := make([]JobState, len(jobs))
 	for i, job := range jobs {
-		states[i] = cloneJobState(job.state)
+		states[i] = job.snapshot()
 	}
 	return states
 }
@@ -508,7 +539,7 @@ func (m *Manager) Wait(ctx context.Context, id string) (JobState, error) {
 		// into a missing-job error.
 		m.mu.Lock()
 		defer m.mu.Unlock()
-		return cloneJobState(job.state), nil
+		return job.snapshot(), nil
 	}
 }
 
@@ -584,6 +615,9 @@ func (m *Manager) Cancel(id string) error {
 	if err != nil {
 		return err
 	}
+	if job.process == nil {
+		return fmt.Errorf("%w: %s", ErrFailedToStart, job.state.Error)
+	}
 	job.requestStop()
 	<-job.done
 	return job.err
@@ -606,14 +640,16 @@ func (m *Manager) Close() error {
 	}
 	m.mu.Unlock()
 	for _, job := range jobs {
-		job.requestStop()
+		if job.process != nil {
+			job.requestStop()
+		}
 	}
 	m.owned.Wait()
 	sort.Slice(jobs, func(i, j int) bool { return jobs[i].state.ID < jobs[j].state.ID })
 	m.mu.Lock()
 	failures := append([]error(nil), m.admissionErrors...)
 	for _, job := range jobs {
-		if job.err != nil {
+		if job.err != nil && !job.state.FailedToStart {
 			failures = append(failures, fmt.Errorf("job %s: %w", job.state.ID, job.err))
 		}
 	}

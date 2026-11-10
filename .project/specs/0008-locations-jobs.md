@@ -5,15 +5,15 @@ document:
   title: "Working locations, SSH, worktrees and jobs"
   description: "Location leases, safe remote execution, shell process ownership, logs and unified job controls"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-10T19:30:00+01:00"
+  updated_at: "2026-11-10T18:18:24+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "User approved breaking the jobs result envelope (10.11.2026)"
-      changes: ["§6: typed camelCase list and single-job results with an explicit omitted count"]
+    - revision: 15
+      reason: "Name the reported job states"
+      changes: ["§6: the state fact lists stopping, failedToStart and unknown; a failed start keeps a retained row"]
 ---
 
 # 1. Scope and references
@@ -113,7 +113,7 @@ reserved → starting → running → stopping → exited
                     └→ failedToStart
 running/starting --lost ownership evidence--> unknown
 ```
-Terminal reason separately records normal, nonzeroExit, killed, timedOut, cancelled or interrupted. ExitCode and signal remain nullable. No invented exit code 0 for a lost process.
+The `state` fact is one of `running`, `stopping`, `exited`, `cancelled`, `timedOut`, `failedToStart` or `unknown`; `reserved` and `starting` are internal and never reported. A command that fails to start keeps its job ID as a retained `failedToStart` row with its error. `unknown` reports `running: false` and is never waited on. Terminal reason separately records normal, nonzeroExit, killed, timedOut, cancelled or interrupted. ExitCode and signal remain nullable. No invented exit code 0 for a lost process.
 
 `jobs` action schema:
 | Action | Arguments/defaults | Result |

@@ -612,3 +612,21 @@ func TestLiveJobsWaitWithoutIDReturnsTheFirstJobThatEndsOrWrites(t *testing.T) {
 		t.Errorf("stream needs an id: %q", results[7])
 	}
 }
+
+// TestLiveACommandThatCannotStartIsListedAsFailedToStart pins the failedToStart row end to end:
+// one argument beyond the kernel's limit makes exec fail, so the shell never ran.
+func TestLiveACommandThatCannotStartIsListedAsFailedToStart(t *testing.T) {
+	tooLong := ": " + strings.Repeat("x", 200<<10)
+	results := runScripted(t, t.TempDir(), "bash,jobs",
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": tooLong, "title": "too long"}}
+		},
+		func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "list"}} },
+	)
+	if !strings.Contains(results[0], "job failed to start") {
+		t.Errorf("the start failure was not reported: %.300q", results[0])
+	}
+	if !strings.Contains(results[1], `"state":"failedToStart"`) || !strings.Contains(results[1], `"title":"too long"`) || !strings.Contains(results[1], `"running":false`) {
+		t.Errorf("the failed start is not listed: %.600s", results[1])
+	}
+}
