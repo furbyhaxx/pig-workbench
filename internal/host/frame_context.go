@@ -482,6 +482,9 @@ func (a *app) collectContextFrames(ctx sdk.Context, data map[string]any) (any, e
 			result["workbenchIncompleteInstructions"] = incomplete
 		}
 	}
+	if options, ok := data["systemPromptOptions"].(map[string]any); ok {
+		s.skills.setHost(decodePromptOptions(options).Skills)
+	}
 	if enabled.Value == true {
 		if options, ok := data["systemPromptOptions"].(map[string]any); ok {
 			options["contextFiles"] = []any{}

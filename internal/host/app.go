@@ -320,6 +320,9 @@ func (a *app) start(ctx sdk.Context, _ map[string]any) (any, error) {
 	}, persist: func(loaded, declined []string) error {
 		return ctx.AppendEntry("pig-workbench.skills", map[string]any{"schemaVersion": 1, "loaded": loaded, "declined": declined})
 	}}
+	if options, err := ctx.GetSystemPromptOptions(); err == nil {
+		s.skills.setHost(options.Skills)
+	}
 	restoreSkills(ctx, s.skills)
 	if err := restoreDisplaySchemas(ctx, s); err != nil {
 		ctx.Notify(noticeText("Retained display schemas were not restored: "+err.Error(), 0), "warning")

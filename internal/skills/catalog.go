@@ -29,11 +29,43 @@ type Catalog struct {
 	Skills []Skill
 }
 
+// Source is a skill another catalog already discovered: its name, routing text and SKILL.md.
+type Source struct {
+	Name        string
+	Description string
+	File        string
+}
+
 // Scan walks each root for SKILL.md. A skills/ child of a skill is a nested skill.
-func Scan(roots []string) (Catalog, error) {
+func Scan(roots []string) (Catalog, error) { return Build(nil, roots) }
+
+// Build merges discovered sources with a walk of roots; the first skill of a name wins and sources
+// come first. A source keeps its discovered name and description; its skills/ children are nested skills.
+func Build(sources []Source, roots []string) (Catalog, error) {
 	var catalog Catalog
 	seen := map[string]bool{}
 	var found []Skill
+	for _, source := range sources {
+		dir := filepath.Dir(source.File)
+		skill, err := readSkill(source.File, filepath.Dir(dir))
+		if err != nil {
+			continue
+		}
+		skill.Parent = ""
+		if source.Name != "" {
+			skill.Name = source.Name
+		}
+		if source.Description != "" {
+			skill.Description = source.Description
+		}
+		found = append(found, skill)
+		children, _ := filepath.Glob(filepath.Join(dir, "skills", "*", "SKILL.md"))
+		for _, child := range children {
+			if nested, err := readSkill(child, filepath.Dir(dir)); err == nil {
+				found = append(found, nested)
+			}
+		}
+	}
 	for _, root := range roots {
 		info, err := os.Stat(root)
 		if err != nil || !info.IsDir() {
@@ -54,10 +86,22 @@ func Scan(roots []string) (Catalog, error) {
 			return catalog, err
 		}
 	}
+	// A nested skill names its parent by the parent's catalog name, which can differ from the directory.
+	parents := map[string]string{}
+	for _, skill := range found {
+		if skill.Parent == "" {
+			if _, ok := parents[filepath.Clean(skill.Dir)]; !ok {
+				parents[filepath.Clean(skill.Dir)] = skill.Name
+			}
+		}
+	}
 	for _, pass := range []bool{false, true} {
 		for _, skill := range found {
 			if (skill.Parent != "") != pass {
 				continue
+			}
+			if name, ok := parents[filepath.Dir(filepath.Dir(skill.Dir))]; ok && pass {
+				skill.Parent = name
 			}
 			if seen[skill.Name] && pass {
 				skill.Name = skill.Parent + "/" + skill.Name

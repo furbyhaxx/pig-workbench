@@ -1433,3 +1433,40 @@ func TestLiveUserPromptTemplateIsServedAndAFailingOneKeepsPiGsPrompt(t *testing.
 		}
 	})
 }
+
+func TestLiveUserLevelSkillIsListedAndLoadsThroughTheSkillScheme(t *testing.T) {
+	root := t.TempDir()
+	for name, front := range map[string]string{
+		"user-wide": "description: a skill from the agent directory\n",
+		"hand-only": "description: only the user starts this\ndisable-model-invocation: true\n",
+	} {
+		dir := filepath.Join(root, "agent", "skills", name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: "+name+"\n"+front+"---\nbody of "+name+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	results, _ := runScriptedRequests(t, root, "ls,read", "", nil,
+		func([]string) scriptedCall { return scriptedCall{tool: "ls", args: map[string]any{"path": "skill://"}} },
+		func([]string) scriptedCall {
+			return scriptedCall{tool: "read", args: map[string]any{"path": "skill://user-wide"}}
+		},
+		func([]string) scriptedCall {
+			return scriptedCall{tool: "read", args: map[string]any{"path": "skill://hand-only"}}
+		},
+	)
+	if len(results) != 3 {
+		t.Fatalf("results = %q", results)
+	}
+	if !strings.Contains(results[0], "file user-wide") || strings.Contains(results[0], "hand-only") {
+		t.Fatalf("the listing must name the agent-directory skill and leave out the one the model may not invoke:\n%s", results[0])
+	}
+	if !strings.Contains(results[1], "body of user-wide") {
+		t.Fatalf("the user-level skill did not load:\n%s", results[1])
+	}
+	if strings.Contains(results[2], "body of hand-only") {
+		t.Fatalf("a skill with disable-model-invocation loaded:\n%s", results[2])
+	}
+}

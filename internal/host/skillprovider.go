@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -25,14 +24,35 @@ type skillState struct {
 	order    []string
 	touched  []string
 	roots    func() []string
+	host     []skills.Source
 	persist  func(loaded, declined []string) error
+}
+
+// setHost retains PiG's discovered skills that the model may invoke; they lead the catalog.
+func (s *skillState) setHost(discovered []sdk.SystemPromptSkill) {
+	if s == nil {
+		return
+	}
+	sources := make([]skills.Source, 0, len(discovered))
+	for _, skill := range discovered {
+		if skill.DisableModelInvocation || skill.FilePath == "" {
+			continue
+		}
+		sources = append(sources, skills.Source{Name: skill.Name, Description: skill.Description, File: skill.FilePath})
+	}
+	s.mu.Lock()
+	s.host = sources
+	s.mu.Unlock()
 }
 
 func (s *skillState) catalog() (skills.Catalog, error) {
 	if s == nil || s.roots == nil {
 		return skills.Catalog{}, errors.New("skill catalog is unavailable")
 	}
-	return skills.Scan(s.roots())
+	s.mu.Lock()
+	host := slices.Clone(s.host)
+	s.mu.Unlock()
+	return skills.Build(host, s.roots())
 }
 
 type skillProvider struct{ source func() (*session, bool) }
@@ -193,7 +213,7 @@ func (p skillProvider) unload(s *session, uri, content string) ([]string, error)
 			continue
 		}
 		for _, skill := range catalog.Skills {
-			if skill.Parent != "" && skill.Parent == filepath.Base(parent.Dir) && s.skills.loaded[skill.Name] && !slices.Contains(withdrawn, skill.Name) {
+			if skill.Parent != "" && skill.Parent == parent.Name && s.skills.loaded[skill.Name] && !slices.Contains(withdrawn, skill.Name) {
 				withdrawn = append(withdrawn, skill.Name)
 			}
 		}

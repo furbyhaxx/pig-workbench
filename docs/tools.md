@@ -33,6 +33,8 @@ Builtin schemes include `file://`, `http://`, `https://`, `local://`, `cfg://`, 
 
 A line selector also works on a name-only URI of a Workbench scheme (`skill://name:10-40`); on `skill://` it shows that range without loading the skill.
 
+`skill://` holds every skill PiG discovered that the model may invoke (a skill with `disable-model-invocation: true` is left out), followed by `.agents/skills` and `.pig/skills` of the working location. The first skill of a name wins. `read skill://<name>` loads it, `ls skill://loaded/` shows the loaded set.
+
 Every scheme, builtin or contributed, has a guide page at `docs://workbench/schemes/<scheme>`; `ls docs://workbench/schemes/` lists them. An empty container lists as `(empty)`.
 
 Reading a directory-like resource (`session://self`, `docs://workbench/`, `skill://`, `job://`, a registered provider's directory) returns the same paged listing view a local directory does; a provider only needs to implement listing.

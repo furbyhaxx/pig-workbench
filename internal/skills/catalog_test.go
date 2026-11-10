@@ -3,6 +3,7 @@ package skills
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -90,5 +91,40 @@ func TestNestedSkillCollidingWithTopLevelNameIsQualifiedByParent(t *testing.T) {
 	}
 	if top, err := Find(catalog, "beta"); err != nil || top.Description != "top beta" {
 		t.Fatalf("top-level beta lost: %+v %v", top, err)
+	}
+}
+
+func TestBuildListsDiscoveredSourcesFirstWithTheirNestedSkills(t *testing.T) {
+	home, project := t.TempDir(), t.TempDir()
+	write := func(path, text string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(filepath.Join(home, "rust-dir", "SKILL.md"), "---\nname: ignored\ndescription: from the file\nwhen:\n  files: [\"Cargo.toml\"]\n---\nrust body\n")
+	write(filepath.Join(home, "rust-dir", "skills", "macros", "SKILL.md"), "---\nname: macros\n---\nmacro body\n")
+	write(filepath.Join(project, "rust", "SKILL.md"), "---\nname: rust\n---\nproject copy\n")
+	write(filepath.Join(project, "local", "SKILL.md"), "---\nname: local\n---\nlocal body\n")
+	catalog, err := Build([]Source{{Name: "rust", Description: "discovered", File: filepath.Join(home, "rust-dir", "SKILL.md")}, {Name: "gone", File: filepath.Join(home, "missing", "SKILL.md")}}, []string{project})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, skill := range catalog.Skills {
+		names = append(names, skill.Name)
+	}
+	if got := strings.Join(names, ","); got != "rust,local,macros" {
+		t.Fatalf("catalog = %s, want the discovered skill first, the project extra, then the nested skill", got)
+	}
+	rust, _ := Find(catalog, "rust")
+	if rust.Description != "discovered" || rust.Body != "rust body\n" || len(rust.WhenFiles) != 1 || rust.Parent != "" {
+		t.Fatalf("rust = %+v, want the discovered name and description with the file's body and conditions", rust)
+	}
+	if macros, _ := Find(catalog, "macros"); macros.Parent != "rust" {
+		t.Fatalf("nested parent = %q", macros.Parent)
 	}
 }
