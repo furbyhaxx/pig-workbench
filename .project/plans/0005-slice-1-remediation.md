@@ -5,15 +5,15 @@ document:
   title: "Slice 1 remediation: close the review findings before the slice exit"
   description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 5
+  revision: 6
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T15:10:00+01:00"
+  updated_at: "2026-11-10T17:00:48+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 5
-      reason: "User decision 10.11.2026: no file watcher in Slice 1; instruction changes are found at boundaries"
-      changes: ["Decision row and area C: watcher settings are removed, not wired"]
+    - revision: 6
+      reason: "Area E classification of the settings that are still inert"
+      changes: ["Table of 58 keys: 26 to wire with owner area, 32 not shown with the owning plan"]
 ---
 
 # 1. Outcome
@@ -113,6 +113,32 @@ Tests: listings with 50 sessions, 50 peers and 50 skills page correctly.
 Current: 65 of 100 catalog keys have `Application = "unavailable"` (`internal/config/catalog.go`). They validate, save and are shown.
 
 Change: classify all 65 in a table in this plan (wired here, already consumed but mislabelled, feature not built). Wire each key whose feature exists, in the area that owns it; the groups not owned elsewhere (`read.*`, `edit.snapshot.*`, `guides.*`, `storage.*`, `projects.*`, `context.timezone`, `prompt.template`, `secrets.env-injection`, `activity.*`) are wired here. A key whose feature is not built is **not shown**: absent from the settings panel, `/workbench settings catalog`, `cfg://` and the docs. A value for such a key in an existing `Workbench.toml` is preserved on save and ignored, as for any unknown key. A test fails when a shown key has no consumer.
+
+### Classification (58 keys still `unavailable` at `fd04522`)
+
+Seven of the 65 were wired in areas A–C (`bash.route-to-tools`, `frames.display.*`, `instructions.boundary`, `instructions.updates.self-edits`) and the two watcher keys were removed. None of the remaining keys is consumed but mislabelled: a search for each key outside the catalog finds only validation and one display line.
+
+| Keys | Class | Owner |
+|---|---|---|
+| `read.concurrency`, `read.output-max-columns`, `read.summarize.min-body-lines`, `read.summarize.min-comment-lines`, `read.summarize.prose` | wire | E |
+| `edit.snapshot.max-paths`, `max-versions`, `max-bytes`, `max-file-bytes` | wire | E |
+| `guides.enabled`, `guides.max-bytes`, `guides.disabled` | wire | E |
+| `storage.finished-retention-days` | wire | E |
+| `projects.offer-registration`, `projects.storage-links` | wire | E |
+| `context.timezone`, `prompt.template`, `secrets.env-injection`, `activity.replace-working-indicator` | wire | E |
+| `jobs.yield-after-ms`, `termination-grace-ms`, `max-finished`, `log-bytes`, `session-log-bytes`, `raw-logs` | wire | G |
+| `skills.conditions` | wire | F |
+| `edit.model-repair.enabled` | not shown: model-assisted repair is not built | PLAN-0003 W1 |
+| `read.query.default-rows`, `max-rows`, `timeout-ms` | not shown: no query adapter | PLAN-0003 W2 |
+| `locations.worktree-parent`, `locations.ssh-host-write` | not shown: no worktrees or SSH | PLAN-0003 W3 |
+| `storage.out-retention-days`, `docs.source-versions-kept`, `docs.source-paths` | not shown: no `out://`, no PiG source docs | PLAN-0003 W4 |
+| `instructions.agents-md-reminder` | not shown: module reminder is not built | PLAN-0003 W7 |
+| `ask.history.*` (2), `answer.*` (2), `tldr.*` (2), `sessions.broadcast`, `coordinator.*` (9) | not shown: features not built | PLAN-0003 W6 |
+| `ask.auto-submit`, `ask.confirm-dismiss-when-dirty`, `ask.present-single-as-multi` | not shown: they configure the questionnaire panel; Slice 1 asks through native dialogs | PLAN-0004 C1–C3 |
+| `statusline.mode`, `statusline.path-style` | not shown: statusline modes are chrome | PLAN-0004 C3 |
+| `frames.role` | not shown: no native role projection on stock PiG | PLAN-0004 C4 |
+
+26 keys are wired, 32 are not shown. A key in the wire class that turns out to have no feature behind it moves to not shown with a row here. `TestLiveCatalogSettingsHaveBehavioralConsumers` already requires a behavioral test per live key; area E adds the rule that every shown key is live.
 
 ## F. Skills
 
