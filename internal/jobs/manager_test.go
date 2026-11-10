@@ -653,3 +653,43 @@ func TestManagerRetentionConcurrentAccess(t *testing.T) {
 		}
 	}
 }
+
+// TestManagerForegroundCommandsDoNotRetireBackgroundJobs pins the separate retention windows.
+func TestManagerForegroundCommandsDoNotRetireBackgroundJobs(t *testing.T) {
+	manager := newTestManager(t, ManagerOptions{MaxFinished: 2, MaxForeground: 3})
+	background, err := manager.Start(context.Background(), Spec{Command: []string{"sh", "-c", "echo kept"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	managerWait(t, manager, background)
+	var foreground []string
+	for range 30 {
+		id, err := manager.StartForeground(context.Background(), Spec{Command: []string{"true"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		managerWait(t, manager, id)
+		foreground = append(foreground, id)
+	}
+	if data, _, _, _, err := manager.Output(background, 0, 100); err != nil || string(data) != "kept\n" {
+		t.Fatalf("30 foreground commands retired the background job: %q %v", data, err)
+	}
+	if listed := manager.List(); len(listed) != 4 || manager.Retired() != 27 {
+		t.Fatalf("retained %d states, retired %d", len(listed), manager.Retired())
+	}
+	if _, err := manager.Status(foreground[0]); !errors.Is(err, ErrJobRetired) {
+		t.Fatalf("the oldest foreground command is still retained: %v", err)
+	}
+	// A promoted command joins the background window and can push out the oldest there.
+	for _, id := range foreground[28:] {
+		if err := manager.Promote(id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := manager.Status(background); !errors.Is(err, ErrJobRetired) {
+		t.Fatalf("promotion did not apply the background cap: %v", err)
+	}
+	if _, err := manager.Status(foreground[29]); err != nil {
+		t.Fatal(err)
+	}
+}

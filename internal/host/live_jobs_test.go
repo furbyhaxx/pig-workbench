@@ -630,3 +630,34 @@ func TestLiveACommandThatCannotStartIsListedAsFailedToStart(t *testing.T) {
 		t.Errorf("the failed start is not listed: %.600s", results[1])
 	}
 }
+
+// TestLiveThirtyForegroundCommandsKeepAFinishedBackgroundJob pins the separate retention: quick
+// commands must not retire a finished background job or its log.
+func TestLiveThirtyForegroundCommandsKeepAFinishedBackgroundJob(t *testing.T) {
+	var id string
+	steps := []scriptStep{
+		func([]string) scriptedCall {
+			return scriptedCall{"bash", map[string]any{"command": "echo background-output", "background": true}}
+		},
+		func(results []string) scriptedCall {
+			if match := regexp.MustCompile(`Job ([0-9a-f]{32}):`).FindStringSubmatch(results[0]); match != nil {
+				id = match[1]
+			}
+			return scriptedCall{"jobs", map[string]any{"action": "wait", "id": id, "timeout_seconds": 20}}
+		},
+	}
+	for range 30 {
+		steps = append(steps, func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": "true"}} })
+	}
+	steps = append(steps,
+		func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "output", "id": id}} },
+		func([]string) scriptedCall { return scriptedCall{"jobs", map[string]any{"action": "list"}} },
+	)
+	results := runScripted(t, t.TempDir(), "bash,jobs", steps...)
+	if id == "" || !strings.Contains(results[32], "background-output") {
+		t.Fatalf("the background job's log was retired by foreground commands: %q", results[32])
+	}
+	if !strings.Contains(results[33], `"id":"`+id+`"`) || !strings.Contains(results[33], `"omitted":20`) {
+		t.Errorf("list should keep the background job and omit only foreground commands: %.400s", results[33])
+	}
+}

@@ -110,7 +110,11 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		s.secrets.withhold(ctx, err)
 		return nil, errors.New("the secrets boundary is unavailable; the command was not run")
 	}
-	id, startErr := s.jobs.Start(work, jobs.Spec{Command: []string{shell, "-c", command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
+	start := s.jobs.StartForeground
+	if input.Background {
+		start = s.jobs.Start
+	}
+	id, startErr := start(work, jobs.Spec{Command: []string{shell, "-c", command}, Dir: location.Cwd, Env: environment, Stdin: input.Interactive})
 	if id == "" {
 		return nil, startErr
 	}
@@ -173,6 +177,8 @@ func (a *app) bash(ctx sdk.Context, params map[string]any) (any, error) {
 		}
 		if waitErr == nil {
 			a.forgetJobRecord(s, id)
+		} else if err := s.jobs.Promote(id); err != nil {
+			return nil, err
 		}
 	}
 	if state, err := s.jobs.Status(id); err == nil && state.Active() {

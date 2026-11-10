@@ -22,6 +22,7 @@ const (
 	defaultGrace           = 2 * time.Second
 	defaultMaxActive       = 32
 	defaultMaxFinished     = 20
+	defaultMaxForeground   = 10
 	identityPrefixBytes    = 8
 	identitySequenceWidth  = 16
 )
@@ -61,13 +62,16 @@ var ErrJobCleanupIncomplete = errors.New("job cleanup is incomplete; child or de
 
 // ManagerOptions configures output limits, background process ownership, and how many
 // terminal states stay readable. Zero fields use the defaults: 10 MiB, 100 MiB, two
-// seconds, 32 active jobs, and 20 finished jobs.
+// seconds, 32 active jobs, 20 finished background jobs and 10 finished foreground commands.
 type ManagerOptions struct {
 	LogBytes        int64
 	SessionLogBytes int64
 	Grace           time.Duration
 	MaxActive       int
 	MaxFinished     int
+	// MaxForeground bounds finished foreground commands separately, so quick commands never
+	// retire a finished background job. Default 10.
+	MaxForeground int
 }
 
 // JobState is a snapshot of a managed job and its terminal facts.
@@ -93,6 +97,7 @@ type managedJob struct {
 	process       *Process
 	streams       *streamTrack
 	sequence      uint64
+	foreground    bool
 	state         JobState
 	done          chan struct{}
 	stop          chan struct{}
@@ -124,6 +129,7 @@ type Manager struct {
 	grace           time.Duration
 	maxActive       int
 	maxFinished     int
+	maxForeground   int
 	active          int
 	closed          bool
 	jobs            map[string]*managedJob
@@ -140,7 +146,7 @@ type Manager struct {
 
 // NewManager creates a background supervisor with independently owned logs.
 func NewManager(options ManagerOptions) (*Manager, error) {
-	if options.LogBytes < 0 || options.SessionLogBytes < 0 || options.Grace < 0 || options.MaxActive < 0 || options.MaxFinished < 0 {
+	if options.LogBytes < 0 || options.SessionLogBytes < 0 || options.Grace < 0 || options.MaxActive < 0 || options.MaxFinished < 0 || options.MaxForeground < 0 {
 		return nil, errors.New("job manager options must not be negative")
 	}
 	if options.LogBytes == 0 {
@@ -158,6 +164,9 @@ func NewManager(options ManagerOptions) (*Manager, error) {
 	if options.MaxFinished == 0 {
 		options.MaxFinished = defaultMaxFinished
 	}
+	if options.MaxForeground == 0 {
+		options.MaxForeground = defaultMaxForeground
+	}
 	prefix, err := newIdentityPrefix()
 	if err != nil {
 		return nil, err
@@ -167,13 +176,14 @@ func NewManager(options ManagerOptions) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		logs:        logs,
-		grace:       options.Grace,
-		maxActive:   options.MaxActive,
-		maxFinished: options.MaxFinished,
-		prefix:      prefix,
-		jobs:        make(map[string]*managedJob),
-		closeDone:   make(chan struct{}),
+		logs:          logs,
+		grace:         options.Grace,
+		maxActive:     options.MaxActive,
+		maxFinished:   options.MaxFinished,
+		maxForeground: options.MaxForeground,
+		prefix:        prefix,
+		jobs:          make(map[string]*managedJob),
+		closeDone:     make(chan struct{}),
 	}, nil
 }
 
@@ -211,6 +221,31 @@ func (m *Manager) admitIdentityLocked() (string, uint64, error) {
 // Context cancellation only affects admission; it does not cancel an admitted job.
 // The job's output goes exclusively to the manager's log store.
 func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
+	return m.start(ctx, spec, false)
+}
+
+// StartForeground starts a job whose caller waits for it. Its finished state is retained in a
+// separate, smaller window until Promote moves it to the background window.
+func (m *Manager) StartForeground(ctx context.Context, spec Spec) (string, error) {
+	return m.start(ctx, spec, true)
+}
+
+// Promote moves a foreground job to the background retention window.
+func (m *Manager) Promote(id string) error {
+	m.mu.Lock()
+	job, err := m.lookupLocked(id)
+	if err != nil {
+		m.mu.Unlock()
+		return err
+	}
+	job.foreground = false
+	retired := m.retireFinishedLocked()
+	m.mu.Unlock()
+	m.forgetRetired(retired)
+	return nil
+}
+
+func (m *Manager) start(ctx context.Context, spec Spec, foreground bool) (string, error) {
 	m.mu.Lock()
 	if m.closed {
 		m.mu.Unlock()
@@ -252,7 +287,7 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 	if err != nil {
 		// The reserved ID stays answerable as a terminal state with an empty log.
 		_ = m.logs.Append(id, nil)
-		job := &managedJob{sequence: sequence, state: JobState{ID: id, FailedToStart: true, Error: err.Error()}, done: make(chan struct{}), stop: make(chan struct{}), selected: true, err: err}
+		job := &managedJob{sequence: sequence, foreground: foreground, state: JobState{ID: id, FailedToStart: true, Error: err.Error()}, done: make(chan struct{}), stop: make(chan struct{}), selected: true, err: err}
 		close(job.done)
 		m.mu.Lock()
 		m.jobs[id] = job
@@ -280,7 +315,7 @@ func (m *Manager) Start(ctx context.Context, spec Spec) (string, error) {
 		cleanupErr, unresolved = m.cleanupAdmission(process, id, admissionErr)
 		return "", cleanupErr
 	}
-	job := &managedJob{process: process, streams: streams, sequence: sequence, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
+	job := &managedJob{process: process, streams: streams, sequence: sequence, foreground: foreground, state: JobState{ID: id, Running: true}, done: make(chan struct{}), stop: make(chan struct{})}
 	m.jobs[id] = job
 	admitted = true
 	go m.supervise(job)
@@ -352,16 +387,33 @@ func (m *Manager) supervise(job *managedJob) {
 // retireFinishedLocked drops the oldest terminal states beyond the cap and returns them,
 // so their log metadata can be forgotten now that no producer remains.
 func (m *Manager) retireFinishedLocked() []*managedJob {
-	excess := len(m.finished) - m.maxFinished
-	if excess <= 0 {
+	background, foreground := -m.maxFinished, -m.maxForeground
+	for _, job := range m.finished {
+		if job.foreground {
+			foreground++
+		} else {
+			background++
+		}
+	}
+	if background <= 0 && foreground <= 0 {
 		return nil
 	}
-	retired := m.finished[:excess]
-	m.retired += excess
-	m.finished = append([]*managedJob(nil), m.finished[excess:]...)
-	for _, job := range retired {
-		delete(m.jobs, job.state.ID)
+	var retired, kept []*managedJob
+	for _, job := range m.finished {
+		excess := &background
+		if job.foreground {
+			excess = &foreground
+		}
+		if *excess > 0 {
+			*excess--
+			retired = append(retired, job)
+			delete(m.jobs, job.state.ID)
+			continue
+		}
+		kept = append(kept, job)
 	}
+	m.retired += len(retired)
+	m.finished = kept
 	return retired
 }
 
