@@ -238,21 +238,35 @@ func TestLiveSchemeCommandRefusesQuotedComposition(t *testing.T) {
 	}
 }
 
-func TestLiveQuotedSchemeCommandDoesNotRunComposedShell(t *testing.T) {
+func TestLiveBashRunsCommandsThatMentionASchemeAndPassesSchemePathsAsFiles(t *testing.T) {
 	root := t.TempDir()
-	results := runScripted(t, root, "bash",
-		func([]string) scriptedCall {
-			return scriptedCall{"bash", map[string]any{"command": `cat 'sess'ion://self/title`}}
-		},
-		func([]string) scriptedCall {
-			return scriptedCall{"bash", map[string]any{"command": `cat 'sess'ion://self/title | tee ` + filepath.Join(root, "should-not-exist")}}
-		},
-	)
-	if len(results) != 2 || !strings.Contains(results[0], "session://self/title") || !strings.Contains(results[1], "standalone") {
-		t.Fatalf("quoted scheme command routing failed: %v", results)
+	if err := os.WriteFile(filepath.Join(root, "notes.txt"), []byte("see agent://peer/inbox\nplain\n"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(root, "should-not-exist")); !os.IsNotExist(err) {
-		t.Fatalf("composed shell command ran: %v", err)
+	web := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "fetched-by-curl") }))
+	defer web.Close()
+	cases := []struct{ command, want string }{
+		{`cat 'sess'ion://self/title`, "session://self/title"},
+		{`curl -s ` + web.URL + `/page`, "fetched-by-curl"},
+		{`grep -c "agent://" notes.txt`, "1"},
+		{"cat <<'EOF'\nagent://peer/inbox and docs://workbench/\nEOF", "agent://peer/inbox and docs://workbench/"},
+		{`sed -e 's#agent://#x://#' notes.txt`, "see x://peer/inbox"},
+		{`P=agent; grep -c "$P://" notes.txt`, "1"},
+		{`cat cfg://workbench/status | wc -c | grep -vq '^0$' && test -r cfg://workbench/status && echo piped-ok`, "piped-ok"},
+		{`cat cfg://workbench/status | tee cfg://workbench/copy`, "standalone"},
+	}
+	steps := make([]scriptStep, len(cases))
+	for i, c := range cases {
+		steps[i] = func([]string) scriptedCall { return scriptedCall{"bash", map[string]any{"command": c.command}} }
+	}
+	results := runScripted(t, root, "bash", steps...)
+	if len(results) != len(cases) {
+		t.Fatalf("got %d results: %v", len(results), results)
+	}
+	for i, c := range cases {
+		if !strings.Contains(results[i], c.want) || c.want != "standalone" && strings.Contains(results[i], "standalone") {
+			t.Errorf("%q: %s", c.command, results[i])
+		}
 	}
 }
 
