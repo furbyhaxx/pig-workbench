@@ -235,7 +235,7 @@ func (a *app) read(ctx sdk.Context, params map[string]any) (any, error) {
 	}
 	if !complete && len(targets) > 1 && budget.Bytes >= 64 && budget.Lines > 0 {
 		content.WriteString("\nBatch incomplete; consult per-resource continuation in Details.")
-	} else if !complete && budget.Bytes >= 256 && budget.Lines > 0 && !strings.Contains(content.String(), "selector :") {
+	} else if !complete && len(targets) == 1 && len(facts) == 1 && budget.Bytes >= 256 && budget.Lines > 0 && !strings.Contains(content.String(), "selector :") {
 		// A page that could not name its own continuation still must not end silently.
 		if page, ok := facts[0].(resource.Page); ok && page.Continuation != "" {
 			content.WriteString("\nIncomplete; continue with " + page.Continuation)
