@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -56,7 +57,7 @@ type sessionTarget struct {
 	byID bool
 	id   string
 	file string
-	// frame is the frame ID below frames/.
+	// frame is the entry name below frames/ or instructions/.
 	frame string
 	depth int
 }
@@ -74,7 +75,7 @@ func parseSessionTarget(parts []string) (sessionTarget, error) {
 			return t, nil
 		}
 	}
-	if len(parts) > 3 || len(parts) == 3 && parts[1] != "frames" {
+	if len(parts) > 3 || len(parts) == 3 && parts[1] != "frames" && parts[1] != "instructions" {
 		return t, resource.ErrNotFound
 	}
 	t.id, t.depth = parts[0], len(parts)
@@ -166,6 +167,21 @@ func (p sessionProvider) Stat(ctx context.Context, uri string) (resource.StatRes
 		}
 		return resource.StatResult{}, resource.ErrNotFound
 	}
+	if t.file == "instructions" {
+		entries, err := p.instructionEntries(host, t.id)
+		if err != nil {
+			return resource.StatResult{}, err
+		}
+		if t.depth == 2 {
+			return resource.StatResult{URI: uri, Kind: resource.EntryDir}, nil
+		}
+		for _, entry := range entries {
+			if entry.Name == t.frame {
+				return resource.StatResult{URI: uri, Kind: entry.Kind}, nil
+			}
+		}
+		return resource.StatResult{}, resource.ErrNotFound
+	}
 	if containsName(files, t.file) {
 		return resource.StatResult{URI: uri, Kind: resource.EntryFile}, nil
 	}
@@ -226,6 +242,13 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		}
 		return pageEntries(entries, cursor, limit), nil
 	}
+	if t.depth == 2 && t.file == "instructions" {
+		entries, err := p.instructionEntries(host, t.id)
+		if err != nil {
+			return resource.Listing{}, err
+		}
+		return pageEntries(entries, cursor, limit), nil
+	}
 	if t.depth != 1 {
 		return resource.Listing{}, resource.ErrNotFound
 	}
@@ -240,7 +263,7 @@ func (p sessionProvider) List(ctx context.Context, uri, cursor string, limit int
 		entries = append(entries, resource.Entry{Name: name, URI: base + name, Kind: resource.EntryFile})
 	}
 	if p.isSelf(host, t.id) {
-		entries = append(entries, resource.Entry{Name: "frames", URI: base + "frames/", Kind: resource.EntryDir})
+		entries = append(entries, resource.Entry{Name: "frames", URI: base + "frames/", Kind: resource.EntryDir}, resource.Entry{Name: "instructions", URI: base + "instructions/", Kind: resource.EntryDir})
 	}
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
 	return resource.Listing{Complete: true, Entries: entries}, nil
@@ -263,6 +286,9 @@ func (p sessionProvider) Read(ctx context.Context, request resource.ReadRequest)
 		return resource.ReadResult{}, resource.ErrUnsupported
 	}
 	var body []byte
+	if t.file == "instructions" {
+		return resource.ReadResult{}, fmt.Errorf("%w: list session://self/instructions/ and read the linked file; write pin or unpin to its ctl", resource.ErrUnsupported)
+	}
 	if t.file == "frames" {
 		body, err = p.renderFrames(session, t)
 	} else if p.isSelf(session, t.id) {
@@ -482,4 +508,47 @@ func pageEntries(entries []resource.Entry, cursor string, limit int) resource.Li
 		listing.NextCursor = entries[end].Name
 	}
 	return listing
+}
+
+// instructionEntries lists the instruction files this session delivered to the model, each linking to
+// its file with class, delivery state and pin origin, followed by the ctl entry.
+func (p sessionProvider) instructionEntries(host sdk.Context, id string) ([]resource.Entry, error) {
+	records, err := p.frameRecords(host, id)
+	if err != nil {
+		return nil, err
+	}
+	s, _ := p.source()
+	s.contextFrames.mu.Lock()
+	pins := append([]instructionPin(nil), s.contextFrames.pins...)
+	s.contextFrames.mu.Unlock()
+	root := s.location.Current().ProjectRoot
+	const base = "session://self/instructions/"
+	index := make(map[string]int)
+	var entries []resource.Entry
+	for _, record := range records {
+		frame := record.Frame
+		class, isInstruction := strings.CutPrefix(frame.Source, "instructions.")
+		if !isInstruction || frame.Kind == "notice" || frame.Resource == "" || record.State != "delivered" && record.State != "pending" {
+			continue
+		}
+		detail := class + " · " + record.State
+		for _, pin := range pins {
+			if pin.Path == frame.Resource {
+				detail += " · pinned by " + pin.Origin
+			}
+		}
+		short := frame.Resource
+		if rel, err := filepath.Rel(root, short); err == nil && filepath.IsLocal(rel) {
+			short = rel
+		}
+		name := class + "-" + sanitizeSegment(strings.Trim(short, "/"))
+		entry := resource.Entry{Name: name, URI: base + name, Kind: resource.EntryLink, Target: "file://" + frame.Resource, Detail: detail}
+		if at, ok := index[name]; ok {
+			entries[at] = entry
+			continue
+		}
+		index[name] = len(entries)
+		entries = append(entries, entry)
+	}
+	return append(entries, resource.Entry{Name: "ctl", URI: base + "ctl", Kind: resource.EntryControl, Detail: "write: pin <path> [--class <id>] | unpin <path>"}), nil
 }

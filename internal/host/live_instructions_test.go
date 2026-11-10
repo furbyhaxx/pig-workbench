@@ -3,6 +3,7 @@
 package host
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -1044,5 +1045,41 @@ func TestLiveMultiReadDeliversTheInstructionsOfEveryTarget(t *testing.T) {
 		if got := strings.Count(last, marker); got != 1 {
 			t.Errorf("%s reached the model %d times, want exactly once", marker, got)
 		}
+	}
+}
+
+func TestLiveSessionSelfInstructionsListActiveFilesAndCtlInJSONMode(t *testing.T) {
+	root, work := t.TempDir(), t.TempDir()
+	instructionTree(t, work, map[string]string{".": "LISTED-ROOT-RULE applies.", "a": "LISTED-NESTED-RULE applies."})
+	nested := filepath.Join(work, "a", "AGENTS.md")
+	if err := os.WriteFile(filepath.Join(work, "a", "BACKLOG.md"), []byte("- [B-1] LISTED-BACKLOG item\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recorder := &requestRecorder{calls: []scriptedCall{
+		{"read", map[string]any{"path": "a/x.txt"}},
+		{"write", map[string]any{"path": "session://self/instructions/ctl", "content": "pin a/BACKLOG.md"}},
+		{"ls", map[string]any{"path": "session://self/instructions/"}},
+		{"ls", map[string]any{"path": "session://self/"}},
+	}}
+	server := recorder.serve(t)
+	defer server.Close()
+	writeFixtureProvider(t, filepath.Join(root, "agent"), server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	runPigJSON(t, ctx, repoRoot(t), root, work, []string{"--tools", "read,write,ls"}, "inspect")
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	results := toolResults(t, recorder.bodies[len(recorder.bodies)-1])
+	if len(results) != 4 {
+		t.Fatalf("want 4 tool results, have %d: %q", len(results), results)
+	}
+	listing := results[2]
+	for _, want := range []string{"file://" + nested, "file://" + filepath.Join(work, "AGENTS.md"), "steering · delivered", "backlog-a-BACKLOG-md", "pinned by agent", "ctl"} {
+		if !strings.Contains(listing, want) {
+			t.Errorf("instruction listing lacks %q:\n%s", want, listing)
+		}
+	}
+	if !strings.Contains(results[3], "instructions") {
+		t.Errorf("self listing lacks instructions:\n%s", results[3])
 	}
 }
