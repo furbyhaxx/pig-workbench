@@ -27,11 +27,11 @@ First-touch provider guides share the read budget. If the full guide cannot fit,
 
 Output is bounded by `read.max-bytes`/`read.max-lines` (default 50 KiB / 2000 lines) for the whole batch. `Details.resources[]` carries the canonical URI, exact-byte revision, known total lines (absent when unknown, zero for a known empty source), shown and fully-shown ranges, selection vs resource completeness, and a continuation selector when the page was cut. A line larger than the budget is emitted as a partial line, is never marked seen, and the continuation repeats it.
 
-Builtin schemes include `file://`, `http://`, `https://`, `local://`, `out://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.
+Builtin schemes include `file://`, `http://`, `https://`, `local://`, `cfg://`, `session://`, `artifact://`, `job://`, `skill://`, `agent://` and registered `docs://` resources. Other extensions can register read-only providers or declare revision-checked mutation capabilities with receipts; Workbench adds no permission prompts.
 
 `ls agent://` shows each live session's title, project, cwd, state with idle time, model and trusted/blocked state; `session://self/messages` lists the inter-session messages this session sent and received.
 
-A line selector also works on a name-only URI of a Workbench scheme (`skill://name:10-40`, `out://id:raw`); on `skill://` it shows that range without loading the skill.
+A line selector also works on a name-only URI of a Workbench scheme (`skill://name:10-40`); on `skill://` it shows that range without loading the skill.
 
 Every scheme, builtin or contributed, has a guide page at `docs://workbench/schemes/<scheme>`; `ls docs://workbench/schemes/` lists them. An empty container lists as `(empty)`.
 

@@ -144,7 +144,7 @@ func withExplicit(t Target, explicit string, suffix bool) (Target, error) {
 
 // nameAuthoritySchemes are Workbench schemes whose authority is a name, never host:port,
 // so a trailing selector on a URI without a path belongs to the resource.
-var nameAuthoritySchemes = map[string]bool{"skill": true, "session": true, "job": true, "agent": true, "docs": true, "cfg": true, "artifact": true, "local": true, "out": true}
+var nameAuthoritySchemes = map[string]bool{"skill": true, "session": true, "job": true, "agent": true, "docs": true, "cfg": true, "artifact": true, "local": true}
 
 func splitSelector(path string) (string, Selection, bool, error) {
 	pieces := strings.Split(path, ":")

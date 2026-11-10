@@ -58,7 +58,7 @@ func TestSelectorOnANameAuthorityURIWithoutAPath(t *testing.T) {
 	for _, c := range []struct{ input, uri, selector string }{
 		{"skill://toml:1-3", "skill://toml", "1-3"},
 		{"skill://toml:5", "skill://toml", "5"},
-		{"out://ab12:raw", "out://ab12", "raw"},
+		{"job://ab12:raw", "job://ab12", "raw"},
 		{"skill://toml", "skill://toml", ""},
 	} {
 		target, err := ParsePath(t.TempDir(), c.input, "")

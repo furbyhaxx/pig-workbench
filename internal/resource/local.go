@@ -13,111 +13,9 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
-
-// OutStore owns spilled tool outputs for one session.
-type OutStore struct {
-	mu       sync.Mutex
-	dir      string
-	maxBytes int64
-	used     int64
-	order    []outEntry
-}
-
-type outEntry struct {
-	id   string
-	size int64
-}
-
-// NewOutStore prepares a private spill directory with a total budget.
-func NewOutStore(dir string, maxBytes int64) (*OutStore, error) {
-	if !filepath.IsAbs(dir) || maxBytes < 1024 {
-		return nil, errors.New("out store needs an absolute directory and a positive budget")
-	}
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return nil, fmt.Errorf("create spill directory: %w", err)
-	}
-	return &OutStore{dir: dir, maxBytes: maxBytes}, nil
-}
-
-// Spill writes one bounded output and returns its immutable out:// URI.
-func (s *OutStore) Spill(ctx context.Context, data []byte) (string, error) {
-	if int64(len(data)) > s.maxBytes {
-		return "", fmt.Errorf("output of %d bytes exceeds the %d-byte spill budget", len(data), s.maxBytes)
-	}
-	var token [6]byte
-	if _, err := rand.Read(token[:]); err != nil {
-		return "", err
-	}
-	id := hex.EncodeToString(token[:])
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for s.used+int64(len(data)) > s.maxBytes && len(s.order) > 0 {
-		oldest := s.order[0]
-		s.order = s.order[1:]
-		if err := os.Remove(filepath.Join(s.dir, oldest.id)); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return "", fmt.Errorf("evict spilled output: %w", err)
-		}
-		s.used -= oldest.size
-	}
-	if err := os.WriteFile(filepath.Join(s.dir, id), data, 0600); err != nil {
-		return "", fmt.Errorf("write spilled output: %w", err)
-	}
-	s.used += int64(len(data))
-	s.order = append(s.order, outEntry{id: id, size: int64(len(data))})
-	return "out://" + id, nil
-}
-
-// Path maps an out:// URI to the private file, refusing traversal.
-func (s *OutStore) Path(uri string) (string, error) {
-	id, ok := strings.CutPrefix(uri, "out://")
-	if !ok || id == "" || strings.ContainsAny(id, "/\\.") {
-		return "", errors.New("out:// takes a single opaque identifier")
-	}
-	return filepath.Join(s.dir, id), nil
-}
-
-// OutProvider serves spilled outputs as immutable files.
-type OutProvider struct{ Store *OutStore }
-
-// Scheme returns the canonical out scheme.
-func (OutProvider) Scheme() string { return "out" }
-
-// Stat describes one spilled output.
-func (p OutProvider) Stat(ctx context.Context, uri string) (StatResult, error) {
-	if uri == "out://" || uri == "out:" {
-		return StatResult{URI: "out://", Kind: EntryDir}, nil
-	}
-	path, err := p.Store.Path(uri)
-	if err != nil {
-		return StatResult{}, err
-	}
-	info, err := os.Stat(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return StatResult{}, ErrNotFound
-	}
-	if err != nil {
-		return StatResult{}, err
-	}
-	return StatResult{URI: uri, Kind: EntryFile, Size: info.Size()}, nil
-}
-
-// List enumerates the retained spilled outputs, oldest first.
-func (p OutProvider) List(_ context.Context, uri, cursor string, limit int) (Listing, error) {
-	if uri != "out://" && uri != "out:" {
-		return Listing{}, ErrUnsupported
-	}
-	p.Store.mu.Lock()
-	entries := make([]Entry, 0, len(p.Store.order))
-	for _, entry := range p.Store.order {
-		entries = append(entries, Entry{Name: entry.id, URI: "out://" + entry.id, Kind: EntryFile, Detail: fmt.Sprintf("%d bytes", entry.size)})
-	}
-	p.Store.mu.Unlock()
-	return PageEntries(entries, cursor, limit)
-}
 
 // PageEntries returns one listing page of at most limit entries starting at the entry named cursor.
 // A cursor whose entry is gone is stale: answering from the start would repeat entries.
@@ -138,20 +36,6 @@ func PageEntries(entries []Entry, cursor string, limit int) (Listing, error) {
 		listing.NextCursor = entries[end].Name
 	}
 	return listing, nil
-}
-
-// Read pages one spilled output.
-func (p OutProvider) Read(ctx context.Context, request ReadRequest) (ReadResult, error) {
-	path, err := p.Store.Path(request.URI)
-	if err != nil {
-		return ReadResult{}, err
-	}
-	page, err := ReadFile(ctx, Target{Requested: request.URI, Scheme: "file", Path: path, URI: request.URI, Selection: request.Selector}, request.Budget)
-	if err != nil {
-		return ReadResult{}, err
-	}
-	page.CanonicalURI = request.URI
-	return ReadResult{Content: page.Content, Facts: page}, nil
 }
 
 // LocalProvider serves the per-session scratch directory under local://.

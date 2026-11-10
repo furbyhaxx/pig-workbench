@@ -925,7 +925,6 @@ func TestLiveTreeRootsListAndScratchIsWritable(t *testing.T) {
 		{"read", map[string]any{"path": "job://"}},
 		{"read", map[string]any{"path": "agent://"}},
 		{"read", map[string]any{"path": "cfg://"}},
-		{"read", map[string]any{"path": "out://"}},
 	}
 	steps := make([]scriptStep, len(calls))
 	for i, call := range calls {
@@ -1257,9 +1256,9 @@ func TestLiveSchemeGuidesListEveryBuiltinSchemeAndEmptyContainersSaySo(t *testin
 		func([]string) scriptedCall {
 			return scriptedCall{"read", map[string]any{"path": "docs://workbench/schemes/job"}}
 		},
-		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "out://"}} },
+		func([]string) scriptedCall { return scriptedCall{"ls", map[string]any{"path": "local://"}} },
 	)
-	for _, scheme := range []string{"file", "http", "https", "local", "out", "artifact", "cfg", "session", "job", "skill", "agent", "docs"} {
+	for _, scheme := range []string{"file", "http", "https", "local", "artifact", "cfg", "session", "job", "skill", "agent", "docs"} {
 		if !strings.Contains(results[0], " "+scheme+"\n") {
 			t.Errorf("scheme guide listing lacks %s: %s", scheme, results[0])
 		}

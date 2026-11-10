@@ -27,13 +27,6 @@ Per-session scratch directory, private to this session and removed with it.
 - Tools: read, write, grep, find, ls. ` + "`write local://<name>`" + ` creates or replaces a file (4 MiB maximum, existing directory).
 - Standalone shell forms: ls, cat, rm, mkdir, mv, cp and ` + "`word > local://<name>`" + `.
 `,
-	"out": `# out://
-
-Spilled large tool outputs of this session, immutable.
-
-- ` + "`ls out://`" + ` lists retained outputs oldest first with their size; ` + "`read out://<id>`" + ` pages one with the usual selectors.
-- The oldest outputs are evicted when the session's spill budget is full.
-`,
 	"artifact": `# artifact://
 
 The ` + "`.project/`" + ` tree of the current project, the same from every subdirectory and worktree.

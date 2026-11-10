@@ -5,15 +5,15 @@ document:
   title: "Projects, artifact conventions and the URI namespace"
   description: "Stable project identity with .project/Project.toml, project-shared session storage, builtin .project/AGENTS.md conventions shared across worktrees, and every scheme as a browsable pseudo-filesystem including docs:// and first-touch guides"
   status: "published"
-  revision: 13
+  revision: 14
   created_at: "2026-11-03T10:00:00+01:00"
-  updated_at: "2026-11-10T16:31:00+01:00"
+  updated_at: "2026-11-10T17:05:00+01:00"
   created_by: "orchestrator"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 13
-      reason: "Slice ownership of the session tree entries and the name-authority selector rule"
-      changes: ["§6 names the slice of session tree and messages", "§5.3 states the selector rule for name-only URIs and the artifact and agent listing columns"]
+    - revision: 14
+      reason: "User decision 10.11.2026: out:// had no producer and leaves Slice 1; it returns in Slice 2 with one"
+      changes: ["§6 lists out:// among the Slice 2 entries"]
 ---
 
 # 1. Scope
@@ -336,7 +336,7 @@ Tool descriptions and the system prompt carry only what is always needed: one li
 - Worktrees: creating a worktree applies sparse checkout, `.project` symlink, exclude and `[worktrees] links` in the verified order; `git status` stays clean; repair command fixes worktrees made outside Workbench.
 - `branch` storage: migration in both directions; artifact commits carry `Code-Commit`.
 - Conventions: frontmatter and `BACKLOG.md` pointer validation report problems without blocking writes.
-- URIs (Slice 1, PLAN-0002 D): every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds, except the entries owned by Slice 2 (PLAN-0003 W4): `project://`, `conflict://`, `session://by-project/` and `by-name/`, `session://<id>/tree`, and `messages` of a stored session (`session://self/messages` is Slice 1); links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
+- URIs (Slice 1, PLAN-0002 D): every tree of §5.3 supports `ls`, `read`, `find` and `grep` within bounds, except the entries owned by Slice 2 (PLAN-0003 W4): `out://`, `project://`, `conflict://`, `session://by-project/` and `by-name/`, `session://<id>/tree`, and `messages` of a stored session (`session://self/messages` is Slice 1); links are not followed by recursive tools; `ctl` writes obey modes; unknown names give "did you mean".
 - Guides: injected once per session and revision on first touch, re-injected after compaction, untrusted provider guides stay data.
 - `docs://harness/` follows the running build; source fetch only on first access, offline shows cache; extension docs confined to their roots.
 - Titles: own, other live (coordinator `lifecycle` only) and stored sessions; the new title appears in `meta`, `by-name/`, `ls session://` and PiG's session picker. Probes answered 05.11.2026 (`internal/host/live_probes_test.go`): **T1** `SetSessionName` is visible to `GetSessionName` and the replicated `SessionName()` without reload, and an empty name clears the title; **T2** the title is persisted as a `session_info` entry in the session file and survives `--continue`; **T3** `session_info` is branch-scoped — forking before a rename leaves the session unnamed, so `by-name/` resolves the active branch's latest entry and never an entry from an inactive branch.

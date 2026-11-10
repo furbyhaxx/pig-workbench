@@ -10,44 +10,6 @@ import (
 	"testing"
 )
 
-func TestOutStoreBudgetAndEviction(t *testing.T) {
-	store, err := NewOutStore(filepath.Join(t.TempDir(), "out"), 2048)
-	if err != nil {
-		t.Fatal(err)
-	}
-	first, err := store.Spill(context.Background(), make([]byte, 1024))
-	if err != nil {
-		t.Fatal(err)
-	}
-	second, err := store.Spill(context.Background(), make([]byte, 1024))
-	if err != nil {
-		t.Fatal(err)
-	}
-	third, err := store.Spill(context.Background(), make([]byte, 1024))
-	if err != nil {
-		t.Fatal(err)
-	}
-	path, _ := store.Path(first)
-	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
-		t.Fatal("oldest spill was not evicted")
-	}
-	for _, uri := range []string{second, third} {
-		path, err := store.Path(uri)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := os.Stat(path); err != nil {
-			t.Fatalf("retained spill missing: %v", err)
-		}
-	}
-	if _, err := store.Spill(context.Background(), make([]byte, 4096)); err == nil {
-		t.Fatal("oversized spill accepted")
-	}
-	if _, err := store.Path("out://../escape"); err == nil {
-		t.Fatal("traversal accepted")
-	}
-}
-
 func TestLocalProviderContainment(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "scratch")
 	provider, err := NewLocalProvider(root)
@@ -451,48 +413,5 @@ func TestLocalProviderWriteIsConfinedAndReadable(t *testing.T) {
 	}
 	if _, _, err := provider.Write(ctx, "local://big", make([]byte, LocalWriteLimit+1)); err == nil {
 		t.Error("oversized scratch write accepted")
-	}
-}
-
-func TestOutRootListsRetainedSpillsOldestFirstAndPages(t *testing.T) {
-	store, err := NewOutStore(filepath.Join(t.TempDir(), "out"), 1<<20)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var want []string
-	for i := 0; i < 30; i++ {
-		uri, err := store.Spill(context.Background(), make([]byte, 10+i))
-		if err != nil {
-			t.Fatal(err)
-		}
-		want = append(want, uri)
-	}
-	provider := OutProvider{Store: store}
-	if stat, err := provider.Stat(context.Background(), "out://"); err != nil || stat.Kind != EntryDir {
-		t.Fatalf("root stat = %+v, %v", stat, err)
-	}
-	var got []string
-	cursor := ""
-	for {
-		page, err := provider.List(context.Background(), "out://", cursor, 16)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(page.Entries) > 16 {
-			t.Fatalf("page holds %d entries", len(page.Entries))
-		}
-		for _, entry := range page.Entries {
-			got = append(got, entry.URI)
-		}
-		if page.Complete {
-			break
-		}
-		cursor = page.NextCursor
-	}
-	if strings.Join(got, ",") != strings.Join(want, ",") {
-		t.Fatalf("listing = %v, want %v", got, want)
-	}
-	if _, err := provider.List(context.Background(), "out://", "gone", 16); err == nil || !strings.Contains(err.Error(), "staleRevision") {
-		t.Fatalf("vanished cursor = %v", err)
 	}
 }

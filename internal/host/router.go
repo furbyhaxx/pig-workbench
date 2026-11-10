@@ -60,7 +60,7 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 	}
 	cache, err := os.UserCacheDir()
 	if err != nil {
-		ctx.Notify("Local scratch and spill storage are unavailable; local:// and out:// cannot be read this session.", "warning")
+		ctx.Notify("Local scratch storage is unavailable; local:// cannot be used this session.", "warning")
 		return router, "", nil
 	}
 	scratch := filepath.Join(cache, "pig-workbench", "scratch", sanitizeSegment(sessionKey(ctx)))
@@ -69,13 +69,6 @@ func buildRouter(ctx sdk.Context, settings *config.Manager, locations *location.
 		return nil, "", err
 	}
 	if err := router.RegisterBuiltin(local); err != nil {
-		return nil, "", err
-	}
-	out, err := resource.NewOutStore(filepath.Join(scratch, "out"), 64<<20)
-	if err != nil {
-		return nil, "", err
-	}
-	if err := router.RegisterBuiltin(resource.OutProvider{Store: out}); err != nil {
 		return nil, "", err
 	}
 	return router, scratch, nil

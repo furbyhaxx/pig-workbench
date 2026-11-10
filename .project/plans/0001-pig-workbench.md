@@ -5,15 +5,15 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 28
+  revision: 29
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-10T16:31:00+01:00"
+  updated_at: "2026-11-10T17:05:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 28
-      reason: "User decision 10.11.2026: the session entry tree and the messages of stored sessions are depth, not foundation"
-      changes: ["§9 row 0012 §5.3 rest gains the session entry tree and stored-session messages"]
+    - revision: 29
+      reason: "User decision 10.11.2026: out:// had no producer and leaves Slice 1; it returns in Slice 2 with one"
+      changes: ["§9: out:// moves from the 0012 §5.3 core row to the rest row"]
 ---
 
 # 1. Outcome and authority
@@ -411,8 +411,8 @@ Authoritative assignment of every specification section to a slice and phase. Sl
 | 0012 §4.1–§4.2 | Bundled conventions, artifact and BACKLOG validation, module reminder | S2 W7 | PLAN-0003 W7 |
 | 0012 §4.3–§4.5 | Shared artifact tree, worktree links, artifact storage modes | S2 W3 | SPEC-0012 §6 |
 | 0012 §5.1–§5.2, §5.5 | Naming rule, tool semantics, first-touch guides | S1 D | SPEC-0012 §6 |
-| 0012 §5.3 core | `session://` self/`<id>`/`by-id/`, own and stored titles, `agent://`, `skill://`, `cfg://`, `job://`, `artifact://`, `out://`, `local://` | S1 D, H, J, L1 | SPEC-0012 §6 |
-| 0012 §5.3 rest | `project://`, `conflict://`, `by-project/`, `by-name/`, search, `session://<id>/tree`, `messages` of stored sessions | S2 W4 | SPEC-0012 §6 |
+| 0012 §5.3 core | `session://` self/`<id>`/`by-id/`, own and stored titles, `agent://`, `skill://`, `cfg://`, `job://`, `artifact://`, `local://` | S1 D, H, J, L1 | SPEC-0012 §6 |
+| 0012 §5.3 rest | `out://` with its producer, `project://`, `conflict://`, `by-project/`, `by-name/`, search, `session://<id>/tree`, `messages` of stored sessions | S2 W4 | SPEC-0012 §6 |
 | 0012 §5.3 titles of live sessions | Other live sessions under coordinator `lifecycle` | S2 W6 | SPEC-0012 §6 |
 | 0012 §5.4 | `docs://` registered docs (S1 C, D); PiG source (S2 W4) | as listed | SPEC-0012 §6 |
 | 0013 §2–§5, §7 | Detection, vault, boundary, env injection, ask secret | S1 I | SPEC-0013 §11 |
