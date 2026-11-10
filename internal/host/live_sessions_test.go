@@ -813,3 +813,41 @@ func TestLiveActivityShortcutSettingBindsTheConfiguredKey(t *testing.T) {
 		})
 	}
 }
+
+func TestLiveAgentListingPagesFiftyPeers(t *testing.T) {
+	runtime := shortRuntime(t)
+	startLiveSession(t, runtime, nil)
+	var receiverID string
+	for id := range waitForRecords(t, runtime, 1) {
+		receiverID = id
+	}
+	dir := filepath.Join(runtime, "pig-workbench", "v1")
+	template, err := os.ReadFile(filepath.Join(dir, receiverID+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{shortID(receiverID)}
+	for i := 1; i < 50; i++ {
+		clone := fmt.Sprintf("%s%04x", receiverID[:len(receiverID)-4], i)
+		if clone == receiverID {
+			continue
+		}
+		want = append(want, shortID(clone))
+		if err := os.WriteFile(filepath.Join(dir, clone+".json"), []byte(strings.ReplaceAll(string(template), receiverID, clone)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sender := startLiveSession(t, runtime, []scriptedCall{{"ls", map[string]any{"path": "agent://"}}})
+	sender.fixture.send("list", "prompt", "List the peers.")
+	sender.fixture.wait(func(event map[string]any) bool { return event["type"] == "agent_end" })
+	requests := sender.requests()
+	results := toolResults(t, requests[len(requests)-1])
+	if len(results) != 1 {
+		t.Fatalf("want one listing: %v", results)
+	}
+	for _, name := range want {
+		if !strings.Contains(results[0], name) {
+			t.Fatalf("listing lacks peer %s: %.800s", name, results[0])
+		}
+	}
+}
