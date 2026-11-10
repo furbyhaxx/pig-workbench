@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gofrs/flock"
 
@@ -66,14 +65,9 @@ func (r *Registry) lock(ctx context.Context) (*flock.Flock, error) {
 		return nil, err
 	}
 	path := filepath.Join(r.dir, ".registry.lock")
-	lock := flock.New(path, flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
-	locked, err := lock.TryLockContext(ctx, 10*time.Millisecond)
-	if err != nil || !locked {
-		lock.Close()
-		if err == nil {
-			err = ctx.Err()
-		}
-		return nil, fmt.Errorf("endpoint registry lock unavailable: %w", err)
+	lock, err := fileio.Lock(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("endpoint registry %w", err)
 	}
 	fail := func(err error) (*flock.Flock, error) {
 		lock.Close()
@@ -85,10 +79,6 @@ func (r *Registry) lock(ctx context.Context) (*flock.Flock, error) {
 	info, err := lock.Stat()
 	if err != nil {
 		return fail(fmt.Errorf("inspect endpoint registry lock: %w", err))
-	}
-	current, err := os.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() || !current.Mode().IsRegular() || !os.SameFile(info, current) {
-		return fail(errors.New("endpoint registry lock must be an unchanged regular file"))
 	}
 	if err := checkPrivate(path, info, 0600); err != nil {
 		return fail(err)

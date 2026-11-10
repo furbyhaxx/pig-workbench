@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/gofrs/flock"
@@ -69,11 +68,12 @@ func (r *Registry) lock() (*flock.Flock, error) {
 		return nil, err
 	}
 	path := filepath.Join(r.dir, ".registry.lock")
-	lock := flock.New(path, flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
-	locked, err := lock.TryLockContext(context.Background(), 10*time.Millisecond)
-	if err != nil || !locked {
-		lock.Close()
-		return nil, fmt.Errorf("project registry lock unavailable: %w", err)
+	lock, err := fileio.Lock(context.Background(), path)
+	if errors.Is(err, fileio.ErrLockReplaced) {
+		return nil, &Error{Path: path, Reason: "lock must be an unchanged regular file"}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("project registry %w", err)
 	}
 	fail := func(err error) (*flock.Flock, error) {
 		lock.Close()
@@ -85,10 +85,6 @@ func (r *Registry) lock() (*flock.Flock, error) {
 	info, err := lock.Stat()
 	if err != nil {
 		return fail(fmt.Errorf("inspect project registry lock: %w", err))
-	}
-	current, err := os.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() || !current.Mode().IsRegular() || !os.SameFile(info, current) {
-		return fail(&Error{Path: path, Reason: "lock must be an unchanged regular file"})
 	}
 	if err := checkRegistryPrivate(path, info, 0600); err != nil {
 		return fail(err)

@@ -52,27 +52,17 @@ func lockOne(ctx context.Context, path, identity string) (*flock.Flock, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf("acquire edit locks: %w", err)
 		}
-		lock := flock.New(path, flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
-		locked, err := lock.TryLockContext(ctx, 10*time.Millisecond)
-		if err != nil || !locked {
-			lock.Close()
-			if err != nil {
-				return nil, fmt.Errorf("lock %s for editing: %w", identity, err)
-			}
-			return nil, fmt.Errorf("lock %s for editing: lock unavailable", identity)
-		}
-		info, err := lock.Stat()
-		if err != nil || !info.Mode().IsRegular() {
-			lock.Close()
-			return nil, errors.New("edit lock must be a regular file")
-		}
+		lock, err := fileio.Lock(ctx, path)
 		// SweepLocks may have unlinked the file between open and lock.
-		if current, err := os.Stat(path); err == nil && os.SameFile(info, current) {
-			now := time.Now()
-			_ = os.Chtimes(path, now, now)
-			return lock, nil
+		if errors.Is(err, fileio.ErrLockReplaced) {
+			continue
 		}
-		lock.Close()
+		if err != nil {
+			return nil, fmt.Errorf("lock %s for editing: %w", identity, err)
+		}
+		now := time.Now()
+		_ = os.Chtimes(path, now, now)
+		return lock, nil
 	}
 	return nil, fmt.Errorf("lock %s for editing: lock file kept changing", identity)
 }

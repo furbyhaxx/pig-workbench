@@ -35,12 +35,10 @@ func (v *Vault) lock() (*flock.Flock, error) {
 		return nil, err
 	}
 	path := v.path + ".lock"
-	lock := flock.New(path, flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	locked, err := lock.TryLockContext(ctx, 10*time.Millisecond)
-	if err != nil || !locked {
-		lock.Close()
+	lock, err := fileio.Lock(ctx, path)
+	if err != nil {
 		return nil, &ErrVaultLocked{}
 	}
 	fail := func() (*flock.Flock, error) {
@@ -52,11 +50,7 @@ func (v *Vault) lock() (*flock.Flock, error) {
 		return nil, err
 	}
 	info, err := lock.Stat()
-	if err != nil || !info.Mode().IsRegular() || checkVaultMode(info, 0600) != nil || (v.lockInfo != nil && !os.SameFile(v.lockInfo, info)) {
-		return fail()
-	}
-	current, err := os.Lstat(path)
-	if err != nil || !current.Mode().IsRegular() || !os.SameFile(info, current) {
+	if err != nil || checkVaultMode(info, 0600) != nil || (v.lockInfo != nil && !os.SameFile(v.lockInfo, info)) {
 		return fail()
 	}
 	return lock, nil

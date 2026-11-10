@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
-
-	"github.com/gofrs/flock"
 
 	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 )
@@ -66,19 +63,9 @@ func lockTarget(ctx context.Context, path string) (string, func() error, error) 
 	if err != nil {
 		return "", nil, err
 	}
-	lock := flock.New(target+".lock", flock.SetFlag(fileio.LockFlags()), flock.SetPermissions(0600))
-	locked, err := lock.TryLockContext(ctx, 10*time.Millisecond)
-	if err != nil || !locked {
-		lock.Close()
-		if err == nil {
-			err = ctx.Err()
-		}
-		return "", nil, fmt.Errorf("configuration lock unavailable: %w", err)
-	}
-	info, err := lock.Stat()
-	if err != nil || !info.Mode().IsRegular() {
-		lock.Close()
-		return "", nil, errors.New("configuration lock must be a regular file")
+	lock, err := fileio.Lock(ctx, target+".lock")
+	if err != nil {
+		return "", nil, fmt.Errorf("configuration %w", err)
 	}
 	return target, lock.Close, nil
 }
