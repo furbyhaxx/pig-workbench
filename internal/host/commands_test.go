@@ -108,7 +108,11 @@ func TestCompletionOffersLiveOwnersAndSchemesAfterTheirVerb(t *testing.T) {
 	for _, item := range items {
 		values = append(values, item.Value)
 	}
-	if !slices.Contains(values, "skills ls") || !slices.Contains(values, "skills load rust") || slices.Contains(values, "skills unload toml") {
-		t.Fatalf("skills completions = %v", values)
+	if !slices.Contains(values, "skills ls") || !slices.Contains(values, "skills load") || slices.Contains(values, "skills unload") {
+		t.Fatalf("skills verbs = %v", values)
+	}
+	items, _ = completeWorkbench("skills load ", []string{"skills load rust", "skills unload toml"}, config.Catalog())
+	if len(items) != 1 || items[0].Value != "skills load rust" {
+		t.Fatalf("skill names = %+v", items)
 	}
 }
