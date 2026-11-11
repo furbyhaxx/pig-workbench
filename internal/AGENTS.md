@@ -20,5 +20,12 @@ Feature packages keep domain logic independent of the SDK; `host/` adapts contex
 - `endpoint/` — live-session endpoint records and liveness probing.
 - `messaging/` — Unix-socket transport, envelope, auth and rate windows for inter-session messages.
 - `sessionstore/` — journaled conversion of PiG session buckets into shared project storage.
+- `contribution/` — generation-scoped registry of other extensions' registrations (SPEC-0001 §4).
+- `fileedit/` — local commit executor for staged edit effects: validate, lock, replace, move, delete.
+- `htmlread/` — static HTML to readable Markdown for the builtin web reader.
+- `modelknowledge/` — knowledge cutoffs for `session.model`, from a generated models.dev snapshot.
+- `pathdisplay/` — display form of paths and URIs for rows, titles and panels.
+- `presentation/` — strict decoder for SPEC-0003 descriptors and snapshots.
+- `prompt/` — Jinja rendering core for system prompt templates (SPEC-0014 §3).
 - `host/` — SDK lifecycle, commands and tool wiring; no duplicated domain policy.
 - Do not retain request-scoped SDK contexts in session state. Read captured configuration/location once per operation.
