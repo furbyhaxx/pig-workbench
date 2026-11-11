@@ -1,0 +1,5 @@
+commit 84c44f0 (working tree identical; run 2026-11-11)
+check=0
+race=0
+integration=0
+TMPDIR=$HOME/.cache/pig-workbench-test-tmp/work
