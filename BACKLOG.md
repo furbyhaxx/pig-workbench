@@ -1,0 +1,7 @@
+- B-0003 debt P2 — Frame ledger metadata grows without bound and is marshalled whole per publish → .project/backlog/B-0003-frame-ledger-growth.md
+- B-0007 chore P3 — staticcheck is not part of `just check` → .project/backlog/B-0007-staticcheck-gate.md
+- B-0008 bug P3 — Instruction views miss withdrawals, non-project rules and the silent baseline → .project/backlog/B-0008-instruction-state-views.md
+- B-0009 drift P3 — Per-kind frame visibility overrides are not implemented → .project/backlog/B-0009-frame-visibility-per-kind.md
+- B-0010 drift P3 — `jobs` list arguments, row bounds and notice title → .project/backlog/B-0010-jobs-contract-leftovers.md
+- B-0014 drift P3 — SPEC-0005 G5.2 lists donor recovery cases that are refused, not recovered → .project/backlog/B-0014-hashline-recovery-parity.md
+- B-0016 debt P3 — Skill catalog re-reads every SKILL.md per list and read; replay order → .project/backlog/B-0016-skills-catalog-cost.md
