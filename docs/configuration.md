@@ -68,7 +68,80 @@ The catalog identifies the other live consumers, including edit policy, instruct
 
 `prompt.template` (default `builtin/workbench`) names the entry template of the system prompt. Any other name is a file, such as `system.md`, in `system-prompts/` under the agent directory or, while the host trusts the project, under the project's PiG configuration directory; the project file wins. A template can build on the builtin one with `{% include "builtin/workbench" %}` and read `model.provider`, `model.id`, `model.name`, `model.reasoning`, `model.context_window` and `model.max_output`. A template that fails to render is reported once with its name and cause; the last good render stays in use, or PiG's prompt when there is none. `session://self/system-prompt` names the template that produced the served prompt.
 
-Settings marked `unavailable` are retained and validated but do not control their intended runtime feature. In particular, `activity.shortcut` is read from the user layer at load because PiG registers shortcuts before a session's settings exist: set it in `Workbench.toml` and `/reload`; an invalid key keeps `alt+w` and `/workbench show` says so. Complex instruction classes and producer-specific settings are not implemented.
+Every listed setting is applied; the [settings reference](#settings-reference) has the full table. `activity.shortcut` is read from the user layer at load because PiG registers shortcuts before a session's settings exist: set it in `Workbench.toml` and `/reload`; an invalid key keeps `alt+w` and `/workbench show` says so.
+
+## Settings reference
+
+Every setting, generated from the catalog. "Project file" says whether a trusted project's `Workbench.toml` may set the key; every key may be set in the user file and at runtime.
+
+<!-- settings-reference:begin (generated: UPDATE_DOCS=1 just check) -->
+| Key | Type | Default | Project file | Description |
+|---|---|---|---|---|
+| `activity.enabled` | boolean | `true` | no | The activity line: counts of running and failed jobs, a pending ask, live sessions, loaded skills and contributed items, as one row above or below the editor. Applied at session start. |
+| `activity.placement` | `above-editor`, `below-editor` | `"above-editor"` | no | The activity line: counts of running and failed jobs, a pending ask, live sessions, loaded skills and contributed items, as one row above or below the editor. Applied at session start. |
+| `activity.shortcut` | string | `"alt+w"` | no | Key that shows the activity line's inspector (for example alt+w or ctrl+shift+s). PiG registers shortcuts while the extension loads, so the user-layer value is read at load and a change applies after /reload; runtime and project values are not consulted. |
+| `ask.remote.timeout-ms` | integer 1–3600000 | `300000` | no | Timeout for native ask dialogs, including resumed pending asks. |
+| `bash.route-to-tools` | boolean | `true` | yes | Run standalone ls, cat, rm, mv, cp, mkdir and `text > path` on scheme paths in-process, and pass readable scheme paths to other commands as read-only copies; applies to bash and ! commands. |
+| `context.timezone` | string | `"system"` | no | Time zone of the session.date frame: `system` or an IANA name such as Europe/Zurich. An unknown zone delivers `Date is unavailable.` instead of a guessed date. |
+| `edit.enforce-seen-lines` | boolean | `true` | may only set true | Require fully emitted source lines before hashline edits; projects may require but not disable the guard. |
+| `edit.mode` | `hashline`, `replace`, `auto` | `"hashline"` | yes | Select hashline, exact-text replace, or auto edit input; captured at the next turn boundary. |
+| `edit.snapshot.max-bytes` | integer 1024–1099511627776 | `67108864` | no | Memory bound for all source snapshots; each retained source counts twice its size. |
+| `edit.snapshot.max-file-bytes` | integer 1024–1073741824 | `4194304` | no | Largest file that gets a snapshot; a larger file is read without a tag and edited with exact text. |
+| `edit.snapshot.max-paths` | integer 1–65536 | `256` | no | How many files keep a source snapshot for tagged edits; the least recently used file is dropped first and must be read again before a tagged edit. |
+| `edit.snapshot.max-versions` | integer 1–1024 | `4` | no | How many versions of one file stay available to tags from earlier reads. |
+| `fetch.disabled-backends` | string-array | `[]` | no | Fetch backends (owner/key, as listed by /workbench integrations) that read https:// skips; the builtin reader serves those URLs. The backend's own tools keep working. |
+| `frames.display.default-visibility` | `shown`, `collapsed`, `hidden` | `"collapsed"` | yes | collapsed shows one row per context frame, shown opens its body, hidden omits the row. Transcript only; the model receives every frame regardless. |
+| `frames.display.sources` | string-array | `[]` | yes | Transcript visibility per frame source, each `shown\|collapsed\|hidden <source prefix>`; the longest matching prefix wins over the default. Manage with /workbench frames show\|collapse\|hide <source>. |
+| `frames.display.style` | `row`, `rail`, `card` | `"rail"` | yes | How an opened frame body is framed in the transcript: rail (line at the left), row (indent only) or card (rail with a closing rule). Transcript only; delivery is unchanged. |
+| `frames.wake-budget` | integer 0–1000 | `10` | no | Maximum wakes per external frame producer per hour; over budget the frame is delivered without a turn. Zero disables external wake. |
+| `guides.disabled` | string-array | `[]` | yes | Schemes whose guide is never added to a read. |
+| `guides.enabled` | boolean | `true` | yes | Add a contributed scheme's guide to the first read of that scheme in a session. |
+| `guides.max-bytes` | integer 0–65536 | `2048` | may only lower | A guide longer than this is replaced by a pointer to docs://workbench/schemes/<scheme>; 0 always sends the pointer. |
+| `instructions.backlog.validate-pointers` | boolean | `true` | yes | Validate BACKLOG pointer targets against the project root before instruction delivery. |
+| `instructions.boundary` | `project`, `filesystem` | `"project"` | no | How far up instruction discovery ascends: project stops at the project root; filesystem also applies instruction files in the directories above it, up to the filesystem root, for trusted projects. |
+| `instructions.enabled` | boolean | `true` | no | Deliver Workbench instruction frames and suppress duplicate host context-file injection. Prompt takeover currently also requires this setting. |
+| `instructions.system-dir` | string | `"/etc/agents"` | no | Directory holding the host-level AGENTS.md (steering above the user's) and HOST.md (always-on host facts); empty disables both. World-writable files are refused; group-writable ones load. |
+| `instructions.updates.context` | integer 0–1000 | `3` | yes | Context lines around instruction updates; full views are sent when a reconstructible diff is not smaller. |
+| `instructions.updates.self-edits` | `notice`, `diff`, `silent` | `"notice"` | yes | How a change the agent made itself to a delivered instruction file reaches it: a one-line notice, the same diff as an outside change, or nothing. Bytes the agent did not write always arrive as a diff. |
+| `jobs.log-bytes` | integer 1024–1099511627776 | `10485760` | no | Output bytes kept per job; older bytes are dropped and reported as a gap. Applies to output written after the next bash call. |
+| `jobs.max-finished` | integer 1–10000 | `20` | no | Finished background and promoted jobs kept with their logs; foreground commands keep their own window of at most 10. Applies from the next bash call. |
+| `jobs.raw-logs` | boolean | `false` | no | false strips terminal escape sequences and control bytes from bash and jobs results and keeps only the last drawing of a redrawn line; true returns the bytes as written. job:// resources always hold the raw log. |
+| `jobs.session-log-bytes` | integer 1024–1099511627776 | `104857600` | no | Output bytes kept across all jobs of the session; the oldest logs are evicted first. Applies to output written after the next bash call. |
+| `jobs.termination-grace-ms` | integer 0–60000 | `2000` | no | How long a stopped or timed-out job may react to TERM before it is killed. Applies from the next bash call. |
+| `jobs.timeout-seconds` | integer 0–86400 | `120` | no | Default bash hard deadline in seconds; zero disables it. A tool-call timeout overrides this value. |
+| `jobs.wake-on-completion` | boolean | `true` | no | Start a turn when a background or promoted job finishes while the session is idle; a running session receives the notice at its next boundary. |
+| `jobs.yield-after-ms` | integer 0–300000 | `0` | no | Promote a foreground bash command to a background job after this many milliseconds; zero never promotes. A call's yield_seconds overrides this value. |
+| `models.knowledge-cutoffs` | string-array | `[]` | no | Knowledge cutoffs for the session.model frame, each `<model-id>=<YYYY-MM[-DD]>` with an optional `provider/` prefix; overrides contributed, bundled and estimated values (an estimate is the release date minus one year). Captured when the frame is built. |
+| `projects.offer-registration` | boolean | `true` | no | Tell the user once per repository that no project recognises it and how to create or join one. |
+| `projects.session-storage` | `link`, `off` | `"link"` | no | `link` shares one session directory per recognised project through symlinked buckets at session start (SPEC-0012 §3.5); `off` never touches session storage. Undo with /workbench projects unlink-storage. |
+| `prompt.delivery` | `auto`, `force`, `sections` | `"auto"` | no | auto resolves to force on stock PiG and replaces PiG's prompt with builtin/workbench; sections needs the fork host and retains PiG's prompt here. Disable takeover with prompt.enabled = false. |
+| `prompt.enabled` | boolean | `true` | no | Serve the prompt.template render in place of PiG's prompt when delivery is auto or force and instructions are enabled; false or a rendering failure retains PiG's prompt. |
+| `prompt.template` | string | `"builtin/workbench"` | yes | Entry template of the system prompt: builtin/workbench, or a file such as system.md in the agent directory's system-prompts/ or, in a trusted project, the project's. A template that fails to render keeps the last good render, else PiG's prompt, and is reported. |
+| `read.concurrency` | integer 1–32 | `4` | may only lower | How many targets of one multi-read are fetched at the same time; results keep input order and share one budget. 1 reads serially. |
+| `read.loop-hint-after` | integer 1–10000 | `3` | yes | Add a repetition hint after this many identical canonical/revision/view/selection reads; source remains present. |
+| `read.max-bytes` | integer 1024–51200 | `51200` | may only lower | Maximum complete read-result bytes, including framing; 1024–51200. |
+| `read.max-lines` | integer 5–2000 | `2000` | may only lower | Maximum complete read-result lines, including framing; 5–2000. |
+| `read.output-max-columns` | integer 1–1048576 | `512` | may only lower | Characters shown per line in a read; a longer line is cut with its omitted byte count, cannot be edited until read whole, and a :raw selector shows it uncut. |
+| `read.summarize.enabled` | boolean | `true` | yes | Enable declaration summaries for bare reads of large local code files. |
+| `read.summarize.min-body-lines` | integer 1–1073741824 | `12` | yes | A declaration body of at least this many lines is folded in a summary; shorter bodies are shown. |
+| `read.summarize.min-comment-lines` | integer 1–1073741824 | `8` | yes | A comment block of at least this many lines is folded in a summary to its first and last line. |
+| `read.summarize.min-total-lines` | integer 1–1073741824 | `200` | yes | Minimum source lines for a declaration summary on a bare local code read. |
+| `read.summarize.prose` | boolean | `false` | yes | Summarize large Markdown files to their headings; off reads them as exact text. |
+| `secrets.enabled` | boolean | `true` | no | Enable the session secrets boundary; enabled but unavailable protection withholds model requests. |
+| `secrets.env-injection` | boolean | `true` | no | Set vault secrets that have an environment name as real values in the environment of bash calls and jobs; false starts them without those variables. |
+| `secrets.redact-owners` | string-array | `[]` | no | Explicit trusted extension owners permitted to call secrets.redact. |
+| `sessions.discoverable` | boolean | `true` | no | Advertise the messaging endpoint to discovery; captured at session start. |
+| `sessions.enabled` | boolean | `true` | no | Start authenticated inter-session messaging at session start. |
+| `sessions.inbound` | `all`, `sameProject`, `allowlist`, `off` | `"all"` | no | Accept all, same-project, explicitly trusted allowlist, or no inbound peers. |
+| `sessions.max-hops` | integer 1–128 | `8` | no | Stop automatic wake when a message reaches the hop limit; busy sessions may still receive a steer. |
+| `sessions.rate-limit` | integer 1–10000 | `30` | no | Maximum accepted messages per peer per minute. |
+| `sessions.wake` | `always`, `trustedPeers`, `never` | `"always"` | no | Wake the receiver for accepted messages always, only for trusted peers, or never. |
+| `sessions.wake-budget` | integer 0–10000 | `10` | no | Maximum message-triggered wakes per peer per hour. |
+| `skills.conditions` | boolean | `true` | yes | Applies the when and auto_load conditions of SKILL.md files. false lists every skill whatever its when says and auto-loads none. |
+| `skills.listing-budget` | integer 0–65536 | `4096` | may only lower | Target byte budget for the session.skills frame and the /workbench skills listing; over it descriptions are shortened, then dropped, and every skill stays listed by name. Zero disables the ladder. |
+| `storage.finished-retention-days` | integer 0–36500 | `7` | no | Days a finished session's local:// scratch directory is kept before a later session start removes it; a directory in use is never removed, and 0 removes unused ones at once. |
+| `trust.rules` | string-array | `[]` | no | Workbench source trust rules, each `allow <absolute dir>` or `deny <absolute dir>`; the nearest rule decides whether instructions from a nested repository load. Manage with /workbench trust. |
+<!-- settings-reference:end -->
 
 ## Presentation display namespaces
 
