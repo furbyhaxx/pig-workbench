@@ -32,7 +32,7 @@ func (p *sessionsPanel) View(width int) kit.View {
 		input := kit.NewInput("message")
 		input.Value = p.input
 		body := kit.NewContainer(kit.NewText(fitLine("Message to "+target, width), 1, 0), input)
-		hint := "enter send · " + sdk.KeyText("tui.select.cancel") + " cancel"
+		hint := sdk.KeyText("tui.select.confirm") + " send · " + sdk.KeyText("tui.select.cancel") + " cancel"
 		return kit.View{Root: panelFrame(p.title+" › message", body, p.message, hint, width), Focus: "message"}
 	}
 	items := make([]kit.SelectItem, len(rows))
@@ -50,7 +50,7 @@ func (p *sessionsPanel) View(width int) kit.View {
 	case status == "":
 		status = "This session " + p.self + " is " + map[bool]string{true: "hidden", false: "discoverable"}[hidden]
 	}
-	hint := "m message · t trust · b block · h hide/show · " + sdk.KeyText("tui.select.cancel") + " close"
+	hint := actionHints("m message", "t trust", "b block", "h hide/show") + " · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
 		body := kit.NewText(emptyState("other live sessions", ""), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, status, hint, width)}
@@ -80,7 +80,7 @@ func (p *sessionsPanel) HandleInput(data string) (sdk.RemoteComponentResult, err
 	if cancel {
 		return sdk.RemoteComponentResult{Done: true}, nil
 	}
-	text, ok := printable(data)
+	text, ok := actionKey(data, "mtbh")
 	if !ok {
 		return sdk.RemoteComponentResult{}, nil
 	}

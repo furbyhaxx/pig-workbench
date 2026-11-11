@@ -36,7 +36,7 @@ func (p *instructionsPanel) View(width int) kit.View {
 		input := kit.NewInput("path")
 		input.Value = p.input
 		body := kit.NewContainer(kit.NewText(fitLine("Path of the file to pin (relative to the location)", width), 1, 0), input)
-		hint := "enter pin · " + sdk.KeyText("tui.select.cancel") + " cancel"
+		hint := sdk.KeyText("tui.select.confirm") + " pin · " + sdk.KeyText("tui.select.cancel") + " cancel"
 		return kit.View{Root: panelFrame(p.title+" › pin", body, p.message, hint, width), Focus: "path"}
 	case "rules":
 		rows := bodyRows(p.height())
@@ -54,7 +54,7 @@ func (p *instructionsPanel) View(width int) kit.View {
 	for _, pin := range pins {
 		items = append(items, kit.SelectItem{Value: pin.Path, Label: filepath.Base(pin.Path), Description: fitLine(pin.Class+" · "+pin.Origin+" · "+filepath.Dir(pin.Path), max(12, width-24))})
 	}
-	hint := "p pin · u unpin · v rules · " + sdk.KeyText("tui.select.cancel") + " close"
+	hint := actionHints("p pin", "u unpin", "v rules") + " · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
 		body := kit.NewText(emptyState("pinned instruction files", "Root and nearest files apply automatically; press p to pin one."), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, p.message, hint, width)}
@@ -92,7 +92,7 @@ func (p *instructionsPanel) HandleInput(data string) (sdk.RemoteComponentResult,
 	if keys.Matches(data, "tui.select.cancel") {
 		return sdk.RemoteComponentResult{Done: true}, nil
 	}
-	text, ok := printable(data)
+	text, ok := actionKey(data, "puv")
 	if !ok {
 		return sdk.RemoteComponentResult{}, nil
 	}

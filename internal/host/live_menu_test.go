@@ -372,7 +372,7 @@ func TestLiveSettingsPanelEditsAnArraySettingAndPersistsIt(t *testing.T) {
 	}
 	s.keys("Enter")
 	s.waitFor("kb", 10*time.Second)
-	s.typeText("d")
+	s.keys("M-d")
 	s.keys("Escape")
 	s.waitFor("[unsaved]", 10*time.Second)
 	s.keys("C-s")
@@ -396,34 +396,34 @@ func TestLiveJobsPanelKillsWaitsAndRefreshesARealJob(t *testing.T) {
 	s.openHub()
 	s.keys("Down", "Enter")
 	list := s.waitFor("Workbench › Jobs", 10*time.Second)
-	if !strings.Contains(list, "running") || !strings.Contains(list, "enter open · k stop") {
+	if !strings.Contains(list, "running") || !strings.Contains(list, "enter open · alt+k stop") {
 		t.Fatalf("the jobs panel does not list the running job with its actions:\n%s", list)
 	}
 	s.capture("jobs-list")
 	s.keys("Enter")
 	detail := s.waitFor("panel-job-output", 10*time.Second)
 	s.capture("jobs-detail")
-	s.keys("r")
+	s.keys("M-r")
 	s.waitFor("Refreshed", 10*time.Second)
-	s.keys("w")
+	s.keys("M-w")
 	s.waitFor("Waited on", 15*time.Second)
 	if !strings.Contains(s.screen(), "running") {
 		t.Fatalf("a timed-out wait must leave the job running:\n%s\n%s", detail, s.screen())
 	}
-	s.keys("k")
+	s.keys("M-k")
 	s.waitFor("Stop job", 10*time.Second)
 	s.keys("n")
 	s.waitFor("Stop cancelled", 10*time.Second)
 	if !strings.Contains(s.screen(), "running") {
 		t.Fatalf("cancelling the confirmation stopped the job:\n%s", s.screen())
 	}
-	s.keys("k", "y")
+	s.keys("M-k", "Enter")
 	stopped := s.waitFor("Stopped", 10*time.Second)
 	if !strings.Contains(stopped, "cancelled") {
 		t.Fatalf("the job did not report cancelled after the confirmed stop:\n%s", stopped)
 	}
 	s.keys("Escape")
-	s.waitFor("enter open · k stop", 10*time.Second)
+	s.waitFor("enter open · alt+k stop", 10*time.Second)
 }
 
 func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
@@ -438,7 +438,7 @@ func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
 	if !strings.Contains(empty, "No pinned instruction files") {
 		t.Fatalf("the panel does not start empty:\n%s", empty)
 	}
-	s.keys("p")
+	s.keys("M-p")
 	s.waitFor("Path of the file to pin", 10*time.Second)
 	s.typeSlowly("BACKLOG.md")
 	s.keys("Enter")
@@ -447,10 +447,10 @@ func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
 		t.Fatalf("the pin is not listed:\n%s", pinned)
 	}
 	s.capture("instructions-pinned")
-	s.keys("v")
+	s.keys("M-v")
 	s.waitFor("› rules", 10*time.Second)
 	s.keys("Escape")
-	s.waitFor("p pin · u unpin", 10*time.Second)
+	s.waitFor("alt+p pin · alt+u unpin", 10*time.Second)
 	s.keys("Escape", "Escape")
 	s.typeText("/workbench instructions ls")
 	s.keys("Enter")
@@ -465,8 +465,8 @@ func TestLiveInstructionsPanelPinsAndUnpinsAFile(t *testing.T) {
 	s.keys("Escape")
 	s.openHub()
 	s.keys("Down", "Down", "Down", "Down", "Enter")
-	s.waitFor("p pin · u unpin", 10*time.Second)
-	s.keys("u")
+	s.waitFor("alt+p pin · alt+u unpin", 10*time.Second)
+	s.keys("M-u")
 	s.waitFor("unpinned", 10*time.Second)
 }
 
@@ -480,7 +480,7 @@ func TestLiveTrustPanelAddsAndRemovesARulePersistently(t *testing.T) {
 	if !strings.Contains(empty, "No trust rules") {
 		t.Fatalf("the panel does not start empty:\n%s", empty)
 	}
-	s.keys("a")
+	s.keys("M-a")
 	s.waitFor("allow <absolute dir>", 10*time.Second)
 	s.typeSlowly(rule)
 	s.keys("Enter")
@@ -493,7 +493,7 @@ func TestLiveTrustPanelAddsAndRemovesARulePersistently(t *testing.T) {
 	if err != nil || !strings.Contains(string(data), rule) {
 		t.Fatalf("the rule was not persisted: %v\n%s", err, data)
 	}
-	s.keys("d")
+	s.keys("M-d")
 	s.waitFor("Removed allow", 15*time.Second)
 	data, err = os.ReadFile(filepath.Join(root, "agent", "Workbench.toml"))
 	if err != nil || strings.Contains(string(data), rule) {
@@ -510,21 +510,21 @@ func TestLiveSessionsPanelMessagesALivePeerAndTogglesPolicy(t *testing.T) {
 	s.openHub()
 	s.keys("Down", "Down", "Down", "Down", "Down", "Down", "Down", "Down", "Enter")
 	list := s.waitFor("Workbench › Sessions", 10*time.Second)
-	if !strings.Contains(list, "m message") {
+	if !strings.Contains(list, "alt+m message") {
 		t.Fatalf("the sessions panel does not offer its actions:\n%s", list)
 	}
 	s.waitFor("idle", 15*time.Second)
 	s.capture("sessions-panel")
-	s.keys("t")
+	s.keys("M-t")
 	s.waitFor("trust:", 10*time.Second)
 	s.waitFor("trusted", 10*time.Second)
-	s.keys("t")
+	s.keys("M-t")
 	s.waitFor("untrust:", 10*time.Second)
-	s.keys("b")
+	s.keys("M-b")
 	s.waitFor("blocked", 10*time.Second)
-	s.keys("b")
+	s.keys("M-b")
 	s.waitFor("unblock:", 10*time.Second)
-	s.keys("m")
+	s.keys("M-m")
 	s.waitFor("Message to", 10*time.Second)
 	s.typeSlowly("PANEL-MSG")
 	s.keys("Enter")

@@ -236,8 +236,27 @@ func (p *settingsPanel) editView(width int) kit.View {
 	if definition.Kind == config.Integer {
 		body.AddChild(kit.NewText(fmt.Sprintf("whole number %d to %d", definition.Min, definition.Max), 1, 0))
 	}
-	hint := "enter stage · " + sdk.KeyText("tui.select.cancel") + " cancel"
+	hint := sdk.KeyText("tui.select.confirm") + " stage · " + sdk.KeyText("tui.select.cancel") + " cancel"
 	return kit.View{Root: panelFrame(fitLine("Workbench › Settings › "+p.editing, width), body, p.message, hint, width), Focus: "value"}
+}
+
+// actionKey reports which of the panel's alt+<letter> actions data is; plain letters never act.
+func actionKey(data, letters string) (string, bool) {
+	for _, letter := range letters {
+		if tui.MatchesKey(data, "alt+"+string(letter)) {
+			return string(letter), true
+		}
+	}
+	return "", false
+}
+
+// actionHints renders "alt+k stop · alt+w wait" from "k stop", "w wait", in the host's key spelling.
+func actionHints(actions ...string) string {
+	hints := make([]string, len(actions))
+	for i, action := range actions {
+		hints[i] = sdk.FormatKeyText("alt+"+action[:1]) + action[1:]
+	}
+	return strings.Join(hints, " · ")
 }
 
 func printable(data string) (string, bool) {
@@ -264,7 +283,7 @@ func (p *settingsPanel) HandleInput(data string) (sdk.RemoteComponentResult, err
 	case tui.MatchesKey(data, "ctrl+r"):
 		if definition, ok := p.current(); ok {
 			p.staged[definition.Key] = stagedChange{reset: true}
-			p.message = "Reset staged for " + definition.Key + " at " + string(p.scope()) + "; ctrl+s saves."
+			p.message = "Reset staged for " + definition.Key + " at " + string(p.scope()) + "; " + sdk.FormatKeyText("ctrl+s") + " saves."
 		}
 	case tui.MatchesKey(data, "tab"):
 		p.scopeIndex = (p.scopeIndex + 1) % len(p.scopes)
@@ -319,7 +338,7 @@ func (p *settingsPanel) HandleViewEvent(event kit.Event) (sdk.RemoteComponentRes
 	case kit.EventCancel:
 		if p.dirty() && !p.armed {
 			p.armed = true
-			p.message = "Unsaved changes: ctrl+s saves, " + sdk.KeyText("tui.select.cancel") + " again discards."
+			p.message = "Unsaved changes: " + sdk.FormatKeyText("ctrl+s") + " saves, " + sdk.KeyText("tui.select.cancel") + " again discards."
 			return sdk.RemoteComponentResult{}, nil
 		}
 		if p.filter != "" {

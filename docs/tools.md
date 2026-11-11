@@ -145,7 +145,7 @@ The single `jobs` tool supports `list`, `status`, `output`, `wait`, `kill`, `wri
 
 A job also outlives the runtime that started it when that runtime dies without shutting down. To keep such a job from becoming an unsupervised process, each runtime claims a liveness lock for its generation under `$XDG_STATE_HOME/pig-workbench/jobs/`, records the pid and kernel start time of every job it starts, and the next start terminates the process groups whose owner lock is free — after rechecking the recorded pid against its start time, so a recycled pid is never signalled. Records of a live runtime are left untouched, including another session's.
 
-`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. In the TUI, `/workbench jobs` opens a panel: `enter` shows a job's output, `r` refreshes, `w` waits up to three seconds and `k` stops the job after one `y` confirmation; every action goes through the `jobs` tool's policy.
+`job://` resources, `/workbench jobs` and `/wb:jobs` are wired. In the TUI, `/workbench jobs` opens a panel: `enter` shows a job's output, `alt+r` refreshes, `alt+w` waits up to three seconds and `alt+k` stops the job after one `enter` confirmation; every action goes through the `jobs` tool's policy.
 
 ### Scheme paths in shell commands
 

@@ -54,7 +54,7 @@ func (e *arrayEditor) view(p *settingsPanel, width int) kit.View {
 			label = "New item"
 		}
 		body := kit.NewContainer(kit.NewText(fitLine(label, width), 1, 0), input)
-		hint := "enter keep · " + sdk.KeyText("tui.select.cancel") + " cancel"
+		hint := sdk.KeyText("tui.select.confirm") + " keep · " + sdk.KeyText("tui.select.cancel") + " cancel"
 		return kit.View{Root: panelFrame(title, body, e.message, hint, width), Focus: "item"}
 	}
 	items := make([]kit.SelectItem, 0, len(e.items)+1)
@@ -68,7 +68,7 @@ func (e *arrayEditor) view(p *settingsPanel, width int) kit.View {
 	if status == "" && !slices.Equal(e.items, e.original) {
 		status = "changed; " + sdk.KeyText("tui.select.cancel") + " stages it"
 	}
-	hint := "enter edit · d remove · " + sdk.KeyText("tui.select.cancel") + " done"
+	hint := sdk.KeyText("tui.select.confirm") + " edit · " + actionHints("d remove") + " · " + sdk.KeyText("tui.select.cancel") + " done"
 	return kit.View{Root: panelFrame(title, list, status, hint, width), Focus: "items"}
 }
 
@@ -76,7 +76,7 @@ func (e *arrayEditor) handleInput(data string) {
 	if e.editing {
 		return
 	}
-	if text, ok := printable(data); ok && (text == "d" || text == "x") && e.selected < len(e.items) {
+	if _, ok := actionKey(data, "d"); ok && e.selected < len(e.items) {
 		e.items = slices.Delete(e.items, e.selected, e.selected+1)
 		e.selected = min(e.selected, len(e.items))
 	}
@@ -122,7 +122,7 @@ func (e *arrayEditor) handleEvent(p *settingsPanel, event kit.Event) {
 	case kit.EventCancel:
 		if !slices.Equal(e.items, e.original) {
 			p.staged[e.key] = stagedChange{value: slices.Clone(e.items)}
-			p.message = fmt.Sprintf("Staged %d item(s) for %s; ctrl+s saves.", len(e.items), e.key)
+			p.message = fmt.Sprintf("Staged %d item(s) for %s; "+sdk.FormatKeyText("ctrl+s")+" saves.", len(e.items), e.key)
 		}
 		p.array = nil
 	}

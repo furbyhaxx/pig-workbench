@@ -60,7 +60,7 @@ func (p *projectsPanel) View(width int) kit.View {
 		input.Value = p.input
 		prompt := fmt.Sprintf("%s (%d/%d)", p.prompts[p.step], p.step+1, len(p.prompts))
 		body := kit.NewContainer(kit.NewText(fitLine(prompt, width), 1, 0), input)
-		hint := "enter next · " + sdk.KeyText("tui.select.cancel") + " back"
+		hint := sdk.KeyText("tui.select.confirm") + " next · " + sdk.KeyText("tui.select.cancel") + " back"
 		return kit.View{Root: panelFrame(p.title, body, p.message, hint, width), Focus: "field"}
 	case "join":
 		items := []kit.SelectItem{

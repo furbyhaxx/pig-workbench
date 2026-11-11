@@ -14,7 +14,7 @@ import (
 type jobRow struct{ id, label, command string }
 
 // jobsPanel lists the session's jobs and acts on them through the jobs tool, so the panel and the
-// model share one policy. Detail shows a bounded output page; k asks once before stopping a job.
+// model share one policy. Detail shows a bounded output page; alt+k asks once before stopping a job.
 type jobsPanel struct {
 	title    string
 	rows     func() []jobRow
@@ -55,7 +55,7 @@ func (p *jobsPanel) View(width int) kit.View {
 	for i, row := range rows {
 		items[i] = kit.SelectItem{Value: row.id, Label: jobs.ShortID(row.id) + "  " + row.label, Description: fitLine(row.command, max(12, width-28))}
 	}
-	hint := "enter open · k stop · w wait · r refresh · " + sdk.KeyText("tui.select.cancel") + " close"
+	hint := sdk.KeyText("tui.select.confirm") + " open · " + actionHints("k stop", "w wait", "r refresh") + " · " + sdk.KeyText("tui.select.cancel") + " close"
 	status := p.status()
 	if len(items) == 0 {
 		body := kit.NewText(emptyState("jobs in this session", ""), 1, 0)
@@ -69,7 +69,7 @@ func (p *jobsPanel) View(width int) kit.View {
 
 func (p *jobsPanel) status() string {
 	if p.confirm != "" {
-		return "Stop job " + p.confirm + "? y confirms, any other key cancels"
+		return "Stop job " + p.confirm + "? " + sdk.KeyText("tui.select.confirm") + " confirms, any other key cancels"
 	}
 	return p.message
 }
@@ -84,7 +84,7 @@ func (p *jobsPanel) detailView(width int) kit.View {
 	if status == "" && len(p.output) > rows {
 		status = fmt.Sprintf("lines %d-%d of %d", p.top+1, p.top+len(window), len(p.output))
 	}
-	hint := "k stop · w wait · r refresh · " + sdk.KeyText("tui.select.cancel") + " back"
+	hint := actionHints("k stop", "w wait", "r refresh") + " · " + sdk.KeyText("tui.select.cancel") + " back"
 	body := kit.NewText(strings.Join(window, "\n"), 1, 0)
 	return kit.View{Root: panelFrame(title, body, status, hint, width)}
 }
@@ -125,7 +125,7 @@ func (p *jobsPanel) HandleInput(data string) (sdk.RemoteComponentResult, error) 
 	if p.confirm != "" {
 		id := p.confirm
 		p.confirm = ""
-		if text, ok := printable(data); ok && text == "y" {
+		if tui.GetKeybindings().Matches(data, "tui.select.confirm") {
 			p.message = ""
 			p.selectID(id)
 			p.run("kill")
@@ -172,7 +172,7 @@ func (p *jobsPanel) selectID(id string) {
 }
 
 func (p *jobsPanel) letter(data string) {
-	text, ok := printable(data)
+	text, ok := actionKey(data, "kwr")
 	if !ok {
 		return
 	}

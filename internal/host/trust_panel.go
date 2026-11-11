@@ -25,7 +25,7 @@ func (p *trustPanel) View(width int) kit.View {
 		input := kit.NewInput("rule")
 		input.Value = p.input
 		body := kit.NewContainer(kit.NewText(fitLine("allow <absolute dir> or deny <absolute dir>", width), 1, 0), input)
-		hint := "enter save · " + sdk.KeyText("tui.select.cancel") + " cancel"
+		hint := sdk.KeyText("tui.select.confirm") + " save · " + sdk.KeyText("tui.select.cancel") + " cancel"
 		return kit.View{Root: panelFrame(p.title+" › add", body, p.message, hint, width), Focus: "rule"}
 	}
 	valid, invalid := p.rules()
@@ -37,7 +37,7 @@ func (p *trustPanel) View(width int) kit.View {
 	if status == "" && len(invalid) > 0 {
 		status = "Ignored malformed rules: " + noticeText(strings.Join(invalid, "; "), 0)
 	}
-	hint := "a add · d remove · " + sdk.KeyText("tui.select.cancel") + " close"
+	hint := actionHints("a add", "d remove") + " · " + sdk.KeyText("tui.select.cancel") + " close"
 	if len(items) == 0 {
 		body := kit.NewText(emptyState("trust rules", "Nested repositories stay a boundary. Nearest rule wins; deny beats allow at equal depth."), 1, 0)
 		return kit.View{Root: panelFrame(p.title, body, status, hint, width)}
@@ -59,7 +59,7 @@ func (p *trustPanel) HandleInput(data string) (sdk.RemoteComponentResult, error)
 	if cancel {
 		return sdk.RemoteComponentResult{Done: true}, nil
 	}
-	text, ok := printable(data)
+	text, ok := actionKey(data, "ad")
 	if !ok {
 		return sdk.RemoteComponentResult{}, nil
 	}
