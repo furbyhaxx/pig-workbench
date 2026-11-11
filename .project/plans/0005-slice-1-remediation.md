@@ -3,22 +3,22 @@ document:
   type: "plan"
   id: "PLAN-0005"
   title: "Slice 1 remediation: close the review findings before the slice exit"
-  description: "Fixes every finding of REV-2026-11-10-slice-1 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
+  description: "Fixes every finding of the Slice 1 review of 10.11.2026 so PLAN-0002 can exit: shell and scheme paths, frame ledger, instruction discovery, resource trees, settings, skills, jobs, services, tool rows, panels, shared primitives and docs"
   status: "draft"
-  revision: 8
+  revision: 9
   created_at: "2026-11-10T09:40:00+01:00"
-  updated_at: "2026-11-10T17:29:33+01:00"
+  updated_at: "2026-11-11T09:45:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 8
-      reason: "activity.replace-working-indicator has no feature behind it yet"
-      changes: ["Area E table: the key is not shown until the activity line has a verified state item"]
+    - revision: 9
+      reason: "Plan completed"
+      changes: ["Progress: all areas done; references to the deleted review replaced"]
 ---
 
 # 1. Outcome
 
-Every finding of [REV-2026-11-10-slice-1](../reviews/2026-11-10-slice-1/report.md) is fixed, or moved to PLAN-0003 by an explicit plan revision. After this plan [PLAN-0002](0002-slice-1-foundation.md) §5 can exit: all three gates are green, the inventory is re-run at the fix commit, and the handoff to pig-web names that commit.
+Every finding of the Slice 1 review of 10.11.2026 (at `00649e9`) is fixed, or moved to PLAN-0003 by an explicit plan revision. After this plan [PLAN-0002](0002-slice-1-foundation.md) §5 can exit: all three gates are green, the inventory is re-run at the fix commit, and the handoff to pig-web names that commit.
 
 This plan adds no feature beyond what the specifications already assign to Slice 1, with one approved extension: scheme paths as arguments of ordinary shell commands (area A).
 
@@ -26,10 +26,8 @@ Task list: `.pig/tasks/slice-1-remediation.json`.
 
 ## Progress
 
-- **done:** areas A to J and L; in K the commands and the activity line; in M the generated settings reference, product docs, steering files and stale plan text.
-- **now:** area M (SPEC-0005 note, backlog).
-- **blocked:** K panels wait for the user's approval of the action-key proposal (single letters become `alt+<letter>`).
-- **next:** K captures and review, then the exit (N).
+- **done:** all areas A to N. Gates pass on the tree of `c84acd8`; the user accepted the layouts; the handoff to pig-web is written; the review is deleted, its unfixed remainders are backlog items (`BACKLOG.md`, `internal/host/BACKLOG.md`).
+- **done outside the original areas:** tool schemas without a union root (xAI 400), jobs detached from the controlling terminal, tools recover after the working location is deleted.
 
 # 2. Decisions
 

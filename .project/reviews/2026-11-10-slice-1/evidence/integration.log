@@ -1,6 +1,0 @@
---- FAIL: TestLiveTrustPanelAddsAndRemovesARulePersistently (22.24s)
-    live_menu_test.go:476: never saw "allow $HOME/.cache/pig-workbench-test-tmp/work/TestLiveTrustPanelAddsAndRemovesARulePersistently3963548887/001/nested":
-FAIL
-FAIL	github.com/furbyhaxx/pig-workbench/internal/host	476.579s
-FAIL
-integration exit=1
