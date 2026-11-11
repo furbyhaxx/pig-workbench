@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 66
+  revision: 67
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-10T17:05:00+01:00"
+  updated_at: "2026-11-11T01:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 66
-      reason: "User decision 10.11.2026: out:// had no producer and leaves Slice 1; it returns in Slice 2 with one"
-      changes: ["§2 URI system row: out:// is depth"]
+    - revision: 67
+      reason: "Progress described the state of 07.11.2026 and cited figures the review contradicted"
+      changes: ["Progress rewritten: implementation done, PLAN-0005 in progress, exit pending, scope moved out by decision listed"]
 ---
 
 # 1. Outcome
@@ -31,13 +31,11 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 
 ## Progress
 
-- **Current status (07.11.2026):** Slice 1 is implemented in substantial part but is **not complete**. All fourteen specifications have been approved; acceptance and the slice exit remain open. The authoritative row-by-row inventory is [ANA-2026-11-05-slice-1-inventory](../analyses/2026-11-05-slice-1-inventory/README.md); its representative passing tests are not a claim that every acceptance anchor passes.
-- **Observed baseline:** `just check`, `just race` and `just integration` pass on Linux after the local acceptance audit (logs `final-check.log`, `final-race.log`, `final-integration.log` in the inventory's `evidence/`). The authorized live run on deepseek/deepseek-flash drove every tool, the core schemes and `ask_user`, and ran the prompt A/B twice; its first round found an empty `builtin/workbench` prompt, fixed before the second. The A/B sample is small, so delivery `auto` still serves PiG's prompt.
-- **Available:** the ten tools, local locations, scoped settings, core resources, hashline editing, jobs, secrets boundary, frames and instructions, prompt/skills, session messaging and the v1 contribution seams are wired in varying degrees. See the product README and the inventory for the exact current surface and its limitations.
-- **Local acceptance reconciliation:** every PLAN-0001 §9 Slice 1 row was audited against its exact specification anchors; the inventory lists PASS, PARTIAL and Slice 2 results separately. The audit fixed real gaps, among them background-job completion notices, read repetition and supersession, retained-metadata redaction, provider cancel/drain and the interactive `/workbench` hub. Remaining PARTIAL rows: SPEC-0013 compaction/branch-summary request capture and per-tool substitution tests for edit, HTTP and codemode children; SPEC-0008 `jobs wait until=output`, `kill` signal argument and stream selection; fused Workbench in a Piglet Binary (a PiG merge limit).
-- **Unfinished Slice 1:** `grep` searches bounded provider-directory roots and explicit files with line selectors. Long matching lines use explicit bounded windows, and oversized context is reduced before dropping a matching line. `find` walks bounded paginated providers including confined `local://` scratch. Scratch reads and listings use root-confined descriptors. Scheme-command `rm`, `mv`, `cp` and `mkdir` now dispatch declared provider mutations without new permission prompts. Direct write and redirects share provider integrity checks; redirects accept one static word, not general shell redirection. Provider snapshot editing remains unadvertised. The shell parser recognizes static quoted/escaped URI paths, but cannot always identify dynamically constructed paths. Trusted project-private notes enter the frame and pin lifecycle; truncated instruction views block mutations until their current source is fully delivered, including tagged batch targets and move destinations. The task list retains the remaining behaviors and acceptance tests; none is moved to depth by this checkpoint.
-- **Evidence and approval gaps:** `TestLiveAgentReplyIncrementsHopAndStopsWake` exercises a real two-session reply and hop limit with scripted inference. `TestLiveStoredSessionTitleRequiresConfirmation` exercises decline and acceptance through PiG RPC confirmation dialogs, not a visual TUI. `TestLiveAskMultiAndPreviewThroughNativeDialogs` exercises multi and preview answers in real PiG RPC dialogs with scripted inference. `TestActivityCountsFailedJobsAfterRealExit` verifies activity failure counts against real child processes. Windows messaging, session storage and registry have compile-level coverage only. The real-provider A/B and full agent transcript require user authorization for inference spend. The live A/B (round 3: 16 tasks x 5 repetitions per arm) passed 79/80 under each prompt with 0 tool errors against 4 and 23% fewer input tokens for builtin/workbench, so `prompt.delivery = auto` now resolves to force on stock PiG per SPEC-0014 §4; takeover still requires instructions enabled.
-- **Intentionally deferred:** activity-item click requires the fork host and `activity.shortcut` is applied from the user layer at load (a change needs /reload); broadcast, coordinator, by-project trees and rich questionnaire chrome belong to later slices. The reference-extension seam gate passed; the real pig-web co-load remains pig-web's gate, and no slice-exit commit exists yet.
+- **done:** Phases A to M are implemented and all fourteen specifications are published. The review of 10.11.2026 found one critical and six high defects against this plan; [PLAN-0005](0005-slice-1-remediation.md) fixes them.
+- **now:** PLAN-0005. Its areas A to J and L are done (shell scheme paths, frames, instructions, resource trees, settings, skills, jobs, services, secrets, tool rows, shared primitives); panels and the documentation area are in progress.
+- **next:** the slice exit of §5: all gates, the row-by-row progress table here, and the handoff to pig-web naming the exit commit.
+- **Not part of this slice by decision:** `out://`, the instruction file watcher, stored-session `tree` and `messages`, `jobs monitor|write` (all PLAN-0003); `operation.status` is reserved (SPEC-0001).
+- **Known limits at the exit:** Windows is compile- and partly wine-tested only; Workbench cannot be fused into a Piglet Binary on PiG 0.7.0; activity-item click needs the fork host (PLAN-0004 C4).
 
 # 2. What is in Slice 1 and what is depth
 

@@ -26,10 +26,10 @@ Task list: `.pig/tasks/slice-1-remediation.json`.
 
 ## Progress
 
-- **done:** review, this plan, the task list.
-- **now:** nothing started.
-- **next:** area A, then B, C and D.
-- **later:** areas E to M, then the exit (N).
+- **done:** areas A to J and L; in K the commands and the activity line; in M the generated settings reference, product docs, steering files and stale plan text.
+- **now:** area M (SPEC-0005 note, backlog).
+- **blocked:** K panels wait for the user's approval of the action-key proposal (single letters become `alt+<letter>`).
+- **next:** K captures and review, then the exit (N).
 
 # 2. Decisions
 

@@ -5,20 +5,20 @@ document:
   title: "Message frames and delivery API"
   description: "External frame producers, provenance, delivery, replay and presentation"
   status: "published"
-  revision: 17
+  revision: 18
   created_at: "2026-11-02T16:00:47+01:00"
-  updated_at: "2026-11-10T22:20:00+01:00"
+  updated_at: "2026-11-11T01:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 17
-      reason: "A system-role frame after an assistant turn was rejected by a provider in the donor"
-      changes: ["§6: placement rule for any native system projection; Workbench sends frames only as custom messages"]
+    - revision: 18
+      reason: "§1 still called the specification an unimplemented draft"
+      changes: ["§1: removed the sentence; the pipeline is implemented in internal/frames and internal/host"]
 ---
 
 # 1. Purpose and dependency
 
-Implement one attributed frame pipeline for Workbench and cooperating extensions. External producers use [SPEC-0001](0001-extension-services.md); they never insert custom system-role text directly. This draft specifies intended v1 behavior; nothing here is implemented yet. Donor references: `host:/mnt/Projects/furbyhaxx/pi-workbench/src/message-framing/`, its `src/instructions/`, and `host:/mnt/Projects/nukular/nukular-ai/crates/nukular-agent-sdk/src/frame/instruction_ledger.rs`.
+Implement one attributed frame pipeline for Workbench and cooperating extensions. External producers use [SPEC-0001](0001-extension-services.md); they never insert custom system-role text directly. Donor references: `host:/mnt/Projects/furbyhaxx/pi-workbench/src/message-framing/`, its `src/instructions/`, and `host:/mnt/Projects/nukular/nukular-ai/crates/nukular-agent-sdk/src/frame/instruction_ledger.rs`.
 
 Frames separate **facts**, **model delivery**, and **transcript presentation**. Hiding a row never removes instructions from context. Delivery to a model request does not prove the model read, obeyed or acted on it.
 

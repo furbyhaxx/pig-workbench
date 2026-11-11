@@ -5,15 +5,15 @@ document:
   title: "Implement the full pig-workbench extension"
   description: "Scope-traced delivery plan for Go tools, full hashline editing, advanced reads, resource schemes, context injection and Workbench UX"
   status: "draft"
-  revision: 29
+  revision: 30
   created_at: "2026-11-02T15:26:05+01:00"
-  updated_at: "2026-11-10T17:05:00+01:00"
+  updated_at: "2026-11-11T01:10:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 29
-      reason: "User decision 10.11.2026: out:// had no producer and leaves Slice 1; it returns in Slice 2 with one"
-      changes: ["§9: out:// moves from the 0012 §5.3 core row to the rest row"]
+    - revision: 30
+      reason: "Progress stated the bootstrap of 02.11.2026 as the present"
+      changes: ["Progress rewritten to the current state: foundation implemented, PLAN-0005 running, exit pending"]
 ---
 
 # 1. Outcome and authority
@@ -46,14 +46,10 @@ Together these ten specifications and three design artifacts cover the planned f
 
 ## Progress
 
-- **done:** Source reconnaissance, proposal revisions, minimal loadable Go factory bootstrap, ten draft specifications and three static design/wireframe artifacts. No service/tool implementation yet.
-- **done (M0.2):** All probe rows except kit views (deferred to M0.5/M1 fixture prototypes) — host probes P1–P30 (SPEC-0001 §9) P1–P30. Findings written into SPEC-0001/0002/0003/0005–0010. Eight upstream issues listed; `--list-tools` output is the only host-blocked feature.
-- **done (M0.2, secrets):** Secrets probes (SPEC-0013 §9) S1–S6: the SPEC-0013 boundary is hostable (entry-time redaction, `context_with_system`, `ctx.Abort()` to withhold). Two upstream requests H-S1/H-S2 join the queue.
-- **done (M0.3):** Backend matrix approved as proposed, including HEIC — backend evaluation of 02.11.2026 (matrix in SPEC-0006 §2). Open coverage checks: cpio and the remaining archive formats, grammar subset/size budget, HTML conversion quality, macOS/Windows.
-- **now:** [PLAN-0002](0002-slice-1-foundation.md): local runtime and scalar configuration foundations implemented and verified; remaining phases and Phase A formal freeze/ledger/handoff closeout are still open. Personal PiG fork (D13) in parallel.
-- **next:** PLAN-0002 Phases B–L, then [PLAN-0003](0003-slice-2-feature-complete.md) and [PLAN-0004](0004-slice-3-completion.md).
-- **done (M0.2, prompts):** System prompt probes (SPEC-0014 §11) PR1–PR8: `force` delivery and `beforePrompt` frames work in RPC, print and TUI; gaps are later handlers and transcript truth (fork candidate F-P3); mid-run tool changes become `tools` frames (SPEC-0014 §4.3). PR7: mid-run `tools` frames work; PR8: late sections (`mcp_servers`) need the `before_provider_request` splice (fork candidate F-P4). SPEC-0014 decisions Q1–Q6 accepted.
-- **later:** Automatic session title generation (agents already read and set titles through `session://<id>/title`, SPEC-0012 §5.3), in PLAN-0004 C5.
+- **done:** M0 contracts, host probes (P1–P30, S1–S6, PR1–PR8) and the backend matrix; all fourteen specifications are published. The Slice 1 foundation is implemented: the ten tools, the URI system with its core schemes, locations, jobs, frames and instructions, system prompt and skills, secrets, session messaging and the v1 extension services.
+- **now:** [PLAN-0005](0005-slice-1-remediation.md) closes the findings of the Slice 1 review; the Slice 1 exit of [PLAN-0002](0002-slice-1-foundation.md) §5 follows it.
+- **next:** [PLAN-0003](0003-slice-2-feature-complete.md) (depth), then [PLAN-0004](0004-slice-3-completion.md) (chrome, fork host, release gate).
+- **later:** automatic session title generation (PLAN-0004 C5).
 
 ## Delivery slices
 
