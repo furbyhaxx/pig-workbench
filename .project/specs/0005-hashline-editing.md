@@ -5,15 +5,15 @@ document:
   title: "Full hashline editing and shared source snapshots"
   description: "Grammar, syntax blocks, registers, provenance, recovery and mutation integrity"
   status: "published"
-  revision: 14
+  revision: 15
   created_at: "2026-11-02T16:17:52+01:00"
-  updated_at: "2026-11-11T00:20:00+01:00"
+  updated_at: "2026-11-11T01:20:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 14
-      reason: "A register paste is accepted at the end of the file"
-      changes: ["PUT >$ @name added to the grammar table"]
+    - revision: 15
+      reason: "Record the relocation rule as built and the donor revision it was ported from"
+      changes: ["G5.2: exact whole-line match with a three-line window, refusal otherwise, note on a relocated commit", "Donor fixtures are not vendored; port revision 553f0d1 named"]
 ---
 
 # 1. Authority and scope
@@ -168,6 +168,10 @@ From the donor test audit of 02.11.2026, oh-my-pi `crates/pi-edit` and `edit-*` 
 - A body shallower than its block slides past the closing line, across several closer levels, stopping at body depth, with a warning. It never crosses a line that another hunk targets.
 
 **G5.2 Recovery.** Body comparison has a character (not byte) budget shared across all hunks and is skipped past that budget. A body written for the tagged line is remapped; one written for the current line is refused. A remap that breaks the parse, or that moves into a sibling construct, is refused. An isolated unique line with no neighbour offset is refused. A duplicated range is remapped only when its context matches. A refused remap leaves the clipboard untouched; an accepted remap publishes its registers. An unchanged anchor replays onto the current text. Tag collision within one canonical resource (user decision D5.b): recover from the newest retained snapshot of that resource whose tag matches, then run the full relocation validation; a collision across different resources is refused.
+
+Relocation as built is stricter than the donor: a target moves only on exact byte equality of whole lines, trailing whitespace included. It moves when the target with up to three neighbour lines on each side occurs exactly once in the tagged snapshot and exactly once in the current content; without such a window, when the target alone is unique in both. Any other case is refused, naming the candidate spans or the absence, never source text. There is no fuzzy or whitespace-insensitive match and no body-versus-current comparison beyond this; the parse and sibling-construct checks run after it. Explicit `<1` and `>$` keep their global position. A relocated edit commits with a one-line note that the file changed since the tagged read.
+
+Fixtures: the donor tests are not vendored. The rules above were ported from oh-my-pi `crates/pi-edit` at `553f0d1` and are covered by this repository's own cases in `internal/hashline/relocate_test.go`; a donor update is compared against that revision.
 
 **G5.3 Parser leniency.** Each case is recognised and warned about, never silent:
 - lenient range separators and dangling ranges;
