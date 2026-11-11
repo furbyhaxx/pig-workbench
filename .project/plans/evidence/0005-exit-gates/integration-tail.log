@@ -1,0 +1,5 @@
+cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
+printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
+go test -race -tags=integration -timeout 30m -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./internal/host
+ok  	github.com/furbyhaxx/pig-workbench/internal/host	654.834s

@@ -1,0 +1,5 @@
+Warning: No models match pattern "synthetic/hf:moonshotai/Kimi-K3.1-Pro"
+Warning: No models match pattern "claude/claude-fable-5-2"
+pig package validate . --json
+{"valid":true,"root":"/mnt/Projects/furbyhaxx/pig-workbench","resources":{"agentEnvironments":0,"agents":0,"extensions":1,"hooks":0,"mcpServers":0,"prompts":0,"skills":0,"themes":0}}
+python3 scripts/check_artifacts.py .
