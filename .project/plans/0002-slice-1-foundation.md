@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 67
+  revision: 68
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-11T01:10:00+01:00"
+  updated_at: "2026-11-11T02:45:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 67
-      reason: "Progress described the state of 07.11.2026 and cited figures the review contradicted"
-      changes: ["Progress rewritten: implementation done, PLAN-0005 in progress, exit pending, scope moved out by decision listed"]
+    - revision: 68
+      reason: "Slice exit state after PLAN-0005"
+      changes: ["Exit state table and the row-by-row progress table with test links", "Progress: remediation done except the layout review and the handoff"]
 ---
 
 # 1. Outcome
@@ -32,8 +32,9 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 ## Progress
 
 - **done:** Phases A to M are implemented and all fourteen specifications are published. The review of 10.11.2026 found one critical and six high defects against this plan; [PLAN-0005](0005-slice-1-remediation.md) fixes them.
-- **now:** PLAN-0005. Its areas A to J and L are done (shell scheme paths, frames, instructions, resource trees, settings, skills, jobs, services, secrets, tool rows, shared primitives); panels and the documentation area are in progress.
-- **next:** the slice exit of §5: all gates, the row-by-row progress table here, and the handoff to pig-web naming the exit commit.
+- **done:** PLAN-0005 code, documentation and gates; the exit state and the row table are in §5.
+- **now:** the user's review of the new layouts (panels, tool rows, activity line, skills rows).
+- **next:** the handoff to pig-web naming the exit commit, then deleting the consumed review.
 - **Not part of this slice by decision:** `out://`, the instruction file watcher, stored-session `tree` and `messages`, `jobs monitor|write` (all PLAN-0003); `operation.status` is reserved (SPEC-0001).
 - **Known limits at the exit:** Windows is compile- and partly wine-tested only; Workbench cannot be fused into a Piglet Binary on PiG 0.7.0; activity-item click needs the fork host (PLAN-0004 C4).
 
@@ -223,6 +224,46 @@ Every command from §2 with completions; activity line (SPEC-0009 §9) with buil
 6. Handoff to pig-web naming the slice-exit commit, reference-gate evidence and depth still pending. The real `pig -e ../pig-workbench -e ../pig-web` co-load run belongs to pig-web's own gate (its PLAN-0001 Slice 5), against that handed-off commit; Workbench does not claim that downstream run passed.
 
 Completion follows PLAN-0001 §7: observed checks only; failures and skipped gates reported with impact.
+
+## Exit state
+
+| # | Exit item | State |
+|---|---|---|
+| 1 | Gates, no leaks | **Pass** on the tree of `6227b03`: `just check`, `just race`, `just integration` exit 0 ([evidence](evidence/0005-exit-gates/)) |
+| 2 | Every Slice 1 row passes, no stubs | **Pass**, table below. No TODO marker in product code; every remaining `unsupported` answer is for a capability or operation that is not advertised; every shown setting has a consumer (`TestEveryShownSettingHasAConsumer`) |
+| 3 | Live agent session | **Done 08.11.2026** on deepseek/deepseek-flash, before the remediation; not repeated |
+| 4 | Prompt A/B | **Done 08.11.2026**, 79/80 per arm, 23% fewer input tokens; `prompt.delivery = auto` resolves to `force` |
+| 5 | Seam gate with the reference producer | **Pass** (`TestLiveReferenceProducerSeams`, `TestLiveStoredSearchKeyIsRedactedInJobLogs`, `TestLiveIntegrationsAndResourcesCommandsListTheContributions`) |
+| 6 | Handoff to pig-web | **Open**: waits for the user's layout review |
+
+Each row's test names, scope and limits are in the [acceptance inventory](../analyses/2026-11-05-slice-1-inventory/README.md).
+
+| Spec § | Requirement | Result | Tests |
+|---|---|---|---|
+| 0001 §2–§7 | Discovery, request/reply, registrations, events, Go API | pass | [live_services_test.go](../../internal/host/live_services_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [client_test.go](../../api/client_test.go), [services_test.go](../../internal/host/services_test.go), [live_presentation_test.go](../../internal/host/live_presentation_test.go), [version_test.go](../../internal/host/version_test.go) |
+| 0001 §8 | Collaboration services | pass | [live_reference_test.go](../../internal/host/live_reference_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [live_sessions_test.go](../../internal/host/live_sessions_test.go), [secrets_test.go](../../internal/host/secrets_test.go) |
+| 0002 all | Frames, ledger, delivery, trust | pass | [live_frames_test.go](../../internal/host/live_frames_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [authority_test.go](../../internal/frames/authority_test.go), [frame_baseline_test.go](../../internal/host/frame_baseline_test.go), [delivery_test.go](../../internal/frames/delivery_test.go), [frame_restore_test.go](../../internal/host/frame_restore_test.go), [live_frame_rows_test.go](../../internal/host/live_frame_rows_test.go) |
+| 0003 §2–§6, §10 | Presentation contract, resolver, path display | pass | [live_reference_test.go](../../internal/host/live_reference_test.go), [presentation_web_test.go](../../internal/host/presentation_web_test.go), [commands_test.go](../../internal/host/commands_test.go), [presentation_builtin_test.go](../../internal/host/presentation_builtin_test.go), [presentation_builtin_render_test.go](../../internal/host/presentation_builtin_render_test.go) |
+| 0004 §1–§10 | Router, grammar, policy, builtin routes | pass | [live_reference_test.go](../../internal/host/live_reference_test.go), [live_test.go](../../internal/host/live_test.go), [router_test.go](../../internal/resource/router_test.go), [provider_mutation_test.go](../../internal/host/provider_mutation_test.go), [live_sessiontree_test.go](../../internal/host/live_sessiontree_test.go), [live_sessions_test.go](../../internal/host/live_sessions_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [path_test.go](../../internal/resource/path_test.go) |
+| 0004 §11 | Fetch backends and web reader | pass | [live_http_test.go](../../internal/host/live_http_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [http_test.go](../../internal/resource/http_test.go) |
+| 0005 §2–§8, §10, G5.2 | Hashline grammar, snapshots, recovery, commit | pass | [live_edit_test.go](../../internal/host/live_edit_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [parser_test.go](../../internal/hashline/parser_test.go), [batch_test.go](../../internal/hashline/batch_test.go), [commit_test.go](../../internal/fileedit/commit_test.go), [lock_test.go](../../internal/fileedit/lock_test.go) |
+| 0006 §2–§4, §6–§7 | Read pipeline, summaries, search | pass | [live_test.go](../../internal/host/live_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [search_test.go](../../internal/search/search_test.go), [live_http_test.go](../../internal/host/live_http_test.go), [live_reads_test.go](../../internal/host/live_reads_test.go) |
+| 0007 §2–§8 local | Instruction classes, barrier, pins, caps | pass | [live_instructions_test.go](../../internal/host/live_instructions_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [instructions_test.go](../../internal/instructions/instructions_test.go) |
+| 0008 §2–§3 local | Location capture, `cd` | pass | [live_test.go](../../internal/host/live_test.go), [location_test.go](../../internal/location/location_test.go) |
+| 0008 §5–§7, G8.20 | Bash, jobs, `job://`, scheme commands | pass | [live_jobs_test.go](../../internal/host/live_jobs_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [process_unix_test.go](../../internal/jobs/process_unix_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [live_menu_test.go](../../internal/host/live_menu_test.go) |
+| 0009 §2–§3, §5 | `ask_user` | pass | [live_ask_test.go](../../internal/host/live_ask_test.go) |
+| 0009 §8, Slice 1 routes | Command routes | pass | [live_sessions_test.go](../../internal/host/live_sessions_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [live_instructions_test.go](../../internal/host/live_instructions_test.go), [commands_test.go](../../internal/host/commands_test.go), [live_commands_test.go](../../internal/host/live_commands_test.go), [live_settings_test.go](../../internal/host/live_settings_test.go), [live_frame_rows_test.go](../../internal/host/live_frame_rows_test.go), [panel_keys_test.go](../../internal/host/panel_keys_test.go) |
+| 0009 §9, activity line | Activity line | pass | [live_sessions_test.go](../../internal/host/live_sessions_test.go), [activity_test.go](../../internal/host/activity_test.go) |
+| 0010 all | Config, state, trust | pass | [live_settings_test.go](../../internal/host/live_settings_test.go), [manager_test.go](../../internal/config/manager_test.go), [manager_test.go](../../internal/jobs/manager_test.go), [shown_test.go](../../internal/config/shown_test.go), [reference_test.go](../../internal/config/reference_test.go) |
+| 0011 §2–§8 | Session endpoint and messaging | pass | [live_sessions_test.go](../../internal/host/live_sessions_test.go), [lifecycle_publish_test.go](../../internal/host/lifecycle_publish_test.go), [registry_test.go](../../internal/endpoint/registry_test.go) |
+| 0012 §3.1–§3.4 | Project identity and registry | pass | [live_test.go](../../internal/host/live_test.go), [project_identity_test.go](../../internal/host/project_identity_test.go), [detect_test.go](../../internal/project/detect_test.go), [registry_test.go](../../internal/project/registry_test.go) |
+| 0012 §3.5 | Shared session storage | pass | [live_storage_test.go](../../internal/host/live_storage_test.go), [crash_test.go](../../internal/sessionstore/crash_test.go), [store_test.go](../../internal/sessionstore/store_test.go) |
+| 0012 §3.6 | Private notes | pass | [live_instructions_test.go](../../internal/host/live_instructions_test.go), [instructions_test.go](../../internal/instructions/instructions_test.go), [registry_test.go](../../internal/project/registry_test.go) |
+| 0012 §5.1–§5.2, §5.5 | Naming, tool semantics, guides | pass | [live_reference_test.go](../../internal/host/live_reference_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [contributions_test.go](../../internal/host/contributions_test.go), [router_test.go](../../internal/resource/router_test.go) |
+| 0012 §5.3 core | Core scheme trees | pass | [live_sessiontree_test.go](../../internal/host/live_sessiontree_test.go), [live_sessions_test.go](../../internal/host/live_sessions_test.go), [live_jobs_test.go](../../internal/host/live_jobs_test.go), [skill_test.go](../../internal/host/skill_test.go), [services_test.go](../../internal/host/services_test.go), [live_scripted_test.go](../../internal/host/live_scripted_test.go), [sessions_settings_test.go](../../internal/host/sessions_settings_test.go) |
+| 0012 §5.4, registered docs | `docs://` registered docs | pass | [live_reference_test.go](../../internal/host/live_reference_test.go) |
+| 0013 §2–§5, §7 | Secrets | pass | [live_secrets_test.go](../../internal/host/live_secrets_test.go), [live_reference_test.go](../../internal/host/live_reference_test.go), [secrets_test.go](../../internal/host/secrets_test.go), [vault_test.go](../../internal/secrets/vault_test.go) |
+| 0014 §3–§5, §6.1–§6.2, §7, §8 | Prompt engine, frames, skills | pass | [live_scripted_test.go](../../internal/host/live_scripted_test.go), [live_settings_test.go](../../internal/host/live_settings_test.go), [golden_test.go](../../internal/prompt/golden_test.go), [builtin_test.go](../../internal/prompt/builtin_test.go), [prompt_test.go](../../internal/host/prompt_test.go), [catalog_test.go](../../internal/skills/catalog_test.go), [live_frames_test.go](../../internal/host/live_frames_test.go) |
 
 # 6. Mode and host matrix
 
