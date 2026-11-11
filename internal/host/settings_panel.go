@@ -220,7 +220,7 @@ func (p *settingsPanel) View(width int) kit.View {
 		}
 	}
 	search := "search: " + p.filter + "▏"
-	hint := "enter change · ctrl+s save · ctrl+r reset · tab scope · " + sdk.KeyText("tui.select.cancel") + " back"
+	hint := sdk.KeyText("tui.select.confirm") + " change · " + sdk.FormatKeyText("ctrl+s") + " save · " + sdk.FormatKeyText("ctrl+r") + " reset · " + sdk.FormatKeyText("tab") + " scope · " + sdk.KeyText("tui.select.cancel") + " back"
 	body := kit.NewContainer(kit.NewText(fitLine(search, width), 1, 0), list, kit.NewText(strings.Join(wrapLines(detail, width)[:min(2, len(wrapLines(detail, width)))], "\n"), 1, 0))
 	return kit.View{Root: panelFrame(p.title(width), body, p.message, hint, width), Focus: "settings"}
 }

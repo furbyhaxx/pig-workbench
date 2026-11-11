@@ -1,7 +1,11 @@
 package host
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
+
+	"github.com/MichaelKinsy/PiG/extensions/sdk/tui"
 
 	sdk "github.com/MichaelKinsy/PiG/extensions/sdk"
 )
@@ -57,5 +61,21 @@ func TestAltLetterRunsThePanelAction(t *testing.T) {
 	must(jobs.HandleInput("\x1bk"))
 	if jobs.confirm != "j1" {
 		t.Fatalf("alt+k did not ask to stop the selected job: %q", jobs.confirm)
+	}
+}
+
+func TestPanelHintsFollowARemappedKey(t *testing.T) {
+	previous := tui.GetKeybindings()
+	t.Cleanup(func() { tui.SetKeybindings(previous) })
+	tui.SetKeybindings(tui.NewKeybindingsManager(tui.TUIKeybindings, tui.KeybindingsConfig{"tui.select.confirm": {"ctrl+j"}, "tui.select.cancel": {"ctrl+q"}}))
+	jobs := &jobsPanel{rows: func() []jobRow { return []jobRow{{id: "j1"}} }, height: func() int { return 24 }}
+	encoded, err := json.Marshal(jobs.View(140))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"ctrl+j open", "ctrl+q close", "alt+k stop"} {
+		if !strings.Contains(string(encoded), want) {
+			t.Errorf("hint lacks %q: %s", want, encoded)
+		}
 	}
 }
