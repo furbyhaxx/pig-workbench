@@ -37,7 +37,7 @@ In the TUI, `/workbench` opens a menu of every Workbench view; typing narrows it
 
 **Unfinished Slice 1:**
 
-- Typed presentation preferences persist by owner/stable key and survive withdrawal. `/workbench settings tools` groups and edits them; enabled/density/preview/metrics controls are live. Target/nested/custom controls and the new plain view's layout review remain open.
+- Typed presentation preferences persist by owner/stable key and survive withdrawal. `/workbench settings tools` groups and edits them; enabled, density, preview lines, metrics and target shortening are live. `child-density` and producer-declared controls are saved but not read by Workbench.
 
 - Long grep matching lines use bounded windows; oversized context is reduced and marked incomplete. Searches still stop at their output and source limits.
 - Scheme paths in `bash` and `!` commands: a standalone `ls`, `cat`, `rm`, `mkdir`, `mv`, `cp` or `word > path` on a non-locatable scheme runs in-process, with the same confirmation rules as the tools. In any other command a readable scheme path is passed as a read-only copy (`cat job://<id>/log | wc -l`); writes there are refused. Commands that only mention a scheme, and all `http(s)` URLs, run unchanged. Paths the shell builds at run time are not recognized. `bash.route-to-tools = false` switches this off. Cross-provider transfers and recursive operations are refused; contributed hashline editing remains unavailable.
