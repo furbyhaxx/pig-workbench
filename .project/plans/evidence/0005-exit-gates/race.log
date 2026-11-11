@@ -1,31 +1,3 @@
-mkdir -p "/mnt/Projects/furbyhaxx/pig-workbench/.tmp"
-cp go.mod "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
-if test -f go.sum; then cp go.sum "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; else : > "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.sum"; fi
-printf '\nreplace github.com/MichaelKinsy/PiG/extensions/sdk => %s\n' "$(pig reload --sdk-path)" >> "/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod"
-go test -race -modfile="/mnt/Projects/furbyhaxx/pig-workbench/.tmp/go.mod" ./...
-ok  	github.com/furbyhaxx/pig-workbench/api	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/ask	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/config	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/contribution	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/endpoint	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/fileedit	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/fileio	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/frames	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/hashline	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	26.204s
-ok  	github.com/furbyhaxx/pig-workbench/internal/htmlread	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/instructions	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/jobs	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/lifecycle	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/location	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/messaging	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/modelknowledge	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/pathdisplay	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/presentation	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/project	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/prompt	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/resource	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/sessionstore	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/skills	(cached)
