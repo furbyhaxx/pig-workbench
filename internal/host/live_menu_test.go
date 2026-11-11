@@ -122,7 +122,9 @@ func (s *tuiSession) typeSlowly(text string) {
 		s.tmux("send-keys", "-t", "wb", "-l", string(r))
 		time.Sleep(80 * time.Millisecond)
 	}
-	s.waitFor(text, 5*time.Second)
+	// A long entry scrolls its input, so only the end of the text is sure to be on screen.
+	tail := []rune(text)
+	s.waitFor(string(tail[max(0, len(tail)-24):]), 5*time.Second)
 }
 
 func (s *tuiSession) waitFor(want string, within time.Duration) string {
