@@ -820,6 +820,8 @@ func TestLiveActivityShortcutSettingBindsTheConfiguredKey(t *testing.T) {
 			for attempt := 0; attempt < 6 && !opened; attempt++ {
 				tmux("send-keys", "-t", "workbench", tc.press)
 				capture, opened = waitFor("Workbench activity: Ready", 4*time.Second)
+				// Under load the toast can expire before a capture sees it; the hub it opens stays.
+				opened = opened || strings.Contains(capture, " Workbench · ")
 			}
 			if !opened {
 				t.Fatalf("%s did not open the inspector:\n%s", tc.press, capture)

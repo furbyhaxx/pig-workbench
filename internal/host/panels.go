@@ -73,8 +73,29 @@ func panelFrame(title string, body kit.Node, status, hint string, width int) *ki
 			children = append(children, kit.NewText(fitLine(line, width), 1, 0))
 		}
 	}
-	children = append(children, kit.NewText(fitLine(hint, width), 1, 0), kit.NewDynamicBorder("borderAccent"))
+	for _, line := range hintLines(hint, width) {
+		children = append(children, kit.NewText(line, 1, 0))
+	}
+	children = append(children, kit.NewDynamicBorder("borderAccent"))
 	return kit.NewContainer(children...)
+}
+
+// hintLines breaks a hint between its " · " parts so a narrow panel still names every key.
+func hintLines(hint string, width int) []string {
+	var lines []string
+	line := ""
+	for _, part := range strings.Split(hint, " · ") {
+		switch {
+		case line == "":
+			line = part
+		case tui.VisibleWidth(line+" · "+part) <= max(width-2, 10):
+			line += " · " + part
+		default:
+			lines = append(lines, fitLine(line, width))
+			line = part
+		}
+	}
+	return append(lines, fitLine(line, width))
 }
 
 // textPanel is a read-only scrollable view of a command's output.

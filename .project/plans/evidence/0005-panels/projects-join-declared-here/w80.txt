@@ -1,0 +1,16 @@
+ projects to create one or join an existing project.
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+Ready
+────────────────────────────────────────────────────────────────────────────────
+ Workbench › Projects
+→ + New project here              create .project/Project.toml and register it
+  001  prj-c34u3rm807
+ Joined project 001 (prj-c34u3rm807): this checkout already declares it in its
+ Project.toml, so nothing was written.
+ enter select · escape/ctrl+c close
+────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveProjectsPanelJoinOfTheProjectDec...
+0.0%/32k (auto)                                                             mock

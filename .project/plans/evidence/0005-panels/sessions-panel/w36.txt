@@ -1,0 +1,16 @@
+ work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready ⚇1
+────────────────────────────────────
+ Workbench › Sessions
+→ b9453f89  idle
+ This session 16b7cf60 is
+ discoverable
+ alt+m message · alt+t trust
+ alt+b block · alt+h hide/show
+ escape/ctrl+c close
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

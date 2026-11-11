@@ -1,0 +1,16 @@
+
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+Ready
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Workbench › Projects
+ Component slug of this repository (1/1)
+> 001
+ $HOME/.cache/pig-workbench-test-tmp/work/TestLiveProjectsPanelJoinOverAnotherProjectFileIsRefusedReadably423214855/001 already
+ declares project home-base (prj-ijlcunyyzg) in its Project.toml, which takes precedence and is never replaced; edit that file by hand to
+ change projects
+ enter next · escape/ctrl+c back
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveProjectsPanelJoinOverAnotherProjectFileIsRefusedReadably423214855/001 (dev)
+0.0%/32k (auto)                                                                                                                         mock

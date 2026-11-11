@@ -1,0 +1,16 @@
+
+ Background job 3e3d-2 finished: exited (exit 0)
+
+ done
+
+ ● workbench.jobs · Job 3e3d-2 finished · 3 lines · ctrl+o expand
+
+Ready  1 jobs
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Workbench › Jobs › 3e3db903a35cea190000000000000001 · running
+ Job 3e3d-1: running
+ panel-job-output
+ alt+k stop · alt+w wait · alt+r refresh · escape/ctrl+c back
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveJobsPanelKillsWaitsAndRefreshesARealJob3338870045/001
+16.7%/32k (auto)                                                                                                                        mock

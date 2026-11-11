@@ -1,0 +1,16 @@
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready
+────────────────────────────────────
+ Workbench › Instructions
+→ BACKLOG.md
+ pinned
+ $HOME/.cache/pig-workben
+ ch-test-tmp/work/TestLiveInstructi
+ onsPanelPinsAndUnpinsAFile2953150…
+ alt+p pin · alt+u unpin
+ alt+v rules · escape/ctrl+c close
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

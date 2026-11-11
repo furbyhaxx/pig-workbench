@@ -79,3 +79,19 @@ func TestPanelHintsFollowARemappedKey(t *testing.T) {
 		}
 	}
 }
+
+func TestNarrowPanelHintKeepsEveryAction(t *testing.T) {
+	hint := "alt+m message · alt+t trust · alt+b block · alt+h hide/show · escape close"
+	lines := hintLines(hint, 36)
+	if joined := strings.Join(lines, " · "); joined != hint || len(lines) < 2 {
+		t.Fatalf("hint parts were lost or not wrapped: %q", lines)
+	}
+	for _, line := range lines {
+		if tui.VisibleWidth(line) > 34 {
+			t.Errorf("line wider than the panel: %q", line)
+		}
+	}
+	if got := hintLines(hint, 140); len(got) != 1 {
+		t.Errorf("a wide panel wraps the hint: %q", got)
+	}
+}

@@ -1,0 +1,16 @@
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready
+────────────────────────────────────
+ Workbench › Projects
+→ + New project here
+  001  prj-c34u3rm807
+ Joined project 001
+ (prj-c34u3rm807): this checkout
+ already declares it in its
+ Project.toml, so nothing was …
+ enter select · escape/ctrl+c close
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

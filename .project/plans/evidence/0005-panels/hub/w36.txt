@@ -1,0 +1,16 @@
+ tmux.
+
+────────────────────────────────────
+ Workbench · ~/.cache/…/001
+ search: ▏
+→ Tools
+  Jobs
+  Settings
+  Tool display
+  Instructions
+  Frames
+  (1/17)
+ enter open · type to search
+ escape/ctrl+c close
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

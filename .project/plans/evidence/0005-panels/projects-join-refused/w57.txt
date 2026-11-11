@@ -1,0 +1,16 @@
+ may not work. Add `set -g extended-keys on` to
+ ~/.tmux.conf and restart tmux.
+
+Ready
+─────────────────────────────────────────────────────────
+ Workbench › Projects
+ Component slug of this repository (1/1)
+> 001
+ $HOME/.cache/pig-workbench-test-tmp/work/Test
+ LiveProjectsPanelJoinOverAnotherProjectFileIsRefusedRea
+ dably423214855/001 already declares project home-base
+ (prj-ijlcunyyzg) in its Project.toml, which takes …
+ enter next · escape/ctrl+c back
+─────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveProjectsP...
+0.0%/32k (auto)                                      mock

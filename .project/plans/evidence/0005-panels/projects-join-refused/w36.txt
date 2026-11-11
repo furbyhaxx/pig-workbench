@@ -1,0 +1,16 @@
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready
+────────────────────────────────────
+ Workbench › Projects
+ Component slug of this repository…
+> 001
+ $HOME/.cache/pig-workben
+ ch-test-tmp/work/TestLiveProjectsP
+ anelJoinOverAnotherProjectFileIsRe
+ fusedReadably423214855/001 alread…
+ enter next · escape/ctrl+c back
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

@@ -1,0 +1,16 @@
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready
+────────────────────────────────────
+ Workbench › Trust
+→ allow $HOME/.cache/…
+ Saved allow
+ $HOME/.cache/pig-workben
+ ch-test-tmp/work/TestLiveTrustPane
+ lAddsAndRemovesARulePersistently2…
+ alt+a add · alt+d remove
+ escape/ctrl+c close
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

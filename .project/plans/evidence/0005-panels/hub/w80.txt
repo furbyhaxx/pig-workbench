@@ -1,0 +1,16 @@
+ -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────
+ Workbench · ~/.cache/pig-workbench-test-tmp/work/…/001
+ search: ▏
+→ Tools                           11 registered · inspect schemas, owners and…
+  Jobs                            Inspect, wait for and stop shell jobs
+  Settings                        Edit scoped settings with provenance
+  Tool display                    Nothing to configure: no extension register…
+  Instructions                    Active AGENTS.md and notes, pins and caps
+  Frames                          Context frames delivered this session
+  (1/17)
+ enter open · type to search · escape/ctrl+c close
+────────────────────────────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveWorkbenchMenuOpensInteractivePan...
+0.0%/32k (auto)                                                             mock

@@ -1,0 +1,16 @@
+
+ Warning: tmux extended-keys is
+ off. Modified Enter keys may not
+ work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart
+ tmux.
+
+Ready
+────────────────────────────────────
+ Workbench › Projects › join share…
+→ Join by file
+  Join by local marker
+ enter choose · escape/ctrl+c back
+────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/w...
+0.0%/32k (auto)                 mock

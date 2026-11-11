@@ -1,0 +1,16 @@
+ Background job 3e3d-2 finished: exited (exit 0)
+
+ done
+
+ ● workbench.jobs · Job 3e3d-2 finished · 3 lines
+
+Ready  1 jobs
+─────────────────────────────────────────────────────────
+ Workbench › Jobs
+→ 3e3d-1  running                 sh -c 'echo panel-job
+  3e3d-2  exited (exit 0)         sh -c 'echo quick-don
+ enter open · alt+k stop · alt+w wait · alt+r refresh
+ escape/ctrl+c close
+─────────────────────────────────────────────────────────
+~/.cache/pig-workbench-test-tmp/work/TestLiveJobsPanel...
+16.7%/32k (auto)                                     mock
