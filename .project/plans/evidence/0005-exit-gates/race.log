@@ -1,5 +1,5 @@
-ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/sessionstore	(cached)
-ok  	github.com/furbyhaxx/pig-workbench/internal/skills	(cached)
+ok  	github.com/furbyhaxx/pig-workbench/internal/secrets	3.592s
+ok  	github.com/furbyhaxx/pig-workbench/internal/sessionstore	1.263s
+ok  	github.com/furbyhaxx/pig-workbench/internal/skills	1.022s
 ok  	github.com/furbyhaxx/pig-workbench/internal/syntax	(cached)
 ok  	github.com/furbyhaxx/pig-workbench/internal/textclean	(cached)

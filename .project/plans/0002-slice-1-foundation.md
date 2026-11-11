@@ -5,15 +5,15 @@ document:
   title: "Slice 1: complete foundation — every tool, seam, abstraction and core URI working"
   description: "All model-facing tools, all extension seams, all shared abstractions, the URI system with its core schemes and the system prompt, fully working on their final implementations; depth follows in PLAN-0003"
   status: "draft"
-  revision: 68
+  revision: 69
   created_at: "2026-11-03T13:53:58+01:00"
-  updated_at: "2026-11-11T02:45:00+01:00"
+  updated_at: "2026-11-11T09:30:00+01:00"
   created_by: "coding-assistant"
   updated_by: "coding-assistant"
   changelog:
-    - revision: 68
-      reason: "Slice exit state after PLAN-0005"
-      changes: ["Exit state table and the row-by-row progress table with test links", "Progress: remediation done except the layout review and the handoff"]
+    - revision: 69
+      reason: "Slice 1 exit"
+      changes: ["Gates re-run on the tree of c84acd8 after the vanished-location fix", "Layouts accepted by the user; handoff to pig-web written"]
 ---
 
 # 1. Outcome
@@ -33,8 +33,8 @@ Umbrella and scope: [PLAN-0001](0001-pig-workbench.md). **Requirement ownership*
 
 - **done:** Phases A to M are implemented and all fourteen specifications are published. The review of 10.11.2026 found one critical and six high defects against this plan; [PLAN-0005](0005-slice-1-remediation.md) fixes them.
 - **done:** PLAN-0005 code, documentation and gates; the exit state and the row table are in §5.
-- **now:** the user's review of the new layouts (panels, tool rows, activity line, skills rows).
-- **next:** the handoff to pig-web naming the exit commit, then deleting the consumed review.
+- **done:** the user accepted the layouts; the exit handoff to pig-web names commit `c84acd8` (§5).
+- **next:** [PLAN-0003](0003-slice-2-feature-complete.md); pig-web runs its own co-load gate against the handed-off commit.
 - **Not part of this slice by decision:** `out://`, the instruction file watcher, stored-session `tree` and `messages`, `jobs monitor|write` (all PLAN-0003); `operation.status` is reserved (SPEC-0001).
 - **Known limits at the exit:** Windows is compile- and partly wine-tested only; Workbench cannot be fused into a Piglet Binary on PiG 0.7.0; activity-item click needs the fork host (PLAN-0004 C4).
 
@@ -229,12 +229,12 @@ Completion follows PLAN-0001 §7: observed checks only; failures and skipped gat
 
 | # | Exit item | State |
 |---|---|---|
-| 1 | Gates, no leaks | **Pass** on the tree of `6227b03`: `just check`, `just race`, `just integration` exit 0 ([evidence](evidence/0005-exit-gates/)) |
+| 1 | Gates, no leaks | **Pass** on the tree of `c84acd8`: `just check`, `just race`, `just integration` exit 0 ([evidence](evidence/0005-exit-gates/)) |
 | 2 | Every Slice 1 row passes, no stubs | **Pass**, table below. No TODO marker in product code; every remaining `unsupported` answer is for a capability or operation that is not advertised; every shown setting has a consumer (`TestEveryShownSettingHasAConsumer`) |
 | 3 | Live agent session | **Done 08.11.2026** on deepseek/deepseek-flash, before the remediation; not repeated |
 | 4 | Prompt A/B | **Done 08.11.2026**, 79/80 per arm, 23% fewer input tokens; `prompt.delivery = auto` resolves to `force` |
 | 5 | Seam gate with the reference producer | **Pass** (`TestLiveReferenceProducerSeams`, `TestLiveStoredSearchKeyIsRedactedInJobLogs`, `TestLiveIntegrationsAndResourcesCommandsListTheContributions`) |
-| 6 | Handoff to pig-web | **Open**: waits for the user's layout review |
+| 6 | Handoff to pig-web | **Done**: `host:/mnt/Projects/furbyhaxx/pig-web/.project/handoff/workbench-slice-1-exit.md`, exit commit `c84acd8` |
 
 Each row's test names, scope and limits are in the [acceptance inventory](../analyses/2026-11-05-slice-1-inventory/README.md).
 
