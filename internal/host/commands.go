@@ -117,7 +117,9 @@ func (a *app) toolsCommand(ctx sdk.Context, args string) error {
 	}
 	if filter != "" && len(rows) == 0 {
 		names, _ := a.toolNames.Load().([]string)
-		return fmt.Errorf("no tool named %q; tools: %s", noticeText(oneLine(filter, 40), 0), strings.Join(names, ", "))
+		// A warning, not an error: the host reports a failed command as an extension fault.
+		ctx.Notify(noticeText(fmt.Sprintf("No tool named %q. Tools: %s. Settings and other views start from /workbench.", oneLine(filter, 40), strings.Join(names, ", ")), 0), "warning")
+		return nil
 	}
 	text, err := formatTools(rows, format)
 	if err != nil {
