@@ -1,8 +1,0 @@
-=== RUN   TestGrepProviderPagesAndHonoursBoundaries
---- PASS: TestGrepProviderPagesAndHonoursBoundaries (0.01s)
-=== RUN   TestGrepProviderPagesAndHonoursBoundaries
---- PASS: TestGrepProviderPagesAndHonoursBoundaries (0.01s)
-=== RUN   TestGrepProviderPagesAndHonoursBoundaries
---- PASS: TestGrepProviderPagesAndHonoursBoundaries (0.01s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.042s

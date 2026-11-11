@@ -1,4 +1,0 @@
-=== RUN   TestLiveLocalReadCannotEscapeScratch
---- PASS: TestLiveLocalReadCannotEscapeScratch (9.79s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	10.817s

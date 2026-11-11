@@ -1,8 +1,0 @@
-=== RUN   TestLiveReadRepetitionThresholdControlsHints
---- PASS: TestLiveReadRepetitionThresholdControlsHints (0.86s)
-=== RUN   TestLiveReadRepetitionThresholdControlsHints
---- PASS: TestLiveReadRepetitionThresholdControlsHints (0.81s)
-=== RUN   TestLiveReadRepetitionThresholdControlsHints
---- PASS: TestLiveReadRepetitionThresholdControlsHints (0.82s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.517s

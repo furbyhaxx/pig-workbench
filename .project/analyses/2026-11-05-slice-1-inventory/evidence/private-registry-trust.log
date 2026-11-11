@@ -1,8 +1,0 @@
-=== RUN   TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories
---- PASS: TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories (0.00s)
-=== RUN   TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories
---- PASS: TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories (0.00s)
-=== RUN   TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories
---- PASS: TestPrivateNotesRootRejectsUnsafeAndOtherProjectDirectories (0.00s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/project	1.009s

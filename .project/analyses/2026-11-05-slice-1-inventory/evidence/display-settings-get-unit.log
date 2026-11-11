@@ -1,8 +1,0 @@
-=== RUN   TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields
---- PASS: TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields (0.01s)
-=== RUN   TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields
---- PASS: TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields (0.00s)
-=== RUN   TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields
---- PASS: TestSettingsGetReturnsOnlyDeclaredOwnerDisplayFields (0.01s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	1.043s

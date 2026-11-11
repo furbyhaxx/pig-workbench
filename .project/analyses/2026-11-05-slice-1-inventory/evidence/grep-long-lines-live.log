@@ -1,8 +1,0 @@
-=== RUN   TestLiveGrepReportsWindowAroundLongLineMatch
---- PASS: TestLiveGrepReportsWindowAroundLongLineMatch (0.77s)
-=== RUN   TestLiveGrepReportsWindowAroundLongLineMatch
---- PASS: TestLiveGrepReportsWindowAroundLongLineMatch (0.77s)
-=== RUN   TestLiveGrepReportsWindowAroundLongLineMatch
---- PASS: TestLiveGrepReportsWindowAroundLongLineMatch (0.77s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.333s

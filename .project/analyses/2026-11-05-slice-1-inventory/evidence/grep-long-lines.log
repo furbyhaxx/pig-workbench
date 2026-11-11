@@ -1,8 +1,0 @@
-=== RUN   TestGrepWindowsLongMatchingLines
---- PASS: TestGrepWindowsLongMatchingLines (0.00s)
-=== RUN   TestGrepWindowsLongMatchingLines
---- PASS: TestGrepWindowsLongMatchingLines (0.00s)
-=== RUN   TestGrepWindowsLongMatchingLines
---- PASS: TestGrepWindowsLongMatchingLines (0.00s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.019s

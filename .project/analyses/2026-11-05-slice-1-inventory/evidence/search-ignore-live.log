@@ -1,8 +1,0 @@
-=== RUN   TestLiveSearchHonoursGitignoreAndExplicitFileTargets
---- PASS: TestLiveSearchHonoursGitignoreAndExplicitFileTargets (2.02s)
-=== RUN   TestLiveSearchHonoursGitignoreAndExplicitFileTargets
---- PASS: TestLiveSearchHonoursGitignoreAndExplicitFileTargets (0.86s)
-=== RUN   TestLiveSearchHonoursGitignoreAndExplicitFileTargets
---- PASS: TestLiveSearchHonoursGitignoreAndExplicitFileTargets (0.88s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	4.785s

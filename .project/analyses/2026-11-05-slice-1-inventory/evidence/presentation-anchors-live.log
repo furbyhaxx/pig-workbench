@@ -1,8 +1,0 @@
-=== RUN   TestLiveReferenceProducerReload
---- PASS: TestLiveReferenceProducerReload (0.99s)
-=== RUN   TestLiveReferenceProducerSeams
---- PASS: TestLiveReferenceProducerSeams (1.19s)
-=== RUN   TestLiveIntegrationsAndResourcesCommandsListTheContributions
---- PASS: TestLiveIntegrationsAndResourcesCommandsListTheContributions (0.67s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.879s

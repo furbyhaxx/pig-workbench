@@ -1,8 +1,0 @@
-=== RUN   TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns
---- PASS: TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns (0.00s)
-=== RUN   TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns
---- PASS: TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns (0.00s)
-=== RUN   TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns
---- PASS: TestCaseInsensitiveLiteralMatchesKeepOriginalByteColumns (0.00s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.013s

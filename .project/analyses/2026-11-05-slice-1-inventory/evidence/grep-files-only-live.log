@@ -1,8 +1,0 @@
-=== RUN   TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText
---- PASS: TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText (1.34s)
-=== RUN   TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText
---- PASS: TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText (0.90s)
-=== RUN   TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText
---- PASS: TestLiveGrepFilesOnlyEmitsPathsWithoutSourceText (0.89s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	4.151s

@@ -1,8 +1,0 @@
-=== RUN   TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows
---- PASS: TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows (0.00s)
-=== RUN   TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows
---- PASS: TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows (0.00s)
-=== RUN   TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows
---- PASS: TestFilesOnlyDoesNotRetainSourceOrApplyContextWindows (0.00s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/search	1.012s

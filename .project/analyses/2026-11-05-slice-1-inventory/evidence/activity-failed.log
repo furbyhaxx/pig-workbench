@@ -1,8 +1,0 @@
-=== RUN   TestActivityCountsFailedJobsAfterRealExit
---- PASS: TestActivityCountsFailedJobsAfterRealExit (0.00s)
-=== RUN   TestActivityCountsFailedJobsAfterRealExit
---- PASS: TestActivityCountsFailedJobsAfterRealExit (0.00s)
-=== RUN   TestActivityCountsFailedJobsAfterRealExit
---- PASS: TestActivityCountsFailedJobsAfterRealExit (0.00s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	1.030s

@@ -1,8 +1,0 @@
-=== RUN   TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory
---- PASS: TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory (0.84s)
-=== RUN   TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory
---- PASS: TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory (0.83s)
-=== RUN   TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory
---- PASS: TestLiveCompleteReadProjectsOlderPartialWithoutChangingHistory (0.93s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	3.620s

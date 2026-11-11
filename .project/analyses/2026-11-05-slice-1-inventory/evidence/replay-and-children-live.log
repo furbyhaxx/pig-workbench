@@ -1,8 +1,0 @@
-=== RUN   TestLiveCodemodeChildIdentitiesAreRetainedForInspection
---- PASS: TestLiveCodemodeChildIdentitiesAreRetainedForInspection (0.95s)
-=== RUN   TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides
---- PASS: TestLiveResumeWithoutProducerRetainsUnavailableDisplaySchemaAndOverrides (1.39s)
-=== RUN   TestLiveRetainedProducerResultIsReadableAfterProducerRemoval
---- PASS: TestLiveRetainedProducerResultIsReadableAfterProducerRemoval (1.65s)
-PASS
-ok  	github.com/furbyhaxx/pig-workbench/internal/host	5.012s
