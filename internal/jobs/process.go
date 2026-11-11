@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"sync"
@@ -231,6 +232,10 @@ func StartProcess(spec Spec) (*Process, error) {
 		closePipes()
 		if stdin != nil {
 			stdin.Close()
+		}
+		if _, statErr := os.Stat(spec.Dir); spec.Dir != "" && errors.Is(statErr, fs.ErrNotExist) {
+			// exec reports a missing directory as a missing program.
+			return nil, fmt.Errorf("start process: working directory %s no longer exists", spec.Dir)
 		}
 		return nil, fmt.Errorf("start process: %w", err)
 	}

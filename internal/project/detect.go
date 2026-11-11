@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/furbyhaxx/pig-workbench/internal/fileio"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,7 @@ type Detection struct {
 }
 
 // Detect recognizes a directory without modifying the project, Git, or registry.
+// A directory that no longer exists is recognized as its nearest existing ancestor.
 func (r *Registry) Detect(ctx context.Context, dir string) (Detection, error) {
 	if err := ctx.Err(); err != nil {
 		return Detection{}, err
@@ -34,7 +36,7 @@ func (r *Registry) Detect(ctx context.Context, dir string) (Detection, error) {
 	if err != nil {
 		return Detection{}, fmt.Errorf("resolve detection directory: %w", err)
 	}
-	absolute, err = filepath.EvalSymlinks(absolute)
+	absolute, err = filepath.EvalSymlinks(fileio.NearestExisting(absolute))
 	if err != nil {
 		return Detection{}, fmt.Errorf("resolve detection directory: %w", err)
 	}

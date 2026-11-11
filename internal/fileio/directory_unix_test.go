@@ -49,3 +49,13 @@ func TestRootedDirectoryAdmissionRefusesOutsideLinks(t *testing.T) {
 		t.Fatal("directory admission escaped the root")
 	}
 }
+
+func TestNearestExistingClimbsToTheSurvivingAncestor(t *testing.T) {
+	root := t.TempDir()
+	if got := NearestExisting(filepath.Join(root, "gone", "deeper")); got != root {
+		t.Fatalf("got %q, want %q", got, root)
+	}
+	if got := NearestExisting(root); got != root {
+		t.Fatalf("an existing path changed: %q", got)
+	}
+}

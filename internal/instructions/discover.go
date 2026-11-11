@@ -66,6 +66,8 @@ func Discover(ctx context.Context, root string, classes []Class, opts Options) (
 	if err != nil {
 		return Set{}, fmt.Errorf("resolve target: %w", err)
 	}
+	// A target that does not exist (yet, or any more) is governed by its nearest existing ancestor.
+	target = fileio.NearestExisting(target)
 	info, err := os.Stat(target)
 	if err != nil {
 		return Set{}, fmt.Errorf("stat target: %w", err)

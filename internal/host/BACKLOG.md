@@ -1,6 +1,5 @@
 - B-0001 feature P2 — Prompt templates get no model family, api or thinking inputs → .project/backlog/B-0001-prompt-template-model-inputs.md
 - B-0002 drift P2 — First-touch guides reach the model only for contributed schemes on read → .project/backlog/B-0002-builtin-scheme-guides.md
-- B-0004 bug P2 — A deleted working directory fails every tool in secrets detection → .project/backlog/B-0004-vanished-cwd-fails-tools.md
 - B-0005 bug P2 — `!` commands run in PiG's host cwd, not the Workbench location → .project/backlog/B-0005-user-shell-cwd.md
 - B-0006 debt P2 — Live tests load the machine's own skills and flake on start order → .project/backlog/B-0006-live-tests-see-user-skills.md
 - B-0011 drift P3 — Referenced env files are missed when the shell builds the path → .project/backlog/B-0011-env-file-learning-limits.md
